@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.18 1999-02-10 04:08:21 willey Exp $
+    $Id: libpubcookie.c,v 2.0 1999-04-01 01:09:37 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -764,4 +764,71 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
 
     return cookie;
 
+}
+
+/*                                                                            */
+/*  generate granting request cookie to go to the login server                */
+/*                                                                            */
+/*                                                                            */
+#ifdef APACHE
+unsigned char *libpbc_gen_granting_req_p(pool *p, 
+	                                 char *appsrv_id, 
+				         char *app_id, 
+				         char creds, 
+				         char *method, 
+				         char *host, 
+				         char *uri, 
+				         char *args, 
+				         char *fr, 
+				         int port,
+			                 md_context_plus *ctx_plus,
+			                 crypt_stuff *c_stuff) 
+#else
+unsigned char *libpbc_gen_granting_req_np(char *appsrv_id, 
+				          char *app_id, 
+				          char creds, 
+				          char *method, 
+				          char *host, 
+				          char *uri, 
+				          char *args, 
+				          char *fr, 
+				          int port,
+			                  md_context_plus *ctx_plus,
+			                  crypt_stuff *c_stuff) 
+#endif
+{
+    char *e_args; 
+    char *g_req_contents;
+    char *e_g_req_contents;
+
+    if ( args )
+        base64_encode(args, e_args, strlen(args));
+    else
+        strcpy(e_args, "");
+
+    /* make the granting request */
+    sprintf(g_req_contents,
+            "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s",
+            PBC_GETVAR_APPSRVID,
+            appsrv_id,
+            PBC_GETVAR_APPID,
+            app_id,
+            PBC_GETVAR_CREDS,
+            creds,
+            PBC_GETVAR_VERSION,
+            PBC_VERSION,
+            PBC_GETVAR_METHOD,
+            method,
+            PBC_GETVAR_HOST,
+            host,
+            PBC_GETVAR_URI,
+            uri,
+            PBC_GETVAR_ARGS,
+            e_args,
+            PBC_GETVAR_FR,
+            fr);
+
+  base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
+
+  return e_g_req_contents;
 }
