@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.54 2004-04-08 21:09:06 fox Exp $
+ * $Id: flavor_basic.c,v 1.55 2004-04-28 21:04:49 willey Exp $
  */
 
 
@@ -67,7 +67,6 @@ typedef void pool;
 #endif /* HAVE_DMALLOC_H */
 
 static verifier *v = NULL;
-extern int debug;
 
 extern int get_kiosk_duration(pool *p, login_rec *l);
 
@@ -324,8 +323,8 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
                 func, user_field_html);
-    return(user_field_html);
 
+    return(user_field_html);
 }
 
 /* get the html for user field, static or dynamic */
@@ -656,14 +655,10 @@ static login_result process_basic(pool *p, const security_context *context,
             rcode = FLB_FORM_EXPIRED;
         } else if (v->v(p, l->user, l->pass, NULL,
                      l->realm, credsp, errstr) == 0) {
-            if (debug) {
                 /* xxx log realm */
-                pbc_log_activity(p,  PBC_LOG_AUDIT,
-                    	"Authentication success: %s IP: %s type: %c\n", 
-			l->user,
-                        (cgiRemoteAddr == NULL ? "(null)" : cgiRemoteAddr),
-			l->creds);
-            }
+            pbc_log_activity(p,  PBC_LOG_AUDIT,
+                  "Authentication success: %s IP: %s type: %c\n", l->user,
+                  (cgiRemoteAddr == NULL ? "(null)" : cgiRemoteAddr), l->creds);
 
             /* authn succeeded! */
 
@@ -741,6 +736,11 @@ static login_result process_basic(pool *p, const security_context *context,
             if ( ! libpbc_config_getswitch(p, "retain_username_on_failed_authn", 0)) {
                 l->user = NULL;	/* in case wrong username */
             }
+            print_login_page(p, l, c, FLB_BAD_AUTH);
+
+            if ( ! libpbc_config_getswitch(p, "retain_username_on_failed_authn", 0)) {
+                l->user = NULL;	/* in case wrong username */
+            }
             rcode = FLB_BAD_AUTH;
         }
 
@@ -757,8 +757,9 @@ static login_result process_basic(pool *p, const security_context *context,
         *errstr = "pinit";
         rcode = FLB_PINIT;
 
-    /* l->check_error will be set whenever the l cookie isn't valid
-       including (for example) when the login cookie has expired.  */
+        /* l->check_error will be set whenever the l cookie isn't valid
+           including (for example) when the login cookie has expired.
+         */
     } else if (l->check_error) {
         *errstr = l->check_error;
         if (strcmp(l->check_error,"expired")) rcode = FLB_LCOOKIE_ERROR;
@@ -777,7 +778,7 @@ static login_result process_basic(pool *p, const security_context *context,
         rcode = FLB_CACHE_CREDS_WRONG;
 
     } else { /* valid login cookie */
-        pbc_log_activity(p, PBC_LOG_AUDIT,
+        pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
                          "flavor_basic: L cookie valid user: %s", l->user);
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: L cookie valid, goodbye\n" );

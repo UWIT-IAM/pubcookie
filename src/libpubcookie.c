@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.71 2004-04-09 06:20:11 willey Exp $
+ * $Id: libpubcookie.c,v 2.72 2004-04-28 21:04:49 willey Exp $
  */
 
 
@@ -786,7 +786,7 @@ pbc_cookie_data *libpbc_unbundle_cookie(pool *p, const security_context *context
     }
 
     if( ! libpbc_base64_decode(p, (unsigned char *)in, buf, &outlen) ) {
-        pbc_log_activity(p, PBC_LOG_ERROR, "libpbc_unbundle_cookie: could not base64 decode cookie.\n");
+        pbc_log_activity(p, PBC_LOG_ERROR, "libpbc_unbundle_cookie: could not base64 decode cookie.");
         return 0;
     }
 
@@ -796,7 +796,7 @@ pbc_cookie_data *libpbc_unbundle_cookie(pool *p, const security_context *context
     }
 
     if (plainlen != sizeof(pbc_cookie_data)) {
-        pbc_log_activity(p, PBC_LOG_ERROR, "libpbc_unbundle_cookie: cookie wrong size: %d != %d\n", plainlen, sizeof(pbc_cookie_data));
+        pbc_log_activity(p, PBC_LOG_ERROR, "libpbc_unbundle_cookie: cookie wrong size: %d != %d", plainlen, sizeof(pbc_cookie_data));
         return 0;
     }
 
@@ -870,6 +870,11 @@ int libpbc_check_version(pool *p, pbc_cookie_data *cookie_data)
  */
 int libpbc_check_exp(pool *p, time_t fromc, int exp)
 {
+
+#ifdef IMMORTAL_COOKIES
+        return PBC_OK;
+#endif
+
     if( (fromc + exp) > time(NULL) )
         return PBC_OK;
     else 

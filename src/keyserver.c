@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.48 2004-03-31 16:53:57 fox Exp $
+ * $Id: keyserver.c,v 2.49 2004-04-28 21:04:49 willey Exp $
  */
 
 
@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
     pbc_log_init_syslog(p, "keyserver");
     libpbc_pubcookie_init(p, &context);
 
-    debug = libpbc_config_getint(p, "debug", 0);
+    debug = libpbc_config_getint(p, "logging_level", 0);
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
@@ -784,7 +784,7 @@ int cgiMain()
     /* xxx log connection */
 
     libpbc_config_init(NULL, "keyserver");
-    debug = libpbc_config_getint("debug", 0);
+    debug = libpbc_config_getint("logging_level", 0);
 
     if (!getenv("HTTPS") || strcmp( getenv("HTTPS"), "on") ) {
 	printf("\r\nNO HTTPS required\r\n");

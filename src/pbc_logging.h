@@ -6,7 +6,7 @@
 /** @file pbc_logging.h
  * Header file for logging stuff
  *
- * $Id: pbc_logging.h,v 1.20 2004-03-31 16:53:57 fox Exp $
+ * $Id: pbc_logging.h,v 1.21 2004-04-28 21:04:49 willey Exp $
  */
 
 
@@ -17,11 +17,11 @@
 # include "config.h"
 #endif
 
-#define PBC_LOG_ERROR 0
-#define PBC_LOG_AUDIT 1
-#define PBC_LOG_DEBUG_LOW 2
-#define PBC_LOG_DEBUG_VERBOSE 3
-#define PBC_LOG_DEBUG_OUTPUT 5
+#define PBC_LOG_ERROR 0		/* errors only */
+#define PBC_LOG_AUDIT 1		/* activity (authns, redirects, etc.) */
+#define PBC_LOG_DEBUG_LOW 2     /* some debugging */
+#define PBC_LOG_DEBUG_VERBOSE 3 /* whole lotta debugging */
+#define PBC_LOG_DEBUG_OUTPUT 5  /* adds logging of all html output */
 
 #ifdef HAVE_STDARG_H
 # include <stdarg.h>

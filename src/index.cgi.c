@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.127 2004-04-13 02:29:52 jteaton Exp $
+ * $Id: index.cgi.c,v 1.128 2004-04-28 21:04:49 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -375,9 +375,12 @@ void print_http_header(pool *p)
  */
 int check_l_cookie_expire (pool *p, login_rec *c, time_t t) 
 {
+
+#ifndef IMMORTAL_COOKIES
     if ( c == NULL || t > c->expire_ts )
         return(PBC_FAIL);
     else
+#endif
         return(PBC_OK);
 
 }
@@ -1310,7 +1313,7 @@ time_t compute_l_expire(pool *p, login_rec *l)
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,"compute_l_expire: hello");
 
-    if((l->duration==0) && (l->duration=get_kiosk_duration(p, l))==0)
+    if((l->duration==0) && (l->duration=get_kiosk_duration(p, l))==PBC_FALSE)
         l->duration = 
         libpbc_config_getint(p, "default_l_expire",DEFAULT_LOGIN_EXPIRE);
 
@@ -1421,13 +1424,31 @@ int app_logged_out(pool *p, login_rec *c, const char *appid, const char *appsrvi
 
 }
 
+/**
+ * handles logout requests and prints logout page
+ *
+ * @param p apache memory pool (null)
+ * @param context security context
+ * @param l login rec from form
+ * @param c login rec from cookie
+ * @param logout_action what to do after logging out
+ *
+ * @returns always returns PBC_OK
+ */
 int logout(pool *p, const security_context *context, login_rec *l, login_rec *c, int logout_action)
 {
     char	*appid;
     char	*appsrvid;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
-		"logout: logout_action: %d\n", logout_action);
+		    "logout: logout_action: %d\n", logout_action);
+
+    pbc_log_activity(p, PBC_LOG_AUDIT, 
+                    "%s logout for user: %s client addr: %s action: %d",
+                    l->first_kiss,
+                    l->user == NULL ? "(null)" : l->user,
+                    cgiRemoteAddr,
+                    logout_action);
 
     /* get appid and appsrvid from env */
     if( (appid=get_string_arg(p, PBC_GETVAR_APPID,NO_NEWLINES_FUNC)) == NULL )
@@ -1439,103 +1460,122 @@ int logout(pool *p, const security_context *context, login_rec *l, login_rec *c,
 
     if( logout_action == LOGOUT_ACTION_NOTHING ) {
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_part1",
-                                                "logout_part1"),
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_part1",
+                                "logout_part1"),
                         NULL);
 
         app_logged_out(p, c, appid, appsrvid);
         if( c == NULL || check_l_cookie_expire(p, c, time(NULL)) == PBC_FAIL) {
             ntmpl_print_html(p, TMPL_FNAME,
-			libpbc_config_getstring(p, "tmpl_logout_already_weblogin",
+			libpbc_config_getstring(p, 
+				"tmpl_logout_already_weblogin",
 				"logout_already_weblogin"),
                         NULL);
             ntmpl_print_html(p, TMPL_FNAME,
-			libpbc_config_getstring(p, "tmpl_logout_postscript_still_others",
+			libpbc_config_getstring(p, 
+				"tmpl_logout_postscript_still_others",
 				"logout_postscript_still_others"),
                         NULL);
         }
         else {
             const char *remaining = time_remaining_text(p, c);
             ntmpl_print_html(p, TMPL_FNAME,
-			libpbc_config_getstring(p, "tmpl_logout_still_weblogin",
+			libpbc_config_getstring(p, 
+				"tmpl_logout_still_weblogin",
 				"logout_still_weblogin"),
                         "contents",
                         (c == NULL || c->user == NULL ? "unknown" : c->user),
                         NULL);
             ntmpl_print_html(p, TMPL_FNAME,
-			libpbc_config_getstring(p, "tmpl_logout_time_remaining",
+			libpbc_config_getstring(p, 
+				"tmpl_logout_time_remaining",
 				"logout_time_remaining"), 
                         "remaining", remaining,
                         NULL);
             pbc_free(p, (char *)remaining);
             ntmpl_print_html(p, TMPL_FNAME,
-			libpbc_config_getstring(p, "tmpl_logout_postscript_still_weblogin",
+			libpbc_config_getstring(p, 
+				"tmpl_logout_postscript_still_weblogin",
 				"logout_postscript_still_weblogin"),
                         NULL);
         }
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_part2",
-                                                "logout_part2"),
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_part2",
+                                "logout_part2"),
                         NULL);
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L ) {
         expire_login_cookie(p, context, l, c);
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_part1",
-                                                "logout_part1"),
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_part1",
+                                "logout_part1"),
                         NULL);
         app_logged_out(p, c, appid, appsrvid);
         if( c == NULL || check_l_cookie_expire(p, c, time(NULL)) == PBC_FAIL)
             ntmpl_print_html(p, TMPL_FNAME,
-                            libpbc_config_getstring(p, "tmpl_logout_already_weblogin",
-                                                    "logout_already_weblogin"),
+                            libpbc_config_getstring(p, 
+				"tmpl_logout_already_weblogin",
+                                "logout_already_weblogin"),
                             NULL);
         else 
             ntmpl_print_html(p, TMPL_FNAME,
-                            libpbc_config_getstring(p, "tmpl_logout_weblogin",
-                                                    "logout_weblogin"),
+                            libpbc_config_getstring(p, 
+				"tmpl_logout_weblogin",
+                                "logout_weblogin"),
                             NULL);
 
         if( c && c->user)
             ntmpl_print_html(p, TMPL_FNAME,
-                            libpbc_config_getstring(p, "tmpl_logout_still_known",
-                                                    "logout_still_known"),
-                        "contents", c->user,
+                            libpbc_config_getstring(p, 
+				"tmpl_logout_still_known",
+                                "logout_still_known"),
+                            "contents", c->user,
                             NULL);
 
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_postscript_still_others",
-                                                "logout_postscript_still_others"),
-                            NULL);
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_postscript_still_others",
+                                "logout_postscript_still_others"),
+                        NULL);
+
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_part2",
-                                                "logout_part2"),
-                            NULL);
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_part2",
+                                "logout_part2"),
+                        NULL);
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L_NO_APP ) {
         clear_login_cookie(p);
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_part1",
-                                                "logout_part1"),
-                            NULL);
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_part1",
+                                "logout_part1"),
+                        NULL);
         if( c == NULL || check_l_cookie_expire(p, c, time(NULL)) == PBC_FAIL )
             ntmpl_print_html(p, TMPL_FNAME,
-                            libpbc_config_getstring(p, "tmpl_logout_already_weblogin",
-                                                    "logout_already_weblogin"),
-                            NULL);
+                            libpbc_config_getstring(p, 
+				"tmpl_logout_already_weblogin",
+                                "logout_already_weblogin"),
+                             NULL);
         else 
             ntmpl_print_html(p, TMPL_FNAME,
-                            libpbc_config_getstring(p, "tmpl_logout_weblogin",
-                                                    "logout_weblogin"),
+                            libpbc_config_getstring(p, 
+				"tmpl_logout_weblogin",
+                                "logout_weblogin"),
                             NULL);
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_postscript_still_others",
-                                                "logout_postscript_still_others"),
-                            NULL);
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_postscript_still_others",
+                                "logout_postscript_still_others"),
+                         NULL);
         ntmpl_print_html(p, TMPL_FNAME,
-                        libpbc_config_getstring(p, "tmpl_logout_part2",
-                                                "logout_part2"),
-                            NULL);
+                        libpbc_config_getstring(p, 
+				"tmpl_logout_part2",
+                                "logout_part2"),
+                         NULL);
     }
 
     return(PBC_OK);
@@ -1564,7 +1604,8 @@ int check_logout(pool *p, const security_context *context, login_rec *l, login_r
 			 "check_logout: program name: %s\n", cgiScriptName);
 
     /* check to see if this is a logout redirect */
-    logout_action = get_int_arg(p, PBC_GETVAR_LOGOUT_ACTION, LOGOUT_ACTION_UNSET);
+    logout_action = get_int_arg(p, PBC_GETVAR_LOGOUT_ACTION, 
+				LOGOUT_ACTION_UNSET);
 
     if ( logout_action != LOGOUT_ACTION_UNSET ) {
 	pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
@@ -1614,6 +1655,7 @@ int check_logout(pool *p, const security_context *context, login_rec *l, login_r
 
 /**
  * prints login status page
+ * @param p apache memory pool (null)
  * @param c contents of login cookie
  */
 void login_status_page(pool *p, login_rec *c)
@@ -2197,7 +2239,7 @@ int cookie_test(pool *p, const security_context *context, login_rec *l, login_re
             clear_greq_cookie(p);
             pbc_free(p,th);
             pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
-		 "cookie_test: not authorized (%s)\n", l->host);
+		 "Host: %s not authorized to access login server\n", l->host);
             return (PBC_FAIL);
         }
         pbc_free(p,th);
@@ -2327,9 +2369,6 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
         abend(p, "out of memory");
     }
 
-    pbc_log_activity(p, PBC_LOG_AUDIT, "l->user=%s l->appsrvid=%s l->appid=%s",
-		    l->user, l->appsrvid, l->appid);
-
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
 
@@ -2455,12 +2494,13 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
     /* will look like format chars in future *printf's */
     now = time(NULL);
     fprintf(stderr,
-            "%s: PUBCOOKIE_DEBUG: %s: %s Redirect user: %s redirect: %s\n",
+            "%s: PUBCOOKIE_DEBUG: %s: %s Redirect user: %s redirect: %s reason: %s\n",
             libpbc_time_string(p, now),
             ANY_LOGINSRV_MESSAGE,
             l->first_kiss,
             l->user, 
-            redirect_final);
+            redirect_final,
+	    l->appsrv_err_string);
 
     /* now blat out the redirect page */
     if( l->pinit == PBC_FALSE ) { /* don't need a G cookie for a pinit */
@@ -2701,26 +2741,26 @@ login_rec *get_query(pool *p)
         }
     }
 
-    pbc_log_activity(p, PBC_LOG_AUDIT, "get_query: from login user: %s\n",
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_query: from login user: %s\n",
 			l->user == NULL ? "(null)" : l->user
 			);
-    pbc_log_activity(p, PBC_LOG_AUDIT, "get_query: from login version: %s\n",
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_query: from login version: %s\n",
 			l->version == NULL ? "(null)" : l->version
 			);
-    pbc_log_activity(p, PBC_LOG_AUDIT, 
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			"get_query: from login creds: %c\n", l->creds);
-    pbc_log_activity(p, PBC_LOG_AUDIT, "get_query: from login appid: %s\n",
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_query: from login appid: %s\n",
 			l->appid == NULL ? "(null)" : l->appid
 			);
-    pbc_log_activity(p, PBC_LOG_AUDIT, "get_query: from login host: %s\n",
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_query: from login host: %s\n",
 			l->host == NULL ? "(null)" : l->host
 			);
-    pbc_log_activity(p, PBC_LOG_AUDIT, "get_query: from login appsrvid: %s\n",
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_query: from login appsrvid: %s\n",
 			l->appsrvid == NULL ? "(null)" : l->appsrvid
 			);
-    pbc_log_activity(p, PBC_LOG_AUDIT, "get_query: from login first_kiss: %d\n",
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_query: from login first_kiss: %d\n",
 			(int)l->first_kiss);
-    pbc_log_activity(p, PBC_LOG_AUDIT, 
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			"get_query: from login post_stuff: %s\n", 
 			(l->post_stuff==NULL ? "" : l->post_stuff));
     pbc_log_activity(p, PBC_LOG_AUDIT,
@@ -2783,7 +2823,7 @@ login_rec *verify_unload_login_cookie (pool *p, const security_context *context,
     if (check_l_cookie_expire(p, new, t=time(NULL)) == PBC_FAIL)
         new->alterable_username = PBC_TRUE;
 
-    pbc_log_activity(p, PBC_LOG_AUDIT,
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
                      "verify_unload_login_cookie: bye!  user is %s\n", 
                      new->user  == NULL ? "(null)" : new->user 
                     );
@@ -2850,8 +2890,8 @@ int create_cookie(pool *p, const security_context *context,
         create = time(NULL);
 
     cookie_local = (char *) 
-        libpbc_get_cookie_with_expire(p, context, user, type, creds, pre_sess_tok,
-                    create, expire, appsrvid, appid, peer, peer ? 1 : 0);
+        libpbc_get_cookie_with_expire(p, context, user, type, creds, 
+             pre_sess_tok, create, expire, appsrvid, appid, peer, peer ? 1 : 0);
 
     if (peer != NULL)
         free(peer);
