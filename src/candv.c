@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.6 1999-01-04 22:05:04 willey Exp $
+    $Id: candv.c,v 1.7 1999-01-13 20:42:00 willey Exp $
  */
 
 #include <stdio.h>
@@ -13,6 +13,14 @@
 #include "pbc_config.h"
 #include "pbc_version.h"
 
+void usage(const char *progname) {
+    printf("%s [-k key_file] [-c cert_file] [-s key_for_cert_file][-h]\n\n", progname);
+    printf("\t key_file:\tencyption key, \n\t\t\tdefault is %s\n", PBC_CRYPT_KEYFILE);
+    printf("\t cert_file:\tcetificate file, \n\t\t\tdefault is %s\n", PBC_G_CERTFILE);
+    printf("\t key_for_cert_file:\tkey for cetificate file, \n\t\t\tdefault is %s\n\n", PBC_G_KEYFILE);
+    exit (1);
+}
+
 int main(int argc, char **argv) {
     unsigned char type;
     unsigned char creds;
@@ -24,10 +32,35 @@ int main(int argc, char **argv) {
     unsigned char       *updated_cookie;
     pbc_cookie_data	*cookie_data;
     pbc_cookie_data	*cookie_data2;
+    char		*key_file = NULL;
+    char		*g_cert_file = NULL;
+    char		*g_key_file = NULL;
+    int 		c, barfarg = 0;
 
     md_context_plus 	*s_ctx_plus;
     md_context_plus	*v_ctx_plus;
     crypt_stuff         *c_stuff;
+
+    optarg = NULL;
+    while (!barfarg && ((c = getopt(argc, argv, "hk:c:s:")) != -1)) {
+	switch (c) {
+	case 'h' :
+	    usage(argv[0]);
+	    break;
+	case 'k' :
+	    key_file = strdup(optarg);
+	    break;
+	case 'c' :
+	    g_cert_file = strdup(optarg);
+	    break;
+	case 's' :
+	    g_key_file = strdup(optarg);
+	    break;
+	default :
+	    barfarg++;
+	    usage(argv[0]);
+	}
+    }
 
     type='1';
     creds='9';
@@ -35,9 +68,20 @@ int main(int argc, char **argv) {
     strncpy(app_id, "app id is googoo", PBC_APP_ID_LEN);
     strncpy(user, "bongo", PBC_USER_LEN);
 
-    c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
-    s_ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
-    v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
+    if ( key_file )
+        c_stuff = libpbc_init_crypt(key_file);
+    else
+        c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+
+    if ( g_key_file )
+        s_ctx_plus = libpbc_sign_init(g_key_file);
+    else
+        s_ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
+
+    if ( g_cert_file )
+        v_ctx_plus = libpbc_verify_init(g_cert_file);
+    else
+        v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
 
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
 
