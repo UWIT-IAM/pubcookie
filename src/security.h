@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: security.h,v 1.11 2004-02-16 17:05:31 jteaton Exp $
+  $Id: security.h,v 1.12 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifndef INCLUDED_SECURITY_H
@@ -20,7 +20,7 @@
 struct security_context_s;
 typedef struct security_context_s security_context;
 
-static void make_crypt_keyfile(pool *p, const char *peername, char *buf);
+static void make_crypt_keyfile (pool * p, const char *peername, char *buf);
 
 /**
  * initializes the security subsystem.
@@ -29,7 +29,7 @@ static void make_crypt_keyfile(pool *p, const char *peername, char *buf);
  * @param context a pointer to the context to be created inside pool
  * @returns non-zero on error
  */
-int security_init(pool *p, security_context **context);
+int security_init (pool * p, security_context ** context);
 
 /**
  * libpbc_mk_priv takes 'buf', 'len', and returns 'outbuf', 'outlen',
@@ -46,9 +46,10 @@ int security_init(pool *p, security_context **context);
  * @param outlen the length of outbuf.
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv(pool *p, const security_context *context, const char *peer,
-                   const char use_granting, const char *buf, const int len,
-		   char **outbuf, int *outlen);
+int libpbc_mk_priv (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len, char **outbuf,
+                    int *outlen);
 
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
@@ -65,9 +66,10 @@ int libpbc_mk_priv(pool *p, const security_context *context, const char *peer,
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks)
  */
-int libpbc_rd_priv(pool *p, const security_context *context, const char *peer,
-                   const char use_granting, const char *buf, const int len,
-		   char **outbuf, int *outlen);
+int libpbc_rd_priv (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len, char **outbuf,
+                    int *outlen);
 
 /**
  * libpbc_mk_safe allocates a signature and returns it to the
@@ -83,9 +85,10 @@ int libpbc_rd_priv(pool *p, const security_context *context, const char *peer,
  * @param outlen the length of the signature
  * @returns 0 success, non-0 on failure
  */
-int libpbc_mk_safe(pool *p, const security_context *context, const char *peer,
-                   const char use_granting, const char *buf, const int len,
-		   char **outbuf, int *outlen);
+int libpbc_mk_safe (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len, char **outbuf,
+                    int *outlen);
 
 /**
  * verifies a message signed with libpbc_mk_safe()
@@ -99,9 +102,10 @@ int libpbc_mk_safe(pool *p, const security_context *context, const char *peer,
  * @param siglen the length of the received signature
  * @returns 0 on success, non-0 on any failure
  */
-int libpbc_rd_safe(pool *p, const security_context *context, const char *peer,
-                   const char use_granting, const char *buf, const int len,
-		   const char *sigbuf, const int siglen);
+int libpbc_rd_safe (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len, const char *sigbuf,
+                    const int siglen);
 
 /**
  * returns the public name of this service. this is what other systems
@@ -110,6 +114,7 @@ int libpbc_rd_safe(pool *p, const security_context *context, const char *peer,
  * @param context the security context for the (virtual) host
  * @returns a constant string, which should not be modified or free()ed
  */
-const char *libpbc_get_cryptname(pool *p, const security_context *context);
+const char *libpbc_get_cryptname (pool * p,
+                                  const security_context * context);
 
 #endif

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.51 2004-08-23 21:48:35 willey Exp $
+  $Id: index.cgi.h,v 1.52 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -26,114 +26,124 @@
 
 #include "security.h"
 
-typedef struct {
-    char	*args;
-    char	*uri;
-    char	*host;
-    char	*method;
-    char	*version;
-    char	creds;
-    char	creds_from_greq;
-    char	ride_free_creds;
-    char	*appid;
-    char	*appsrvid;
-    char	*fr;
-    char	*user;
-    int		hide_user;
-    char	*realm;
-    char	*pass;
-    char	*pass2;
-    char	*post_stuff;
-    char	*real_hostname;
-    char	*appsrv_err;
-    char	*appsrv_err_string;
-    char	*file;
-    char	*flag;
-    char	*referer;
-    char	type;
-    time_t	create_ts;
-    time_t	expire_ts;
-    int		pre_sess_token;
-    int		session_reauth;
-    int		duration;
-    char	*first_kiss;
-    int		reply;
-    int		alterable_username;
-    int		pinit;
-    int		pre_sess_tok;   
-    char        *check_error;
-    char        *relay_uri;
-    void *flavor_extension; /* used for ad-hoc purposes until
-			       we add a general extension mechanism to the
-			       cookie structure */
-} login_rec;
+typedef struct
+{
+    char *args;
+    char *uri;
+    char *host;
+    char *method;
+    char *version;
+    char creds;
+    char creds_from_greq;
+    char ride_free_creds;
+    char *appid;
+    char *appsrvid;
+    char *fr;
+    char *user;
+    int hide_user;
+    char *realm;
+    char *pass;
+    char *pass2;
+    char *post_stuff;
+    char *real_hostname;
+    char *appsrv_err;
+    char *appsrv_err_string;
+    char *file;
+    char *flag;
+    char *referer;
+    char type;
+    time_t create_ts;
+    time_t expire_ts;
+    int pre_sess_token;
+    int session_reauth;
+    int duration;
+    char *first_kiss;
+    int reply;
+    int alterable_username;
+    int pinit;
+    int pre_sess_tok;
+    char *check_error;
+    char *relay_uri;
+    void *flavor_extension;     /* used for ad-hoc purposes until
+                                   we add a general extension mechanism to the
+                                   cookie structure */
+}
+login_rec;
 
-struct browser {
-    char		agent[1024];
-    int			timeout;
-    int			allow;
-    int			deny;
-    struct browser	*next;
-    struct browser 	*prev;
+struct browser
+{
+    char agent[1024];
+    int timeout;
+    int allow;
+    int deny;
+    struct browser *next;
+    struct browser *prev;
 };
 
 typedef struct browser browser_rec;
 
-typedef enum {
-    NOTOK_OK = 0,                   /* really ok */
-    NOTOK_GENERIC = 1,              /* who knows? */
-    NOTOK_FORMMULTIPART = 2,        /* we don't support form multipart */
-    NOTOK_BADAGENT = 3,             /* not a supported or supportable browser */
-    NOTOK_NEEDSSL = 4               /* requires ssl */
-} notok_event;
+typedef enum
+{
+    NOTOK_OK = 0,               /* really ok */
+    NOTOK_GENERIC = 1,          /* who knows? */
+    NOTOK_FORMMULTIPART = 2,    /* we don't support form multipart */
+    NOTOK_BADAGENT = 3,         /* not a supported or supportable browser */
+    NOTOK_NEEDSSL = 4           /* requires ssl */
+}
+notok_event;
 
 #define FREE_RIDE_MESSAGE "You entered it less than 10 minutes ago.<BR>\n"
 
 /* prototypes */
-int cgiMain();
-void abend(pool *, char *);
-int cookie_test(pool *, const security_context *, login_rec *, login_rec *);
-void notok(pool *, notok_event, char *);
-void print_http_header(pool *);
-void notok_need_ssl(pool *);
-void notok_formmultipart(pool *);
-void notok_generic(pool *);
-void notok_bad_agent(pool *);
-void print_login_page_part1(pool *,char *);
-void print_login_page_part5(pool *);
-int check_user_agent(pool *);
-void log_message(pool *,const char *, ...);
-void log_error(pool *,int, const char *, int, const char *, ...);
-void clear_error(pool *,const char *, const char *);
-void print_uwnetid_logo(pool *);
-login_rec *verify_unload_login_cookie (pool *, const security_context *, login_rec *);
-int create_cookie(pool *, const security_context *, char *, char *, char *, char, char, int, time_t, 
-		time_t, char *, const char *host, int);
-int get_cookie(pool *p, char *name, char *result, int max);
-login_rec *get_query(pool *);
-char *check_login(pool *, login_rec *, login_rec *);
-char *check_l_cookie(pool *, const security_context *, login_rec *, login_rec *);
-void print_redirect_page(pool *, const security_context *, login_rec *, login_rec *);
-char *url_encode(pool *, char *);
-char *get_cookie_created(pool *, char *);
-char *decode_granting_request(pool *, char *, char **peerp);
-const char *login_host(pool *);
-const char *enterprise_domain(pool *);
-int set_pinit_cookie(pool *);
-int clear_pinit_cookie(pool *);
-char *get_string_arg(pool *, char *name, cgiFormResultType(*f)());
+int cgiMain ();
+void abend (pool *, char *);
+int cookie_test (pool *, const security_context *, login_rec *,
+                 login_rec *);
+void notok (pool *, notok_event, char *);
+void print_http_header (pool *);
+void notok_need_ssl (pool *);
+void notok_formmultipart (pool *);
+void notok_generic (pool *);
+void notok_bad_agent (pool *);
+void print_login_page_part1 (pool *, char *);
+void print_login_page_part5 (pool *);
+int check_user_agent (pool *);
+void log_message (pool *, const char *, ...);
+void log_error (pool *, int, const char *, int, const char *, ...);
+void clear_error (pool *, const char *, const char *);
+void print_uwnetid_logo (pool *);
+login_rec *verify_unload_login_cookie (pool *, const security_context *,
+                                       login_rec *);
+int create_cookie (pool *, const security_context *, char *, char *,
+                   char *, char, char, int, time_t, time_t, char *,
+                   const char *host, int);
+int get_cookie (pool * p, char *name, char *result, int max);
+login_rec *get_query (pool *);
+char *check_login (pool *, login_rec *, login_rec *);
+char *check_l_cookie (pool *, const security_context *, login_rec *,
+                      login_rec *);
+void print_redirect_page (pool *, const security_context *, login_rec *,
+                          login_rec *);
+char *url_encode (pool *, char *);
+char *get_cookie_created (pool *, char *);
+char *decode_granting_request (pool *, char *, char **peerp);
+const char *login_host (pool *);
+const char *enterprise_domain (pool *);
+int set_pinit_cookie (pool *);
+int clear_pinit_cookie (pool *);
+char *get_string_arg (pool *, char *name, cgiFormResultType (*f) ());
 
 /* print part of the HTML */
-void print_html(pool *, const char *format, ...);
+void print_html (pool *, const char *format, ...);
 /* print it from the template "fname" */
-void tmpl_print_html(pool *, const char *fpath, const char *fname,...);
+void tmpl_print_html (pool *, const char *fpath, const char *fname, ...);
 
-void ntmpl_print_html(pool *p, const char *fname, ...);
+void ntmpl_print_html (pool * p, const char *fname, ...);
 
-char *ntmpl_sub_template(pool *, const char *, const char *, ...);
+char *ntmpl_sub_template (pool *, const char *, const char *, ...);
 
 /* print part of the HTTP headers */
-void print_header(pool *, const char *format, ...);
+void print_header (pool *, const char *format, ...);
 
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"
@@ -164,10 +174,10 @@ void print_header(pool *, const char *format, ...);
 #define FORM_REPLY 1
 
 /* how we accentuate warning messages */
-#define PBC_EM1_START "<P><B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">" 
+#define PBC_EM1_START "<P><B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">"
 #define PBC_EM1_END "</FONT></B><BR></P>"
 /* how we accentuate less important warning messages */
-#define PBC_EM2_START "<P><B><FONT SIZE=\"+1\">" 
+#define PBC_EM2_START "<P><B><FONT SIZE=\"+1\">"
 #define PBC_EM2_END "</FONT></B><BR></P>"
 
 /* identify log messages */
@@ -191,4 +201,4 @@ void print_header(pool *, const char *format, ...);
 /* how big can a filled-in template be? */
 #define MAX_EXPANDED_TEMPLATE_SIZE (110*1024)
 
-#endif   /* PUBCOOKIE_LOGIN_CGI */
+#endif /* PUBCOOKIE_LOGIN_CGI */

@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.101 2004-10-07 19:13:46 willey Exp $
+     $Id: pbc_config.h,v 1.102 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -29,7 +29,7 @@
 
 /* names of the login servers */
 #ifndef WIN32
-        #define PBC_LOGIN_HOST (libpbc_config_getstring(p,"login_host", "weblogin.washington.edu"))
+#define PBC_LOGIN_HOST (libpbc_config_getstring(p,"login_host", "weblogin.washington.edu"))
 #endif
 #define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
 #define PBC_RELAY_LOGIN_URI (libpbc_config_getstring(p,"relay_login_uri", ""))
@@ -40,23 +40,23 @@
 #define CUSTOM_LOGIN_MSG "custom_login_msg"
 
 #if defined (WIN32)
-	#define PBC_PUBLIC_NAME (libpbc_config_getstring(p, "PUBLIC_dir_name", "PUBLIC")) 
-	#define PBC_NETID_NAME (libpbc_config_getstring(p, "NETID_dir_name", "UWNETID"))
-	#define PBC_SECURID_NAME (libpbc_config_getstring(p, "SECURID_dir_name", "SECURID"))
-	#define PBC_DEFAULT_APP_NAME (libpbc_config_getstring(p, "DEFAULT_APP_name", "defaultapp"))
-	#define PBC_LEGACY_DIR_NAMES (libpbc_config_getint(p, "LegacyDirNames", 1))
-	#define PBC_DEBUG_TRACE (libpbc_config_getint(p, "Debug_Trace", 0))
-	#define PBC_IGNORE_POLL (libpbc_config_getint(p, "Ignore_Poll", 0))
-	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
-	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
-	#define PBC_AUTHTYPE2 (libpbc_config_getstring(p, "AuthTypeName2", ""))
-	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
-	#define PBC_FILTER_KEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
-	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
-        #define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", PBC_FILTER_KEY))
-	#define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
-	#define PBC_INSTANCE_KEY "_PBC_Web_Instances"
-        #define PBC_DEFAULT_KEY "default"
+#define PBC_PUBLIC_NAME (libpbc_config_getstring(p, "PUBLIC_dir_name", "PUBLIC"))
+#define PBC_NETID_NAME (libpbc_config_getstring(p, "NETID_dir_name", "UWNETID"))
+#define PBC_SECURID_NAME (libpbc_config_getstring(p, "SECURID_dir_name", "SECURID"))
+#define PBC_DEFAULT_APP_NAME (libpbc_config_getstring(p, "DEFAULT_APP_name", "defaultapp"))
+#define PBC_LEGACY_DIR_NAMES (libpbc_config_getint(p, "LegacyDirNames", 1))
+#define PBC_DEBUG_TRACE (libpbc_config_getint(p, "Debug_Trace", 0))
+#define PBC_IGNORE_POLL (libpbc_config_getint(p, "Ignore_Poll", 0))
+#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE"))
+#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
+#define PBC_AUTHTYPE2 (libpbc_config_getstring(p, "AuthTypeName2", ""))
+#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
+#define PBC_FILTER_KEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
+#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
+#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", PBC_FILTER_KEY))
+#define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
+#define PBC_INSTANCE_KEY "_PBC_Web_Instances"
+#define PBC_DEFAULT_KEY "default"
 #endif
 
 #define PBC_DEFAULT_FORM_EXPIRE_TIME	60
@@ -73,10 +73,10 @@
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
-#define PBC_BAD_G_STATE  4   /* G cookie is unusable, don't return to WLS */
-#define PBC_NO_PS_MATCH  5   /* pression token mismatch, redirect */
+#define PBC_BAD_G_STATE  4      /* G cookie is unusable, don't return to WLS */
+#define PBC_NO_PS_MATCH  5      /* pression token mismatch, redirect */
 
-#define PBC_TRANSCRED_MAX_COOKIES 10 
+#define PBC_TRANSCRED_MAX_COOKIES 10
 #define PBC_TRANSCRED_MAX_COOKIE_LENGTH 3900
 /* cookies can theoretically be up to 4KB, but some browsers
  * really limit it to 4000 bytes, and include the name of the
@@ -113,8 +113,8 @@
 #define PBC_END_SESSION_REDIR_HANDLER "pubcookie-end-session-redir-handler"
 #define PBC_STOP_THE_SHOW_HANDLER "pubcookie-stop-the-show-handler"
 
-#define PBC_G_REQ_EXP (10 * 60)    /* shrug?  ten minutes? */
-#define PBC_PRE_S_EXP (10 * 60)    /* shrug?  ten minutes? */
+#define PBC_G_REQ_EXP (10 * 60) /* shrug?  ten minutes? */
+#define PBC_PRE_S_EXP (10 * 60) /* shrug?  ten minutes? */
 
 /* set in apache config to clear session cookie and redirect to weblogin */
 #define PBC_END_SESSION_ARG_REDIR   "redirect"
@@ -122,12 +122,12 @@
 #define PBC_END_SESSION_ARG_ON      "On"
 #define PBC_END_SESSION_ARG_OFF     "Off"
 
-#define PBC_END_SESSION_NOPE          0    /* no end session */
-#define PBC_END_SESSION_ONLY          1    /* end session only */
-#define PBC_END_SESSION_REDIR         2    /* end session, redirect to WLS */
-#define PBC_END_SESSION_CLEAR_L       4    /* end session, redirect to WLS, 
-                                              clear Login cookie */
-#define PBC_END_SESSION_ANY           127  /* any of the above, except NONE */
+#define PBC_END_SESSION_NOPE          0 /* no end session */
+#define PBC_END_SESSION_ONLY          1 /* end session only */
+#define PBC_END_SESSION_REDIR         2 /* end session, redirect to WLS */
+#define PBC_END_SESSION_CLEAR_L       4 /* end session, redirect to WLS, 
+                                           clear Login cookie */
+#define PBC_END_SESSION_ANY           127       /* any of the above, except NONE */
 
 #define LOGOUT_ACTION_UNSET          -1
 #define LOGOUT_ACTION_NOTHING        0
@@ -163,7 +163,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 </SCRIPT> <NOSCRIPT> \
 <P>You do not have Javascript turned on, please click the button to continue.<P>\n </NOSCRIPT>\n</TABLE>\n \
 <INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\""
-	/* button text (PBC_POST_NO_JS_BUTTON) */
+        /* button text (PBC_POST_NO_JS_BUTTON) */
 #define PBC_POST_NO_JS_HTML5 "\">\n </FORM>\n"
 #define PBC_POST_NO_JS_HTML6 "</CENTER>\n </BODY></HTML>\n"
 
@@ -179,22 +179,22 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_CREDS "three"
 #define PBC_GETVAR_VERSION "four"
 #define PBC_GETVAR_METHOD "five"
-#define PBC_GETVAR_HOST "six"    /* host portion of url, could be host:port */
+#define PBC_GETVAR_HOST "six"   /* host portion of url, could be host:port */
 #define PBC_GETVAR_URI "seven"
 #define PBC_GETVAR_ARGS "eight"
 #define PBC_GETVAR_FR "fr"
 /* new in dec 1999 */
-#define PBC_GETVAR_REAL_HOST "hostname"  /* machine's hostname         */
-#define PBC_GETVAR_APPSRV_ERR "nine"  /* let the login server know why */
-#define PBC_GETVAR_FILE_UPLD "file"   /* for form multipart testing    */
-#define PBC_GETVAR_FLAG "flag"        /* not currently used            */
-#define PBC_GETVAR_REFERER "referer"  /* to knit together the referer  */
-#define PBC_GETVAR_POST_STUFF "post_stuff"  /* post args               */
+#define PBC_GETVAR_REAL_HOST "hostname" /* machine's hostname         */
+#define PBC_GETVAR_APPSRV_ERR "nine"    /* let the login server know why */
+#define PBC_GETVAR_FILE_UPLD "file"     /* for form multipart testing    */
+#define PBC_GETVAR_FLAG "flag"  /* not currently used            */
+#define PBC_GETVAR_REFERER "referer"    /* to knit together the referer  */
+#define PBC_GETVAR_POST_STUFF "post_stuff"      /* post args               */
 /* new in Aug 2001 */
-#define PBC_GETVAR_SESSION_REAUTH "sess_re" /* session delta force reauth */
-#define PBC_GETVAR_REPLY "reply"            /* tags a reply from the form */
+#define PBC_GETVAR_SESSION_REAUTH "sess_re"     /* session delta force reauth */
+#define PBC_GETVAR_REPLY "reply"        /* tags a reply from the form */
 /* new in oct 2001 */
-#define PBC_GETVAR_DURATION "duration" 
+#define PBC_GETVAR_DURATION "duration"
 /* new in March 2002 to support short term logout */
 #define PBC_GETVAR_LOGOUT_ACTION "logout_action"
 /* added previously but only now as defines March 2002 */
@@ -211,8 +211,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 /* added June 2002 willey */
 #define PBC_GETVAR_PRE_SESS_TOK "pre_sess_tok"
 
-#define PBC_GETVAR_RELAY_URL "relay_url"  /* relay url                 */
-#define PBC_GETVAR_CREATE_TS "create_ts"  /* time form issued          */
+#define PBC_GETVAR_RELAY_URL "relay_url"        /* relay url                 */
+#define PBC_GETVAR_CREATE_TS "create_ts"        /* time form issued          */
 
 /* 
  things that are used both places (module and the library)
@@ -281,4 +281,3 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #endif
 
 #endif /* !PUBCOOKIE_CONFIG */
-

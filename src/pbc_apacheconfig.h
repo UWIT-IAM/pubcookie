@@ -4,7 +4,7 @@
  */
 
 /*
- *  $Id: pbc_apacheconfig.h,v 2.9 2004-02-19 23:07:03 fox Exp $
+ *  $Id: pbc_apacheconfig.h,v 2.10 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -73,15 +73,15 @@ typedef void pool;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-pubcookie_server_rec * globalsr;
-#define CONFIGLISTGROWSIZE 30 /* 100 */
+pubcookie_server_rec *globalsr;
+#define CONFIGLISTGROWSIZE 30   /* 100 */
 
-void libpbc_apacheconfig_storeglobal(pubcookie_server_rec *scfg);
+void libpbc_apacheconfig_storeglobal (pubcookie_server_rec * scfg);
 
-int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident);
+int libpbc_apacheconfig_init (pool * p, void *initarg, const char *ident);
 
-const char *libpbc_apacheconfig_getstring(pool *p, const char *key,
-    const char *def);
-char **libpbc_apacheconfig_getlist(pool *p, const char *key);
-int libpbc_apacheconfig_getint(pool *p, const char *key, int def);
-int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def);
+const char *libpbc_apacheconfig_getstring (pool * p, const char *key,
+                                           const char *def);
+char **libpbc_apacheconfig_getlist (pool * p, const char *key);
+int libpbc_apacheconfig_getint (pool * p, const char *key, int def);
+int libpbc_apacheconfig_getswitch (pool * p, const char *key, int def);

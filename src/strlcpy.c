@@ -6,7 +6,7 @@
 /** @file strlcpy.c
  * strlcpy()
  *
- * $Id: strlcpy.c,v 2.8 2004-02-10 00:42:15 willey Exp $
+ * $Id: strlcpy.c,v 2.9 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -38,42 +38,46 @@
  *
  * i believe/hope this is compatible with the BSD strlcpy(). 
  */
-size_t strlcpy(char *dst, const char *src, size_t len)
+size_t strlcpy (char *dst, const char *src, size_t len)
 {
     size_t n;
 
     /* Avoid problems if size_t is unsigned */
-    if(len == 0) return strlen(src);
-    
-    for (n = 0; n < len-1; n++) {
-	if ((dst[n] = src[n]) == '\0') break;
+    if (len == 0)
+        return strlen (src);
+
+    for (n = 0; n < len - 1; n++) {
+        if ((dst[n] = src[n]) == '\0')
+            break;
     }
     if (src[n] != '\0') {
-	/* ran out of space */
-	dst[n] = '\0';
-	while(src[n]) n++;
+        /* ran out of space */
+        dst[n] = '\0';
+        while (src[n])
+            n++;
     }
     return n;
 }
 #endif
 
 #ifndef HAVE_STRLCAT
-size_t strlcat(char *dst, const char *src, size_t len)
+size_t strlcat (char *dst, const char *src, size_t len)
 {
     size_t i, j, o;
-    
-    o = strlen(dst);
+
+    o = strlen (dst);
     if (len < o + 1)
-	return o + strlen(src);
+        return o + strlen (src);
     len -= o + 1;
     for (i = 0, j = o; i < len; i++, j++) {
-	if ((dst[j] = src[i]) == '\0') break;
+        if ((dst[j] = src[i]) == '\0')
+            break;
     }
     dst[j] = '\0';
     if (src[i] == '\0') {
-	return j;
+        return j;
     } else {
-	return j + strlen(src + i);
+        return j + strlen (src + i);
     }
 }
 #endif

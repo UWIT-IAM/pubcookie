@@ -6,7 +6,7 @@
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.28 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: pbc_logging.c,v 1.29 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -58,40 +58,41 @@ typedef void pool;
 
 #ifdef NEED_SYSLOG_NAMES
 
-typedef struct _code {
-    char    *c_name;
-    int     c_val;
-} CODE;
-
-CODE facilitynames[] =
+typedef struct _code
 {
-    { "auth", LOG_AUTH },
-    { "authpriv", LOG_AUTHPRIV },
-    { "cron", LOG_CRON },
-    { "daemon", LOG_DAEMON },
+    char *c_name;
+    int c_val;
+}
+CODE;
+
+CODE facilitynames[] = {
+    {"auth", LOG_AUTH},
+    {"authpriv", LOG_AUTHPRIV},
+    {"cron", LOG_CRON},
+    {"daemon", LOG_DAEMON},
 # ifdef LOG_FTP
-    { "ftp", LOG_FTP },
+    {"ftp", LOG_FTP},
 # endif /* LOG_FTP */
-    { "kern", LOG_KERN },
-    { "lpr", LOG_LPR },
-    { "mail", LOG_MAIL },
+    {"kern", LOG_KERN},
+    {"lpr", LOG_LPR},
+    {"mail", LOG_MAIL},
 # ifdef INTERNAL_MARK
-    { "mark", INTERNAL_MARK },          /* INTERNAL */
+    {"mark", INTERNAL_MARK},    /* INTERNAL */
 # endif /* INTERNAL_MARK */
-    { "news", LOG_NEWS },
-    { "security", LOG_AUTH },           /* DEPRECATED */
-    { "syslog", LOG_SYSLOG },
-    { "user", LOG_USER },
-    { "uucp", LOG_UUCP },
-    { "local0", LOG_LOCAL0 },
-    { "local1", LOG_LOCAL1 },
-    { "local2", LOG_LOCAL2 },
-    { "local3", LOG_LOCAL3 },
-    { "local4", LOG_LOCAL4 },
-    { "local5", LOG_LOCAL5 },
-    { "local6", LOG_LOCAL6 },
-    { "local7", LOG_LOCAL7 },
-    { NULL, -1 }
+    {"news", LOG_NEWS},
+    {"security", LOG_AUTH},     /* DEPRECATED */
+    {"syslog", LOG_SYSLOG},
+    {"user", LOG_USER},
+    {"uucp", LOG_UUCP},
+    {"local0", LOG_LOCAL0},
+    {"local1", LOG_LOCAL1},
+    {"local2", LOG_LOCAL2},
+    {"local3", LOG_LOCAL3},
+    {"local4", LOG_LOCAL4},
+    {"local5", LOG_LOCAL5},
+    {"local6", LOG_LOCAL6},
+    {"local7", LOG_LOCAL7},
+    {NULL, -1}
 };
 
 #endif /* NEED_SYSLOG_NAMES */
@@ -100,42 +101,43 @@ CODE facilitynames[] =
 /* xxx is there a better win32 function? */
 
 extern int Debug_Trace;
-extern FILE *debugFile;  /* from PubcookieFilter */
+extern FILE *debugFile;         /* from PubcookieFilter */
 
-static void mylog(pool *p, int logging_level, const char *mymsg)
+static void mylog (pool * p, int logging_level, const char *mymsg)
 {
     /* xxx should we prepend the time? */
 
-    OutputDebugString(mymsg);  /* win32 debugging */
-    if ( debugFile ) {
-        fprintf(debugFile,"%s",buff);
+    OutputDebugString (mymsg);  /* win32 debugging */
+    if (debugFile) {
+        fprintf (debugFile, "%s", buff);
     }
 }
 
 #else
 
-static void mylog(pool *p, int logging_level, const char *mymsg)
+static void mylog (pool * p, int logging_level, const char *mymsg)
 {
     int pri = LOG_INFO;
     int fac = PBC_LOG_GENERAL_FACILITY;
-    const char *facstr = libpbc_config_getstring(p, "general_facility", NULL);
+    const char *facstr =
+        libpbc_config_getstring (p, "general_facility", NULL);
 
     if (logging_level == PBC_LOG_ERROR) {
         pri = LOG_ERR;
     } else if (logging_level == PBC_LOG_AUDIT) {
         fac = PBC_LOG_AUDIT_FACILITY;
-        facstr = libpbc_config_getstring(p, "audit_facility", NULL);
+        facstr = libpbc_config_getstring (p, "audit_facility", NULL);
     }
 
     if (facstr != NULL) {
         /* user has specified a different facility to use */
-        if (isdigit(*facstr)) {
-            fac = atoi(facstr);
+        if (isdigit (*facstr)) {
+            fac = atoi (facstr);
         } else {
             const CODE *c;
 
             for (c = facilitynames; c->c_name != NULL; c++) {
-                if (!strcasecmp(facstr, c->c_name)) {
+                if (!strcasecmp (facstr, c->c_name)) {
                     fac = c->c_val;
                     break;
                 }
@@ -143,7 +145,7 @@ static void mylog(pool *p, int logging_level, const char *mymsg)
         }
     }
 
-    syslog(LOG_MAKEPRI(LOG_FAC(fac),pri), "%s", mymsg);
+    syslog (LOG_MAKEPRI (LOG_FAC (fac), pri), "%s", mymsg);
 }
 
 #endif
@@ -151,11 +153,11 @@ static void mylog(pool *p, int logging_level, const char *mymsg)
 /* The log level is use a lot - no sense recomputing it each time. */
 static int cfg_logging_level = (-1);
 
-int myloglevel(pool *p)
+int myloglevel (pool * p)
 {
-   if (cfg_logging_level<0)
-          cfg_logging_level = libpbc_config_getint(p, "logging_level", 0);
-   return (cfg_logging_level);
+    if (cfg_logging_level < 0)
+        cfg_logging_level = libpbc_config_getint (p, "logging_level", 0);
+    return (cfg_logging_level);
 }
 
 static pbc_open_log *olog = NULL;
@@ -163,9 +165,9 @@ static pbc_log_func *logf = &mylog;
 static pbc_close_log *clog = NULL;
 static pbc_log_level *llog = NULL;
 
-void pbc_log_init(pool *p, const char *ident,
-                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c, 
-                  pbc_log_level *v)
+void pbc_log_init (pool * p, const char *ident,
+                   pbc_open_log * o, pbc_log_func * l, pbc_close_log * c,
+                   pbc_log_level * v)
 {
 
     olog = o;
@@ -179,43 +181,45 @@ void pbc_log_init(pool *p, const char *ident,
 
     if (olog) {
         /* open syslog - we are appending the PID to the log */
-        olog((char *) ident, LOG_PID, LOG_AUTHPRIV);
+        olog ((char *) ident, LOG_PID, LOG_AUTHPRIV);
     }
 
 }
 
-void pbc_log_init_syslog(pool *p, const char *ident)
+void pbc_log_init_syslog (pool * p, const char *ident)
 {
-    pbc_log_init(p, ident, &openlog, &mylog, &closelog, &myloglevel);
+    pbc_log_init (p, ident, &openlog, &mylog, &closelog, &myloglevel);
 }
 
 
-void pbc_log_activity(pool *p, int logging_level, const char *message,...)
+void pbc_log_activity (pool * p, int logging_level, const char *message,
+                       ...)
 {
     va_list args;
 
-    va_start(args, message);
+    va_start (args, message);
 
-    pbc_vlog_activity(p, logging_level, message, args );
+    pbc_vlog_activity (p, logging_level, message, args);
 
-    va_end(args);
+    va_end (args);
 }
 
-void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list args )
+void pbc_vlog_activity (pool * p, int logging_level, const char *format,
+                        va_list args)
 {
-    char      log[PBC_4K];
-        
-    if (llog && (llog(p)<logging_level)) return;
+    char log[PBC_4K];
+
+    if (llog && (llog (p) < logging_level))
+        return;
 
     /* xxx deal with %m here? */
-    vsnprintf(log, sizeof(log)-1, format, args);
-    logf(p, logging_level, log);
+    vsnprintf (log, sizeof (log) - 1, format, args);
+    logf (p, logging_level, log);
 }
 
-void pbc_log_close(pool *p)
+void pbc_log_close (pool * p)
 {
     if (clog) {
-        clog(p);
+        clog (p);
     }
 }
-

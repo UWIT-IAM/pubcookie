@@ -6,7 +6,7 @@
 /** @file pbc_logging.h
  * Header file for logging stuff
  *
- * $Id: pbc_logging.h,v 1.21 2004-04-28 21:04:49 willey Exp $
+ * $Id: pbc_logging.h,v 1.22 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -17,8 +17,8 @@
 # include "config.h"
 #endif
 
-#define PBC_LOG_ERROR 0		/* errors only */
-#define PBC_LOG_AUDIT 1		/* activity (authns, redirects, etc.) */
+#define PBC_LOG_ERROR 0         /* errors only */
+#define PBC_LOG_AUDIT 1         /* activity (authns, redirects, etc.) */
 #define PBC_LOG_DEBUG_LOW 2     /* some debugging */
 #define PBC_LOG_DEBUG_VERBOSE 3 /* whole lotta debugging */
 #define PBC_LOG_DEBUG_OUTPUT 5  /* adds logging of all html output */
@@ -40,10 +40,10 @@
 #endif /* NEED_LOG_FAC */
 
 /* callbacks for the logging subsystem */
-typedef void pbc_open_log(const char *ident, int option, int facility);
-typedef void pbc_log_func(pool *p, int priority, const char *msg);
-typedef void pbc_close_log();
-typedef int  pbc_log_level(pool *p);
+typedef void pbc_open_log (const char *ident, int option, int facility);
+typedef void pbc_log_func (pool * p, int priority, const char *msg);
+typedef void pbc_close_log ();
+typedef int pbc_log_level (pool * p);
 
 /**
  * Initializes the logging system.
@@ -53,10 +53,10 @@ typedef int  pbc_log_level(pool *p);
  * @param l optional function to replace syslog()
  * @param c optional function to replace closelog()
  */
-void pbc_log_init(pool *p, const char *ident,
-                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c,
-                  pbc_log_level *v);
-void pbc_log_init_syslog(pool *p, const char *ident);
+void pbc_log_init (pool * p, const char *ident,
+                   pbc_open_log * o, pbc_log_func * l, pbc_close_log * c,
+                   pbc_log_level * v);
+void pbc_log_init_syslog (pool * p, const char *ident);
 
 /**
  * Log activity messages
@@ -65,7 +65,8 @@ void pbc_log_init_syslog(pool *p, const char *ident);
  * @param message the message format to be logged
  * @param ... stuff to be logged.
  */
-void pbc_log_activity(pool *p, int logging_level, const char *message,...);
+void pbc_log_activity (pool * p, int logging_level, const char *message,
+                       ...);
 
 /**
  * Log activity messages, takes a va_list.
@@ -74,7 +75,8 @@ void pbc_log_activity(pool *p, int logging_level, const char *message,...);
  * @param message the message to be logged
  * @param arg a va_list to be logged.
  */
-void pbc_vlog_activity(pool *p, int logging_level, const char *format, va_list arg);
+void pbc_vlog_activity (pool * p, int logging_level, const char *format,
+                        va_list arg);
 
 /**
  * Create well-formed messages to be logged
@@ -84,11 +86,12 @@ void pbc_vlog_activity(pool *p, int logging_level, const char *format, va_list a
  * @param app_id the app_id of the requesting application
  * @return a nicely-formatted string to be logged
  */
-char* pbc_create_log_message(pool *p, char *info, char *user, char *app_id);
+char *pbc_create_log_message (pool * p, char *info, char *user,
+                              char *app_id);
 
 /**
  * Closes the logging system.  Optional.
  */
-void pbc_log_close();
+void pbc_log_close ();
 
 #endif /* INCLUDED_PBC_LOGGING_H */

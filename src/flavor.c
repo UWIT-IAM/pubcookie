@@ -6,7 +6,7 @@
 /** @file flavor.c
  * Flavor generic code
  *
- * $Id: flavor.c,v 1.14 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: flavor.c,v 1.15 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -40,15 +40,16 @@ static struct login_flavor *flavors[] = {
     &login_flavor_uwsecurid,
 #endif
     NULL
-}; /*! list of available flavors */
+};                              /*! list of available flavors */
 
-struct login_flavor *get_flavor(pool *p, const char id)
+struct login_flavor *get_flavor (pool * p, const char id)
 {
     struct login_flavor **f = flavors;
 
     while (*f) {
-	if ((*f)->id == id) break;
-	f++;
+        if ((*f)->id == id)
+            break;
+        f++;
     }
 
     return (*f);

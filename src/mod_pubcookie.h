@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.12 2004-08-17 21:46:57 fox Exp $
+    $Id: mod_pubcookie.h,v 2.13 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -69,49 +69,55 @@
 #endif /* HAVE_SYS_STAT_H */
 
 /* misc prototype */
-char *make_session_cookie_name(pool *, char *, unsigned char *);
-static int load_keyed_directives(request_rec *r, char *key);
-server_rec *find_server_from_pool(pool *p);
-request_rec *find_request_from_pool(pool *p);
+char *make_session_cookie_name (pool *, char *, unsigned char *);
+static int load_keyed_directives (request_rec * r, char *key);
+server_rec *find_server_from_pool (pool * p);
+request_rec *find_request_from_pool (pool * p);
 
 module pubcookie_module;
 
-typedef struct {
-  table * configlist;
-  int                   dirdepth;
-  int                   noblank;
-  char			*login;
-  unsigned char		*appsrvid;
-  char			*authtype_names; /* raw arg string from conf */
-  int                   use_post;
-  char                  *post_reply_url;
-  security_context      *sectext;
-} pubcookie_server_rec;
+typedef struct
+{
+    table *configlist;
+    int dirdepth;
+    int noblank;
+    char *login;
+    unsigned char *appsrvid;
+    char *authtype_names;       /* raw arg string from conf */
+    int use_post;
+    char *post_reply_url;
+    security_context *sectext;
+}
+pubcookie_server_rec;
 
-typedef struct {
-  int           inact_exp;
-  int           hard_exp;
-  int           non_ssl_ok;
-  unsigned char *appid;
-  char          *end_session;
-  int           session_reauth;
-  unsigned char *addl_requests;
-  int strip_realm;
-  char *accept_realms;
-  table *keydirs;
-  int noprompt;
-} pubcookie_dir_rec;
+typedef struct
+{
+    int inact_exp;
+    int hard_exp;
+    int non_ssl_ok;
+    unsigned char *appid;
+    char *end_session;
+    int session_reauth;
+    unsigned char *addl_requests;
+    int strip_realm;
+    char *accept_realms;
+    table *keydirs;
+    int noprompt;
+}
+pubcookie_dir_rec;
 
-typedef struct {
-  int           failed;
-  int           redir_reason_no;
-  int           has_granting;
-  char          *user;
-  char          creds;
-  pbc_cookie_data *cookie_data;
-  char          *stop_message;
-  char *cred_transfer;
-  int cred_transfer_len;
-} pubcookie_req_rec;
+typedef struct
+{
+    int failed;
+    int redir_reason_no;
+    int has_granting;
+    char *user;
+    char creds;
+    pbc_cookie_data *cookie_data;
+    char *stop_message;
+    char *cred_transfer;
+    int cred_transfer_len;
+}
+pubcookie_req_rec;
 
 #endif /* INCLUDED_MOD_PUBCOOKIE_H */

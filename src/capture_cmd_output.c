@@ -6,9 +6,9 @@
 /** @file capture_cmd_output.c
  * um, Captures command output
  *
- * $Id: capture_cmd_output.c,v 2.8 2004-02-10 00:42:14 willey Exp $
+ * $Id: capture_cmd_output.c,v 2.9 2004-12-22 22:14:54 willey Exp $
  */
-                                                                                
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -59,90 +59,90 @@
  * @return the number of bytes read
  * anything past len bytes is discarded
  */
-int capture_cmd_output(char *cmd[], char *out, int len) 
+int capture_cmd_output (char *cmd[], char *out, int len)
 {
-   int p[2];
-   pid_t pid;
-   int ret;
-   int devnull=-1;
-   int fp = 0;
-   int bytes_read = 0;
+    int p[2];
+    pid_t pid;
+    int ret;
+    int devnull = -1;
+    int fp = 0;
+    int bytes_read = 0;
 
-   devnull = open("/dev/null", O_RDWR);
-   if (devnull == -1) {
-      return(-1);
-   } 
+    devnull = open ("/dev/null", O_RDWR);
+    if (devnull == -1) {
+        return (-1);
+    }
 
-   /* set up the pipe for communication */
-   if (pipe(p) == -1) {
-      return(-1);
-   }
+    /* set up the pipe for communication */
+    if (pipe (p) == -1) {
+        return (-1);
+    }
 
 
-   pid = fork();
+    pid = fork ();
 
-   switch (pid) {
-      case -1:
-         close(devnull);
-         close(p[0]);
-         close(p[1]);
-         return(-1);
-      case 0:
-         dup2(devnull, 0);
-         dup2(p[1], 1);
-         dup2(p[1], 2);
-         close(devnull);
-         close(p[0]);
-         close(p[1]);
-         execv(cmd[0], cmd);
-         exit (-1);
-     default:
-         break;
+    switch (pid) {
+    case -1:
+        close (devnull);
+        close (p[0]);
+        close (p[1]);
+        return (-1);
+    case 0:
+        dup2 (devnull, 0);
+        dup2 (p[1], 1);
+        dup2 (p[1], 2);
+        close (devnull);
+        close (p[0]);
+        close (p[1]);
+        execv (cmd[0], cmd);
+        exit (-1);
+    default:
+        break;
 
-   }
+    }
 
-   close(p[1]);
+    close (p[1]);
 
-   while(!fp) {
-      if (len) {
-         ret = read(p[0], out, len);
-         if (ret > 0) {
-            out += ret;
-            len -= ret;
-            bytes_read += ret;
-         } else {
-            fp = 1;
-         }
-     } else {
-        char buf[1024];
-        /* the buffer filled, just disard the rest of the output */
-        ret = read(p[0], buf, sizeof(buf));
-        if (ret <= 0) { 
-           fp = 1;
+    while (!fp) {
+        if (len) {
+            ret = read (p[0], out, len);
+            if (ret > 0) {
+                out += ret;
+                len -= ret;
+                bytes_read += ret;
+            } else {
+                fp = 1;
+            }
+        } else {
+            char buf[1024];
+            /* the buffer filled, just disard the rest of the output */
+            ret = read (p[0], buf, sizeof (buf));
+            if (ret <= 0) {
+                fp = 1;
+            }
         }
-     }
-   }
+    }
 
-   waitpid(pid, &ret, 0);
-   close(p[0]);
+    waitpid (pid, &ret, 0);
+    close (p[0]);
 
-   *(out++) = 0;
+    *(out++) = 0;
 
-   return(bytes_read);
-} 
+    return (bytes_read);
+}
 
 #if 0
-int main()
+int main ()
 {
-    char * cmd[3] = {"/bin/ps", "-ef", NULL};
+    char *cmd[3] = { "/bin/ps", "-ef", NULL };
     char buf[100];
     int ret;
 
-    ret = capture_cmd_output(cmd, buf, sizeof(buf));
+    ret = capture_cmd_output (cmd, buf, sizeof (buf));
 
-    printf("got %d bytes", ret);
+    printf ("got %d bytes", ret);
     printf ("\n%s\n", buf);
 
-    exit(0);
+    exit (0);
 }
 #endif

@@ -6,7 +6,7 @@
 /** @file pbc_configure.c
  * Configure stuff
  *
- * $Id: pbc_configure.c,v 2.8 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_configure.c,v 2.9 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,30 +59,34 @@ static config_getswitch *gswitch = NULL;
 /**
  *  For backward compatibilty
  */
-void libpbc_config_init(pool *p, const char *alt_config, const char *ident)
+void libpbc_config_init (pool * p, const char *alt_config,
+                         const char *ident)
 {
-    pbc_configure_init(p, ident, 
-        (config_initialize *) &libpbc_myconfig_init,
-        (void *)alt_config,
-        &libpbc_myconfig_getint,
-        &libpbc_myconfig_getlist,
-        &libpbc_myconfig_getstring,
-        &libpbc_myconfig_getswitch);
+    pbc_configure_init (p, ident,
+                        (config_initialize *) & libpbc_myconfig_init,
+                        (void *) alt_config,
+                        &libpbc_myconfig_getint,
+                        &libpbc_myconfig_getlist,
+                        &libpbc_myconfig_getstring,
+                        &libpbc_myconfig_getswitch);
 }
 
-void pbc_configure_init(pool *p, const char *ident,
-                        config_initialize *initialize,
-                        void * initarg,
-                        config_getint *i,
-                        config_getlist *l,
-                        config_getstring *s,
-                        config_getswitch *w)
+void pbc_configure_init (pool * p, const char *ident,
+                         config_initialize * initialize,
+                         void *initarg,
+                         config_getint * i,
+                         config_getlist * l,
+                         config_getstring * s, config_getswitch * w)
 {
     /* sigh, prototypes not totally standardized so I need to cast */
-    if (!i) i = (config_getint *) &libpbc_myconfig_getint;
-    if (!l) l = (config_getlist *) &libpbc_myconfig_getlist;
-    if (!s) s = (config_getstring *) &libpbc_myconfig_getstring;
-    if (!w) w = (config_getswitch *) &libpbc_myconfig_getswitch;
+    if (!i)
+        i = (config_getint *) & libpbc_myconfig_getint;
+    if (!l)
+        l = (config_getlist *) & libpbc_myconfig_getlist;
+    if (!s)
+        s = (config_getstring *) & libpbc_myconfig_getstring;
+    if (!w)
+        w = (config_getswitch *) & libpbc_myconfig_getswitch;
 
     gint = i;
     glist = l;
@@ -94,26 +98,27 @@ void pbc_configure_init(pool *p, const char *ident,
     }
 
     if (initialize) {
-        initialize(p, initarg, ident);
+        initialize (p, initarg, ident);
     }
 }
 
-int libpbc_config_getint(pool *p, const char *key, int def)
+int libpbc_config_getint (pool * p, const char *key, int def)
 {
-    return(gint(p, key, def));
+    return (gint (p, key, def));
 }
 
-int libpbc_config_getswitch(pool *p, const char *key, int def)
+int libpbc_config_getswitch (pool * p, const char *key, int def)
 {
-    return(gswitch(p, key, def));
+    return (gswitch (p, key, def));
 }
 
-const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
+const char *libpbc_config_getstring (pool * p, const char *key,
+                                     const char *def)
 {
-    return(gstring(p, key, def));
+    return (gstring (p, key, def));
 }
 
-char **libpbc_config_getlist(pool *p, const char *key)
+char **libpbc_config_getlist (pool * p, const char *key)
 {
-    return(glist(p, key));
+    return (glist (p, key));
 }

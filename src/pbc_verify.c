@@ -15,7 +15,7 @@
  *
  * key and cert locations all come from pubcookie config
  *
- * $Id: pbc_verify.c,v 1.20 2004-10-07 08:39:21 willey Exp $
+ * $Id: pbc_verify.c,v 1.21 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -53,45 +53,48 @@ typedef void pool;
 #include "pbc_logging.h"
 
 
-int main(int argc, char **argv) {
-    pbc_cookie_data	*cookie_data;
-    char		in[PBC_4K];
-    char 		*s;
-    void 		*p = NULL;
-    security_context 	*context = NULL;
-    int			use_granting = 0;
-    
-    fgets(in, sizeof(in), stdin);
+int main (int argc, char **argv)
+{
+    pbc_cookie_data *cookie_data;
+    char in[PBC_4K];
+    char *s;
+    void *p = NULL;
+    security_context *context = NULL;
+    int use_granting = 0;
+
+    fgets (in, sizeof (in), stdin);
 
     /* clean some junk off the end of message */
     s = in;
-    while(*s) {
-        if( *s == '\r' || *s == '\n' ) {
+    while (*s) {
+        if (*s == '\r' || *s == '\n') {
             *s = '\0';
-             break;
+            break;
         }
         s++;
     }
 
     use_granting = argv[1][0];
 
-    libpbc_config_init(p, NULL, "pbc_verify");
-    pbc_log_init_syslog(p, "pbc_verifyr");
-    libpbc_pubcookie_init(p, &context);
+    libpbc_config_init (p, NULL, "pbc_verify");
+    pbc_log_init_syslog (p, "pbc_verifyr");
+    libpbc_pubcookie_init (p, &context);
 
-    if( ! (cookie_data = libpbc_unbundle_cookie(p, context, in, NULL, use_granting)) )
-	exit(1);
+    if (!
+        (cookie_data =
+         libpbc_unbundle_cookie (p, context, in, NULL, use_granting)))
+        exit (1);
 
-    printf("user: %s\n", (*cookie_data).broken.user);
-    printf("version: %s\n", (*cookie_data).broken.version);
-    printf("type: %c\n", (*cookie_data).broken.type);
-    printf("creds: %c\n", (*cookie_data).broken.creds);
-    printf("pre_sess_token: %d\n", (*cookie_data).broken.pre_sess_token);
-    printf("appsrvid: %s\n", (*cookie_data).broken.appsrvid);
-    printf("appid: %s\n", (*cookie_data).broken.appid);
-    printf("create_ts: %d\n", (int)(*cookie_data).broken.create_ts);
-    printf("last_ts: %d\n", (int)(*cookie_data).broken.last_ts);
-    
-    exit(0);
+    printf ("user: %s\n", (*cookie_data).broken.user);
+    printf ("version: %s\n", (*cookie_data).broken.version);
+    printf ("type: %c\n", (*cookie_data).broken.type);
+    printf ("creds: %c\n", (*cookie_data).broken.creds);
+    printf ("pre_sess_token: %d\n", (*cookie_data).broken.pre_sess_token);
+    printf ("appsrvid: %s\n", (*cookie_data).broken.appsrvid);
+    printf ("appid: %s\n", (*cookie_data).broken.appid);
+    printf ("create_ts: %d\n", (int) (*cookie_data).broken.create_ts);
+    printf ("last_ts: %d\n", (int) (*cookie_data).broken.last_ts);
+
+    exit (0);
 
 }

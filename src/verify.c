@@ -6,7 +6,7 @@
 /** @file verify.c
  * Verifier base stuff
  *
- * $Id: verify.c,v 1.23 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: verify.c,v 1.24 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -60,16 +60,19 @@ static verifier *verifiers[] = {
 };
 
 /* given a string, find the corresponding verifier */
-verifier *get_verifier(const char *name)
+verifier *get_verifier (const char *name)
 {
     verifier **v = verifiers;
     while (*v) {
-	if (!strcasecmp((*v)->name, name)) break;
-	v++;
+        if (!strcasecmp ((*v)->name, name))
+            break;
+        v++;
     }
 
-    if ( *v && (*v)->v) return (*v);
-    else return NULL;
+    if (*v && (*v)->v)
+        return (*v);
+    else
+        return NULL;
 }
 
 #ifdef TEST_VERIFY
@@ -80,9 +83,9 @@ verifier *get_verifier(const char *name)
 
 #include "pbc_myconfig.h"
 
-int debug = 1; /* in case one of the verifiers wants it */
+int debug = 1;                  /* in case one of the verifiers wants it */
 
-int main(int argc, char *argv[])
+int main (int argc, char *argv[])
 {
     verifier *v = NULL;
     const char *errstr;
@@ -90,56 +93,59 @@ int main(int argc, char *argv[])
     struct credentials *creds;
 
     if (argc < 3) {
-        fprintf(stderr, "%s <verifier> <user> <pass> [realm] [service]\n", 
-                argv[0]);
-        exit(1);
+        fprintf (stderr, "%s <verifier> <user> <pass> [realm] [service]\n",
+                 argv[0]);
+        exit (1);
     }
 
-    libpbc_config_init(NULL, "vtest");
+    libpbc_config_init (NULL, "vtest");
 
-    v = get_verifier(argv[1]);
+    v = get_verifier (argv[1]);
     if (!v) {
-        printf("no such verifier: %s\n", argv[1]);
-        exit(1);
+        printf ("no such verifier: %s\n", argv[1]);
+        exit (1);
     }
 
     /* first arg is pool */
-    r = v->v(NULL, argv[2], argv[3], 
-             argc > 4 ? argv[5] : NULL, 
-             argc > 3 ? argv[4] : NULL,
-             &creds, &errstr);
+    r = v->v (NULL, argv[2], argv[3],
+              argc > 4 ? argv[5] : NULL,
+              argc > 3 ? argv[4] : NULL, &creds, &errstr);
     if (r) {
-        printf("verifier failed: %d %s\n", r, errstr);
+        printf ("verifier failed: %d %s\n", r, errstr);
         return r;
     }
 
-    printf("success!\n");
+    printf ("success!\n");
     if (creds) {
         int s;
         struct credentials *newcreds;
 
-        printf("got creds, size %d:\n", creds->sz);
+        printf ("got creds, size %d:\n", creds->sz);
         for (s = 0; s < creds->sz; s++) {
-            if (isprint(creds->str[s])) putchar(creds->str[s]);
-            else putchar('.');
+            if (isprint (creds->str[s]))
+                putchar (creds->str[s]);
+            else
+                putchar ('.');
         }
-        putchar('\n');
+        putchar ('\n');
 
 
-        printf("\n"
-               "attempting to get imap/cyrus.andrew.cmu.edu credential...\n");
+        printf ("\n"
+                "attempting to get imap/cyrus.andrew.cmu.edu credential...\n");
 
-        if (!v->cred_derive(NULL, creds, "vtest", "imap/cyrus.andrew.cmu.edu",
-                            &newcreds) &&
-            newcreds) {
-            printf("got newcreds, size %d:\n", newcreds->sz);
+        if (!v->
+            cred_derive (NULL, creds, "vtest", "imap/cyrus.andrew.cmu.edu",
+                         &newcreds) && newcreds) {
+            printf ("got newcreds, size %d:\n", newcreds->sz);
             for (s = 0; s < newcreds->sz; s++) {
-                if (isprint(newcreds->str[s])) putchar(newcreds->str[s]);
-                else putchar('.');
+                if (isprint (newcreds->str[s]))
+                    putchar (newcreds->str[s]);
+                else
+                    putchar ('.');
             }
-            putchar('\n');
+            putchar ('\n');
         } else {
-            printf("failed.\n");
+            printf ("failed.\n");
         }
     }
 

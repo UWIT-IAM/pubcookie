@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.20 2004-12-04 03:36:51 ryanc Exp $
+    $Id: pubcookie.h,v 1.21 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -50,33 +50,40 @@
 #define PBC_INIT_IVEC_LEN 8
 #define PBC_DES_INDEX_FOLDER 30
 
-typedef struct {
-    unsigned char	user[PBC_USER_LEN];
-    unsigned char	version[PBC_VER_LEN];
-    unsigned char	appsrvid[PBC_APPSRV_ID_LEN];
-    unsigned char	appid[PBC_APP_ID_LEN];
-    unsigned char	type;
-    unsigned char	creds;
-    int			pre_sess_token;
-    time_t		create_ts;
-    time_t		last_ts;
-} cookie_data_struct;
+typedef struct
+{
+    unsigned char user[PBC_USER_LEN];
+    unsigned char version[PBC_VER_LEN];
+    unsigned char appsrvid[PBC_APPSRV_ID_LEN];
+    unsigned char appid[PBC_APP_ID_LEN];
+    unsigned char type;
+    unsigned char creds;
+    int pre_sess_token;
+    time_t create_ts;
+    time_t last_ts;
+}
+cookie_data_struct;
 
-typedef union pbc_cookie_data_union {
-    cookie_data_struct	broken;
-    unsigned char      	string[PBC_TOT_COOKIE_DATA];
-} pbc_cookie_data;
+typedef union pbc_cookie_data_union
+{
+    cookie_data_struct broken;
+    unsigned char string[PBC_TOT_COOKIE_DATA];
+}
+pbc_cookie_data;
 
-typedef struct {
-    EVP_MD_CTX	*ctx;
-    EVP_PKEY 	*private_key;
-    EVP_PKEY 	*public_key;
-    char 	key_file[600];         /*for debugging routines to print*/
-} md_context_plus;
+typedef struct
+{
+    EVP_MD_CTX *ctx;
+    EVP_PKEY *private_key;
+    EVP_PKEY *public_key;
+    char key_file[600];         /*for debugging routines to print */
+}
+md_context_plus;
 
-typedef struct {
-    unsigned char	key_a[PBC_DES_KEY_BUF];
-} crypt_stuff;
+typedef struct
+{
+    unsigned char key_a[PBC_DES_KEY_BUF];
+}
+crypt_stuff;
 
 #endif /* !PUBCOOKIE_MAIN */
-

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: verify.h,v 1.13 2004-04-07 04:59:38 jteaton Exp $
+    $Id: verify.h,v 1.14 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifndef INCLUDED_VERIFY_H
@@ -33,7 +33,8 @@
 
 
 /* serialized version of credentials */
-struct credentials {
+struct credentials
+{
     int sz;
     char *str;
 };
@@ -56,19 +57,19 @@ struct credentials {
  *         -2 indicates a system error
 */
 /* returns 0 on success; non-zero on failure */
-typedef int plaintext_verifier(pool * p, const char *userid,
-			       const char *passwd,
-			       const char *service,
-			       const char *user_realm,
-			       struct credentials **creds,
-			       const char **errstr);
+typedef int plaintext_verifier (pool * p, const char *userid,
+                                const char *passwd,
+                                const char *service,
+                                const char *user_realm,
+                                struct credentials **creds,
+                                const char **errstr);
 
 /**
  * free credentials returned from plaintext_verifier() or credentials_derive()
  * @param creds the credentials to free
  * @returns always succeeds
  */
-typedef void credentials_free(pool *p, struct credentials *creds);
+typedef void credentials_free (pool * p, struct credentials *creds);
 
 
 /**
@@ -83,19 +84,21 @@ typedef void credentials_free(pool *p, struct credentials *creds);
  *        which must later be free'd with credentials_free()
  * @returns 0 on success, non-zero on failure
  */
-typedef int credentials_derive(pool *p, struct credentials *creds,
-			       login_rec *l, 
-			       const char **target_array,
-			       struct credentials **newcreds);
+typedef int credentials_derive (pool * p, struct credentials *creds,
+                                login_rec * l,
+                                const char **target_array,
+                                struct credentials **newcreds);
 
-typedef struct verifier_s {
+typedef struct verifier_s
+{
     const char *name;
     plaintext_verifier *v;
     credentials_free *cred_free;
     credentials_derive *cred_derive;
-} verifier;
+}
+verifier;
 
 /* given a string, find the corresponding verifier */
-verifier *get_verifier(const char *name);
+verifier *get_verifier (const char *name);
 
 #endif

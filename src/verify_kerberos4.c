@@ -6,7 +6,7 @@
 /** @file verify_kerberos4.c
  * Kerberos 4 verifier
  *
- * $Id: verify_kerberos4.c,v 1.13 2004-02-10 00:42:15 willey Exp $
+ * $Id: verify_kerberos4.c,v 1.14 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -30,18 +30,19 @@ typedef void pool;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-static int kerberos4_v(pool * p, const char *userid,
-		       const char *passwd,
-		       const char *service,
-		       const char *user_realm,
-		       struct credentials **creds,
-		       const char **errstr)
+static int kerberos4_v (pool * p, const char *userid,
+                        const char *passwd,
+                        const char *service,
+                        const char *user_realm,
+                        struct credentials **creds, const char **errstr)
 {
-    if (creds) *creds = NULL;
+    if (creds)
+        *creds = NULL;
 
     *errstr = "kerberos4 not implemented";
     return -1;
 }
 
 verifier kerberos4_verifier = { "kerberos_v4",
-				&kerberos4_v, NULL, NULL };
+    &kerberos4_v, NULL, NULL
+};

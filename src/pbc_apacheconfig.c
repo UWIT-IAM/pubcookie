@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.14 2004-08-17 21:46:57 fox Exp $
+ * $Id: pbc_apacheconfig.c,v 2.15 2004-12-22 22:14:54 willey Exp $
  */
 
 
@@ -50,7 +50,7 @@ typedef apr_table_t table;
 #define PC_LOG_EMERG APLOG_MARK,APLOG_EMERG,0
 #define PC_LOG_CRIT APLOG_MARK,APLOG_CRIT,0
 
-#else 
+#else
 
 #define PC_LOG_DEBUG APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO
 #define PC_LOG_INFO  APLOG_MARK,APLOG_INFO|APLOG_NOERRNO
@@ -110,7 +110,8 @@ typedef apr_table_t table;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *def)
+const char *libpbc_apacheconfig_getstring (pool * p, const char *key,
+                                           const char *def)
 {
     server_rec *sr;
     request_rec *rr;
@@ -121,38 +122,43 @@ const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *
     /* If the pool is from config then it has the server record.
        If the pool is from the request, then it has the request record. */
 
-    if (!(sr=find_server_from_pool(p))) {
-       rr = find_request_from_pool(p);
-       if (!rr) {
-          return (def);
-       }
-       sr = rr->server;
+    if (!(sr = find_server_from_pool (p))) {
+        rr = find_request_from_pool (p);
+        if (!rr) {
+            return (def);
+        }
+        sr = rr->server;
     }
 
-    scfg = (pubcookie_server_rec *) ap_get_module_config(sr->module_config,
-                                                   &pubcookie_module);
+    scfg =
+        (pubcookie_server_rec *) ap_get_module_config (sr->module_config,
+                                                       &pubcookie_module);
     configlist = scfg->configlist;
 
-    if ( key == NULL ) return def;
+    if (key == NULL)
+        return def;
 
-    ret = ap_table_get(configlist, key);
-  
-    if (ret) { 
-        ap_log_error(PC_LOG_DEBUG,  sr, "found %s with value %s", key, ret);
+    ret = ap_table_get (configlist, key);
+
+    if (ret) {
+        ap_log_error (PC_LOG_DEBUG, sr, "found %s with value %s", key,
+                      ret);
         return ret;
-    } 
-    ap_log_error(PC_LOG_DEBUG,  sr, "failed to find %s, returning default %s", key, def);
+    }
+    ap_log_error (PC_LOG_DEBUG, sr,
+                  "failed to find %s, returning default %s", key, def);
     return def;
 }
 
-int libpbc_apacheconfig_getint(pool *p, const char *key, int def)
+int libpbc_apacheconfig_getint (pool * p, const char *key, int def)
 {
-    const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
-    
-    if (!val) return def;
-    if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
+    const char *val = libpbc_myconfig_getstring (p, key, (char *) 0);
+
+    if (!val)
         return def;
-    return atoi(val);
+    if (!isdigit ((int) *val) && (*val != '-' || !isdigit ((int) val[1])))
+        return def;
+    return atoi (val);
 }
 
 
@@ -164,17 +170,18 @@ int libpbc_apacheconfig_getint(pool *p, const char *key, int def)
 
 /* see the myconfig equivalents for reference */
 
-char **libpbc_apacheconfig_getlist(pool *p, const char *key) {
-   ap_log_error(PC_LOG_CRIT, NULL,
-       "libpbc_apacheconfig_getlist not implmented, was looking for %s",
-       key);
-   return NULL;
-} 
+char **libpbc_apacheconfig_getlist (pool * p, const char *key)
+{
+    ap_log_error (PC_LOG_CRIT, NULL,
+                  "libpbc_apacheconfig_getlist not implmented, was looking for %s",
+                  key);
+    return NULL;
+}
 
-int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def) {
-   ap_log_error(PC_LOG_CRIT, NULL,
-       "libpbc_apacheconfig_getswitch not implmented, was looking for %s",
-       key);
-   return def;
-} 
-
+int libpbc_apacheconfig_getswitch (pool * p, const char *key, int def)
+{
+    ap_log_error (PC_LOG_CRIT, NULL,
+                  "libpbc_apacheconfig_getswitch not implmented, was looking for %s",
+                  key);
+    return def;
+}

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: strlcpy.h,v 1.5 2004-02-10 00:42:15 willey Exp $
+  $Id: strlcpy.h,v 1.6 2004-12-22 22:14:54 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -12,9 +12,9 @@
 #endif
 
 #ifndef HAVE_STRLCPY
-size_t strlcpy(char *dst, const char *src, size_t len);
+size_t strlcpy (char *dst, const char *src, size_t len);
 #endif
 
 #ifndef HAVE_STRLCAT
-size_t strlcat(char *dst, const char *src, size_t len);
+size_t strlcat (char *dst, const char *src, size_t len);
 #endif

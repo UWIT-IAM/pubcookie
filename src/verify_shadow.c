@@ -12,9 +12,9 @@
  *  
  *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  *  
- * $Id: verify_shadow.c,v 1.17 2004-12-22 22:13:44 willey Exp $
+ * $Id: verify_shadow.c,v 1.18 2004-12-22 22:14:54 willey Exp $
  */
- 
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -62,70 +62,71 @@ typedef void pool;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-static int shadow_v(pool * p, const char *userid,
-		    const char *passwd,
-		    const char *service,
-		    const char *user_realm,
-		    struct credentials **creds,
-		    const char **errstr)
+static int shadow_v (pool * p, const char *userid,
+                     const char *passwd,
+                     const char *service,
+                     const char *user_realm,
+                     struct credentials **creds, const char **errstr)
 {
 
     struct spwd *shadow;
     char *crypted;
     FILE *pwfile;
 
-    if (errstr) *errstr = NULL;
-    if (creds) *creds = NULL;
+    if (errstr)
+        *errstr = NULL;
+    if (creds)
+        *creds = NULL;
 
     if (!userid) {
-       *errstr = "no userid to verify";
-       return -1;
+        *errstr = "no userid to verify";
+        return -1;
     }
 
     if (!passwd) {
-       *errstr = "no password to verify";
-       return -1;
+        *errstr = "no password to verify";
+        return -1;
     }
 
-    pwfile = pbc_fopen(p, SHADOW_PATH, "r");
-    setspent();
-    while (shadow = fgetspent(pwfile))
-       if (strcmp(userid, shadow->sp_namp) == 0)
-           break;
-    endspent();
+    pwfile = pbc_fopen (p, SHADOW_PATH, "r");
+    setspent ();
+    while (shadow = fgetspent (pwfile))
+        if (strcmp (userid, shadow->sp_namp) == 0)
+            break;
+    endspent ();
 
-    fclose(pwfile);
+    fclose (pwfile);
 
     if (shadow == NULL) {
-       *errstr = "unable to get entry from shadow file";
-       return -2;
+        *errstr = "unable to get entry from shadow file";
+        return -2;
     }
 
-    crypted = crypt(passwd, shadow->sp_pwdp);
+    crypted = crypt (passwd, shadow->sp_pwdp);
 
     if (crypted == NULL) {
-       *errstr = "error crypt'ing passwd";
-       return -2;
+        *errstr = "error crypt'ing passwd";
+        return -2;
     }
 
-    if (strcmp(shadow->sp_pwdp, crypted) == 0) {
-       return 0;
+    if (strcmp (shadow->sp_pwdp, crypted) == 0) {
+        return 0;
     }
-    
-    *errstr=("username/password pair is incorrect");
+
+    *errstr = ("username/password pair is incorrect");
     return -1;
 }
 
 #else /* ENABLE_SHADOW */
 
-static int shadow_v(pool * p, const char *userid,
-		    const char *passwd,
-		    const char *service,
-		    const char *user_realm,
-		    struct credentials **creds,
-		    const char **errstr)
+static int shadow_v (pool * p, const char *userid,
+                     const char *passwd,
+                     const char *service,
+                     const char *user_realm,
+                     struct credentials **creds, const char **errstr)
 {
-    if (creds) *creds = NULL;
+    if (creds)
+        *creds = NULL;
 
     *errstr = "shadow verifier not implemented";
     return -1;

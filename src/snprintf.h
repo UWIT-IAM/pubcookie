@@ -73,17 +73,17 @@
 
 #if defined(HAVE_STDARG_H)
 # include <stdarg.h>
-# define HAVE_STDARGS    /* let's hope that works everywhere (mj) */
+# define HAVE_STDARGS           /* let's hope that works everywhere (mj) */
 # define VA_LOCAL_DECL   va_list ap
 # define VA_START(f)     va_start(ap, f)
-# define VA_SHIFT(v,t)  ;   /* no-op for ANSI */
+# define VA_SHIFT(v,t)  ;       /* no-op for ANSI */
 # define VA_END          va_end(ap)
 #else
 # if defined(HAVE_VARARGS_H)
 #  include <varargs.h>
 #  undef HAVE_STDARGS
 #  define VA_LOCAL_DECL   va_list ap
-#  define VA_START(f)     va_start(ap)      /* f is ignored! */
+#  define VA_START(f)     va_start(ap)  /* f is ignored! */
 #  define VA_SHIFT(v,t) v = va_arg(ap,t)
 #  define VA_END        va_end(ap)
 # else
@@ -105,14 +105,15 @@ int snprintf (char *str, size_t count, const char *fmt, ...);
 int vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
 #endif /* HAVE_VSNPRINTF */
 
-static int dopr (char *buffer, size_t maxlen, const char *format, 
+static int dopr (char *buffer, size_t maxlen, const char *format,
                  va_list args);
-static int fmtstr (char *buffer, size_t *currlen, size_t maxlen,
-		   char *value, int flags, int min, int max);
-static int fmtint (char *buffer, size_t *currlen, size_t maxlen,
-		   long value, int base, int min, int max, int flags);
-static int fmtfp (char *buffer, size_t *currlen, size_t maxlen,
-		  LDOUBLE fvalue, int min, int max, int flags);
-static int dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c );
+static int fmtstr (char *buffer, size_t * currlen, size_t maxlen,
+                   char *value, int flags, int min, int max);
+static int fmtint (char *buffer, size_t * currlen, size_t maxlen,
+                   long value, int base, int min, int max, int flags);
+static int fmtfp (char *buffer, size_t * currlen, size_t maxlen,
+                  LDOUBLE fvalue, int min, int max, int flags);
+static int dopr_outch (char *buffer, size_t * currlen, size_t maxlen,
+                       char c);
 
 #endif /* !HAVE_SNPRINTF */
