@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.40 2001-11-10 01:44:09 willey Exp $
+    $Id: pbc_config.h,v 1.41 2001-11-14 23:22:46 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -65,6 +65,7 @@
 /* lives only on login server */
 #define PBC_G_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.key"
 #else
+/* the module has directives for the key files, these are the defaults */
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 #define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
 /* lives only on login servers */
@@ -79,6 +80,15 @@
 #define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
 /* lives only on login server */
 #define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
+
+/* the login server builds it's key Filenames from the hostname     */
+/* unless NO_HOST_BASED_KEY_FILENAMES is set then the above static  */
+/*   filenames will be used                                         */
+#define PBC_KEY_DIR "/usr/local/pubcookie/"
+#define PBC_CRYPT_KEY_PREFIX "c_key"
+#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
+#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
+#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
 #endif
 
 #define PBC_CRED1_AUTHTYPE "uwnetid"
