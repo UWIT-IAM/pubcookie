@@ -1,8 +1,13 @@
 
+# if the apache binaries aren't in your path
 APXS=apxs
+# set your path to ssl libraries
+SSL_BASE=openssl
+# set your path to RSAref library
+RSA_BASE=rsaref
 
 CFLAGS=-DAPACHE1_3
-INCS=-I$(SSL_BASE)/include
+INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
 LIBS=-L$(SSL_BASE) -lssl -lcrypto -lRSAglue -L$(RSA_BASE) -lrsaref
 all: mod_pubcookie.so
 
