@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.39 2003-09-26 22:27:02 ryanc Exp $
+    $Id: libpubcookie.h,v 1.40 2003-11-21 06:50:48 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -31,7 +31,7 @@
 
 #include "pubcookie.h"
 
-const char *get_my_hostname();
+const char *get_my_hostname(pool *p);
 
 /** 
  * find the credential id value for an authtype name

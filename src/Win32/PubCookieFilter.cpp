@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.21 2003-09-26 22:27:02 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.22 2003-11-21 06:50:48 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -19,7 +19,7 @@
 
 extern "C" 
 {
-typedef void pool;
+	typedef void pool;
 
 #include <pem.h>
 #include "../pubcookie.h"
@@ -251,7 +251,7 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 
     sprintf(szBuff,"Content-Type: text/html\r\n");
 		
-	filterlog(dcfg, LOG_INFO," Redirect\n");
+	filterlog(dcfg, LOG_INFO," Redirect to %s",RUrl);
 
 	pFC->AddResponseHeaders(pFC,szBuff,0);
 
@@ -489,7 +489,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, dcfg->Enterprise_Domain);
 
 	/* make the pre-session cookie */
-    pre_s = libpbc_get_cookie( 
+    pre_s = libpbc_get_cookie(  
 		p,
 		(unsigned char *) "presesuser",
 		PBC_COOKIE_TYPE_PRE_S, 
@@ -497,7 +497,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		pre_sess_tok,
 		(unsigned char *)dcfg->server_hostname, 
 		(unsigned char *)dcfg->appid,
-		NULL);
+		dcfg->server_hostname);
 	
     Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s,dcfg->appsrvid);
 	
@@ -542,14 +542,12 @@ int Bad_User (HTTP_FILTER_CONTEXT* pFC)
 
 int Is_Pubcookie_Auth (pubcookie_dir_rec *dcfg)
 {
-	filterlog(dcfg, LOG_INFO," Is_Pubcookie_Auth: ");
-	
 	if ( dcfg->AuthType != AUTH_NONE ) {
-		filterlog(dcfg, LOG_INFO," TRUE\n ");
+		filterlog(dcfg, LOG_INFO," Is_Pubcookie_Auth: True");
 		return TRUE;
 	}
 	else {
-		filterlog(dcfg, LOG_INFO," FALSE\n ");
+		filterlog(dcfg, LOG_INFO," Is_Pubcookie_Auth: False");
 		return FALSE;
 	}
 
@@ -564,7 +562,7 @@ int Pubcookie_Check_Version (HTTP_FILTER_CONTEXT* pFC, unsigned char *a, unsigne
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	filterlog(dcfg, LOG_INFO," Pubcookie_Check_Version\n");
+	filterlog(dcfg, LOG_DEBUG," Pubcookie_Check_Version\n");
 
 	if ( a[0] == b[0] && a[1] == b[1] )
 		return 1;
@@ -585,15 +583,12 @@ int Pubcookie_Check_Exp(HTTP_FILTER_CONTEXT* pFC, time_t fromc, int exp)
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	filterlog(dcfg, LOG_INFO," Pubcookie_Check_Exp: ");
-	
 	if ( (fromc + exp) > time(NULL) ) {
-			filterlog(dcfg, LOG_INFO,"True\n");
-
+		filterlog(dcfg, LOG_INFO," Pubcookie_Check_Exp: True");
 		return 1;
 	}
 	else {
-			filterlog(dcfg, LOG_INFO,"False\n");
+		filterlog(dcfg, LOG_INFO," Pubcookie_Check_Exp: False");
 		return 0;
 	}
 
@@ -612,13 +607,11 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	filterlog(dcfg, LOG_INFO," Get_Cookie: %s : ",name);
-      
 	cookie_data[0] = NULL;
 	cbSize = MAX_COOKIE_SIZE;
 	if (!pFC->GetServerVariable(pFC,"HTTP_COOKIE",cookie_data,&cbSize)) {
 		dwError = GetLastError();
-		filterlog(dcfg, LOG_INFO," GetServerVariable[HTTP_COOKIE] failed = %d (%x), buffer size= %d\n",
+		filterlog(dcfg, LOG_DEBUG," GetServerVariable[HTTP_COOKIE] failed = %d (%x), buffer size= %d\n",
 			dwError,dwError,cbSize);
 		if ( dwError == ERROR_INSUFFICIENT_BUFFER) {  // Should quit if too much cookie
 			filterlog(dcfg, LOG_ERR,"[Get_Cookie] Cookie Data too large : %d", cbSize);
@@ -632,14 +625,14 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 	strcpy(name_w_eq,name);
 	strcat(name_w_eq,"=");
 
-	/*	filterlog(dcfg, LOG_INFO,"  Looking for cookie name '%s' in (%d) (first 2000 bytes)\n%.2000s\n",
-		name_w_eq,strlen(cookie_data),cookie_data);*/
+	filterlog(dcfg, LOG_DEBUG,"  Looking for cookie name '%s' in (%d) (first 3000 bytes)\n%.3000s\n",
+		name_w_eq,strlen(cookie_data),cookie_data);
 
 	/* find the one that's pubcookie */
 
     if (!(cookie_header = strstr(cookie_data, name_w_eq))) {
 
-		filterlog(dcfg, LOG_INFO,"  Not found.\n");
+		filterlog(dcfg, LOG_INFO, " Get_Cookie: %s : Not Found",name);
 		return NULL;
 	}
 	cookie_header += strlen(name_w_eq);
@@ -661,7 +654,7 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 
 //	Blank_Cookie (name);   // Why Blank it ??
 
-	filterlog(dcfg, LOG_INFO,"  Found.\n");
+		filterlog(dcfg, LOG_INFO, " Get_Cookie: %s : Found",name);
 
 	return cookie;
 
@@ -772,8 +765,6 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	filterlog(dcfg, LOG_INFO,"Get_Effective_Values\n"); 
-	
 	// Initialize default values  
 	// These can be overriden in /default
 
@@ -865,6 +856,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		char buff[4096];
 
 		_snprintf(buff,4096,
+			"Get_Effective_Values\n" 
 			"  Values for: %s\n" 
 			"    AppId            : %s\n" 
 			"    NtUserId         : %s\n" 
@@ -979,7 +971,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	pFC->ServerSupportFunction(pFC,SF_REQ_NORMALIZE_URL,
 								achUrl,NULL,NULL);
 
-	filterlog(dcfg, LOG_INFO,"  Normalized URL: %s\n",achUrl);
+	filterlog(dcfg, LOG_DEBUG,"  Normalized URL: %s\n",achUrl);
 
 	// set Uri
 	strcpy(dcfg->uri,achUrl);
@@ -1180,7 +1172,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}*/ 		/* PBC_X_STRING doesn't seem to be used any longer */
 
 
-		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, get_my_hostname())) ) {
+		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, dcfg->server_hostname)) ) {
 			filterlog(dcfg, LOG_ERR,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
 				dcfg->uri, dcfg->remote_host);
 			dcfg->failed = PBC_BAD_GRANTING_CERT;
@@ -1313,14 +1305,14 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	filterlog(dcfg, LOG_INFO," Pubcookie_Typer\n");
+	filterlog(dcfg, LOG_DEBUG," Pubcookie_Typer\n");
 
 	if( dcfg->logout_action ) 
 		return OK;  //if we got here while logging out, we're redirecting
 	if( !Is_Pubcookie_Auth(dcfg) ) 
 		return DECLINED;  //if we got here without auth, something must have changed midstream
 
-	filterlog(dcfg, LOG_INFO,"  Has_Granting= %d, Failed= %d\n",dcfg->has_granting,dcfg->failed);
+	filterlog(dcfg, LOG_INFO," Pubcookie_Typer\n Has_Granting= %d, Failed= %d\n",dcfg->has_granting,dcfg->failed);
 
 	if (dcfg->has_granting ) {
 
@@ -1350,7 +1342,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 					23,
 					(unsigned char *)dcfg->server_hostname, 
 					(unsigned char *)dcfg->appid,
-					NULL);
+					dcfg->server_hostname);
 
 				filterlog(dcfg, LOG_INFO,"  Created new session cookie.\n");
 			}
@@ -1663,7 +1655,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	else
 		Hide_Cookies(pFC,pHeaderInfo);
 
-	filterlog(dcfg, LOG_INFO," OnPreprocHeaders returned x%X\n",return_rslt);
+	filterlog(dcfg, LOG_DEBUG," OnPreprocHeaders returned x%X\n",return_rslt);
 	
 	return return_rslt;
 
@@ -1999,13 +1991,12 @@ DllMain(
 --*/
 {
     BOOL fReturn = TRUE;
-	
     switch ( fdwReason )
     {
     case DLL_PROCESS_ATTACH:
 		{
 			// Initialize Pubcookie Stuff - and Set Debut Trace Flags
-			
+	
 			fReturn = Pubcookie_Init ();
 			
 			if ( !fReturn )

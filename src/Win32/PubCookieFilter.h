@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.23 2003-09-26 22:27:02 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.24 2003-11-21 06:50:49 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
@@ -123,4 +123,4 @@ Notify_Flags =  ( SF_NOTIFY_SECURE_PORT         |
 					  SF_NOTIFY_END_OF_REQUEST      |
 					  SF_NOTIFY_LOG                 |
 					  SF_NOTIFY_END_OF_NET_SESSION  |
-					  SF_NOTIFY_ORDER_DEFAULT );
+					  SF_NOTIFY_ORDER_DEFAULT ); 

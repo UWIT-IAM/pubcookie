@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.30 2003-09-26 22:27:02 ryanc Exp $
+ * $Id: security_legacy.c,v 1.31 2003-11-21 06:50:48 ryanc Exp $
  */
 
 
@@ -355,8 +355,6 @@ int security_init(pool *p)
 #ifdef WIN32
 	}
 	else {
-        char tmp[1024];
-		struct hostent *hp;
 
 		sess_key=EVP_PKEY_new();
 		
@@ -369,17 +367,21 @@ int security_init(pool *p)
 
 		/* sess_key was assigned both public and private keys */
 		sess_pub = sess_key;
-	
-		{
-			gethostname(tmp, sizeof(tmp)-1);
-			if ( !(hp = gethostbyname(tmp)) ) {
-				pbc_log_activity(p, PBC_LOG_ERROR, 
-					"[Pubcookie_Init] gethostbyname failed.");
-				return -1;
-			}
-			myname = mystrdup(p, hp->h_name);
+        pbc_log_activity(p, PBC_LOG_AUDIT, 
+                         "security_init: generated new session keypair.");
+	}
+
+	{
+		char tmp[1024];
+		struct hostent *hp;
+
+		gethostname(tmp, sizeof(tmp)-1);
+		if ( !(hp = gethostbyname(tmp)) ) {
+			pbc_log_activity(p, PBC_LOG_ERROR, 
+				"[Pubcookie_Init] gethostbyname failed.");
+			return -1;
 		}
-		
+		myname = mystrdup(p, hp->h_name);
 	}
 
 #endif
@@ -483,12 +485,14 @@ static int get_crypt_key(pool *p, const char *peername, char *buf)
     char keyfile[1024];
     
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_crypt_key: hello\n");
+	pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "Looking for crypt key %s", peername); //debug
 
     make_crypt_keyfile(p, peername, keyfile);
 	
     if (!(fp = pbc_fopen(p, keyfile, "rb"))) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "can't open crypt key %s: %m", keyfile);
+                         "can't open crypt key %s", keyfile);
 	return -1;
     }
 
@@ -719,14 +723,8 @@ int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
     *outbuf = NULL;
     *outlen = 0;
 
-    if (peer && !g_key) {
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-	   "libpbc_mk_safe: no granting key: can't secure message to %s", peer);
-	return -1;
-    }
-
-    /* sign with g_key if there's a peer; key otherwise */
-    if (peer) thekey = g_key;
+    /* sign with g_key if it exists and there is a peer; session key otherwise */
+    if (g_key && peer) thekey = g_key;
     else thekey = sess_key;
 
     sig = (unsigned char *) pbc_malloc(p, EVP_PKEY_size(thekey));
