@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.150 2005-02-24 23:26:38 willey Exp $
+ * $Id: index.cgi.c,v 1.151 2005-04-01 23:45:08 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -226,9 +226,9 @@ int max_cgi_count = 0;
 security_context *context;      /* to hold all of the certs for a transaction */
 char **ok_user_agents = NULL;
 
-                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+/*                                                                         */
 /*      general utility thingies                                           */
-                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+/*                                                                         */
 
 /*
  * return the length of the passed file in bytes or 0 if we cant tell
@@ -774,9 +774,8 @@ int expire_login_cookie (pool * p, const security_context * context,
         return (PBC_FAIL);
     }
 
-    print_header (p, "Set-Cookie: %s=%s; domain=%s; path=%s%s\n",
-                  PBC_L_COOKIENAME,
-                  l_cookie, login_host (p), LOGIN_DIR, secure_cookie);
+    print_header (p, "Set-Cookie: %s=%s; path=%s%s\n",
+                  PBC_L_COOKIENAME, l_cookie, LOGIN_DIR, secure_cookie);
 
     if (l_cookie != NULL)
         free (l_cookie);
@@ -797,8 +796,8 @@ int clear_login_cookie (pool * p)
                       "clear_login_cookie: hello");
 
     print_header (p,
-                  "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\n",
-                  PBC_L_COOKIENAME, PBC_CLEAR_COOKIE, login_host (p),
+                  "Set-Cookie: %s=%s; path=%s; expires=%s%s\n",
+                  PBC_L_COOKIENAME, PBC_CLEAR_COOKIE,
                   LOGIN_DIR, EARLIEST_EVER, secure_cookie);
     return (PBC_OK);
 
@@ -1139,7 +1138,6 @@ char *decode_granting_request (pool * p, char *in, char **peerp)
 }
 
 
-                                                       /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 /*                                                                   */
 /*                                                                   */
 /* four cases for the main thingie                                   */
@@ -1170,7 +1168,6 @@ char *decode_granting_request (pool * p, char *in, char **peerp)
 /*         out: L & G cookies redirect (username comes from L cookie)*/
 /*                                                                   */
 /*                                                                   */
-                                                       /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 
 int vector_request (pool * p, const security_context * context,
                     login_rec * l, login_rec * c)
@@ -1962,9 +1959,9 @@ static void init_user_agent (pool * p)
 
 }
 
-                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+/*                                                                         */
 /*	main line                                                          */
-                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+/*                                                                         */
 
 int cgiMain_init ()
 {
@@ -2262,9 +2259,9 @@ char *check_l_cookie (pool * p, const security_context * context,
 }
 
 
-                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+/*                                                                         */
 /*	functions                                                          */
-                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+/*                                                                         */
 
 /* show a nice page when things don't go well */
 void notok (pool * p, notok_event event, char *reason)
@@ -2330,9 +2327,9 @@ void notok (pool * p, notok_event event, char *reason)
 
 int set_pinit_cookie (pool * p)
 {
-    print_header (p, "Set-Cookie: %s=%s; domain=%s; path=/%s\n",
-                  PBC_PINIT_COOKIENAME,
-                  PBC_SET, login_host (p), secure_cookie);
+
+    print_header (p, "Set-Cookie: %s=%s; path=/%s\n",
+                  PBC_PINIT_COOKIENAME, PBC_SET, secure_cookie);
     return (PBC_OK);
 }
 
@@ -2340,8 +2337,8 @@ int clear_pinit_cookie (pool * p)
 {
 
     print_header (p,
-                  "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
-                  PBC_PINIT_COOKIENAME, PBC_CLEAR_COOKIE, login_host (p),
+                  "Set-Cookie: %s=%s; path=/; expires=%s%s\n",
+                  PBC_PINIT_COOKIENAME, PBC_CLEAR_COOKIE,
                   EARLIEST_EVER, secure_cookie);
     return (PBC_OK);
 
@@ -2616,9 +2613,8 @@ void print_redirect_page (pool * p, const security_context * context,
     /* create the login cookie header */
 
     snprintf (l_set_cookie, sizeof (l_set_cookie) - 1,
-              "Set-Cookie: %s=%s; domain=%s; path=%s%s",
-              PBC_L_COOKIENAME,
-              l_cookie, login_host (p), LOGIN_DIR, secure_cookie);
+              "Set-Cookie: %s=%s; path=%s%s",
+              PBC_L_COOKIENAME, l_cookie, LOGIN_DIR, secure_cookie);
 
     /* whip up the url to send the browser back to */
     if (!strcmp (l->fr, "NFR"))
