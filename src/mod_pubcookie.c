@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.136 2004-03-31 16:53:57 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.137 2004-04-01 03:39:48 jteaton Exp $
  */
 
 
@@ -482,7 +482,7 @@ void set_no_cache_headers(request_rec *r) {
     ap_table_set(r->headers_out, "Expires", ap_gm_timestr_822(r->pool, 
 		r->request_time));
 #endif
-    ap_table_set(r->headers_out, "Cache-Control", "no-cache");
+    ap_table_set(r->headers_out, "Cache-Control", "no-store, no-cache, must-revalidate");
     ap_table_set(r->headers_out, "Pragma", "no-cache");
 
 }
