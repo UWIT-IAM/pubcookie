@@ -1,0 +1,203 @@
+<html>
+
+<head>
+<title>Pubcookie ISAPI Filter - Install Guide</title> 
+<link rel="stylesheet" href="pubcookie.css" type="text/css" 
+title="pubcookie">
+</head>
+
+<body>
+
+<h1>Pubcookie ISAPI Filter - Install Guide</h1>
+
+<p>Note: Documentation can contain bugs too. The  
+<a href="http://www.pubcookie.org/docs/install-filter.html">online      
+version of this document</a> is always the most up-to-date version.
+</p>
+
+<p><i>Included on this page:</i></p>
+
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#news">What's New</a></li>
+<li><a href="#prereq">Prerequisites</a></li>
+<li><a href="#sysreq">System Requirements</a></li>
+<li><a href="#install">InstallShield Wizard for Pubcookie</a></li> 
+<li><a href="#clusters">Clustered Host Configuration</a></li>
+<li><a href="#vhosts">Virtual Host Configuration</a></li>
+<li><a href="#upgrade">Upgrading</a></li>
+</ul>
+
+<h4><a name="overview">Overview</a></h4>
+
+<p>This guide helps Microsoft IIS server administrators install the
+Pubcookie ISAPI filter, herein referred to as simply <i>the
+filter</i>.</p>
+
+<h4><a name="news">What's New</a></h4>
+
+<p>TBD</p>
+
+<h4><a name="prereq">Prerequisites</a></h4>
+
+<p>The filter relies on additional infrastructure at your site. Here are
+some general prerequisites that, if fulfilled, will lead to a smooth,
+successful installation.</p>
+
+<ul>
+
+<li><p>Determine the location of your site's Pubcookie login server.  The
+installer needs this URL during installation. You may also want to find
+out its version, so that you know what features it supports.</p></li>
+
+<li><p>Determine the location of your site's Pubcookie keyserver. The
+installer needs this URL to request a symmetric encryption key that your
+server will share with your login server. Depending on the keyserver
+version and site policy, you may also need to ask your administrator to
+"permit" your server to request keys.</p></li>
+
+<li><p>Determine how trust is handled by your site's Pubcookie keyserver.
+You'll need to know which Certificate Authorities the keyserver trusts to
+verify certificates. Similarly, you'll need to know which Certificate
+Authority can verify the keyserver's certificate. Ask your administrator
+for guidelines; it'll save you time and effort.</p></li>
+
+<li><p>Determine how your site distributes its Pubcookie "granting" 
+certificate. The installer needs a copy of this certificate to verify the
+"granting" cookies signed and sent by your site's login server. The
+installer may be able to download it from your keyserver, or you may have
+to obtain it manually. Ask your administrator which method to
+use.</p></li>
+
+</ul>
+
+<p>Note: Review the sections on <a href="vhost">virtual host
+configuration</a> or <a href="clusters">clustered host configuration</a>
+now if either of those scenarios apply. The information will help you
+think about and tailor the installation as needed.</p>
+
+<h4><a name="sysreq">System Requirements</a></h4>
+
+<p>The Pubcookie ISAPI filter has the following system requirements:</p>
+
+<ul>
+
+<li><p>Microsoft Windows ???? or later</p></li>
+
+<li><p>Microsoft Internet Information Server (IIS) 4.0 or later</p></li>
+
+<li><p>Accurate system time</p></li>
+
+<li><p>SSL enabled Web site. All intended users should be able to 
+reach your website via HTTPS.</p></li>
+
+<li><p>SSL private key and server certifiate. The certificate should be
+signed by a CA trusted by your site's keyserver. Should be installed in
+your Personal Certificate Store and associated with your website server
+name.</p></li>
+
+<li><p>Domain name registered in DNS (e.g. <i>appserver.example.edu</i>). 
+Should be the same server name as the Common Name field of your SSL
+certificate.</p>
+
+<p>Note: If your server doesn't share a common DNS subdomain (e.g. 
+.example.edu) with your site's Pubcookie login server (e.g. 
+weblogin.example.edu) you will have to install and use the Pubcookie relay
+cgi to authenticate across DNS domains. [fixme: note country code
+top-level domains too.]</p>
+
+<p>Note: a host file can work for testing, but production systems need
+enterprise dns.</p>
+
+<li><p>The <tt>System32\Inetsrv</tt> folder should be world writable or 
+writable by the administrator account running the installer.</p></li>
+
+</ul>
+
+<h4><a name="install">InstallShield Wizard for Pubcookie</a></h4>
+
+<p>Run the InstallShield Wizard for Pubcookie as the administrator user or
+as an account with administrator privileges. The installer needs to create
+folders and files in the <tt>System32\Inetsrv</tt> folder as well as to
+stop and start system services.</p>
+
+<p>In a typical installation, the Wizard will:</p>
+
+<ol>
+
+<li><p>Allow you to install Pubcookie, or to modify, repair, or 
+remove Pubcookie if it is already installed.</p></li>
+
+<li><p>Collect Site Information. Here you'll be able to specify your 
+server name, Pubcookie login server and keyserver locations, 
+enterprise domain, and authentication types.</p></li>
+
+<li><p>Select the ISAPI Filter and basic test Webapp for 
+installation.</p></li>
+
+<li><p>Do the install. Here the installer will add the Pubcookie filter to
+the IIS root filter list and restart IIS services. It will aslo use your
+server name to locate your SSL key pair from the Personal Certificate
+store and use them, along with your installed Certificate Authority
+certificates, to negotiate a symmetric key from your keyserver and
+download your site's "granting" certificate.</p></li>
+
+</ol>
+
+<p>Note: to request a key from your keyserver you may have to ask your 
+keyserver administrator to "permit" your host. Also, you'll need to be 
+able to verify the keyserver's SSL certificate with the CA certificates 
+installed on your system. Ask your keyserver administrator if you need a 
+special CA certificate to do that.</p>
+
+<p>Note: to protect the server's symmetric encryption key, the installer
+will remove <i>everyone</i> permission to this file; no other accounts 
+except the IIS 4/5/6 iuser account needs to read this key.</p>
+
+<p>[fixme: does the installer prompt for a granting cert if it can't be 
+retrieved from the keyserver?]</p>
+
+<h4><a name="clusters">Clustered Host Configuration</a></h4>
+
+<p>For clustered host configurations, run the installer on each host.
+After running the install on the last host, copy the symmetric key (from
+<tt>System32\Inetsrv\Pubcookie\keys\</tt>) on the last host to each of the
+other hosts. This will syncronize the cluster with the key stored on the
+login server.</p>
+
+<h4><a name="vhosts">Virtual Host Configuration</a></h4>
+
+<p>TBD.</p>
+
+<h4><a name="upgrade">Upgrading</a></h4>
+
+<p>For the cleanest upgrade from an earlier version of Pubcookie:</p>
+
+<ul>
+
+<li><p>Stop IIS.</p></li>
+
+<li><p>Remove your existing 
+<tt>System32\Inetsrv\Pubcookie</tt> folder.</p></li>
+
+<li><p>Run the InstallShield Wizard for Pubcookie 3.1</p></li>
+
+</ul>
+
+<p>Note: the installer won't overwrite the web properties (registry 
+settings) you've assigned to your website, folders, or resources. It 
+will update the filter variables according to the login server and 
+keyserver URLs you provide to the installer.</p>
+
+<hr>
+<p>
+Copyright 1999-2004, University of Washington.  All rights reserved.<br />
+See doc/LICENSE.txt for terms of use.
+</p>
+<pre>
+$Id: install-filter.html,v 1.1 2004-05-13 22:49:29 dors Exp $
+</pre>
+</body>
+
+</html>
+
