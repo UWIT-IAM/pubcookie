@@ -36,6 +36,7 @@ directives, you must do the same for other Pubcookie directives. Otherwise,
 <li><a href="#PubcookieNoPrompt">PubcookieNoPrompt</a></li>
 <li><a href="#PubcookieOnDemand">PubcookieOnDemand</a></li>
 <li><a href="#PubcookieAddlRequest">PubcookieAddlRequest</a></li>
+<li><a href="#PubCookieNoBlank">PubCookieNoBlank</a></li>
 <li><a href="#PubcookieEgdDevice">PubcookieEgdDevice</a></li>
 <li><a href="#PubcookieSuperDebug">PubcookieSuperDebug</a></li>
 </ul>
@@ -491,6 +492,20 @@ responses from the login server and how these responses are
 returned. Eventually, there will be a standardized mechanism for
 returning answers. Likely they will be returned in extensions to the
 granting response and set as environment variables.</p>
+
+<h3><a name="PubCookieNoBlank">PubCookieNoBlank directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubCookieNoBlank on | off<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
+3.0 and higher and Apache 1.3 and later.</p>
+
+<p>By default, session cookies are blanked by the module before being 
+exposed to other handlers. To hand session cookies to other handlers 
+(such as CGI programs) set this directive.</p>
 
 <h3><a name="PubcookieEgdDevice">PubcookieEgdDevice directive</a></h3>
 

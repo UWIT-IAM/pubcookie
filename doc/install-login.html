@@ -98,27 +98,46 @@ Pubcookie 3.2.0:</p>
 
 <h4><a name="upgrading">Upgrading &amp; Compatibility</a></h4>
 
-<p>Sites using previous versions of the login server (3.0.0-3.1.1) can 
-safely upgrade without modifying current site configuration. You can
-build and install from the distribution (i.e., run <tt>configure</tt>,
-<tt>make</tt>, and <tt>make install</tt>) without worrying that it
-will overwrite your current <tt>config</tt> file or login templates.</p>
+<p>Sites upgrading from previous versions of the login server can build and
+install the new version while safely maintaining their existing configuration
+file (<tt>PREFIX/config</tt>) and login templates. Running <tt>make
+install</tt> will not overwrite these files. Note, however, that it will
+install new keyserver, keyclient, and login cgi binaries into
+<tt>PREFIX/keyserver</tt>, <tt>PREFIX/keyclient</tt>, and
+<tt>PREFIX/login/index.cgi</tt>, respectively. A new sample configuration file
+(<tt>PREFIX/config.login.sample</tt>) is installed and can be compared with
+your current configuration file.</p>
 
-<p>Sites should compare their configurations with the new 
-<tt>config.login.sample</tt> file and look in <tt>login_templates.default</tt>
-for templates changes. Version 3.2.0 addes several new templates (<tt>notok</tt>, 
+<p>Sites upgrading to version 3.2 will need to update the following templates
+from <tt>PREFIX/login_templates.default</tt>. They contain new variable
+substitutions used by the new login cgi.</p>
+
+<ul>
+<li><tt>login</tt> (adds new <tt>%reason%</tt> and <tt>%version%</tt> variables)
+<li><tt>form_expired</tt> (adds new <tt>%time</tt> variable)
+<li><tt>logout_part2</tt> (adds new  <tt>%version%</tt> variable)
+<li><tt>pinit_response2</tt> (adds new  <tt>%version%</tt> variable)
+</ul>
+
+<p>Use <tt>diff</tt> to locate these differences relative to your current
+templates.  This shouldn't be much work. There are only a few lines that have
+changed.</p>
+
+<p>Version 3.2 also adds several new templates (<tt>notok</tt>,
 <tt>notok_badagent</tt>, <tt>notok_form_multipart</tt>, <tt>notok_generic</tt>,
-and <tt>notok_need_ssl</tt>); and two templates have been removed 
-(<tt>notok_part1</tt>, <tt>notok_part2</tt>).</p>
+and <tt>notok_need_ssl</tt>); and two templates have been removed
+(<tt>notok_part1</tt>, <tt>notok_part2</tt>). You will want to make sure you've
+updated your template directory accordingly.</p>
 
 <p><b>Compatibility note on third-party relays:</b> 
 The 3.2 login cgi deprecates the use of relays hosted on third-party servers.
 New POST-based messaging support allows use across DNS domains without the use 
 of a separate relay cgi. To continue to support third-party cgi-based 
 relays, <strong>YOU MUST USE</strong> the <tt>--enable-unsafe-relay</tt> 
-configure option while building the login cgi. Rather than doing that, 
-you're encouraged to upgrade application servers using third-party relays
-to use POST-based messaging provided by the version 3.2.0 modules.</p>
+configure option while building the login cgi. The other option is to
+upgrade application servers using third-party relays to use the version 3.2.0 
+modules. Once they're all using the new POST-based login method, there's no 
+need to support third-party relays in your login cgi.</p>
 
 <h4><a name="components">System Components</a></h4>
 
@@ -841,6 +860,9 @@ verifier. Your service name can be set with the
 service key, generating a keytab file, or otherwise configuring Kerberos
 (e.g. <tt>/etc/krb5.conf</tt>) on your login server.</p>
 
+<p>See <tt>doc/krb5-getcred.html</tt> for details on how to configure and
+use Kerberos credential passing.</p>
+
 <h4><a name="ldap">LDAP Verifier Configuration</a></h4>
 
 <p>To build the login cgi with support for the LDAP verifier,
@@ -1000,7 +1022,7 @@ Copyright 1999-2005, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.33 2005-01-03 23:15:05 willey Exp $
+$Id: install-login.html,v 1.34 2005-01-21 16:01:38 dors Exp $
 </pre>
 </body>
 

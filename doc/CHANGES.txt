@@ -1,3 +1,11 @@
+Changes with 3.2.0
+
+*) Fixed login cgi's POST login method to provide continue button for 
+   browsers that have disabled or don't support Javascript.
+
+*) Exempt the post reply URL in mod_pubcookie so that the entire site can
+   be protected using the POST login method.
+
 Changes with 3.2.0 Beta 2:
 
 *) Tidied source code. See doc/HACKING.txt for 'indent' format.
