@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.14 1999-01-27 03:34:14 willey Exp $
+# $Id: Makefile,v 1.15 1999-03-04 23:11:33 willey Exp $
 #
 
 CC=gcc
@@ -9,11 +9,13 @@ LDFLAGS=-L./ssleay -lssl -lRSAglue -lcrypto ./rsaref/build/rsaref.a
 
 GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
-MISC=README Makefile Makefile.tmpl Makefile.apxs pubcookie_granting.cert
+MISC=README CHANGES Makefile Makefile.tmpl Makefile.apxs pubcookie_granting.cert
 
 BASENAME=pubcookie
-VERSION=v1
-NAME=$(BASENAME)-$(VERSION)
+#sed -e '/^#define PBC_VERSION/!d' -e '/^#define PBC_VERSION/s/^#define PBC_VERSION "\(a2\)".*$/\1/' pbc_version.h` \
+
+VERSION=a4
+DIR_NAME=$(BASENAME)-$(VERSION)
 TARFILE=$(BASENAME)-$(VERSION).tar
 
 MAKEFILE=Makefile
@@ -45,16 +47,16 @@ h2ph:
 	ci -mauto_update -u *.ph
 
 tar:
-	rm -rf $(NAME); \
-	mkdir $(NAME); \
+	rm -rf $(DIR_NAME); \
+	mkdir $(DIR_NAME); \
 	for i in $(SRC) $(GEN_HEAD) $(MISC) ;\
 	do \
-		cp $$i $(NAME); \
-		chmod 664 $(NAME)/$$i; \
+		cp $$i $(DIR_NAME); \
+		chmod 664 $(DIR_NAME)/$$i; \
 	done; \
-	$(TAR) cf $(TARFILE) $(NAME); \
+	$(TAR) cf $(TARFILE) $(DIR_NAME); \
 	$(GZIP) -f $(TARFILE); \
-	$(RM) -rf $(NAME);
+	$(RM) -rf $(DIR_NAME);
 
 libpubcookie.o: libpubcookie.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 base64.o: base64.c ${GEN_HEAD} ${MAKEFILE}
