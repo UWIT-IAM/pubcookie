@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.70 $)
+AC_REVISION($Revision: 1.71 $)
 AC_INIT(Pubcookie, [3.1.2 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -832,7 +832,7 @@ fi
 
 # See if we are to enable the unsafe relay
 AC_ARG_ENABLE(unsafe-relay,
-    AC_HELP_STRING([--unsafe-relay],[Enable unsafe relay. (Compatibility)]),
+    AC_HELP_STRING([--enable-unsafe-relay],[Enable unsafe relay. (Compatibility)]),
 [ case "${enableval}" in
    yes)
     CFLAGS="$CFLAGS -DALLOW_RELAY"
