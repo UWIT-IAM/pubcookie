@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.21 $
+ * $Revision: 1.22 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -307,52 +307,52 @@ Problems With the UW NetID Login Page</A> for further advice.</p>\
 
 #define J_TEST_TEXT1 "<SCRIPT LANGUAGE=\"JavaScript\"><!-- \
  \
-name = \"cookie_test\"; \n
-    s = (new Date().getSeconds());
-    document.cookie = name + \"=\" + s;
-\n
-    dc = document.cookie;
-    prefix = name + \"=\";
-    begin = dc.indexOf(\"; \" + prefix);
-\n
-    if (begin == -1) {
-        begin = dc.indexOf(prefix);
-        if (begin != 0) returned = \"\";
-    } else
-        begin += 2;
-    end = document.cookie.indexOf(\";\", begin);
-\n
-    if (end == -1)
-        end = dc.length;
-    returned = unescape(dc.substring(begin + prefix.length, end));
-\n
-if ( returned == s ) {
+name = \"cookie_test\"; \n \
+    s = (new Date().getSeconds()); \
+    document.cookie = name + \"=\" + s; \
+\n \
+    dc = document.cookie; \
+    prefix = name + \"=\"; \
+    begin = dc.indexOf(\"; \" + prefix); \
+\n \
+    if (begin == -1) { \
+        begin = dc.indexOf(prefix); \
+        if (begin != 0) returned = \"\"; \
+    } else \
+        begin += 2; \
+    end = document.cookie.indexOf(\";\", begin); \
+\n \
+    if (end == -1) \
+        end = dc.length; \
+    returned = unescape(dc.substring(begin + prefix.length, end)); \
+\n \
+if ( returned == s ) { \
 "
 
-#define J_TEST_TEXT2 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">A problem has been detected!</font></B></P>\");
-    document.write(\"<p><b><font size=\\\"+1\\\">Either you tried to use the BACK button to return to pages you\");
-    document.write(\" visited before the UW NetID login page, or the URL address you opened contains a shortened\");
-    document.write(\" domain name. </font></b></p>\");
-    document.write(\"<p>Review <A HREF=\\\"http://www.washington.edu/computing/web/login-problems.html\\\">Common\");
-    document.write(\" Problems With the UW NetID Login Page</A> for further advice.</p>\");
-    document.write(\"<p>&nbsp;</p>\");
+#define J_TEST_TEXT2 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">A problem has been detected!</font></B></P>\"); \
+    document.write(\"<p><b><font size=\\\"+1\\\">Either you tried to use the BACK button to return to pages you\"); \
+    document.write(\" visited before the UW NetID login page, or the URL address you opened contains a shortened\"); \
+    document.write(\" domain name. </font></b></p>\"); \
+    document.write(\"<p>Review <A HREF=\\\"http://www.washington.edu/computing/web/login-problems.html\\\">Common\"); \
+    document.write(\" Problems With the UW NetID Login Page</A> for further advice.</p>\"); \
+    document.write(\"<p>&nbsp;</p>\"); \
 "
 
-#define J_TEST_TEXT3 "    document.cookie = name + \"=; expires=Thu, 01-Jan-70 00:00:01 GMT\";
-}
-else {
+#define J_TEST_TEXT3 "    document.cookie = name + \"=; expires=Thu, 01-Jan-70 00:00:01 GMT\"; \
+} \
+else { \
 "
 
-#define J_TEST_TEXT4 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">This browser doesn't accept cookies!</font></B></P>\");
-    document.write(\"<p><b><font size=\\\"+1\\\">Your browser must <a href=\\\"http://www.washington.edu/computing/web/cookies.html\\\">accept cookies</a> in\");
-    document.write(\" order to use the UW NetID login page.</font></b></p>\");
-    document.write(\"<p>&nbsp;</p>\");
+#define J_TEST_TEXT4 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">This browser doesn't accept cookies!</font></B></P>\"); \
+    document.write(\"<p><b><font size=\\\"+1\\\">Your browser must <a href=\\\"http://www.washington.edu/computing/web/cookies.html\\\">accept cookies</a> in\"); \
+    document.write(\" order to use the UW NetID login page.</font></b></p>\"); \
+    document.write(\"<p>&nbsp;</p>\"); \
 "
 
-#define J_TEST_TEXT5 "}
-
-// -->
-</SCRIPT>
+#define J_TEST_TEXT5 "} \
+ \
+// --> \
+</SCRIPT> \
 "
 
 #define NOTOK_NO_G_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P>\
