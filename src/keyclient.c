@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.45 2004-04-08 21:09:06 fox Exp $
+ * $Id: keyclient.c,v 2.46 2004-04-09 16:56:30 fox Exp $
  */
 
 
@@ -581,14 +581,15 @@ jump:
     SSL_shutdown(ssl);
 
     if (!done) {
-        printf("operation failed: %s\n", buf);
+        printf("Failed: %s\n", buf);
+        r = 1;
     } else {
-        printf("operation succeeded: %s\n", buf);
+        r = 0;
     }
 
     close(sd);
     SSL_free(ssl);
     SSL_CTX_free(ctx);
 
-    return 0;
+    exit (r);
 }
