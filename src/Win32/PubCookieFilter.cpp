@@ -4,13 +4,14 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.27 2004-02-17 23:06:38 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.28 2004-03-17 02:06:11 ryanc Exp $
 //
 
 //#define COOKIE_PATH
 
 #include <windows.h>
 #include <stdio.h>
+#include <io.h>
 #include <direct.h>       // For mkdir
 #include <time.h>
 #include <process.h>
@@ -29,10 +30,31 @@ extern "C"
 #include "pbc_myconfig.h"
 #include "pbc_configure.h"
 #include "debug.h"
+#include "strlcpy.h"
+
 }
 #define HDRSIZE 56
 
-security_context *global_context;  //TODO:  Allow different context for each virutal server
+/* a place to hold all of the certificates and keys */
+struct security_context_s {
+   /* our private session keypair */
+   EVP_PKEY *sess_key;
+   X509 *sess_cert;
+   EVP_PKEY *sess_pub;
+
+   /* the granting key & certificate */
+   EVP_PKEY *g_key;
+   X509 *g_cert;
+   EVP_PKEY *g_pub;
+
+   /* my name */
+   char *myname;
+
+   /* the crypt_key */
+   unsigned char cryptkey[PBC_DES_KEY_BUF];
+};
+
+security_context *default_context;  //Read-only after init
 
 VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
 	char source[HDRSIZE];
@@ -286,7 +308,7 @@ BOOL Pubcookie_Init ()
 	   
 	WSADATA wsaData;
 
-	libpbc_config_init(p,"","");
+	libpbc_config_init(p,"",""); 
 
 	syslog(LOG_INFO,"Pubcookie_Init\n  %s\n",Pubcookie_Version);
 	
@@ -297,7 +319,7 @@ BOOL Pubcookie_Init ()
 	}
 
 	// Initialize Pubcookie Stuff
-	if (!libpbc_pubcookie_init(p,&global_context)) {  //TODO:  separate security contexts for each virtual server
+	if (!libpbc_pubcookie_init(p,&default_context)) {  
 		return FALSE;
 	}
 
@@ -1423,8 +1445,6 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 }  /* Pubcookie_Typer */
 
-
-
 BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 {
 	// The version of the web server this is running on
@@ -1473,6 +1493,114 @@ DWORD OnReadRawData (HTTP_FILTER_CONTEXT *pFC,
 
 }  /* OnReadRawData */
 
+/**
+ * generates the filename that stores the DES key
+ * @param peername the certificate name of the peer
+ * @param buf a buffer of at least 1024 characters which gets the filename
+ * @return always succeeds
+ */
+static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
+{
+
+    strlcpy(buf, PBC_KEY_DIR, 1024);
+
+    if (buf[strlen(buf)-1] != '\\') {
+        strlcat(buf, "\\", 1024);
+    }
+    strlcat(buf, peername, 1024);
+
+}
+
+bool MakeSecContext(pubcookie_dir_rec *p)
+{
+
+    /* the granting certificate */
+    char *g_certfile;
+    /* our crypt key */
+    char *cryptkeyfile = NULL;
+	size_t cb_read;
+    FILE *fp;
+
+	p->sectext = (security_context *)pbc_malloc(p, sizeof(security_context));
+
+	p->sectext->sess_key  = default_context->sess_key;
+	p->sectext->sess_cert = default_context->sess_cert;
+	p->sectext->sess_pub = default_context->sess_pub;
+	p->sectext->myname = p->server_hostname;
+
+    g_certfile = strdup(libpbc_config_getstring(p, "granting_cert_file", NULL));
+
+    if (!g_certfile) {
+        g_certfile = (char *)pbc_malloc(p, 1025); 
+        snprintf(g_certfile, 1024, "%s\\%s", PBC_KEY_DIR,
+                 "pubcookie_granting.cert");
+    }
+
+    /* test g_certfile; it's a fatal error if this isn't found */
+    if (access(g_certfile, R_OK | F_OK)) {
+        filterlog(p, LOG_ERR, 
+                         "security_context: couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
+        return false;
+    }
+
+    /* granting cert */
+    fp = pbc_fopen(p, g_certfile, "r");
+    if (!fp) {
+	filterlog(p, LOG_ERR, 
+                         "security_context: couldn't read granting certfile: pbc_fopen %s", 
+                         g_certfile); 
+	return false;
+    }
+    p->sectext->g_cert = (X509 *) PEM_read_X509(fp, NULL, NULL, NULL);
+    if (!p->sectext->g_cert) {
+	filterlog(p, LOG_ERR, 
+                         "security_context: couldn't parse granting certificate: %s", g_certfile);
+	return false;
+    }
+    p->sectext->g_pub = X509_extract_key(p->sectext->g_cert);
+
+    pbc_fclose(p, fp);
+
+    /* our crypt key */
+    cryptkeyfile = (char *)libpbc_config_getstring(p, "crypt_key", NULL);
+    if (cryptkeyfile) {
+        if (access(cryptkeyfile, R_OK | F_OK) == -1) {
+            filterlog(p, LOG_ERR, "security_context: can't access crypt key file %s, will try standard location", cryptkeyfile);
+            pbc_free(p, cryptkeyfile);
+            cryptkeyfile = NULL;
+        }
+    }
+    if (!cryptkeyfile) {
+        cryptkeyfile = (char *)pbc_malloc(p, 1024);
+        make_crypt_keyfile(p, p->sectext->myname, cryptkeyfile);
+        if (access(cryptkeyfile, R_OK | F_OK) == -1) {
+            filterlog(p, LOG_ERR, "security_context: can't access crypt key file %s (try setting crypt_key)", cryptkeyfile);
+            free(cryptkeyfile);
+            return false;
+        }
+    }
+
+    fp = pbc_fopen(p, cryptkeyfile, "rb");
+    if (!fp) {
+        filterlog(p, LOG_ERR, "security_context: couldn't read crypt key: pbc_fopen %s: %m", cryptkeyfile);
+        return false;
+    }
+
+    if( cb_read = fread(p->sectext->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
+        filterlog(p, LOG_ERR,
+			"can't read crypt key %s: short read: %d", cryptkeyfile, cb_read);
+        pbc_fclose(p, fp);
+        return false;
+    }
+
+    pbc_fclose(p, fp);
+    if (g_certfile != NULL)
+        pbc_free(p, g_certfile);
+    
+    return true;
+}
+
+
 DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
                         HTTP_FILTER_PREPROC_HEADERS* pHeaderInfo)
 {
@@ -1495,8 +1623,6 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 	
 	memset(p,0,sizeof(pubcookie_dir_rec));
-
-	p->sectext= global_context;  //TODO: Generate new context here
 
 	// IBM Network Dispatcher probes web sites with a URL of "/" and command of HEAD
 	// bail quickly if this is the case
@@ -1610,6 +1736,12 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	p->pszUser[0] = NULL;    // For OnAuth
 
 	filterlog(p, LOG_INFO, LogBuff);
+	
+	// Fill in security context
+	if (!MakeSecContext(p)) {
+		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error creating security context");
+		return SF_STATUS_REQ_ERROR;
+	}
 
    // Begin Pubcookie logic
 
@@ -2009,6 +2141,7 @@ DllMain(
     {
     case DLL_PROCESS_ATTACH:
 		{
+			Sleep(5000);
 			// Initialize Pubcookie Stuff - and Set Debug Trace Flags
 			fReturn = Pubcookie_Init ();
 		
