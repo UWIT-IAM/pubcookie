@@ -1,8 +1,24 @@
+/* 
 
-/* Copyright 1999, University of Washington.  All rights reserved. */
+    Copyright 1999, University of Washington.  All rights reserved.
 
-/*
-    $Id: libpubcookie.c,v 2.6 1999-08-17 01:27:20 willey Exp $
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More info: https:/www.washington.edu/pubcookie/
+    Written by the Pubcookie Team
+
+    this is the pubcookie library
+
+ */
+
+/* 
+    $Id: libpubcookie.c,v 2.7 1999-08-23 19:13:18 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -42,7 +58,6 @@ typedef  int pid_t;  /* win32 process ID */
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
-/*#include <envelope.h> */
 
 /* get a nice pretty log time                                                 */
 char *libpbc_time_string(time_t t)
