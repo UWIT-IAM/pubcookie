@@ -14,7 +14,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.37 2003-05-06 23:51:19 willey Exp $
+    $Id: flavor_basic.c,v 1.38 2003-05-14 23:45:33 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -199,6 +199,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 
     char * reason_html = NULL;
     char now[64];
+    char user_field[PBC_1K];
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
 
@@ -347,13 +348,31 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 
     snprintf(now, sizeof(now), "%d", time(NULL));
 
+    /* if it's a reauth then the user field can't be changed */
+    if ( reason == FLB_REAUTH && l->user != NULL ) {
+        snprintf(user_field, sizeof(user_field), "%s%s%s%s%s%s%s%s",
+		"<span style=\"background: #eeeeee; color:black\"><tt>",
+		l->user,
+		"</tt></span>\n", 
+        	"<INPUT TYPE=\"hidden\" NAME=\"",
+		"user",
+		"\" VALUE=\"",
+		l->user,
+		"\">\n");
+    }
+    else {
+        char *u = l->user != NULL ? l->user : (c != NULL ? c->user: NULL);
+        
+        snprintf(user_field, sizeof(user_field), "<INPUT TYPE=\"text\" NAME=\"user\" SIZE=\"20\" VALUE=\"%s\">", u != NULL ? u : "");
+    }
+
+
     /* Display the login form. */
     ntmpl_print_html(p, TMPL_FNAME,
-                     libpbc_config_getstring(p, "tmpl_login",
-                                            "login"),
+                     libpbc_config_getstring(p, "tmpl_login", "login"),
                     "loginuri", PBC_LOGIN_URI,
                     "message", reason_html != NULL ? reason_html : "",
-                    "user", l->user ? l->user : "",
+                    "user_field", user_field,
                     "curtime", now, 
                     "hiddenfields", hidden_fields,
                     "getcredhidden", getcred_hidden != NULL ? getcred_hidden : "",

@@ -30,7 +30,7 @@
      </tr>
      <tr>
       <td>User ID</td>
-      <td><input type="text" name="user"  size="24" maxlength="8" value="%user%"></td>
+      %user_field%
      </tr>
      <tr>
       <td>Password</td>
