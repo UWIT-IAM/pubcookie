@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.7 1999-01-13 20:42:00 willey Exp $
+    $Id: candv.c,v 1.8 1999-01-28 20:38:50 willey Exp $
  */
 
 #include <stdio.h>
@@ -121,15 +121,15 @@ int main(int argc, char **argv) {
     }
 
     if( cookie_data ) {
-	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
-	printf("version is:\t>%s<\n", (*cookie_data2).broken.version);
-	printf("type is:\t>%c<\n", (*cookie_data2).broken.type);
-	printf("cred is:\t>%c<\n", (*cookie_data2).broken.creds);
-	printf("serial is:\t>%d<\n", (*cookie_data2).broken.serial);
-	printf("appsrv_id is:\t>%s<\n", (*cookie_data2).broken.appsrv_id);
-	printf("app_id is:\t>%s<\n", (*cookie_data2).broken.app_id);
-	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.create_ts));
-	printf("last is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.last_ts));
+	printf("loser is:\t>%s<\n", (*cookie_data).broken.user);
+	printf("version is:\t>%s<\n", (*cookie_data).broken.version);
+	printf("type is:\t>%c<\n", (*cookie_data).broken.type);
+	printf("cred is:\t>%c<\n", (*cookie_data).broken.creds);
+	printf("serial is:\t>%d<\n", (*cookie_data).broken.serial);
+	printf("appsrv_id is:\t>%s<\n", (*cookie_data).broken.appsrv_id);
+	printf("app_id is:\t>%s<\n", (*cookie_data).broken.app_id);
+	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data).broken.create_ts));
+	printf("last is:\t>%s<\n", libpbc_time_string((*cookie_data).broken.last_ts));
     } 
     else {
 	printf("this sucks\n");
