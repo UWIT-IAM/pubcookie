@@ -72,4 +72,11 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
 int libpbc_rd_safe(const char *peer, const char *buf, const int len,
 		   const char *sigbuf, const int siglen);
 
+/**
+ * returns the public name of this service. this is what other systems
+ * should use as peer to send data here with libpbc_mk_safe()
+ * @returns a constant string, which should not be modified or free()ed
+ */
+const char *libpbc_get_cryptname(void);
+
 #endif
