@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is a pubcookie include file for macros that define the 
@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.32 2001-04-27 22:03:14 willey Exp $
+    $Id: pbc_config.h,v 1.33 2001-05-29 20:51:58 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG

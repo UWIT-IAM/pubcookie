@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the header file for the pubcookie library, things
@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.12 2000-09-25 18:05:28 willey Exp $
+    $Id: libpubcookie.h,v 1.13 2001-05-29 20:51:58 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB

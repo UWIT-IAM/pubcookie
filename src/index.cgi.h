@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the header file for index.cgi the pubcookie login cgi
@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.7 2001-04-23 23:15:37 willey Exp $
+    $Id: index.cgi.h,v 1.8 2001-05-29 20:51:58 willey Exp $
  */
 
 typedef struct {

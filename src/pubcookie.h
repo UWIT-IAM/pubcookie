@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the header file for static boring pubcookie stuff, for 
@@ -27,7 +27,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.9 2000-01-27 22:16:06 willey Exp $
+    $Id: pubcookie.h,v 1.10 2001-05-29 20:51:58 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN

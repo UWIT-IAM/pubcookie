@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is simply a header file with the version in it.  do you like that 
@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.25 2001-05-15 01:21:09 willey Exp $
+    $Id: pbc_version.h,v 1.26 2001-05-29 20:51:58 willey Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
