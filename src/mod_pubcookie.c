@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.1 1998-02-14 08:24:45 willey Exp $
+    $Id: mod_pubcookie.c,v 1.2 1998-03-06 02:38:27 willey Exp $
  */
 
 #include "httpd.h"
@@ -10,16 +10,16 @@
 #include "http_protocol.h"
 #include "util_script.h"
 #include <pem.h>
-#include <envelope.h>
+/* #include <envelope.h> */
 
-#define CERTFILE "cookie_cert.pem"
+#define CERTFILE "/usr/local/src/pubcookie/cookie_cert.pem"
 #define SIG_LEN 128
 #define COOKIENAME "pubcookie"
 #define AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define BAD_USER_HANDLER "pubcookie-bad-user"
-#define LOGIN_PAGE_STAT "http://dot.mcis.washington.edu/login/login-stat.html"
-#define LOGIN_PAGE_DYN "http://dot.mcis.washington.edu/login/login-dyn.html"
-#define LOGIN_DESC "http://dot.mcis.washington.edu/login/login-desc.html"
+#define LOGIN_PAGE_STAT "http://www.washington.edu/login/login-stat.html"
+#define LOGIN_PAGE_DYN "http://www.washington.edu/login/login-dyn.html"
+#define LOGIN_DESC "http://www.washington.edu/login/login-desc.html"
 #define DEFAULT_EXPIRE 1800
 #define BAD_AUTH 1
 #define BAD_USER 2
@@ -127,18 +127,18 @@ static void pubcookie_init(server_rec *s, pool*p) {
 						   &pubcookie_module);
 
   if(!(fp = pfopen(p, cfg->certfile ? cfg->certfile : CERTFILE, "r"))) {
-    fprintf(stderr, "Could not open the certificate file.\n");
+    fprintf(stderr, "PUBCOOKIE: Could not open the certificate file.\n");
     exit(1);
   }
 
   if(!(x509 = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509, PEM_STRING_X509,
 				     fp, NULL, NULL))) {
-    fprintf(stderr, "Could not read the certificate file.\n");
+    fprintf(stderr, "PUBCOOKIE: Could not read the certificate file.\n");
     exit(1);
   }
 
   if(!(public_key = X509_extract_key(x509))) {
-    fprintf(stderr, "Could not convert certificate to public key.\n");
+    fprintf(stderr, "PUBCOOKIE: Could not convert certificate to public key.\n");
     exit(1);
   }
 
@@ -310,7 +310,7 @@ const char *pubcookie_set_expire(cmd_parms *cmd, void *mconfig, char *v) {
   pubcookie_rec *cfg = (pubcookie_rec *) mconfig;
   
   if((cfg->expire = atoi(v)) <= 0) {
-    return "Could not convert expire parameter to nonnegative integer.";
+    return "PUBCOOKIE: Could not convert expire parameter to nonnegative integer.";
   }
   return NULL;
 }
