@@ -51,6 +51,7 @@ version of this document</a> is always the most up-to-date version.
   <li><a href="#krb5">Kerberos 5 Verifier Configuration</a></li>
   <li><a href="#ldap">LDAP Verifier Configuration</a></li>
   <li><a href="#clusters">Redundant Login Server Configuration</a></li>
+  <li><a href="#fastcgi">FastCGI Configuration</a></li>  
   <li><a href="#upgrading">Upgrading</a></li>  
   <li><a href="#apps">Supporting Application Servers</a></li>
   <li><a href="#apacheconfig">Appendix A: Apache Configuration</a></li>
@@ -232,8 +233,9 @@ service. Review the configure help for the build options.</p>
 
 <pre>$ ./configure --help</pre>
 
-<p>Refer also to the <a href="#krb5">Kerberos</a> and <a
-href="#ldap">LDAP</a> configuration sections.</p>
+<p>Refer also to the <a href="#krb5">Kerberos</a>, <a
+href="#ldap">LDAP</a>, and <a href="#fastcgi">FastCGI</a> configuration
+sections.</p>
 
 <h4><a name="keypairs">SSL &amp; Granting Key Pairs</a></h4>
 
@@ -757,6 +759,29 @@ name and settings. Use the
 <a href="config.html#login_servers"><tt>login_servers</tt></a>
 variable to configure keyserver to push new keys to its peers.</p>
 
+<h4><a name="fastcgi">FastCGI Configuration</a></h4>
+
+<p>The login cgi can run as a <a
+href="http://www.fastcgi.com/">FastCGI</a> process. This allows one or 
+more instances of the login cgi to persist and handle many requests 
+rather than just one.</p>
+
+<p>FastCGI support is enabled with the <tt>--with-fcgi=&lt;path to
+fcgi&gt;</tt> option. Example Apache configuration follows below; modify
+as needed.</p>
+
+<pre>LoadModule fastcgi_module     libexec/mod_fastcgi.so
+FastCgiConfig \
+       -appConnTimeout 0 \
+       -idle-Timeout 30 \
+       -init-start-delay 2 \
+       -killInterval 300 \
+       -listen-Queue-Depth 50 \
+       -maxProcesses 10 \
+       -maxClassProcesses 2 \
+       -minProcesses 1 \
+       -startDelay 10</pre>
+
 <h4><a name="upgrading">Upgrading</a></h4>
 
 <p>Servers running version 3.0.0 of the login server can build
@@ -878,7 +903,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.24 2004-05-15 15:57:15 dors Exp $
+$Id: install-login.html,v 1.25 2004-05-16 03:19:28 dors Exp $
 </pre>
 </body>
 

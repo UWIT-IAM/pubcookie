@@ -41,6 +41,7 @@
      * Bugzilla
      * cgic (*)
      * CVS
+     * FastCGI
      * GNU autoconf
      * MIT Kerberos
      * Microsoft IIS
