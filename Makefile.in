@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.45 2003-07-03 04:25:21 willey Exp $
+# $Id: Makefile.in,v 1.46 2003-09-24 00:48:48 willey Exp $
 
 @SET_MAKE@
 
@@ -92,6 +92,7 @@ UTIL_SRC=$(srcdir)/src/pbc_key_local.c \
 		 $(srcdir)/src/keyclient.c
 
 VERIFIERS=$(builddir)/src/verify_alwaystrue.o \
+		  $(builddir)/src/verify_fork.o \
 		  $(builddir)/src/verify_kerberos4.o \
 		  $(builddir)/src/verify_kerberos5.o \
 		  $(builddir)/src/verify_shadow.o \
@@ -102,6 +103,7 @@ VERIFIERS=$(builddir)/src/verify_alwaystrue.o \
 VERIFY_SRC=$(srcdir)/src/verify.c \
 		   @SNPRINTF_C@ \
 		   $(srcdir)/src/verify_alwaystrue.c \
+		   $(srcdir)/src/verify_fork.c \
 		   $(srcdir)/src/verify_kerberos4.c \
 		   $(srcdir)/src/verify_kerberos5.c \
 		   $(srcdir)/src/verify_shadow.c \

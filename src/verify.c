@@ -6,7 +6,7 @@
 /** @file verify.c
  * Verifier base stuff
  *
- * $Id: verify.c,v 1.19 2003-07-03 04:25:21 willey Exp $
+ * $Id: verify.c,v 1.20 2003-09-24 00:48:48 willey Exp $
  */
 
 
@@ -44,6 +44,7 @@ extern verifier kerberos5_verifier;
 extern verifier ldap_verifier;
 extern verifier alwaystrue_verifier;
 extern verifier shadow_verifier;
+extern verifier fork_verifier;
 
 /* verifiers that we actually compiled */
 static verifier *verifiers[] = {
@@ -52,6 +53,7 @@ static verifier *verifiers[] = {
     &ldap_verifier,
     &alwaystrue_verifier,
     &shadow_verifier,
+    &fork_verifier,
     NULL
 };
 
