@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.8 1999-01-28 20:38:50 willey Exp $
+    $Id: candv.c,v 1.9 1999-02-10 19:52:33 willey Exp $
  */
 
 #include <stdio.h>
@@ -24,7 +24,7 @@ void usage(const char *progname) {
 int main(int argc, char **argv) {
     unsigned char type;
     unsigned char creds;
-    int serial=23;
+    int serial=2147483647;
     char user[PBC_USER_LEN];
     unsigned char appsrv_id[PBC_APPSRV_ID_LEN];
     unsigned char app_id[PBC_APP_ID_LEN];
@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
     else
         v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
 
+    printf("cook up a cookie\n");
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
 
     printf("please wait while take a quick nap\n");
@@ -92,8 +93,10 @@ int main(int argc, char **argv) {
         printf("test failed: cookie couldn't be unbundled\n");
 	exit (1);
     }
+    printf("update that cookie\n");
     updated_cookie = libpbc_update_lastts(cookie_data, s_ctx_plus, c_stuff);
 
+    printf("verify and show me the cookie\n");
     cookie_data2 = libpbc_unbundle_cookie(updated_cookie, v_ctx_plus, c_stuff);
     if( cookie_data2 ) {
 	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
@@ -110,11 +113,13 @@ int main(int argc, char **argv) {
 	printf("this sucks\n");
     } 
 
+    printf("cook up another cookie\n");
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
 
     printf("please wait while take a quick nap\n");
     sleep(2);
 
+    printf("verify and show me the cookie\n");
     if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
 	printf("test failed: cookie couldn't be unbundled\n");
         exit (1);
