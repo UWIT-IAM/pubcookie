@@ -1,0 +1,631 @@
+<html>
+<head>
+<title>Pubcookie Apache Module - Install Guide 3.0</title>
+</head>
+
+<h1>Pubcookie Apache Module - Install Guide 3.0</h1>
+
+<p><i>Included on this page:</i></p>
+
+<ul>
+<li><a href="#obj">Objectives</a></li>
+<li><a href="#pre">Prerequisites</a></li>
+<li><a href="#build">Build Pubcookie (DSO or static)</a></li>
+<li><a href="#install">Install Supporting Files (Keys &amp; Certs)</a></li>
+<li><a href="#config">Configure Apache (httpd.conf)</a></li>
+<li><a href="#test">Test Pubcookie (with sample .htaccess)</a></li>
+</ul>
+
+<h4><a name="obj">Objectives</a></h4>
+
+<p>This guide helps you install the Pubcookie application server
+software on Apache. Objectives include:</p>
+
+<ul>
+
+<li>
+<p>how to install mod_pubcookie 3.0 on an Apache web server</p>
+</li>
+
+<li>
+<p>how to configure Apache as a Pubcookie application server</p>
+</li>
+
+<li>
+<p>how to test mod_pubcookie to confirm that authentication
+works</p>
+</li>
+
+</ul>
+
+<h4><a name="pre">Prerequisites</a></h4>
+
+<p>Before you begin:</p>
+
+<ul>
+<li>
+<p>If you deployed your Pubcookie login server, locate your
+granting certificate (e.g pubcookie_granting.cert). Also, locate
+the <b>mkc_key_local</b> utility from the Pubcookie login server
+software distribution. You will use it to make an encryption key
+for your Apache server.</p>
+</li>
+
+<li>
+<p>If you didn't deploy your Pubcookie login server (e.g.
+<em>weblogin.example.edu</em>), contact the people at your
+institution who did . They will have information about obtaining
+your login server's granting certificate and an encryption key for
+your server.</p>
+</li>
+</ul>
+
+<p>System requirements for your Apache server:</p>
+
+<ul>
+<li>Unix platform</li>
+
+<li>Accurate system time</li>
+
+<li>A domain name (e.g. <em>appserver.example.edu</em>) registered
+in DNS within the same subdomain as your Pubcookie login server
+(e.g. <i>weblogin.example.edu</i>).</li>
+
+<li>A working <a href="http://www.apache.org/httpd.html">Apache</a>
+server (version 1.3.x) with: 
+<ul>
+<li><a href="http://www.modssl.org">mod_ssl</a> or <a href=
+"http://www.apache-ssl.org">Apache-SSL</a> patches</li>
+
+<li><a href="http://www.openssl.org">OpenSSL</a></li>
+
+<li>SSL certificate</li>
+</ul>
+</li>
+</ul>
+
+<h4><a name="build">Build Pubcookie</a></h4>
+
+<p>mod_pubcookie can be built as a Dynamic Shared Object (DSO) or
+it can be built into Apache itself (statically linked). Before you
+build mod_pubcookie, install and test Apache with SSL support,
+which is required.</p>
+
+<p><b>General guidelines for adding SSL support to Apache:</b></p>
+
+<p>If your Apache server does not already support SSL, here are
+some guidelines for adding it. Note: this is just an overview;
+you'll have to look elsewhere for specific instructions if you need
+them.</p>
+
+<ol>
+<li>
+<p>Build and install OpenSSL.</p>
+</li>
+
+<li>
+<p>Compile Apache with SSL support by following the directions
+accompanying the mod_ssl or Apache-SSL source.</p>
+</li>
+
+<li>
+<p>Generate a private key and obtain a SSL server certificate and
+install them as directed by the mod_ssl or Apache-SSL
+documentation.</p>
+</li>
+
+<li>
+<p>Build and install Apache. This is when you will decide to build
+modules dynamically or statically. If you use apxs (the Apache DSO
+module builder), be sure to link it with OpenSSL.</p>
+</li>
+
+<li>
+<p>Verify that Apache with SSL support works before you proceed to
+build mod_pubcookie.</p>
+</li>
+</ol>
+
+<p><b>To build mod_pubcookie as a DSO using apxs:</b></p>
+
+<ol>
+<li>
+<p><a href="download.html">Download</a> the mod_pubcookie
+distribution.</p>
+</li>
+
+<li>
+<p>Unzip and untar the distribution.</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% gunzip -cd mod_pubcookie-1.77.tar.gz | tar xvf -</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>Edit Makefile.apxs for your environment. For example, change the
+value of APXS to the location of the apxs executable; change
+SSL_BASE to the location of your OpenSSL libraries.</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% pico Makefile.apxs</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>Build the DSO module using Makefile.apxs.</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% make -f Makefile.apxs</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>Copy the module to your module library directory. For
+example:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% cp mod_pubcookie.so /etc/httpd/modules</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>Edit your Apache server configuration file (httpd.conf), adding
+new LoadModule and AddModule directives to the appropriate
+sections. These directives often go right before SSL. For
+example:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>&lt;IfDefine HAVE_SSL&gt;
+LoadModule pubcookie_module   modules/mod_pubcookie.so
+LoadModule ssl_module         modules/libssl.so
+&lt;/IfDefine&gt;
+
+...
+
+&lt;IfDefine HAVE_SSL&gt;
+AddModule mod_pubcookie.c
+AddModule mod_ssl.c
+&lt;/IfDefine&gt;
+</pre>
+</td>
+</tr>
+</table>
+
+<p>Again, this is just an example. Your httpd.conf may differ.</p>
+</li>
+</ol>
+
+<p><b>To build mod_pubcookie as a built-in (statically linked)
+module:</b></p>
+
+<ol>
+<li>
+<p><a href="download.html">Download</a> the mod_pubcookie
+distribution.</p>
+</li>
+
+<li>
+<p>Unzip and untar the distribution where you would put source code
+for other modules, e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% mv mod_pubcookie-1.77.tar.gz /usr/local/apache/src/modules/pubcookie
+% cd /usr/local/apache/src/modules/pubcookie
+% gunzip -cd mod_pubcookie-1.77.tar.gz | tar xvf -
+</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>If you use the top level Apache Configure script, you will need
+to add the following options to it:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>--activate-module=src/modules/pubcookie/mod_pubcookie.a
+--enable-module=pubcookie
+</pre>
+</td>
+</tr>
+</table>
+
+<p>Or, if you use a src level Configure script, add the module
+listing to the Configuration file and run the Configure
+scripts.</p>
+</li>
+
+<li>
+<p>After running the configure scripts, run 'make' to create a new
+Apache daemon with mod_pubcookie now statically linked in.</p>
+</li>
+
+<li>
+<p>Install your new Apache daemon.</p>
+</li>
+</ol>
+
+<h4><a name="install">Install Supporting Files (Keys &amp;
+Certs)</a></h4>
+
+<p>Now some keys and certificates must be generated and installed
+as part of the installation process.</p>
+
+<p><b>To prepare a directory for keys and certificates:</b></p>
+
+<ol>
+<li>
+<p>Choose a good location for the keys and certificates used by
+mod_pubcookie. We'll call it your "pubcookie directory". The
+default is <b>/usr/local/pubcookie</b>, so, e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% mkdir /usr/local/pubcookie
+</pre>
+</td>
+</tr>
+</table>
+
+<p>Non-privileged accounts should not be able to access files in
+this directory.</p>
+</li>
+</ol>
+
+<p><b>To create and install a crypt key file (c_key) for your
+server:</b></p>
+
+<ol>
+<li>
+<p>Determine the IP address of your Apache server. The correct
+address is very important.</p>
+</li>
+
+<li>
+<p>Generate an encryption key, <b>c_key,</b> based on this IP
+address. Use the <b>mkc_key_local</b> utility from the Pubcookie
+login server distribution. For example:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% mkc_key_local -a 209.211.239.208 &gt; c_key
+</pre>
+</td>
+</tr>
+</table>
+
+<p>If you did not deploy your Pubcookie login server, contact the
+people who did. They can generate the encryption key for you.</p>
+</li>
+
+<li>
+<p>Place the <b>c_key</b> file in your pubcookie directory,
+e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% mv c_key /usr/local/pubcookie
+</pre>
+</td>
+</tr>
+</table>
+
+<p>During configuration, this file corresponds with the
+PubcookieCryptKeyfile directive.</p>
+</li>
+</ol>
+
+<p><b>To install your granting certificate:</b></p>
+
+<ol>
+<li>
+<p>Obtain a copy of your Pubcookie login server's granting
+certificate (e.g. pubcookie_granting.cert). This cert is created as
+part of deploying the Pubcookie login server. It holds the login
+server's public key, which is used to verify the signature of the
+cookies sent from the login server to your application server.</p>
+</li>
+
+<li>
+<p>Place pubcookie_granting.cert in your pubcookie directory,
+e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% mv pubcookie_granting.cert /usr/local/pubcookie
+</pre>
+</td>
+</tr>
+</table>
+
+<p>During configuration, this certificate corresponds with the
+PubcookieGrantingCertfile directive.</p>
+</li>
+</ol>
+
+<p><b>To create and install your session key pair:</b></p>
+
+<ol>
+<li>
+<p>Generate a key pair for signing session cookies. For example,
+using openssl:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% openssl req -new -x509 -nodes -out file-for-cert \
+-newkey rsa:1024 -keyout file-for-key
+</pre>
+</td>
+</tr>
+</table>
+
+<p>If you already have a private key, you can use something
+like:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% openssl req -new -x509 -nodes -out file-for-cert \
+-key file-with-key
+</pre>
+</td>
+</tr>
+</table>
+
+<p>During configuration, file-for-key (or file-with-key)
+corresponds with the PubcookieSessionKeyfile directive and
+file-for-cert corresponds with the PubcookieSessionCertfile
+directive. Example filenames might be pubcookie_session.key and
+pubcookie_session.cert, respectively.</p>
+</li>
+
+<li>
+<p>Copy your PubcookieSessionKeyfile and PubcookieSessionCertfile
+to your pubcookie directory, e.g.;</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% cp file-for-key /usr/local/pubcookie/pubcookie_session.key
+% cp file-for-cert /usr/local/pubcookie/pubcookie_session.cert
+</pre>
+</td>
+</tr>
+</table>
+</li>
+</ol>
+
+<h4><a name="config">Configure Apache (httpd.conf)</a></h4>
+
+<p>Before restarting your Apache daemon, configure the directives
+required by mod_pubcookie. Take this opportunity also to add any
+other system-wide configuration you want for your Pubcookie
+application server.</p>
+
+<p><b>To configure the necessary mod_pubcookie directives:</b></p>
+
+<ol>
+<li>
+<p>Edit your Apache server configuration file (httpd.conf),
+e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% pico httpd.conf</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>Add a new section for Pubcoookie directives. mod_pubcookie
+generally requires the following directives:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre># Pubcookie Configuration 
+PubcookieCryptKeyfile /usr/local/pubcookie/c_key
+PubcookieGrantingCertfile /usr/local/pubcookie/pubcookie_granting.cert
+PubcookieSessionCertfile /usr/local/pubcookie/pubcookie_session.cert
+PubcookieSessionKeyfile /usr/local/pubcookie/pubcookie_session.key
+PubcookieLogin https://weblogin.example.edu/
+PubcookieInactiveExpire -1
+PubcookieAuthTypeNames EGNetID
+</pre>
+</td>
+</tr>
+</table>
+
+<p>The first four directives should be set according to the
+location and filenames from the previous section. Adjust the paths
+and filenames appropriately. For a definition of each directive,
+refer to the <a href="mod_pubcookie-directives.html">configuration
+directives</a> reference.</p>
+
+<p>Note: the <a href=
+"mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
+directive is new in mod_pubcookie 1.77 and it is required. It
+defines the strings that mod_pubcookie enables as additional
+arguments to the <a href=
+"mod_pubcookie-directives.html#PubcookieAuthType">AuthType</a>
+directive.</p>
+</li>
+
+<li>
+<p>It is likely that you will want to permit the use of Pubcookie
+via .htaccess files. To do so, you may need to adjust your server's
+<a href=
+"http://httpd.apache.org/docs/mod/core.html#allowoverride">AllowOverride</a>
+setting, e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>AllowOverride AuthConfig</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>That's it for installation and configuration. Please start your
+server.</p>
+</li>
+</ol>
+
+<p><b>Optional Recommended Configuration For Abbreviated Domain
+Names</b></p>
+
+<p>Because HTTP cookies must be scoped to a specific
+fully-qualified domain, the use of abbreviated domain names (e.g.
+"<em>appserver</em>" instead of "<em>appserver.example.edu</em>")
+affects cookies which in tern affects and causes problems for
+Pubcookie. To remedy this, you might use <a href=
+"http://www.apache.org/docs/mod/mod_rewrite.html">mod_rewrite</a>
+to rewrite (and redirect) abbreviated domain names to
+fully-qualified domain names. Here is a sample configuration (for
+httpd.conf):</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>RewriteEngine on
+RewriteCond %{HTTP_HOST} !^$
+RewriteCond %{HTTP_HOST} !\.example\.edu
+RewriteRule ^/(.*)$ https://%{SERVER_NAME}/$1 [L,R]
+</pre>
+</td>
+</tr>
+</table>
+
+<p>This rule is for a https requests only; you would need something
+similar for http requests. You may also need to add additional
+rules for subdomains (e.g. <i>subdomain.example.edu</i>).
+Additionally, abbreviated domain names must be in your ServerAlias
+list.</p>
+
+<h4><a name="test">Test Pubcookie (with sample .htaccess)</a></h4>
+
+<p><b>To test the Pubcookie Apache module:</b></p>
+
+<ol>
+<li>
+<p>Create a new directory within your DocumentRoot. For
+example:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>% cd /var/www/html
+% mkdir testapp
+% cd testapp
+</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>In this directory, create a new Web page:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>pico index.html</pre>
+</td>
+</tr>
+</table>
+
+<p>Add a simple message to the file such as "Hello world - I'm
+Pubcookie-protected!!" and then save it.</p>
+</li>
+
+<li>
+<p>Create a .htaccess file:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>pico .htaccess</pre>
+</td>
+</tr>
+</table>
+</li>
+
+<li>
+<p>Add the following directives to the .htaccess file:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>AuthType EGNetID
+PubcookieAppID "TestApp"
+require valid-user
+</pre>
+</td>
+</tr>
+</table>
+
+<p>Substitute the appropriate argument for the AuthType directive,
+based on the string you defined with the AuthTypeNames directive in
+your httpd.conf (see above). Note that using these directives in a
+.htaccess file requires the <tt>AllowOverride AuthConfig</tt>
+configuration (also mentioned above).</p>
+</li>
+
+<li>
+<p>Start a Web browser and open the address for the test directory,
+e.g.:</p>
+
+<table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td>
+<pre>https://appserver.example.edu/testapp/
+</pre>
+</td>
+</tr>
+</table>
+
+<p>You should be redirected to your Pubcookie login server.</p>
+</li>
+
+<li>
+<p>When you log in as requested, you will be redirected back to the
+test directory and you should see your "Hello world!" message. If
+you do, you have successfully installed and configured Pubcookie.
+Congratulations!</p>
+</li>
+</ol>
+
+</body>
+</html>

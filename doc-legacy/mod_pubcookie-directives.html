@@ -1,0 +1,345 @@
+<html>
+<head>
+<title>Pubcookie Apache Module - Configuration Directives</title>
+</head>
+
+<h1>Pubcookie Apache Module - Configuration Directives</h1>
+
+<p><b>mod_pubcookie</b> uses the following run-time configuration
+directives:</p>
+
+<ul>
+<li><a href="#AuthType">AuthType</a></li>
+<li><a href="#PubcookieInactiveExpire">PubcookieInactiveExpire</a></li>
+<li><a href="#PubcookieHardExpire">PubcookieHardExpire</a></li>
+<li><a href="#PubcookieAppID">PubcookieAppID</a></li>
+<li><a href="#PubcookieDirDepthforAppID">PubcookieDirDepthforAppID</a></li>
+<li><a href="#PubcookieAppSrvID">PubcookieAppSrvID</a></li>
+<li><a href="#PubcookieLogin">PubcookieLogin</a></li>
+<li><a href="#PubcookieGrantingCertfile">PubcookieGrantingCertfile</a></li>
+<li><a href="#PubcookieSessionKeyfile">PubcookieSessionKeyfile</a></li>
+<li><a href="#PubcookieSessionCertfile">PubcookieSessionCertfile</a></li>
+<li><a href="#PubcookieCryptKeyfile">PubcookieCryptKeyfile</a></li>
+<li><a href="#PubcookieSuperDebug">PubcookieSuperDebug</a></li>
+<li><a href="#PubcookieEndSession">PubcookieEndSession</a></li>
+<li><a href="#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a></li>
+<li><a href="#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a></li>
+<li><a href="#PubcookieAddlRequest">PubcookieAddlRequest</a></li>
+</ul>
+
+<hr>
+
+<h3><a name="AuthType">AuthType directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> AuthType <em>type</em><br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
+and Apache 1.2 and later.</p>
+
+<p>This directive selects the type of user authentication applied to a
+resource. It must be accompanied by a <a href=
+"http://www.apache.org/docs/mod/core.html#require">require</a> directive when
+used with an authentication type handled by mod_pubcookie.</p>
+
+<p>The type is case-insensitive and can be any string defined by <a href=
+"#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a> or supported as an
+existing core <a href=
+"http://www.apache.org/docs/mod/core.html#authtype">AuthType</a> (e.g.
+Basic).</p>
+
+<h3><a name="PubcookieInactiveExpire">PubcookieInactiveExpire
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieInactiveExpire
+<em>expire-time-in-seconds</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The duration of inactivity allowed between a user and an application before
+the session expires. Expiration due to inactivity causes a loop thru the login
+server to obtain a new granting cookie.</p>
+
+<p>The default value is 30 minutes which is defined as PBC_DEFAULT_INACT_EXPIRE
+in pbc_config.h. Minimium inactivity timeout is five minutes.</p>
+
+<p>A value of -1 turns off the check for inactivity.</p>
+
+<h3><a name="PubcookieHardExpire">PubcookieHardExpire directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieHardExpire
+<em>expire-time-in-seconds</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The maximum duration of an application session, regardless of user activity.
+Expiration due to reaching the hard timeout causes a loop thru the login server
+to obtain a new granting cookie.</p>
+
+<p>The default value is eight hours which is defined as PBC_DEFAULT_HARD_EXPIRE
+in pbc_config.h. The minimium is one hour; the maximium is twelve hours.</p>
+
+<h3><a name="PubcookieAppID">PubcookieAppID directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieAppID
+<em>application-name</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The name of the application.</p>
+
+<p>The default is the directory path.</p>
+
+<h3><a name="PubcookieDirDepthforAppID">PubcookieDirDepthforAppID
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieDirDepthforAppID
+<em>depth</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>Allows you to limit the length of default AppIDs to a specific number of
+directories.</p>
+
+<p>The depth is the number of directories that the AppID will be truncated to.
+e.g.:</p>
+
+<table>
+<tr>
+<td>/</td>
+<td>0</td>
+</tr>
+
+<tr>
+<td>/blah/</td>
+<td>1</td>
+</tr>
+
+<tr>
+<td>/blah/asdf/</td>
+<td>2</td>
+</tr>
+</table>
+
+<p>This directive has no effect if <a href="#PubcookieAppID">PubcookieAppID</a>
+is specified.</p>
+
+<h3><a name="PubcookieAppSrvID">PubcookieAppSrvID directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieAppSrvID <em>AppServerID</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>Allows you to specify an AppSrvID string, instead of using the default based
+on your <a href=
+"http://www.apache.org/docs/mod/core.html#servername">ServerName</a>.</p>
+
+<h3><a name="PubcookieLogin">PubcookieLogin directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieLogin
+<em>url-of-login-server</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The location of the login cgi on the pubcookie login server.</p>
+
+<p>The default is <a href=
+"https://weblogin.washington.edu/">https://weblogin.washington.edu/</a> which
+is defined as PBC_LOGIN_URI in pbc_config.h.</p>
+
+<h3><a name="PubcookieGrantingCertfile">PubcookieGrantingCertfile
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieGrantingCertfile
+<em>filename</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The name of the file containing the login server's certificate used to
+verify granting cookies.</p>
+
+<p>The default is /usr/local/pubcookie/pubcookie_granting.cert which is defined
+as PBC_G_CERTFILE in pbc_config.h.</p>
+
+<h3><a name="PubcookieSessionKeyfile">PubcookieSessionKeyfile
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieSessionKeyfile
+<em>filename</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The name of the file containing the key for session cookies.</p>
+
+<p>The default is /usr/local/pubcookie/pubcookie_session.key which is defined
+as PBC_S_KEYFILE in pbc_config.h.</p>
+
+<h3><a name="PubcookieSessionCertfile">PubcookieSessionCertfile
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieSessionCertfile
+<em>filename</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later.</p>
+
+<p>The name of the file containing the certificate for session cookies.</p>
+
+<p>The default is /usr/local/pubcookie/pubcookie_session.cert which is defined
+as PBC_S_CERTFILE in pbc_config.h.</p>
+
+<h3><a name="PubcookieCryptKeyfile">PubcookieCryptKeyfile directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieCryptKeyfile <em>filename</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later<br>
+</p>
+
+<p>The name of the file containing the shared key for encrypting/decrypting
+cookies.</p>
+
+<p>The default is /usr/local/pubcookie/c_key which is defined as
+PBC_CRYPT_KEYFILE in pbc_config.h.</p>
+
+<h3><a name="PubcookieSuperDebug">PubcookieSuperDebug directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieSuperDebug on|off<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
+and Apache 1.2 and later.</p>
+
+<p>Toggles logging of voluminous debugging information.</p>
+
+<h3><a name="PubcookieEndSession">PubcookieEndSession directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieEndSession redirect | clearLogin |
+on | off<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 1.69
+and later and Apache 1.3 and later.</p>
+
+<p>This directive is used to end an application session. It should be placed in
+a child directory or explicitly have the same <a href=
+"l#PubcookieAppID">PubcookieAppID</a> as the application it is going to affect.
+(E.g., if /webapp/ defines the AuthType directive, then /webapp/logout/ would
+typically be used to define PubcookieEndSession.)</p>
+
+<p>With arguments <tt>on</tt>, <tt>redirect</tt>, and <tt>clearLogin</tt> the
+session cookie is cleared. Re-requesting the resource will require a trip to
+the login server to retrieve a new granting cookie. Note: session cookies of
+other applications are not cleared by the PubcookieEndSession directive, only
+the session cookie applicable to the scope of the current application.</p>
+
+<p>After clearing the session cookie, the <tt>redirect</tt> and
+<tt>clearLogin</tt> arguments redirect the browser back to the login server
+which generates a response page. The <tt>clearLogin</tt> argument also causes
+the login server to clear the user's login cookie.</p>
+
+<p>The <tt>off</tt> argument turns off all PubcookieEndSession
+functionality.</p>
+
+<h3><a name="PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieSessionCauseReAuth on|off<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
+and Apache 1.2 and later.</p>
+
+<p>When set to <tt>on</tt>, the PubcookieSessionCauseReAuth directive overrides
+the login server's single sign-on functionality, forcing each user to re-enter
+credentials when requesting an application for the first time or when a session
+timeout has occurred.</p>
+
+<h3><a name="PubcookieAuthTypeNames">PubcookieAuthTypeNames directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieAuthTypeNames name1 [name2
+...]<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 1.77
+and higher and Apache 1.3 and later.</p>
+
+<p>This directive is <b>required</b> in mod_pubcookie 1.77 and higher. It
+defines the strings that mod_pubcookie enables as new arguments to the <a href=
+"#PubcookieAuthType">AuthType</a> directive. All users upgrading to
+mod_pubcookie 1.77 or higher will need to add this directive to their server
+config.</p>
+
+<h3><a name="PubcookieAddlRequest">PubcookieAddlRequest directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieAuthTypeNames ???<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config?, virtual host?, 
+directory?, .htaccess? <br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
+3.0 and higher and Apache 1.3 and later.</p>
+
+<p>This directive allows the user (the application?) to give arbitrary
+requests to the login server. Send the following options to the login
+server along with authentication requests.</p>
+
+</body>
+</html>
+
