@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.1 2002-06-05 16:52:29 greenfld Exp $
+    $Id: keyserver.c,v 2.2 2002-06-07 17:40:21 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -44,6 +44,19 @@
 #ifndef KEYSERVER_CGIC
 static SSL *ssl = NULL;
 
+/**
+ * log all outstanding errors from OpenSSL, attributing them to 'func'
+ * @param func the function to attribute errors to
+ */
+static const char *logerrstr(const char *func)
+{
+    unsigned long r;
+
+    while (r = ERR_get_error()) {
+	syslog(LOG_ERR, "%s: %s", func, ERR_error_string(r, NULL));
+    }
+}
+
 void myprintf(const char *format, ...)
 {
     va_list args;
@@ -56,7 +69,7 @@ void myprintf(const char *format, ...)
     va_end(args);
 
     if (SSL_write(ssl, buf, strlen(buf)) < 0) {
-	syslog(LOG_ERR, "SSL_write '%s' failed", buf);
+	logerrstr("SSL_write");
 	exit(1);
     }
 }
@@ -73,6 +86,7 @@ void myprintf(const char *format, ...)
 
 
 int debug = 1;
+const char *keyfile = "server.pem";
 
 enum optype {
     NOOP,
@@ -82,10 +96,67 @@ enum optype {
 };
 
 /**
+ * iterate through the 'login_servers' configuration variable, contacting
+ * each one and setting my copy of peer's key on it
+ */
+void pushkey(const char *peer)
+{
+    char **lservers = libpbc_config_getlist("login_servers");
+    char hostname[1024];
+    int x;
+    int res;
+
+    if (!lservers) {
+	/* only me here */
+	return;
+    }
+
+    if (gethostname(hostname, sizeof(hostname)) < 0) {
+	syslog(LOG_ERR, "gethostname(): %m");
+	perror("gethostname");
+	exit(1);
+    }
+
+    x = 0;
+    for (x = 0; lservers[x] != NULL; x++) {
+	if (!strcasecmp(hostname, lservers[x])) {
+	    /* don't push the key to myself */
+	    continue;
+	}
+
+	syslog(LOG_INFO, "setting %s's key on %s", peer, lservers[x]);
+
+	res = fork();
+	if (res < 0) {
+	    syslog(LOG_ERR, "fork(): %m");
+	    perror("fork");
+	    exit(1);
+	}
+	if (fork() == 0) {
+	    /* child */
+	    res = execl("keyclient", "keyclient", 
+			"-L", lservers[x],
+			"-c", keyfile, 
+			"-u", "-h", peer, NULL);
+	    syslog(LOG_ERR, "execl(): %m");
+	    exit(2);
+	}
+	
+	/* parent */
+	res = wait(&res);
+	syslog(LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
+	       res == 0 ? "done" : "error");
+    }
+
+    free(lservers);
+}
+
+/**
  * do the keyserver operation
  * @param peer the name of the client that's connected to us
  * @param op the operation to perform, one of GENKEY, SETKEY, FETCHKEY
  * @param newkey if the operation is SETKEY, "peer;base64(key)"
+ * @return 0 on success, non-zero on error
  */
 int doit(const char *peer, enum optype op, const char *newkey)
 {
@@ -102,11 +173,13 @@ int doit(const char *peer, enum optype op, const char *newkey)
 	assert(newkey == NULL);
 	if (libpbc_generate_crypt_key(peer) < 0) {
 	    myprintf("NO generate_new_key() failed\r\n");
-	    /* xxx log */
+	    syslog(LOG_ERR, "generate_new_key() failed");
+
 	    return(1);
 	}
 	
-	/* xxx push the new key to the other login servers */
+	/* push the new key to the other login servers */
+	pushkey(peer);
 
 	break;
     }
@@ -164,6 +237,8 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
     myprintf("OK %s\r\n", buf);
     fflush(stdout);
+    
+    return 0;
 }
 
 #ifndef KEYSERVER_CGIC
@@ -175,6 +250,7 @@ void usage(void)
     printf("  -a                 : expect keyfile in ASN.1\n");
     printf("  -p (default)       : expect keyfile in PEM\n");
     printf("  -C <cert file>     : CA cert to use for client verification\n");
+    printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
 }
 
 static int verify_callback(int ok, X509_STORE_CTX * ctx)
@@ -211,8 +287,8 @@ int main(int argc, char *argv[])
 {
     int c;
     int filetype = SSL_FILETYPE_PEM;
-    const char *keyfile = "server.pem";
     const char *cafile = NULL;
+    const char *cadir = NULL;
     char *peer = NULL;
     char *p;
     char buf[2048];
@@ -222,7 +298,7 @@ int main(int argc, char *argv[])
     X509 *client_cert;
     int r;
 
-    while ((c = getopt(argc, argv, "apc:ndh:C:")) != -1) {
+    while ((c = getopt(argc, argv, "apc:ndh:C:D:")) != -1) {
 	switch (c) {
 	case 'a':
 	    filetype = SSL_FILETYPE_ASN1;
@@ -242,6 +318,11 @@ int main(int argc, char *argv[])
 	    cafile = strdup(optarg);
 	    break;
 
+	case 'D':
+	    /* 'optarg' is a directory of CAs */
+	    cadir = strdup(optarg);
+	    break;
+
 	case '?':
 	default:
 	    usage();
@@ -249,15 +330,27 @@ int main(int argc, char *argv[])
 	}
     }
 
+    /* xxx log connection information */
+
+
     /* initialize the OpenSSL connection */
     SSL_library_init();
     
     ctx = SSL_CTX_new(TLSv1_server_method());
 
     /* setup the correct certificate */
-    SSL_CTX_use_certificate_file(ctx, keyfile, filetype);
-    SSL_CTX_use_PrivateKey_file(ctx, keyfile, filetype);
-    SSL_CTX_load_verify_locations(ctx, cafile, NULL);
+    if (!SSL_CTX_use_certificate_file(ctx, keyfile, filetype)) {
+	logerrstr("SSL_CTX_use_certificate_file");
+	exit(1);
+    }
+    if (!SSL_CTX_use_PrivateKey_file(ctx, keyfile, filetype)) {
+	logerrstr("SSL_CTX_use_PrivateKey_file");
+	exit(1);
+    }
+    if (!SSL_CTX_load_verify_locations(ctx, cafile, cadir)) {
+	logerrstr("SSL_CTX_load_verify_locations");
+	exit(1);
+    }
 
     SSL_CTX_set_verify(ctx, 
 		       SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
@@ -271,6 +364,7 @@ int main(int argc, char *argv[])
     SSL_set_accept_state(ssl);
 
     if (SSL_accept(ssl) <= 0) {
+	logerrstr("SSL_accept");
 	ERR_print_errors_fp(stderr);
 	exit(1);
     }
