@@ -1,5 +1,4 @@
 /*
-#else
   Copyright (c) 1999-2003 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
@@ -18,7 +17,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.27 2003-07-02 23:27:05 willey Exp $
+ * $Id: verify_kerberos5.c,v 1.28 2003-07-03 04:25:21 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,7 +25,7 @@
 # include "pbc_path.h"
 #endif
 
-typedef void apr_pool_t;
+typedef void pool;
 
 /* login cgi includes */
 #include "index.cgi.h"
@@ -88,7 +87,7 @@ typedef void apr_pool_t;
 
 static char thishost[BUFSIZ];
 
-static int save_tf(apr_pool_t *p, const char *tfname, struct credentials **credsp)
+static int save_tf(pool *p, const char *tfname, struct credentials **credsp)
 {
     FILE *f;
     struct stat sbuf;
@@ -141,7 +140,7 @@ static int save_tf(apr_pool_t *p, const char *tfname, struct credentials **creds
     return -1;
 }
 
-static int unsave_tf(apr_pool_t *p, const char *tfname, struct credentials *creds)
+static int unsave_tf(pool *p, const char *tfname, struct credentials *creds)
 {
     FILE *f;
 
@@ -172,13 +171,13 @@ static int unsave_tf(apr_pool_t *p, const char *tfname, struct credentials *cred
     return 0;
 }
 
-static void creds_free(apr_pool_t *p, struct credentials *creds)
+static void creds_free(pool *p, struct credentials *creds)
 {
     if (creds->str) free(creds->str);
     if (creds) free(creds);
 }
 
-static int creds_derive(apr_pool_t *p, struct credentials *creds,
+static int creds_derive(pool *p, struct credentials *creds,
 			const char *app,
 			const char *target,
 			struct credentials **outcredsp)
@@ -319,7 +318,7 @@ static int creds_derive(apr_pool_t *p, struct credentials *creds,
 /*
  * returns 0 success; non-0 on failure
  */
-static int k5support_verify_tgt(apr_pool_t *p, krb5_context context, 
+static int k5support_verify_tgt(pool *p, krb5_context context, 
 				krb5_ccache ccache,
 				krb5_auth_context *auth_context,
 				const char **errstr)
@@ -406,7 +405,7 @@ static int k5support_verify_tgt(apr_pool_t *p, krb5_context context,
 }
 
 /* returns 0 on success; non-zero on failure */
-static int kerberos5_v(apr_pool_t *p, const char *userid,
+static int kerberos5_v(pool *p, const char *userid,
 		       const char *passwd,
 		       const char *service,
 		       const char *user_realm,

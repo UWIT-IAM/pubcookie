@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.59 2003-07-02 23:27:05 willey Exp $
+ * $Id: libpubcookie.c,v 2.60 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -71,7 +71,17 @@ typedef  int pid_t;  /* win32 process ID */
 
 #endif /* WIN32 */
 
-#include "apache.h"
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
 
 #ifdef OPENSSL_IN_DIR
 # include <openssl/pem.h>
@@ -120,7 +130,7 @@ const char *redirect_reason[] = {
     "Bad Pre-session Cookie" /* 12 */
 };
 
-const char *get_my_hostname(apr_pool_t*p)
+const char *get_my_hostname(pool *p)
 {
     return libpbc_get_cryptname(p);
 }
@@ -130,7 +140,7 @@ const char *get_my_hostname(apr_pool_t*p)
  * @param name the name of the authtype
  * @returns either PBC_CREDS_NONE or the credential id to pass in the cookie
  */
-const char libpbc_get_credential_id(apr_pool_t*p, const char *name)
+const char libpbc_get_credential_id(pool *p, const char *name)
 {
     if (!strcasecmp(name, "uwnetid")) {
          pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "WARNING: AuthType %s will not be supported in future versions - user AuthType WebISO\n", name);
@@ -149,14 +159,14 @@ const char libpbc_get_credential_id(apr_pool_t*p, const char *name)
 /*
  * print the passed bytes
  */
-static void print_hex_nybble(apr_pool_t*p, FILE *f,int n)
+static void print_hex_nybble(pool *p, FILE *f,int n)
 {
   char *hex="0123456789abcdef";
   n&=0x0f;
   fputc(hex[n],f);
 }
 
-static void print_hex_bytes(apr_pool_t*p, FILE *f,void *s_in,int len)
+static void print_hex_bytes(pool *p, FILE *f,void *s_in,int len)
 {
   unsigned char *s=(unsigned char *)s_in;
   fprintf(f,"[%lx]",(long)s);
@@ -172,7 +182,7 @@ static void print_hex_bytes(apr_pool_t*p, FILE *f,void *s_in,int len)
 }
 
 /* get a nice pretty log time                                                 */
-char *libpbc_time_string(apr_pool_t*p, time_t t)
+char *libpbc_time_string(pool *p, time_t t)
 { 
     struct tm	*tm;
     static char	buf[PBC_1K];
@@ -184,7 +194,7 @@ char *libpbc_time_string(apr_pool_t*p, time_t t)
 }
 
 /* when things fail too badly to go on ...                                    */
-void *libpbc_abend(apr_pool_t*p, const char *format,...)
+void *libpbc_abend(pool *p, const char *format,...)
 {
     va_list args;
     
@@ -199,23 +209,23 @@ void *libpbc_abend(apr_pool_t*p, const char *format,...)
 #endif
 }
 
-void libpbc_void(apr_pool_t*p, void *thing) {
+void libpbc_void(pool *p, void *thing) {
 }
 
-void *libpbc_malloc_debug(apr_pool_t*p, size_t x) {
+void *libpbc_malloc_debug(pool *p, size_t x) {
     void *ptr;
     ptr = pbc_malloc (p, x);
     pbc_log_activity(p, PBC_LOG_ERROR, "  pbc_malloc(p, %d)= x%X\n",x,ptr);
     return ptr;
 }
 
-void free_debug(apr_pool_t*p, void *ptr) {
+void free_debug(pool *p, void *ptr) {
     pbc_log_activity(p, PBC_LOG_ERROR, "  pbc_free= x%X\n",ptr);
     pbc_free(p, ptr);
 }
 
 /* keep pumping stuff into the random state                                   */
-void libpbc_augment_rand_state(apr_pool_t*p, unsigned char *array, int len)
+void libpbc_augment_rand_state(pool *p, unsigned char *array, int len)
 {
 
 /*  Window only has milliseconds */
@@ -266,7 +276,7 @@ void libpbc_augment_rand_state(apr_pool_t*p, unsigned char *array, int len)
 /*                                                                            */
 /* any general startup stuff goes here                                        */
 /*                                                                            */
-void libpbc_pubcookie_init(apr_pool_t*p)
+void libpbc_pubcookie_init(pool *p)
 {
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
@@ -283,7 +293,7 @@ void libpbc_pubcookie_init(apr_pool_t*p)
 
 }
 
-static void limit_strcpy(apr_pool_t*p, char *dst, char *src, int siz)
+static void limit_strcpy(pool *p, char *dst, char *src, int siz)
 {
     while(siz-->1) {
         char ch= *src++;
@@ -296,7 +306,7 @@ static void limit_strcpy(apr_pool_t*p, char *dst, char *src, int siz)
 }
 
 /* mallocs a pbc_cookie_data struct                                           */
-pbc_cookie_data *libpbc_init_cookie_data(apr_pool_t*p)
+pbc_cookie_data *libpbc_init_cookie_data(pool *p)
 {
     pbc_cookie_data *cookie_data;
 
@@ -306,7 +316,7 @@ pbc_cookie_data *libpbc_init_cookie_data(apr_pool_t*p)
 }
 
 /*                                                                            */
-unsigned char *libpbc_gethostip(apr_pool_t*p)
+unsigned char *libpbc_gethostip(pool *p)
 {
     struct hostent      *h;
     unsigned char       *addr;
@@ -347,7 +357,7 @@ unsigned char *libpbc_gethostip(apr_pool_t*p)
  * @param buf a buffer of at least 1024 characters which gets the filename
  * @return always succeeds
  */
-static void make_crypt_keyfile(apr_pool_t*p, const char *peername, char *buf)
+static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
@@ -367,7 +377,7 @@ static void make_crypt_keyfile(apr_pool_t*p, const char *peername, char *buf)
  * @param peer the certificate name of the peer
  * @return PBC_OK for success, PBC_FAIL for failure
  */
-int libpbc_generate_crypt_key(apr_pool_t*p, const char *peer)
+int libpbc_generate_crypt_key(pool *p, const char *peer)
 {
     unsigned char buf[PBC_DES_KEY_BUF];
     char keyfile[1024];
@@ -391,7 +401,7 @@ int libpbc_generate_crypt_key(apr_pool_t*p, const char *peer)
  * @param peer the certificate name of the peer
  * @return PBC_OK for success, PBC_FAIL for failure
  */
-int libpbc_set_crypt_key(apr_pool_t*p, const char *key, const char *peer)
+int libpbc_set_crypt_key(pool *p, const char *key, const char *peer)
 {
     char keyfile[1024];
     FILE *f;
@@ -411,7 +421,7 @@ int libpbc_set_crypt_key(apr_pool_t*p, const char *key, const char *peer)
 }
 
 /*                                                                           */
-int libpbc_get_crypt_key(apr_pool_t*p, crypt_stuff *c_stuff, const char *peer)
+int libpbc_get_crypt_key(pool *p, crypt_stuff *c_stuff, const char *peer)
 {
     FILE             *fp;
     char             *key_in;
@@ -446,7 +456,7 @@ int libpbc_get_crypt_key(apr_pool_t*p, crypt_stuff *c_stuff, const char *peer)
     return PBC_OK;
 }
 
-unsigned char *libpbc_stringify_seg(apr_pool_t*p, unsigned char *start, unsigned char *seg, unsigned len)
+unsigned char *libpbc_stringify_seg(pool *p, unsigned char *start, unsigned char *seg, unsigned len)
 {
     int			seg_len;
 
@@ -456,7 +466,7 @@ unsigned char *libpbc_stringify_seg(apr_pool_t*p, unsigned char *start, unsigned
 }
 
 /*                                                                            */
-pbc_cookie_data *libpbc_destringify_cookie_data(apr_pool_t*p, pbc_cookie_data *cookie_data) 
+pbc_cookie_data *libpbc_destringify_cookie_data(pool *p, pbc_cookie_data *cookie_data) 
 {
 
     (*cookie_data).broken.user[PBC_USER_LEN-1] = '\0';
@@ -467,7 +477,7 @@ pbc_cookie_data *libpbc_destringify_cookie_data(apr_pool_t*p, pbc_cookie_data *c
 
 }
 
-void print_cookie_string(apr_pool_t*p, const char *prelude, char *cookie_string)
+void print_cookie_string(pool *p, const char *prelude, char *cookie_string)
 {
     unsigned char	printable[PBC_4K];
     int			i;
@@ -487,7 +497,7 @@ void print_cookie_string(apr_pool_t*p, const char *prelude, char *cookie_string)
 /* package the cookie info for transit                                        */
 /*   - make the cookie_data struct a string                                   */
 /*   - do network byte order conversion                                       */
-unsigned char *libpbc_stringify_cookie_data(apr_pool_t*p, pbc_cookie_data *cookie_data) 
+unsigned char *libpbc_stringify_cookie_data(pool *p, pbc_cookie_data *cookie_data) 
 {
     unsigned char	*cookie_string;
     unsigned char	*ptr;
@@ -526,7 +536,7 @@ unsigned char *libpbc_stringify_cookie_data(apr_pool_t*p, pbc_cookie_data *cooki
 }
 
 /* get some indices for choosing a key and modifying ivec                     */
-int libpbc_get_crypt_index(apr_pool_t*p) 
+int libpbc_get_crypt_index(pool *p) 
 {
     unsigned char	r_byte[1];
     int			index;
@@ -542,7 +552,7 @@ int libpbc_get_crypt_index(apr_pool_t*p)
 /*  note: we don't do network byte order conversion here,                     */
 /*  instead we leave that for stringify                                       */
 /*                                                                            */
-void libpbc_populate_cookie_data(apr_pool_t*p, pbc_cookie_data *cookie_data,
+void libpbc_populate_cookie_data(pool *p, pbc_cookie_data *cookie_data,
 	                  unsigned char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
@@ -576,7 +586,7 @@ void libpbc_populate_cookie_data(apr_pool_t*p, pbc_cookie_data *cookie_data,
  * @param peer the peer this cookie is destined for (NULL for myself)
  * @returns a pointer to a newly malloc()ed base64 string
  */
-unsigned char *libpbc_sign_bundle_cookie(apr_pool_t*p, unsigned char *cookie_string,
+unsigned char *libpbc_sign_bundle_cookie(pool *p, unsigned char *cookie_string,
 					    const char *peer)
 {
     unsigned char		*cookie;
@@ -617,7 +627,7 @@ unsigned char *libpbc_sign_bundle_cookie(apr_pool_t*p, unsigned char *cookie_str
 /*                                                                            */
 /* for now we use the last_ts field in login cookie as expire_ts */
 /* this is the call used for creating G and S cookies            */
-unsigned char *libpbc_get_cookie(apr_pool_t*p, unsigned char *user, 
+unsigned char *libpbc_get_cookie(pool *p, unsigned char *user, 
 				    unsigned char type, 
 				    unsigned char creds,
 				    int pre_sess_token,
@@ -644,7 +654,7 @@ unsigned char *libpbc_get_cookie(apr_pool_t*p, unsigned char *user,
 /* the overleading of last_ts with expire_ts is ugly but we're   */
 /* going to reframe the library interfaces anyway and this will  */
 /* be treated better then.                                       */
-unsigned char *libpbc_get_cookie_with_expire(apr_pool_t*p, unsigned char *user, 
+unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *user, 
 						unsigned char type, 
 						unsigned char creds,
 						int pre_sess_token,
@@ -681,7 +691,7 @@ unsigned char *libpbc_get_cookie_with_expire(apr_pool_t*p, unsigned char *user,
 /*                                                                            */
 /*  deal with unbundling a cookie                                             */
 /*                                                                            */
-pbc_cookie_data *libpbc_unbundle_cookie(apr_pool_t*p, char *in, const char *peer)
+pbc_cookie_data *libpbc_unbundle_cookie(pool *p, char *in, const char *peer)
 {
     pbc_cookie_data	*cookie_data;
     char *plain;
@@ -739,7 +749,7 @@ pbc_cookie_data *libpbc_unbundle_cookie(apr_pool_t*p, char *in, const char *peer
 /* takes a cookie_data structure, updates the time, signs and packages up     */
 /* the cookie to be sent back into the world                                  */
 /*                                                                            */
-unsigned char *libpbc_update_lastts(apr_pool_t*p, pbc_cookie_data *cookie_data,
+unsigned char *libpbc_update_lastts(pool *p, pbc_cookie_data *cookie_data,
 				       const char *peer)
 {
     unsigned char	*cookie_string;
@@ -757,7 +767,7 @@ unsigned char *libpbc_update_lastts(apr_pool_t*p, pbc_cookie_data *cookie_data,
 /*                                                                            */
 /* check version string in cookie                                             */
 /*                                                                            */
-int libpbc_check_version(apr_pool_t*p, pbc_cookie_data *cookie_data)
+int libpbc_check_version(pool *p, pbc_cookie_data *cookie_data)
 {
     unsigned char *a = (*cookie_data).broken.version;
     unsigned char *b = (unsigned char *) PBC_VERSION;
@@ -779,7 +789,7 @@ int libpbc_check_version(apr_pool_t*p, pbc_cookie_data *cookie_data)
  * @param exp number of seconds for timeout
  * @returns PBC_OK if not expired, PBC_FAIL if expired
  */
-int libpbc_check_exp(apr_pool_t*p, time_t fromc, int exp)
+int libpbc_check_exp(pool *p, time_t fromc, int exp)
 {
     if( (fromc + exp) > time(NULL) )
         return PBC_OK;
@@ -792,7 +802,7 @@ int libpbc_check_exp(apr_pool_t*p, time_t fromc, int exp)
  * use openssl calls to get a random int
  * @returns random int or -1 for error
  */
-int libpbc_random_int(apr_pool_t*p)
+int libpbc_random_int(pool *p)
 {
     unsigned char 	buf[16];
     int 		i;
@@ -814,7 +824,7 @@ int libpbc_random_int(apr_pool_t*p)
 /** 
  * something that should never be executed, but shuts-up the compiler warning
  */
-void libpbc_dummy(apr_pool_t*p)
+void libpbc_dummy(pool *p)
 {
     char c;
 

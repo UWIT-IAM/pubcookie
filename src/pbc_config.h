@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.80 2003-07-02 23:27:05 willey Exp $
+    $Id: pbc_config.h,v 1.81 2003-07-03 04:25:21 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -217,19 +217,13 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 /* macros to support older version of apache */
 
-#if defined(APACHE1_3)
+#ifdef APACHE1_3
 #define pbc_malloc(p, x) ap_palloc(p, x)
 #define pbc_free(p, x) libpbc_void(p, x)
 #define pbc_strdup(p, x) ap_pstrdup(p, x)
 #define pbc_strndup(p, s, n) ap_pstrdup(p, s, n)
 #define pbc_fopen(p, x, y) ap_pfopen(p, x, y)
 #define pbc_fclose(p, x) ap_pfclose(p, x)
-
-#elif defined(APACHE2)
-# define pbc_malloc(p, x) apr_palloc(p, x)
-# define pbc_free(p, x) libpbc_void(p, x)
-# define pbc_strdup(p, x) apr_pstrdup(p, x)
-# define pbc_strndup(p, s, n) apr_pstrdup(p, s, n)
 #endif
 
 #ifndef pbc_malloc
@@ -252,5 +246,4 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #endif
 
 #endif /* !PUBCOOKIE_CONFIG */
-
 

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_apacheconfig.h,v 2.5 2003-07-02 23:27:05 willey Exp $
+    $Id: pbc_apacheconfig.h,v 2.6 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -13,6 +13,7 @@
 # include "pbc_path.h"
 #endif
 
+#if defined (APACHE1_3)
 # include "httpd.h"
 # include "http_config.h"
 # include "http_core.h"
@@ -20,6 +21,9 @@
 # include "http_main.h"
 # include "http_protocol.h"
 # include "util_script.h"
+#else
+typedef void pool;
+#endif
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -72,10 +76,10 @@
 pubcookie_server_rec * globalsr;
 #define CONFIGLISTGROWSIZE 30 /* 100 */
 
-int libpbc_apacheconfig_init(apr_pool_t *p, void *initarg, const char *ident);
+int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident);
 
-const char *libpbc_apacheconfig_getstring(apr_pool_t *p, const char *key,
+const char *libpbc_apacheconfig_getstring(pool *p, const char *key,
     const char *def);
-char **libpbc_apacheconfig_getlist(apr_pool_t *p, const char *key);
-int libpbc_apacheconfig_getint(apr_pool_t *p, const char *key, int def);
-int libpbc_apacheconfig_getswitch(apr_pool_t *p, const char *key, int def);
+char **libpbc_apacheconfig_getlist(pool *p, const char *key);
+int libpbc_apacheconfig_getint(pool *p, const char *key, int def);
+int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def);

@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.6 2003-07-02 23:27:05 willey Exp $
+ * $Id: pbc_apacheconfig.c,v 2.7 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -15,7 +15,17 @@
 # include "pbc_path.h"
 #endif
 
-#include "apache.h"
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -68,7 +78,7 @@
 
 pubcookie_server_rec * globalsr;
 
-int libpbc_apacheconfig_init(apr_pool_t *p, void *initarg, const char *ident)
+int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident)
 {
     /*
      * stash a pointer to the server rec structure so the get functions
@@ -104,30 +114,27 @@ int libpbc_apacheconfig_init(apr_pool_t *p, void *initarg, const char *ident)
     return 0;
 }
 
-const char *libpbc_apacheconfig_getstring(apr_pool_t*p, const char *key, const char *def)
+const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *def)
 {
-    apr_table_t *configlist = globalsr->configlist;
+    table * configlist = globalsr->configlist;
     const char * ret;
 
     if ( key == NULL )
         return def;
 
-    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, APLOG_STATUS NULL,
-		    "looking for %s", key);
+    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, NULL, "looking for %s", key);
 
     ret = ap_table_get(configlist, key);
   
     if (ret) { 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, APLOG_STATUS NULL,
-			"found %s with value %s", ret);
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, NULL, "found %s with value %s", ret);
         return ret;
     } 
-    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, APLOG_STATUS NULL,
-		    "failed to find %s, returning default %s", key, def);
+    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, NULL, "failed to find %s, returning default %s", key, def);
     return def;
 }
 
-int libpbc_apacheconfig_getint(apr_pool_t*p, const char *key, int def)
+int libpbc_apacheconfig_getint(pool *p, const char *key, int def)
 {
     const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
     
@@ -143,15 +150,15 @@ int libpbc_apacheconfig_getint(apr_pool_t*p, const char *key, int def)
  * i didn't bother because they're not used (yet)
  *
  */
-char **libpbc_apacheconfig_getlist(apr_pool_t*p, const char *key) {
-   ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_CRIT, APLOG_STATUS NULL,
+char **libpbc_apacheconfig_getlist(pool *p, const char *key) {
+   ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_CRIT, NULL,
        "libpbc_apacheconfig_getlist not implmented, was looking for %s",
        key);
    return NULL;
 } 
 
-int libpbc_apacheconfig_getswitch(apr_pool_t*p, const char *key, int def) {
-   ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_CRIT, APLOG_STATUS NULL,
+int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def) {
+   ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_CRIT, NULL,
        "libpbc_apacheconfig_getswitch not implmented, was looking for %s",
        key);
    return def;
@@ -159,7 +166,7 @@ int libpbc_apacheconfig_getswitch(apr_pool_t*p, const char *key, int def) {
 
 /* these are the myconfig equivalents, for reference */
 #if 0
-char **libpbc_myconfig_getlist(apr_pool_t*p, const char *key)
+char **libpbc_myconfig_getlist(pool *p, const char *key)
 {
     const char *tval = libpbc_myconfig_getstring(p, key, NULL);
     char *val;
@@ -200,7 +207,7 @@ char **libpbc_myconfig_getlist(apr_pool_t*p, const char *key)
     return ret;
 }
 
-int libpbc_myconfig_getswitch(apr_pool_t*p, const char *key, int def)
+int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
 {
     const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
 

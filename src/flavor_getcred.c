@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.18 2003-07-02 23:27:05 willey Exp $
+ * $Id: flavor_getcred.c,v 1.19 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -15,7 +15,17 @@
 # include "pbc_path.h"
 #endif
 
-#include "apache.h"
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
 
 #ifdef HAVE_STDLIB_H
 # include <stdlib.h>
@@ -66,7 +76,7 @@ static verifier *v = NULL;
  * @returns 0 on success; negative numbers indicate
  * unauthorized. positive numbers are reserved for future "ask" features.
  */
-static int check_authz(apr_pool_t *p, const char *server, const char *target)
+static int check_authz(pool *p, const char *server, const char *target)
 {
     int r = -1;
     FILE *f;
@@ -168,7 +178,7 @@ static int check_authz(apr_pool_t *p, const char *server, const char *target)
     return r;
 }
 
-static login_result process_getcred(apr_pool_t *p, login_rec *l, login_rec *c,
+static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
 				    const char **errstr)
 {
     login_result basic_res;

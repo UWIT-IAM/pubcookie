@@ -6,7 +6,7 @@
 /** @file pbc_configure.c
  * Configure stuff
  *
- * $Id: pbc_configure.c,v 2.4 2003-07-02 23:27:05 willey Exp $
+ * $Id: pbc_configure.c,v 2.5 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -15,7 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-#include "apache.h"
+typedef void pool;
 
 #ifdef HAVE_TIME_H
 # include <time.h>
@@ -57,11 +57,8 @@ static config_getswitch *gswitch = NULL;
 /**
  *  For backward compatibilty
  */
-void libpbc_config_init(apr_pool_t *p, const char *alt_config, const char *ident)
-{ 
-   fprintf(stderr, "pbc_configure: libpbc_config_init start\n");
-   fflush(stderr);
-
+void libpbc_config_init(pool *p, const char *alt_config, const char *ident)
+{
     pbc_configure_init(p, ident, 
         (config_initialize *) &libpbc_myconfig_init,
         (void *)alt_config,
@@ -71,7 +68,7 @@ void libpbc_config_init(apr_pool_t *p, const char *alt_config, const char *ident
         &libpbc_myconfig_getswitch);
 }
 
-void pbc_configure_init(apr_pool_t *p, const char *ident,
+void pbc_configure_init(pool *p, const char *ident,
                         config_initialize *initialize,
                         void * initarg,
                         config_getint *i,
@@ -99,22 +96,22 @@ void pbc_configure_init(apr_pool_t *p, const char *ident,
     }
 }
 
-int libpbc_config_getint(apr_pool_t*p, const char *key, int def)
+int libpbc_config_getint(pool *p, const char *key, int def)
 {
     return(gint(p, key, def));
 }
 
-int libpbc_config_getswitch(apr_pool_t*p, const char *key, int def)
+int libpbc_config_getswitch(pool *p, const char *key, int def)
 {
     return(gswitch(p, key, def));
 }
 
-const char *libpbc_config_getstring(apr_pool_t*p, const char *key, const char *def)
+const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 {
     return(gstring(p, key, def));
 }
 
-char **libpbc_config_getlist(apr_pool_t*p, const char *key)
+char **libpbc_config_getlist(pool *p, const char *key)
 {
     return(glist(p, key));
 }

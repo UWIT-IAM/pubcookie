@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.44 2003-07-02 23:27:04 willey Exp $
+# $Id: Makefile.in,v 1.45 2003-07-03 04:25:21 willey Exp $
 
 @SET_MAKE@
 
@@ -50,23 +50,9 @@ LIBS=@LIBS@
 CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src
 CFLAGS=@CFLAGS@ $(CPPFLAGS)
 LDFLAGS=@LDFLAGS@ $(LIBS)
-
+LOGINLIBS=@LOGINLIBS@ @CGIC_LIB@
 
 APXS=@APXS@
-
-# Apache 1.X
-APU=/bin/true
-APR=/bin/true
-APACHE_DEFINES= -DAPACHE
-
-# Apache 2.X
-# add "-Wl,-shared" for apache2
-#
-# APACHE_DEFINES= -DAPACHE -Wl,-shared
-# APU=/usr/bin/apu-config
-# APR=/usr/bin/apr-config
-
-LOGINLIBS=@LOGINLIBS@ @CGIC_LIB@ `$(APU) --link-ld --libs` `$(APR) --link-ld --libs`
 
 CONFIGURE_TMP_FILES=$(builddir)/config.status \
 					$(builddir)/config.log \
@@ -451,6 +437,7 @@ distclean:: clean
 
 # APXS Stuff.
 
+APACHE_DEFINES= -DAPACHE1_3
 
 apache_module: a_ver mod_pubcookie.so aix_warning 
 

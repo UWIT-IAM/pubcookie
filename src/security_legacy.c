@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.27 2003-07-02 23:27:05 willey Exp $
+ * $Id: security_legacy.c,v 1.28 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -15,7 +15,17 @@
 # include "pbc_path.h"
 #endif
 
-#include "apache.h"
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -107,14 +117,14 @@ static EVP_PKEY *g_pub;
 /* my name */
 static char *myname = NULL;
 
-static char *mystrdup(apr_pool_t*p, const char *s)
+static char *mystrdup(pool *p, const char *s)
 {
     if (s) return pbc_strdup(p, s);
     else return NULL;
 }
 
 /* destructively returns the value of the CN */
-static char *extract_cn(apr_pool_t*p, char *s)
+static char *extract_cn(pool *p, char *s)
 {
     char *ptr;
     char *q;
@@ -150,7 +160,7 @@ static char *extract_cn(apr_pool_t*p, char *s)
    . check pubcookie_granting
 
 */
-int security_init(apr_pool_t*p)
+int security_init(pool *p)
 {
 
     /* our private session keypair */
@@ -405,7 +415,7 @@ int security_init(apr_pool_t*p)
     return 0;
 }
 
-const char *libpbc_get_cryptname(apr_pool_t*p)
+const char *libpbc_get_cryptname(pool *p)
 {
     return myname;
 
@@ -417,7 +427,7 @@ const char *libpbc_get_cryptname(apr_pool_t*p)
  * @param buf a buffer of at least 1024 characters which gets the filename
  * @return always succeeds
  */
-static void make_crypt_keyfile(apr_pool_t*p, const char *peername, char *buf)
+static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
     
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
@@ -432,7 +442,7 @@ static void make_crypt_keyfile(apr_pool_t*p, const char *peername, char *buf)
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: goodbye\n");
 }
 
-static int get_crypt_key(apr_pool_t*p, const char *peername, char *buf)
+static int get_crypt_key(pool *p, const char *peername, char *buf)
 {
     FILE *fp;
     char keyfile[1024];
@@ -473,7 +483,7 @@ static int get_crypt_key(apr_pool_t*p, const char *peername, char *buf)
  * @param outlen the length of outbuf.
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv(apr_pool_t*p, const char *peer, const char *buf, const int len,
+int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     int r;
@@ -576,7 +586,7 @@ int libpbc_mk_priv(apr_pool_t*p, const char *peer, const char *buf, const int le
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks
  */
-int libpbc_rd_priv(apr_pool_t*p, const char *peer, const char *buf, const int len,
+int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     int index1, index2;
@@ -656,7 +666,7 @@ int libpbc_rd_priv(apr_pool_t*p, const char *peer, const char *buf, const int le
  * application. 'outbuf' does not contain the plaintext message; both
  * 'buf' and 'outbuf' must be sent to the other side
  */
-int libpbc_mk_safe(apr_pool_t*p, const char *peer, const char *buf, const int len,
+int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     unsigned char *sig;
@@ -706,7 +716,7 @@ int libpbc_mk_safe(apr_pool_t*p, const char *peer, const char *buf, const int le
     return r;
 }
 
-int libpbc_rd_safe(apr_pool_t*p, const char *peer, const char *buf, const int len,
+int libpbc_rd_safe(pool *p, const char *peer, const char *buf, const int len,
 		   const char *sigbuf, const int siglen)
 {
     EVP_MD_CTX ctx;

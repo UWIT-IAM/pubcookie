@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.107 2003-07-02 23:27:05 willey Exp $
+ * $Id: index.cgi.c,v 1.108 2003-07-03 04:25:21 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -94,7 +94,7 @@
 #endif /* HAVE_CGIC_H */
 
 /* An apache "pool" */
-typedef void apr_pool_t;
+typedef void pool;
 
 /* pubcookie things */
 #include "pubcookie.h"
@@ -135,7 +135,7 @@ int debug;
  * return the length of the passed file in bytes or 0 if we cant tell
  * resets the file postion to the start
  */
-static long file_size(apr_pool_t *p, FILE *afile)
+static long file_size(pool *p, FILE *afile)
 {
   long len;
   if (fseek(afile, 0, SEEK_END) != 0)
@@ -149,7 +149,7 @@ static long file_size(apr_pool_t *p, FILE *afile)
 /*
  * return a template html file
  */
-static char *get_file_template(apr_pool_t *p, const char *fname)
+static char *get_file_template(pool *p, const char *fname)
 {
   char *template;
   long len, readlen;
@@ -193,7 +193,7 @@ static char *get_file_template(apr_pool_t *p, const char *fname)
 /*
  * print to the passed buffer given the name of the file containing the %s info
  */
-static void buf_template_vprintf(apr_pool_t *p, const char *fname, char *dst, size_t n,
+static void buf_template_vprintf(pool *p, const char *fname, char *dst, size_t n,
 				 va_list ap)
 {
     char *template = get_file_template(p, fname);
@@ -209,7 +209,7 @@ static void buf_template_vprintf(apr_pool_t *p, const char *fname, char *dst, si
  * @param ... printf style
  * @return always succeeds
  */
-void print_html(apr_pool_t *p, const char *format, ...)
+void print_html(pool *p, const char *format, ...)
 {
     va_list args;
 
@@ -230,7 +230,7 @@ void print_html(apr_pool_t *p, const char *format, ...)
  * @param ... printf style
  * @return always succeeds
  */
-void print_header(apr_pool_t *p, const char *format, ...)
+void print_header(pool *p, const char *format, ...)
 {
 
     va_list args;
@@ -251,7 +251,7 @@ void print_header(apr_pool_t *p, const char *format, ...)
 /*
  * print out using a template
  */
-void tmpl_print_html(apr_pool_t *p, const char *fpath, const char *fname,...) {
+void tmpl_print_html(pool *p, const char *fpath, const char *fname,...) {
     char buf[MAX_EXPANDED_TEMPLATE_SIZE];
     va_list args;
     char *templatefile;
@@ -309,7 +309,7 @@ void tmpl_print_html(apr_pool_t *p, const char *fpath, const char *fname,...) {
  * output the cached headers and html files.
  * should be called before exiting if we want to show anything to the client.
  */
-void do_output(apr_pool_t *p)
+void do_output(pool *p)
 {
     /* set the cookies on the client */
     rewind(headerout);
@@ -345,7 +345,7 @@ void do_output(apr_pool_t *p)
  * this should probably be runtime configurable.
  * @return always succeeds
  */
-void print_http_header(apr_pool_t *p)
+void print_http_header(pool *p)
 {
         print_header(p, "Pragma: No-Cache\n");
         print_header(p, "Cache-Control: no-store, no-cache, must-revalidate\n");
@@ -361,7 +361,7 @@ void print_http_header(apr_pool_t *p)
  * @returns PBC_FAIL for expired
  * @returns PBC_OK   for not expired
  */
-int check_l_cookie_expire (apr_pool_t *p, login_rec *c, time_t t) 
+int check_l_cookie_expire (pool *p, login_rec *c, time_t t) 
 {
     if ( c == NULL || t > c->expire_ts )
         return(PBC_FAIL);
@@ -373,7 +373,7 @@ int check_l_cookie_expire (apr_pool_t *p, login_rec *c, time_t t)
 /*
  * initialize some things in the record 
  */
-void init_login_rec(apr_pool_t *p, login_rec *r)
+void init_login_rec(pool *p, login_rec *r)
 {
     r->alterable_username = PBC_FALSE;
     r->first_kiss = NULL;
@@ -390,7 +390,7 @@ void init_login_rec(apr_pool_t *p, login_rec *r)
 /*
  * this returns first cookie for a given name
  */
-int get_cookie(apr_pool_t *p, char *name, char *result, int max)
+int get_cookie(pool *p, char *name, char *result, int max)
 {
     char *s;
     char *ptr;
@@ -447,7 +447,7 @@ int get_cookie(apr_pool_t *p, char *name, char *result, int max)
 }
 
 
-char *get_string_arg(apr_pool_t *p, char *name, cgiFormResultType (*f)())
+char *get_string_arg(pool *p, char *name, cgiFormResultType (*f)())
 {
     int			length;
     char		*s;
@@ -477,7 +477,7 @@ char *get_string_arg(apr_pool_t *p, char *name, cgiFormResultType (*f)())
  * @param default
  * @returns int that was found or default
  */
-int get_int_arg(apr_pool_t *p, char *name, int def) {
+int get_int_arg(pool *p, char *name, int def) {
     int		i;
 
     if( cgiFormInteger(name, &i, 0) == cgiFormSuccess ) {
@@ -488,7 +488,7 @@ int get_int_arg(apr_pool_t *p, char *name, int def) {
 
 }
 
-char *clean_username(apr_pool_t *p, char *in)
+char *clean_username(pool *p, char *in)
 {
     char	*ptr;
     int		word_start = 0;
@@ -527,7 +527,7 @@ char *clean_username(apr_pool_t *p, char *in)
  * @returns PBC_FAIL on error
  * @returns PBC_OK if everything went ok
  */
-int expire_login_cookie(apr_pool_t *p, login_rec *l, login_rec *c) {
+int expire_login_cookie(pool *p, login_rec *l, login_rec *c) {
     char	*l_cookie;
     char	*message = NULL;
     int		l_res;
@@ -618,7 +618,7 @@ int expire_login_cookie(apr_pool_t *p, login_rec *l, login_rec *c) {
  * clears login cookie
  * depreciated we now expire login cookies
  */
-int clear_login_cookie(apr_pool_t *p) {
+int clear_login_cookie(pool *p) {
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,"clear_login_cookie: hello");
 
@@ -643,7 +643,7 @@ int clear_login_cookie(apr_pool_t *p) {
  * sets cleared granting request cookie
  * @returns PBC_OK regardless
  */
-int clear_greq_cookie(apr_pool_t *p) {
+int clear_greq_cookie(pool *p) {
 
     print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
             PBC_G_REQ_COOKIENAME, 
@@ -661,7 +661,7 @@ int clear_greq_cookie(apr_pool_t *p) {
 
 }
 
-login_rec *load_login_rec(apr_pool_t *p, login_rec *l) 
+login_rec *load_login_rec(pool *p, login_rec *l) 
 {
     char * tmp;
 
@@ -718,7 +718,7 @@ login_rec *load_login_rec(apr_pool_t *p, login_rec *l)
     return(l);
 }
 
-char *url_encode(apr_pool_t *p, char *in)
+char *url_encode(pool *p, char *in)
 {
     char	*out;
     char	*ptr;
@@ -782,7 +782,7 @@ char *url_encode(apr_pool_t *p, char *in)
 
 }
 
-char *string_encode(apr_pool_t *p, char *in)
+char *string_encode(pool *p, char *in)
 {
     char	*out;
     char	*ptr;
@@ -817,7 +817,7 @@ char *string_encode(apr_pool_t *p, char *in)
 
 /* when things go wrong and you're not sure what else to do                  */
 /* a polite bailing out                                                      */
-void abend(apr_pool_t *p, char *message) 
+void abend(pool *p, char *message) 
 {
 
     pbc_log_activity(p, PBC_LOG_ERROR, "abend", message);
@@ -829,7 +829,7 @@ void abend(apr_pool_t *p, char *message)
 
 }
 
-void init_mirror_file(apr_pool_t *p, const char * mirrorfile) 
+void init_mirror_file(pool *p, const char * mirrorfile) 
 {
     if (mirrorfile != NULL) {
         mirror = fopen(mirrorfile, "w");
@@ -838,20 +838,20 @@ void init_mirror_file(apr_pool_t *p, const char * mirrorfile)
     }
 }
 
-void close_mirror_file(apr_pool_t *p) 
+void close_mirror_file(pool *p) 
 {
     if (mirror) {
         fclose(mirror);
     }
 }
 
-const char *login_host(apr_pool_t *p) 
+const char *login_host(pool *p) 
 {
     return(libpbc_config_getstring(p, "login_host", PBC_LOGIN_HOST));
 
 }
 
-const char *enterprise_domain(apr_pool_t *p) 
+const char *enterprise_domain(pool *p) 
 {
     const char  *s;
 
@@ -865,7 +865,7 @@ const char *enterprise_domain(apr_pool_t *p)
 
 }
 
-int has_login_cookie(apr_pool_t *p)
+int has_login_cookie(pool *p)
 {
     if (getenv("HTTP_COOKIE") && 
         strstr(getenv("HTTP_COOKIE"), PBC_L_COOKIENAME) )
@@ -875,7 +875,7 @@ int has_login_cookie(apr_pool_t *p)
 
 }
 
-char *get_granting_request(apr_pool_t *p) 
+char *get_granting_request(pool *p) 
 {
     char        *cookie;
 
@@ -891,7 +891,7 @@ char *get_granting_request(apr_pool_t *p)
 
 }
 
-char *decode_granting_request(apr_pool_t *p, char *in, char **peerp)
+char *decode_granting_request(pool *p, char *in, char **peerp)
 {
     char *out = NULL;
     char *peer = NULL;
@@ -973,7 +973,7 @@ char *decode_granting_request(apr_pool_t *p, char *in, char **peerp)
 /*                                                                   */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
-int vector_request(apr_pool_t *p, login_rec *l, login_rec *c)
+int vector_request(pool *p, login_rec *l, login_rec *c)
 {
     login_result res;
     const char *errstr = NULL;
@@ -1041,7 +1041,7 @@ int vector_request(apr_pool_t *p, login_rec *l, login_rec *c)
  * returns user agent, hides cgic global
  * @returns pointer to user agent
  */
-char *user_agent(apr_pool_t *p) 
+char *user_agent(pool *p) 
 {
     return(cgiUserAgent);
 
@@ -1052,7 +1052,7 @@ char *user_agent(apr_pool_t *p)
  * @param *l from login session
  * @returns duration
  */
-int get_kiosk_duration(apr_pool_t *p, login_rec *l)
+int get_kiosk_duration(pool *p, login_rec *l)
 {
     int         i;
     char	**keys;
@@ -1083,7 +1083,7 @@ int get_kiosk_duration(apr_pool_t *p, login_rec *l)
  * @param *l from login session
  * @returns time of expiration
  */
-time_t compute_l_expire(apr_pool_t *p, login_rec *l)
+time_t compute_l_expire(pool *p, login_rec *l)
 {
     time_t t;
 
@@ -1105,7 +1105,7 @@ time_t compute_l_expire(apr_pool_t *p, login_rec *l)
  * @param *c from login cookie
  * @returns string
  */
-const char *time_remaining_text(apr_pool_t *p, login_rec *c)
+const char *time_remaining_text(pool *p, login_rec *c)
 {
     char 	*remaining = NULL;
     int 	secs_left = 0;
@@ -1157,7 +1157,7 @@ const char *time_remaining_text(apr_pool_t *p, login_rec *c)
 
 }
 
-int app_logged_out(apr_pool_t *p, login_rec *c, const char *appid, const char *appsrvid) 
+int app_logged_out(pool *p, login_rec *c, const char *appid, const char *appsrvid) 
 {
     char	*new, *ptr, *app_string;
     const char	*s;
@@ -1198,7 +1198,7 @@ int app_logged_out(apr_pool_t *p, login_rec *c, const char *appid, const char *a
 
 }
 
-int logout(apr_pool_t *p, login_rec *l, login_rec *c, int logout_action)
+int logout(pool *p, login_rec *l, login_rec *c, int logout_action)
 {
     char	*appid;
     char	*appsrvid;
@@ -1318,7 +1318,7 @@ int logout(apr_pool_t *p, login_rec *l, login_rec *c, int logout_action)
  *
  * @returns PBC_OK if not a logout, or never returns if a logout
  */
-int check_logout(apr_pool_t *p, login_rec *l, login_rec *c) 
+int check_logout(pool *p, login_rec *l, login_rec *c) 
 {
     int logout_action;
     char *logout_prog;
@@ -1387,7 +1387,7 @@ int check_logout(apr_pool_t *p, login_rec *l, login_rec *c)
  * prints login status page
  * @param c contents of login cookie
  */
-void login_status_page(apr_pool_t *p, login_rec *c)
+void login_status_page(pool *p, login_rec *c)
 {
     char *refresh_line = NULL;
     int refresh_needed_len = STATUS_INIT_SIZE;
@@ -1430,7 +1430,7 @@ void login_status_page(apr_pool_t *p, login_rec *c)
  * @param l info for login session
  * @param c contents of login cookie
  */
-int pinit(apr_pool_t *p, login_rec *l, login_rec *c)
+int pinit(pool *p, login_rec *l, login_rec *c)
 {
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,"pinit: hello");
@@ -1502,13 +1502,11 @@ int cgiMain()
     login_rec *l = NULL;   /* culled from various sources */
     login_rec *c = NULL;   /* only from login cookie */
     const char *mirrorfile;
-    void *p; /* we pass a pointer around that is an Apache memory apr_pool_t if we're
+    void *p; /* we pass a pointer around that is an Apache memory pool if we're
                 using apache, here we just pass a void pointer */
 
     libpbc_config_init(p, NULL, "logincgi");
-
     debug = libpbc_config_getint(p, "debug", 0);
-
     pbc_log_init(p, "pubcookie login server", NULL, NULL, NULL);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...\n");
@@ -1648,7 +1646,7 @@ done:
 /* returns NULL if the L cookie is valid                                     */
 /*   else a description of it's invalid nature                               */
 /* xxx most of this work should probably be done inside of the flavor */
-char *check_l_cookie(apr_pool_t *p, login_rec *l, login_rec *c)
+char *check_l_cookie(pool *p, login_rec *l, login_rec *c)
 {
     time_t	t;
     char	*g_version;
@@ -1718,7 +1716,7 @@ char *check_l_cookie(apr_pool_t *p, login_rec *l, login_rec *c)
 /*	functions                                                          */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
-void print_j_test(apr_pool_t *p) 
+void print_j_test(pool *p) 
 {
     print_html(p, "%s", J_TEST_TEXT1);
     print_html(p, "%s", J_TEST_TEXT2);
@@ -1727,7 +1725,7 @@ void print_j_test(apr_pool_t *p)
     print_html(p, "%s", J_TEST_TEXT5);
 }
 
-void notok_no_g_or_l(apr_pool_t *p) 
+void notok_no_g_or_l(pool *p) 
 {
     print_j_test(p);
 
@@ -1739,26 +1737,26 @@ void notok_no_g_or_l(apr_pool_t *p)
 
 }
 
-void notok_no_g(apr_pool_t *p) 
+void notok_no_g(pool *p) 
 {
     print_html(p, "%s", NOTOK_NO_G_TEXT1);
 
 }
 
-void notok_formmultipart(apr_pool_t *p) 
+void notok_formmultipart(pool *p) 
 {
     print_html(p, "%s", NOTOK_FORMMULTIPART_TEXT1);
 
 }
 
-void notok_need_ssl(apr_pool_t *p) 
+void notok_need_ssl(pool *p) 
 {
     print_html(p, "%s", NOTOK_NEEDSSL_TEXT1);
     pbc_log_activity(p, PBC_LOG_AUDIT,
 		     "host %s came in on a non-ssl port, why?", cgiRemoteAddr);
 }
 
-void notok_bad_agent(apr_pool_t *p) 
+void notok_bad_agent(pool *p) 
 {
     print_html(p, "%s", NOTOK_BAD_AGENT_TEXT1);
     print_html(p, "The browser you are using identifies itself as:<P><TT></TT>",
@@ -1766,13 +1764,13 @@ void notok_bad_agent(apr_pool_t *p)
     print_html(p, "%s", NOTOK_BAD_AGENT_TEXT2);
 }
 
-void notok_generic(apr_pool_t *p) 
+void notok_generic(pool *p) 
 {
     print_html(p, "%s", NOTOK_GENERIC_TEXT1);
 
 }
 
-void notok (apr_pool_t *p,  void (*notok_f)() )
+void notok (pool *p,  void (*notok_f)() )
 {
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), 
@@ -1797,7 +1795,7 @@ void notok (apr_pool_t *p,  void (*notok_f)() )
 
 }
 
-int set_pinit_cookie(apr_pool_t *p) 
+int set_pinit_cookie(pool *p) 
 {
     print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/%s\n", 
                  PBC_PINIT_COOKIENAME,
@@ -1813,7 +1811,7 @@ int set_pinit_cookie(apr_pool_t *p)
     return(PBC_OK);
 }
 
-int clear_pinit_cookie(apr_pool_t *p) {
+int clear_pinit_cookie(pool *p) {
 
     print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
                  PBC_PINIT_COOKIENAME, 
@@ -1831,7 +1829,7 @@ int clear_pinit_cookie(apr_pool_t *p) {
 
 }
 
-int pinit_response(apr_pool_t *p, login_rec *l, login_rec *c)
+int pinit_response(pool *p, login_rec *l, login_rec *c)
 {
   
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "pinit_response: hello");
@@ -1872,7 +1870,7 @@ int pinit_response(apr_pool_t *p, login_rec *l, login_rec *c)
  * @returns PBC_FAIL if the program should finish
  * @returns PBC_OK   if the program should continue
  */
-int cookie_test(apr_pool_t *p, login_rec *l, login_rec *c) 
+int cookie_test(pool *p, login_rec *l, login_rec *c) 
 {
     char        *cookies;
     char        cleared_g_req[PBC_1K];
@@ -1923,28 +1921,28 @@ int cookie_test(apr_pool_t *p, login_rec *l, login_rec *c)
 }
 
 /*	################################### The beginning of the table       */
-void print_table_start(apr_pool_t *p)
+void print_table_start(pool *p)
 {
     print_html(p, "<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"580\">\n");
 
 }
 
 /*	################################### da copyright, it's ours!         */
-void print_copyright(apr_pool_t *p)
+void print_copyright(pool *p)
 {
     print_html(p, "<small>Copyright &#169; 2002 University of Washington</small>\n");
 
 }
 
 /*	################################### UWNetID Logo                     */
-void print_uwnetid_logo(apr_pool_t *p)
+void print_uwnetid_logo(pool *p)
 {
     print_html(p, "<img src=\"/images/login/weblogin.gif\" alt=\"UW NetID Weblogin\" height=\"57\" width=\"198\" oncontextmenu=\"return false\">\n");
 
 }
 
 
-char *to_lower(apr_pool_t *p, char *in)
+char *to_lower(pool *p, char *in)
 {
     char	*ptr;
 
@@ -1962,7 +1960,7 @@ char *to_lower(apr_pool_t *p, char *in)
  *  @param in pointer to a string, which is modified
  *  @return nothing
  */
-void clean_ok_browsers_line(apr_pool_t *p, char *in)
+void clean_ok_browsers_line(pool *p, char *in)
 {
     char *ptr;
 
@@ -1984,7 +1982,7 @@ void clean_ok_browsers_line(apr_pool_t *p, char *in)
  *  @return 1 if a valid substring matches
  *  @return 0 if no match is found (the browser is bad)
  */
-int check_user_agent(apr_pool_t *p)
+int check_user_agent(pool *p)
 {
     char line[PBC_1K];
     char agent_clean[PBC_1K];
@@ -2016,7 +2014,7 @@ int check_user_agent(apr_pool_t *p)
 }
 
 
-void print_redirect_page(apr_pool_t *p, login_rec *l, login_rec *c)
+void print_redirect_page(pool *p, login_rec *l, login_rec *c)
 {
     char		*g_cookie;
     char		*l_cookie;
@@ -2322,7 +2320,7 @@ void print_redirect_page(apr_pool_t *p, login_rec *l, login_rec *c)
 }
 
 /* fills in the login_rec from the form submit and granting request */
-login_rec *get_query(apr_pool_t *p) 
+login_rec *get_query(pool *p) 
 {
     login_rec		*l = malloc(sizeof(login_rec));
     char		*g_req;
@@ -2429,7 +2427,7 @@ login_rec *get_query(apr_pool_t *p)
 
 /* uses libpubcookie calls to check the cookie and load the login rec with  */
 /* cookie contents                                                          */
-login_rec *verify_unload_login_cookie (apr_pool_t *p, login_rec *l)
+login_rec *verify_unload_login_cookie (pool *p, login_rec *l)
 {
     pbc_cookie_data     *cookie_data;
     char		*cookie = NULL;
@@ -2485,7 +2483,7 @@ login_rec *verify_unload_login_cookie (apr_pool_t *p, login_rec *l)
 
 }
 
-int create_cookie(apr_pool_t *p, char *user_buf,
+int create_cookie(pool *p, char *user_buf,
                   char *appsrvid_buf,
                   char *appid_buf,
                   char type,

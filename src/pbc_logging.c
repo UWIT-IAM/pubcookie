@@ -6,7 +6,7 @@
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.24 2003-07-02 23:27:05 willey Exp $
+ * $Id: pbc_logging.c,v 1.25 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -15,7 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-typedef void apr_pool_t;
+typedef void pool;
 
 #ifdef HAVE_TIME_H
 # include <time.h>
@@ -96,7 +96,7 @@ CODE facilitynames[] =
 
 #endif /* NEED_SYSLOG_NAMES */
 
-static void mylog(apr_pool_t*p, int logging_level, const char *mymsg);
+static void mylog(pool *p, int logging_level, const char *mymsg);
 
 static pbc_open_log *olog = NULL;
 static pbc_log_func *logf = &mylog;
@@ -108,7 +108,7 @@ static pbc_close_log *clog = NULL;
 extern int Debug_Trace;
 extern FILE *debugFile;  /* from PubcookieFilter */
 
-static void mylog(apr_pool_t*p, int logging_level, const char *mymsg)
+static void mylog(pool *p, int logging_level, const char *mymsg)
 {
     /* xxx should we prepend the time? */
 
@@ -120,7 +120,7 @@ static void mylog(apr_pool_t*p, int logging_level, const char *mymsg)
 
 #else
 
-static void mylog(apr_pool_t*p, int logging_level, const char *mymsg)
+static void mylog(pool *p, int logging_level, const char *mymsg)
 {
     int pri = LOG_INFO;
     int fac = PBC_LOG_GENERAL_FACILITY;
@@ -154,7 +154,7 @@ static void mylog(apr_pool_t*p, int logging_level, const char *mymsg)
 
 #endif
 
-void pbc_log_init(apr_pool_t*p, const char *ident,
+void pbc_log_init(pool *p, const char *ident,
                   pbc_open_log *o, pbc_log_func *l, pbc_close_log *c)
 {
     /* sigh, prototypes not totally standardized so I need to cast */
@@ -177,7 +177,7 @@ void pbc_log_init(apr_pool_t*p, const char *ident,
 }
 
 
-void pbc_log_activity(apr_pool_t*p, int logging_level, const char *message,...)
+void pbc_log_activity(pool *p, int logging_level, const char *message,...)
 {
     va_list args;
 
@@ -188,7 +188,7 @@ void pbc_log_activity(apr_pool_t*p, int logging_level, const char *message,...)
     va_end(args);
 }
 
-void pbc_vlog_activity(apr_pool_t*p, int logging_level, const char * format, va_list args )
+void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list args )
 {
     char      log[PBC_4K];
         
@@ -200,7 +200,7 @@ void pbc_vlog_activity(apr_pool_t*p, int logging_level, const char * format, va_
     }
 }
 
-void pbc_log_close(apr_pool_t*p)
+void pbc_log_close(pool *p)
 {
     if (clog) {
         clog(p);
@@ -208,7 +208,7 @@ void pbc_log_close(apr_pool_t*p)
 }
 
 #if 0
-char* pbc_create_log_message(apr_pool_t*p, char *info, char* user, char* app_id)
+char* pbc_create_log_message(pool *p, char *info, char* user, char* app_id)
 {
     return sprintf(%s: user ip: %s \t app id: %s \n %s, 
                    libpbc_time_string(p, time(NULL)),user,app_id, info);

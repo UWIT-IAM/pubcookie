@@ -6,7 +6,7 @@
 /** @file verify_kerberos4.c
  * Kerberos 4 verifier
  *
- * $Id: verify_kerberos4.c,v 1.11 2003-07-02 23:27:05 willey Exp $
+ * $Id: verify_kerberos4.c,v 1.12 2003-07-03 04:25:21 willey Exp $
  */
 
 
@@ -20,7 +20,7 @@
 #endif /* HAVE_STDLIB_H */
 
 /* Pretending we're Apache */
-typedef void apr_pool_t;
+typedef void pool;
 
 #include "verify.h"
 
@@ -30,7 +30,7 @@ typedef void apr_pool_t;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-static int kerberos4_v(apr_pool_t * p, const char *userid,
+static int kerberos4_v(pool * p, const char *userid,
 		       const char *passwd,
 		       const char *service,
 		       const char *user_realm,

@@ -6,7 +6,7 @@
 /** @file base64.cgi.c
  * Base64 functions
  *
- * $Id: base64.c,v 1.14 2003-07-02 23:27:04 willey Exp $
+ * $Id: base64.c,v 1.15 2003-07-03 04:25:21 willey Exp $
  */
                                                                                 
 
@@ -15,7 +15,17 @@
 # include "pbc_path.h"
 #endif
 
-#include "apache.h"
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
 
 #ifdef HAVE_STRING_H
 # include <string.h>  /* for win32 */
@@ -69,7 +79,7 @@ static unsigned char decode[256] = {
   NL, NL, NL, NL, NL, NL, NL, NL, NL, NL,
   NL, NL, NL, NL, NL, NL};
 
-int libpbc_base64_encode(apr_pool_t*p, unsigned char *in, unsigned char *out, int size) {
+int libpbc_base64_encode(pool *p, unsigned char *in, unsigned char *out, int size) {
   unsigned int a, b, c;
 
   while(size > 0) {
@@ -102,7 +112,7 @@ int libpbc_base64_encode(apr_pool_t*p, unsigned char *in, unsigned char *out, in
   return 1;
 }
 
-int libpbc_base64_decode(apr_pool_t*p, unsigned char *in, unsigned char *out, int *osizep) {
+int libpbc_base64_decode(pool *p, unsigned char *in, unsigned char *out, int *osizep) {
   unsigned int a, b, c, d;
   int size = strlen((const char *)in);
   int correct = 0;

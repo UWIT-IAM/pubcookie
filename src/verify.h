@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: verify.h,v 1.10 2003-07-02 23:27:05 willey Exp $
+    $Id: verify.h,v 1.11 2003-07-03 04:25:21 willey Exp $
  */
 
 #ifndef INCLUDED_VERIFY_H
@@ -54,7 +54,7 @@ struct credentials {
  *         -2 indicates a system error
 */
 /* returns 0 on success; non-zero on failure */
-typedef int plaintext_verifier(apr_pool_t * p, const char *userid,
+typedef int plaintext_verifier(pool * p, const char *userid,
 			       const char *passwd,
 			       const char *service,
 			       const char *user_realm,
@@ -66,7 +66,7 @@ typedef int plaintext_verifier(apr_pool_t * p, const char *userid,
  * @param creds the credentials to free
  * @returns always succeeds
  */
-typedef void credentials_free(apr_pool_t *p, struct credentials *creds);
+typedef void credentials_free(pool *p, struct credentials *creds);
 
 
 /**
@@ -81,7 +81,7 @@ typedef void credentials_free(apr_pool_t *p, struct credentials *creds);
  *        which must later be free'd with credentials_free()
  * @returns 0 on success, non-zero on failure
  */
-typedef int credentials_derive(apr_pool_t *p, struct credentials *creds,
+typedef int credentials_derive(pool *p, struct credentials *creds,
 			       const char *app,
 			       const char *target,
 			       struct credentials **newcreds);
