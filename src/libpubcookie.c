@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.13 1999-01-04 19:31:46 willey Exp $
+    $Id: libpubcookie.c,v 1.14 1999-01-06 05:16:34 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/utsname.h>
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -291,13 +292,15 @@ unsigned char *libpbc_gethostip_np()
 #endif
 {
     struct hostent      *h;
-    char                hostname[PBC_1K];
     unsigned char       *addr;
+    struct utsname	myname;
 
-    gethostname(hostname, sizeof(hostname));
-    if( (h = gethostbyname(hostname)) == NULL ) {
-        libpbc_abend("%s: host unknown.\n", hostname);
-    }
+    if ( uname(&myname) < 0 ) 
+	libpbc_abend("problem doing uname lookup\n");
+
+    if ( (h = gethostbyname(myname.nodename)) == NULL )
+        libpbc_abend("%s: host unknown.\n", myname.nodename);
+
     addr = libpbc_alloc_init(h->h_length);
     memcpy(addr, h->h_addr_list[0], h->h_length);
     
@@ -310,7 +313,7 @@ char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
     int			i;
 
     for( i=0; i<PBC_DES_KEY_BUF; ++i ) {
-	in[i] ^= addr_bytes[i % sizeof(addr_bytes)];
+	in[i] ^= addr_bytes[i % strlen(addr_bytes)];
     }
     
     return in;
@@ -331,10 +334,10 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
     if( ! (fp = pbc_fopen(keyfile, "r")) )
-	libpbc_abend("libpbc_crypt_key: Failed open\n");
+	libpbc_abend("libpbc_crypt_key: Failed open: %s\n", keyfile);
     
     if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF)
-        libpbc_abend("libpbc_crypt_key: Failed read\n");
+        libpbc_abend("libpbc_crypt_key: Failed read: %s\n", keyfile);
     
     fclose(fp);
 
