@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.34 2001-08-22 23:22:42 willey Exp $
+#   $Id: Makefile,v 1.35 2001-08-23 00:21:05 willey Exp $
 #
 
 # your compiler here
@@ -119,10 +119,8 @@ make_crypted_bit:	make_crypted_bit.o libpubcookie.o
 what_is_my_ip:		what_is_my_ip.o libpubcookie.o base64.o
 	$(CC) ${CFLAGS} -o $@ what_is_my_ip.o libpubcookie.o base64.o $(LDFLAGS)
 
-h2ph:
-	co -l *.ph; \
-	h2ph -d . *.h; \
-	ci -mauto_update -u *.ph
+uwnetid_stub:		uwnetid_stub.o libpubcookie.o index.cgi_krb.o base64.o
+	$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o index.cgi_krb.o $(LDFLAGS) -lkrb5
 
 moduletar:
 	VERSION=`awk '/PBC_PUBID/{print $$3}' pbc_version.h | sed 's/"//g'`; \
@@ -171,9 +169,11 @@ pbc_verify.o: pbc_verify.c ${GENERALHEAD} ${MAKEFILE}
 t.o: t.c ${GENERALHEAD} ${MAKEFILE}
 test_local_c_key.o: test_local_c_key.c ${GENERALHEAD} ${MAKEFILE}
 what_is_my_ip.o: what_is_my_ip.c ${GENERALHEAD} ${MAKEFILE}
+uwnetid_stub.o: uwnetid_stub.c ${GENERALHEAD} ${MAKEFILE}
+index.cgi_krb.o: index.cgi_krb.c ${GENERALHEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local
+	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local uwnetid_stub
 
 # to purify candv {then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
