@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.51 2004-05-27 23:22:31 fox Exp $
+ * $Id: keyclient.c,v 2.52 2004-09-14 16:41:44 fox Exp $
  */
 
 
@@ -115,6 +115,7 @@ static void usage(void)
 {
     printf("usage: keyclient [options]                 Download (upload) host key\n");
     printf("       keyclient -P <host> [options]       Permit 'host' to access keyserver\n");
+    printf("       keyclient -U <cert_file> [options]  Set the cert's public key\n");
     printf("       keyclient -G <gcertfile> [options]  Get granting cert (to gcertfile)\n");
     printf("\n  options:\n");
     printf("  -C <ca file>    : authorized CA certs file. Def: ssl_ca_file\n");
@@ -192,6 +193,7 @@ int main(int argc, char *argv[])
     int r;
     pool *p = NULL;
     char *gcert = NULL;
+    char *pcert = NULL;
     const char *cluster = NULL;
 
 #ifdef WIN32
@@ -223,7 +225,7 @@ int main(int argc, char *argv[])
 
     newkeyp = 1;
     permit = 0;
-    while ((c = getopt(argc, argv, "0:1:P:aqpc:k:C:D:nudH:L:K:G:")) != -1) {
+    while ((c = getopt(argc, argv, "0:1:P:aqpc:k:C:D:nudH:L:K:G:U:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -300,6 +302,11 @@ int main(int argc, char *argv[])
 
             case 'G':
                 gcert = strdup(optarg);
+                newkeyp = -1;
+                break;
+
+            case 'U':
+                pcert = strdup(optarg);
                 newkeyp = -1;
                 break;
 
@@ -469,6 +476,19 @@ int main(int argc, char *argv[])
                   "GET %s?genkey=getgc;\r\n\r\n",
                    keymgturi);
                
+        } else if (pcert) { /* set the pubkey */
+           FILE *fp = fopen(pcert,"r");
+           char crt[10240];
+           if (fp && fread(crt, 1, 10240, fp)) {
+             snprintf(buf, sizeof(buf),
+                  "GET %s?genkey=setpkey?setkey=%s;\r\n\r\n",
+                   keymgturi, crt);
+             fclose(fp);
+           } else {
+             perror(pcert);
+             exit(1);
+           }
+               
         } else {   /* set the key */
           if (libpbc_get_crypt_key(p, &c_stuff, hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
@@ -484,8 +504,8 @@ int main(int argc, char *argv[])
         }
     } else {  /* get the key */
         snprintf(buf, sizeof(buf), 
-                 "GET %s?genkey=%s HTTP/1.0\r\n\r\n", keymgturi,
-                 newkeyp ? "yes" : "no");
+                 "GET %s?genkey=%s?setkey=%s HTTP/1.0\r\n\r\n", keymgturi,
+                 newkeyp ? "yes" : "no", hostname);
     }
 
     if (noop && newkeyp) {

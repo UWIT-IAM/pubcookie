@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.68 $)
+AC_REVISION($Revision: 1.69 $)
 AC_INIT(Pubcookie, [3.1.2 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -258,47 +258,47 @@ if ! test "x$APXS" = "x"; then
      esac
  fi
  if test "x$APACHE_VERSION" = "x"; then
-  OCFLAGS=$CFLAGS
-  APXS_INC=`$APXS -q INCLUDEDIR`
-  CFLAGS="$CFLAGS -I$APXS_INC"
-  AC_TRY_RUN( [ 
-    /* Look for 1.x version */
-    #include <stdlib.h>
-    #include <httpd.h>
-
-    int main() {
+   OCFLAGS=$CFLAGS
+   APXS_INC=`$APXS -q INCLUDEDIR`
+   CFLAGS="$CFLAGS -I$APXS_INC"
+   AC_TRY_RUN( [ 
+     /* Look for 1.x version */
+     #include <stdlib.h>
+     #include <httpd.h>
+ 
+     int main() {
         exit( ( APACHE_RELEASE > 10300000 &&
                 APACHE_RELEASE < 10400000 ) != 1 );
-    }
-    ],
-      [APACHE_VERSION="1_3"]
-    [ 
-    ]
-  )
-  if test "x$APACHE_VERSION" = "x"; then
-    AC_TRY_RUN( [ 
-      /* Look for 2.x version */
-      #include <stdlib.h>
-      #include <httpd.h>
+     }
+     ],
+       [APACHE_VERSION="1_3"]
+     [ 
+     ]
+   )
+   if test "x$APACHE_VERSION" = "x"; then
+     AC_TRY_RUN( [ 
+       /* Look for 2.x version */
+       #include <stdlib.h>
+       #include <httpd.h>
 
-      int main() {
+       int main() {
           exit( *AP_SERVER_MAJORVERSION!='2');
-      }
-      ],
-        [APACHE_VERSION="2"]
-      [ 
-        AC_MSG_ERROR([Apache version 1.3.x or 2.x is required!])
-      ]
-    )
-  fi
-  fi
-  AC_MSG_RESULT([$APACHE_VERSION])
-  AC_SUBST(APACHE_VERSION, $APACHE_VERSION)
+       }
+       ],
+         [APACHE_VERSION="2"]
+       [ 
+         AC_MSG_ERROR([Apache version 1.3.x or 2.x is required!])
+       ]
+     )
+   fi
+   CFLAGS=$OCFLAGS
+ fi
+ AC_MSG_RESULT([$APACHE_VERSION])
+ AC_SUBST(APACHE_VERSION, $APACHE_VERSION)
 
-  CFLAGS=$OCFLAGS
 
-  apache_target=module
-  apache_src_ref=".."
+ apache_target=module
+ apache_src_ref=".."
 
 fi # if apxs
 

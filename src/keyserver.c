@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.53 2004-05-07 21:54:24 fox Exp $
+ * $Id: keyserver.c,v 2.54 2004-09-14 16:41:44 fox Exp $
  */
 
 
@@ -51,6 +51,8 @@ typedef void pool;
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 # include <openssl/rand.h>
+# include <openssl/objects.h>
+# include <openssl/x509v3.h>
 #else
 # include <pem.h>
 # include <crypto.h>
@@ -58,6 +60,8 @@ typedef void pool;
 # include <pem.h>
 # include <ssl.h>
 # include <err.h>
+# include <objects.h>
+# include <x509v3.h>
 #endif /* OPENSSL_IN_DIR */
 
 #ifndef KEYSERVER_CGIC
@@ -152,7 +156,8 @@ enum optype {
     SETKEY,
     FETCHKEY,
     PERMIT,
-    FETCHGC
+    FETCHGC,
+    SETPKEY
 };
 
 /**
@@ -162,7 +167,7 @@ enum optype {
  * @return the number of login servers we failed to set the key on
  * (thus 0 is success)
  */
-int pushkey(const char *peer, const security_context *context)
+int pushkey(const char *peer, const security_context *context, const char *crt)
 {
     pool *p = NULL;
     char **lservers = libpbc_config_getlist(p, "login_servers");
@@ -209,7 +214,8 @@ int pushkey(const char *peer, const security_context *context)
         free(lservername);
 
         pbc_log_activity(p, PBC_LOG_AUDIT, 
-                         "setting %s's key on %s", peer, lservers[x]);
+                         "setting %s's %s on %s", peer,
+                          crt?"pubkey":"key", lservers[x]);
 
         res = fork();
         if (res < 0) {
@@ -223,7 +229,10 @@ int pushkey(const char *peer, const security_context *context)
             int n = 0;
             cmd[n++] = keyclient;
             cmd[n++] = "-q";
-            cmd[n++] = "-u";
+            if (crt) {
+              cmd[n++] = "-U";       /* upload a cert */
+              cmd[n++] = crt;        
+            } else cmd[n++] = "-u";  /* upload a key */ 
             cmd[n++] = "-H";
             cmd[n++] = peer;
             cmd[n++] = "-L";
@@ -265,6 +274,86 @@ int pushkey(const char *peer, const security_context *context)
     return fail;
 }
 
+/* ---- X509 tools ------------ */
+
+/* Get a cn from a cert */
+static char *get_cn_from_crt(X509 *crt)
+{
+  X509_NAME *subj;
+  int l;
+  char *ret = NULL;
+
+  subj = X509_get_subject_name(crt);
+  l = X509_NAME_get_text_by_NID(subj,NID_commonName,NULL,0);
+  ret = (char*) malloc(l+8);
+  X509_NAME_get_text_by_NID(subj,NID_commonName,ret,l+4);
+  return (ret);
+}
+
+/* Get a cert from a PEM string */
+
+X509 *get_crt_from_pem(const char *crtstr)
+{
+  X509 *crt=NULL;
+  BIO *cbio;
+
+  cbio = BIO_new_mem_buf((char*)crtstr, strlen(crtstr));
+  if (cbio==NULL) {
+    return (NULL);
+  }
+
+  crt = PEM_read_bio_X509(cbio, NULL, NULL, NULL);
+
+  BIO_free(cbio);
+  return (crt);
+}
+
+/* Get the alt names from a cert */
+
+char **get_altnames_from_crt(X509 *crt)
+    
+{   
+  X509_NAME *subj;
+  char **ret;
+  char **rn; 
+  int next, lext;
+  int i,l;
+
+  next = X509_get_ext_count(crt);
+
+  ret = (char**) malloc((next+1)*sizeof(char*));
+  rn = ret;
+  lext = 0;
+  for (i=0; i<next; i++) {
+     X509_EXTENSION *ext;
+     ASN1_OBJECT *obj;
+     STACK_OF(GENERAL_NAME) *alt;
+     GENERAL_NAME *an;
+
+     lext = X509_get_ext_by_NID(crt, NID_subject_alt_name, lext);
+     if (lext<0) break;
+     ext = X509_get_ext(crt, lext);
+     obj = X509_EXTENSION_get_object(ext);
+
+     alt = X509V3_EXT_d2i(ext);
+     if (alt) {
+        int j,anl;
+        char *ant;
+        for (j=0;j<sk_GENERAL_NAME_num(alt);j++) {
+           an = sk_GENERAL_NAME_value(alt, j);
+           if (an->type != GEN_DNS) continue;
+           ant = ASN1_STRING_data(an->d.ia5);
+           anl = ASN1_STRING_length(an->d.ia5);
+           *rn++ = strdup(ant);
+        }
+     }
+  }
+  *rn = NULL;
+  return (ret);
+}
+
+
+
 /**
  @param peer machine talking to the keyserver
  @return PBC_FAIL if not in the access list, PBC_OK if ok.
@@ -290,31 +379,69 @@ static int check_access_list(const char *peer)
 
 }
 
+/* Test if the peer has authority for the host.  We allow
+   a single '*' wildcard at the start of a cn. */
+static int test_peer(char *host, X509 *ccert)
+{
+   char *cn;
+   pool *p;
+   char **altnames, **an;
+
+   if (strchr(host,'*')) return (0); 
+   cn = get_cn_from_crt(ccert);
+   if (!strcmp(host,cn)) return (1);
+   /* maybe cert has a wildcard */
+   if (*cn == '*') {
+      int nc;
+      char *cp;
+      for (nc=0,cp=cn;cp;cp=strchr(cp+1,'.'),nc++);
+      if (nc<3) return (0);
+      if (!strcmp(cn+1, host+(strlen(host)-strlen(cn+1)))) return (1);
+   }
+   /* maybe in altnames */
+   altnames = get_altnames_from_crt(ccert);
+  
+   for (an=altnames;*an;an++) {
+      if (!strcmp(host, *an)) {
+         pbc_log_activity(p, PBC_LOG_ERROR, "peer ok by altname");
+         free(altnames);
+         return (1);
+      }
+   }
+   free(altnames);
+   return (0);
+}
+
 /**
  * do the keyserver operation
- * @param peer the name of the client that's connected to us
+ * @param peer the cn from the client's certificate
  * @param op the operation to perform, one of: 
  *	PERMIT - authorize a keyserver client
  *	GENKEY - generate a new key for peer
  *      SETKEY - key from friend login server
  *      FETCHKEY - peer requests it's key
  *      FETCHGC - peer requests the granting cert
+ *      SETPKEY - set the public key for a client's cert
  *      NOOP - for completeness
  * @param newkey if the operation is SETKEY, "peer;base64(key)"
+ *               else is effective hostname for the op
+ * @param ccert the client's certificate
  * @return 0 on success, non-zero on error
  */
-int doit(const char *peer, security_context *context, enum optype op, const char *newkey)
+int doit(const char *peer, security_context *context, enum optype op,
+     const char *newkey, X509 *ccert)
 {
     char buf[8 * PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
     pool *p = NULL;
     int dokeyret = 0;
-    char *thepeer;
+    char *thepeer = NULL;  /* effective peer hostname */
     char *thekey64;
     FILE *gcf;
     int lgcf;
     char **keymgt_peers = libpbc_config_getlist(p, "keymgt_peers");
     int x, found;
+    char *z;
 
     /* no HTML headers for me */
     myprintf("\r\n");
@@ -341,6 +468,7 @@ int doit(const char *peer, security_context *context, enum optype op, const char
                     return(1);
                 }
                 *thekey64++ = '\0';
+                if (z=strchr(thekey64, ' ')) *z = '\0';
 
                 if (libpbc_test_crypt_key(p, thepeer) == PBC_OK) {
                     myprintf("OK already authorized\r\n");
@@ -369,7 +497,7 @@ int doit(const char *peer, security_context *context, enum optype op, const char
                 }
 
                 /* push the new key to the other login servers */
-                pushkey(thepeer, context);
+                pushkey(thepeer, context, NULL);
 
                 dokeyret = 0; /* don't return the key to this client */
                 break;
@@ -378,19 +506,28 @@ int doit(const char *peer, security_context *context, enum optype op, const char
         case GENKEY:
             {
                 /* 'peer' has asked us to generate a new key */
-                if(libpbc_test_crypt_key(p, peer) == PBC_FAIL ) {
-                   myprintf("NO you (%s) are not authorized for keys\r\n",
-                        peer);
+                if (newkey) thepeer = strdup(newkey);
+                else thepeer = (char*) peer;
+                if (z=strchr(thepeer, ' ')) *z = '\0';
+                if (!test_peer(thepeer, ccert)) {
+                   myprintf("NO you (%s) are not authorized for host %s\r\n",
+                        peer, thepeer);
                    pbc_log_activity(p, PBC_LOG_ERROR,
-                        "operation not allowed: %s", peer);
+                        "operation not allowed: p=%s, h=%s", peer, thepeer);
                    return(1);
                 }
-                assert(newkey == NULL);
+                if(libpbc_test_crypt_key(p, thepeer) == PBC_FAIL ) {
+                   myprintf("NO you (%s) are not authorized for keys\r\n",
+                        thepeer);
+                   pbc_log_activity(p, PBC_LOG_ERROR,
+                        "operation not allowed: %s", thepeer);
+                   return(1);
+                }
 
                 pbc_log_activity(p, PBC_LOG_AUDIT,
-                        "generating a new key for %s", peer);
+                        "generating a new key for %s", thepeer);
 
-                if (libpbc_generate_crypt_key(p, peer) < 0) {
+                if (libpbc_generate_crypt_key(p, thepeer) < 0) {
                     myprintf("NO generate_new_key() failed\r\n");
                     pbc_log_activity(p, PBC_LOG_ERROR, 
                                      "generate_new_key() failed");
@@ -399,7 +536,7 @@ int doit(const char *peer, security_context *context, enum optype op, const char
                 }
 
                 /* push the new key to the other login servers */
-                pushkey(peer, context);
+                pushkey(thepeer, context, NULL);
 
                 dokeyret = 1;
                 break;
@@ -439,6 +576,7 @@ int doit(const char *peer, security_context *context, enum optype op, const char
                     return(1);
                 }
                 *thekey64++ = '\0';
+                if (z=strchr(thekey64, ' ')) *z = '\0';
 
                 /* base64 decode thekey64 */
                 thekey = (char *) malloc(strlen(thekey64));
@@ -474,8 +612,16 @@ int doit(const char *peer, security_context *context, enum optype op, const char
 
             pbc_log_activity(p, PBC_LOG_AUDIT, "Fetching a key..");
 
-            /* noop; we always return the new key */
-            assert(newkey == NULL);
+            if (newkey) thepeer = strdup(newkey);
+            else thepeer = (char*) peer;
+            if (z=strchr(thepeer, ' ')) *z = '\0';
+            if (!test_peer(thepeer, ccert)) {
+               myprintf("NO you (%s) are not authorized for host %s\r\n",
+                    peer, thepeer);
+               pbc_log_activity(p, PBC_LOG_ERROR,
+                    "operation not allowed: p=%s, h=%s", peer, thepeer);
+               return(1);
+            }
             dokeyret = 1;
             break;
 
@@ -496,6 +642,54 @@ int doit(const char *peer, security_context *context, enum optype op, const char
             dokeyret = 0;
             break;
 
+        case SETPKEY:
+            {
+                /* 'peer' has asked us to store the public key for a host */
+                /* newkey is the cert (pem) */
+                X509 *crt;
+                char *cn, *cn1;
+                char *fn;
+                FILE *fp;
+
+                if(check_access_list(peer) == PBC_FAIL ) {
+                   myprintf("NO you (%s) are not authorized to set cert keys\r\n",
+                        peer);
+                   pbc_log_activity(p, PBC_LOG_ERROR,
+                        "operation not allowed: %s", peer);
+                   return(1);
+                }
+
+                pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "pkey cert = %s", newkey);
+                crt = get_crt_from_pem(newkey);
+                if (!crt || !(cn=get_cn_from_crt(crt))) {
+                   myprintf("NO bad cert\r\n");
+                   pbc_log_activity(p, PBC_LOG_ERROR, "bad pkey cert");
+                   return(1);
+                }
+                cn1 = cn;
+                if (*cn1=='*') cn1++;
+                if (*cn1=='.') cn1++;
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                        "setting pubkey for %s", cn1);
+
+                fn = (char*) malloc(strlen(PBC_KEY_DIR) + strlen(cn1) + 16);
+                sprintf(fn, "%s/%s.crt", PBC_KEY_DIR, cn1);
+
+                if (!((fp=fopen(fn,"w")) && (fputs(newkey, fp)>0) &&
+                    (fclose(fp)==0))) { 
+                    myprintf("NO store pkey failed\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "store pkey failed");
+                    return(1);
+                }
+
+                /* push the pkey to the other login servers */
+                pushkey(thepeer, context, fn);
+
+                dokeyret = 0; /* don't return a key to this client */
+                break;
+            }
+
         case NOOP:
 
             pbc_log_activity(p, PBC_LOG_AUDIT, "Noop..");
@@ -505,7 +699,7 @@ int doit(const char *peer, security_context *context, enum optype op, const char
 
     if (dokeyret) {
        /* return the key */
-       if (libpbc_get_crypt_key(p, &c_stuff, (char *) peer) != PBC_OK) {
+       if (libpbc_get_crypt_key(p, &c_stuff, (char *) thepeer) != PBC_OK) {
            myprintf("NO couldn't retrieve key\r\n");
            return 1;
        }
@@ -535,6 +729,50 @@ void usage(void)
     printf("All options override the values in the configuration file.\n");
 }
 
+/* Check if a certificate's pubkey is on file.  */
+
+static ASN1_BIT_STRING *cache_pkey = NULL;
+static int verify_local_public_key(X509 *crt)
+{
+  int l;
+  void *p = NULL;
+
+  if (!cache_pkey) {
+    char *cn, *cn1;
+    char *fn;
+    BIO *cb;
+    X509 *cache_crt;
+
+    cn = get_cn_from_crt(crt);
+    if (!cn) return (0);
+
+    cn1 = cn;
+    if (*cn1=='*') cn1++;
+    if (*cn1=='.') cn1++;
+    
+    fn = (char*) malloc(strlen(PBC_KEY_DIR) + strlen(cn1) + 16);
+    sprintf(fn, "%s/%s.crt", PBC_KEY_DIR, cn1);
+
+    cb = BIO_new(BIO_s_file());
+
+    if (BIO_read_filename(cb,fn)>0) {
+       cache_crt = PEM_read_bio_X509(cb,NULL,NULL,NULL);
+       if (cache_crt) cache_pkey = X509_get0_pubkey_bitstr(cache_crt);
+    }
+    BIO_free(cb);
+    free(cn);
+    free(fn);
+  }
+
+  if (cache_pkey) {
+     ASN1_BIT_STRING *nkey;
+     nkey = X509_get0_pubkey_bitstr(crt);
+     if(nkey && (nkey->length==cache_pkey->length) && 
+        (memcmp(nkey->data, cache_pkey->data, nkey->length)==0)) return (1);
+  }
+  return (0);
+}
+
 static int verify_callback(int ok, X509_STORE_CTX * ctx)
 {
     X509   *err_cert;
@@ -551,14 +789,24 @@ static int verify_callback(int ok, X509_STORE_CTX * ctx)
 	pbc_log_activity(p, PBC_LOG_ERROR, "verify error:num=%d:%s", err,
                          X509_verify_cert_error_string(err));
 
-	/* we want to ignore any key usage problems but no other faults */
 	switch (ctx->error) {
-	case X509_V_ERR_INVALID_PURPOSE:
+
+	 /* ignore any key usage problems */
+	 case X509_V_ERR_INVALID_PURPOSE:
 	    pbc_log_activity(p, PBC_LOG_ERROR, "invalid purpose; ignoring error!");
 	    ok = 1;
 	    break;
 	    
-	default:
+        
+         /* no approved ca - check local cache of public keys */
+	 case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+	 case X509_V_ERR_CERT_UNTRUSTED:
+	 case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+            ok = verify_local_public_key(err_cert);
+            if (ok) pbc_log_activity(p, PBC_LOG_ERROR, "pubkey on file");
+	    break;
+
+	 default:
 	    break;
 	}
     }
@@ -712,26 +960,13 @@ int main(int argc, char *argv[])
 	exit(1);
     }
 
-    peer = X509_NAME_oneline (X509_get_subject_name (client_cert),0,0);
+    peer = get_cn_from_crt(client_cert);
     if (peer == NULL) {
         pbc_log_activity(p, PBC_LOG_ERROR, "peer == NULL???");
         exit(1);
     }
-    if (strstr(peer, "CN=")) {
-        peer = strstr(peer, "CN=");
-        peer += 3;
-    }
-    if( strstr(peer, "/Email=") ) {
-        *(strstr(peer, "/Email=")) = '\0';
-    }
 
-    /* Not all certificate subjects go root->leaf, some go leaf->root */
-    
-    if ( strchr(peer, '/') ) {
-        *(strchr(peer, '/')) = '\0';
-    }
-
-    pbc_log_activity(p, PBC_LOG_AUDIT, "peer identified as %s\n", peer);
+    pbc_log_activity(p, PBC_LOG_AUDIT, "peer cn: %s\n", peer);
 
     /* read HTTP query */
     if (SSL_read(ssl, buf, sizeof(buf)) <= 0) {
@@ -740,6 +975,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    pbc_log_activity(p, PBC_LOG_ERROR, "REQ=%s", buf);
     for (ptr = buf; *ptr != '\0'; ptr++) {
 	/* look for 'genkey' */
 	if (*ptr == '?' && !strncmp(ptr+1, "genkey=yes", 10)) {
@@ -762,6 +998,10 @@ int main(int argc, char *argv[])
 	    op = FETCHGC;
 	}
 
+	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=setpkey", 12)) {
+	    op = SETPKEY;
+	}
+
 	/* look for 'setkey' */
 	else if (*ptr == '?' && !strncmp(ptr+1, "setkey=", 7)) {
 	    char *q;
@@ -770,10 +1010,8 @@ int main(int argc, char *argv[])
 	    ptr += 7; /* setkey= */
 
 	    setkey = strdup(ptr);
-	    /* terminated by ? or ' ' */
+	    /* terminated by ? */
 	    q = strchr(setkey, '?');
-	    if (q) *q = '\0';
-	    q = strchr(setkey, ' ');
 	    if (q) *q = '\0';
 	}
     }
@@ -785,7 +1023,7 @@ int main(int argc, char *argv[])
 
     /* call doit */
 
-    r = doit(peer, context, op, setkey);
+    r = doit(peer, context, op, setkey, client_cert);
     SSL_shutdown(ssl);
 
     return r;
