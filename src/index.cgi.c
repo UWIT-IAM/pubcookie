@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.43 2002-05-18 01:05:43 willey Exp $
+    $Id: index.cgi.c,v 1.44 2002-05-18 01:22:30 willey Exp $
  */
 
 
@@ -1099,7 +1099,9 @@ int app_logged_out(login_rec *c, const char *appid, const char *appsrvid)
         tmpl_print_out(TMPL_FNAME "logout_app");
     }
     else {
+        tmpl_print_out(TMPL_FNAME "logout_app_custom_prefix");
         print_out("%s\n", s);
+        tmpl_print_out(TMPL_FNAME "logout_app_custom_suffix");
     }
  
     free(app_string);
