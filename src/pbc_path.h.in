@@ -1,10 +1,9 @@
 /* 
- * 
  * pbc_path.h, The pubcookie path.
+ *
+ * So that we can just #include this file instead of having to 
+ * worry about shell escapes and whatnot.
  * 
- * Copyright (C) 2002 Jonathan J. Miner
- * 
- * Jonathan J. Miner <miner@doit.wisc.edu>
  */
 
 #ifndef PBC_PATH_H

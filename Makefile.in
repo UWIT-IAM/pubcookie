@@ -4,9 +4,7 @@
 #
 # @configure_input@
 # 
-# Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
-#
-# $Id: Makefile.in,v 1.12 2002-09-16 18:43:45 jjminer Exp $
+# $Id: Makefile.in,v 1.13 2002-10-17 15:58:30 jjminer Exp $
 
 @SET_MAKE@
 
