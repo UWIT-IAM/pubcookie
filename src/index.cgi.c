@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.70 $
+ * $Revision: 1.71 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -102,6 +102,8 @@
 /* cgic */
 #ifdef HAVE_CGIC_H
 # include <cgic.h>
+#else
+# error "cgic is required for building the login server"
 #endif /* HAVE_CGIC_H */
 
 
