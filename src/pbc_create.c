@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_create.c,v 1.1 1998-06-25 03:00:58 willey Exp $
+    $Id: pbc_create.c,v 1.2 1998-07-15 00:21:22 willey Exp $
  */
 
 #include <stdio.h>
@@ -11,12 +11,14 @@
 #include "pbc_config.h"
 
 int main(int argc, char **argv) {
-    context_plus *ctx_plus;
-    char type;
-    char creds;
-    char appsrv_id[PBC_APPSRV_ID_LEN];
-    char app_id[PBC_APP_ID_LEN];
-    char *cookie;
+    md_context_plus *ctx_plus;
+    unsigned char type;
+    unsigned char creds;
+    unsigned char appsrv_id[PBC_APPSRV_ID_LEN];
+    unsigned char app_id[PBC_APP_ID_LEN];
+    unsigned char *cookie;
+    crypt_stuff         *c_stuff;
+    FILE		*fp;
 
     // somethings for debugging
     type='1';
@@ -35,10 +37,13 @@ int main(int argc, char **argv) {
     }
 
     ctx_plus = libpbc_sign_init();
-    cookie = libpbc_get_cookie(argv[1], type, creds, appsrv_id, app_id, ctx_plus);
+    c_stuff = libpbc_init_crypt();
+    cookie = libpbc_get_cookie(argv[1], type, creds, appsrv_id, app_id, ctx_plus, c_stuff);
 
+    fp = fopen("out", "w");
     if ( cookie ) 
-	printf("%s\n", cookie);
+	fprintf(fp, "%s", cookie);
+    fclose(fp);
     exit(0);
 
 }

@@ -1,9 +1,12 @@
 /*
-    $Id: mod_pubcookie.c,v 1.3 1998-06-25 03:00:58 willey Exp $
+    $Id: mod_pubcookie.c,v 1.4 1998-07-15 00:21:22 willey Exp $
  */
 
 #include <pem.h>
+#include <time.h>
 #include "pubcookie.h"
+#include "libpubcookie.h"
+#include "pbc_config.h"
 
 #include "httpd.h"
 #include "http_config.h"
@@ -13,18 +16,6 @@
 #include "http_protocol.h"
 #include "util_script.h"
 /* #include <envelope.h> */
-
-#define CERTFILE "/usr/local/src/pubcookie/cookie_cert.pem"
-#define SIG_LEN 128
-#define COOKIENAME "pubcookie"
-#define AUTH_FAILED_HANDLER "pubcookie-failed-handler"
-#define BAD_USER_HANDLER "pubcookie-bad-user"
-#define LOGIN_PAGE_STAT "http://selby.cac.washington.edu/login/login-stat.html"
-#define LOGIN_PAGE_DYN "http://selby.cac.washington.edu/login/login-dyn.html"
-#define LOGIN_DESC "http://selby.cac.washington.edu/login/login-desc.html"
-#define DEFAULT_EXPIRE 1800
-#define BAD_AUTH 1
-#define BAD_USER 2
 
 module pubcookie_module;
 
@@ -52,8 +43,8 @@ static int auth_failed(request_rec *r) {
 	  "<frame name=description src=%s>\n"
 	  "<frame name=dynamic src=%s>\n"
 	  "</frameset>", 
-	  cfg->desc ? cfg->desc : LOGIN_DESC, 
-	  cfg->login ? cfg->login : LOGIN_PAGE_DYN);
+	  cfg->desc ? cfg->desc : PBC_LOGIN_DESC, 
+	  cfg->login ? cfg->login : PBC_LOGIN_PAGE_DYN);
   return OK;
 }
 
@@ -124,11 +115,16 @@ static void pubcookie_init(server_rec *s, pool*p) {
   pubcookie_server_rec *cfg;
   FILE *fp;
   X509 *x509;
+  md_context_plus *sign_ctx_plus;
+  md_context_plus *verify_ctx_plus;
+
+  sign_ctx_plus = libpbc_verify_init();
+  verify_ctx_plus = libpbc_sign_init();
 
   cfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
 						   &pubcookie_module);
 
-  if(!(fp = pfopen(p, cfg->certfile ? cfg->certfile : CERTFILE, "r"))) {
+  if(!(fp = pfopen(p, cfg->certfile ? cfg->certfile : PBC_CERTFILE, "r"))) {
     fprintf(stderr, "PUBCOOKIE: Could not open the certificate file: %s.\n", cfg->certfile);
     exit(1);
   }
@@ -200,39 +196,39 @@ static int pubcookie_user(request_rec *r) {
   cfg = (pubcookie_rec *) get_module_config(r->per_dir_config, 
 					    &pubcookie_module);
 
-  if(!(cookie = get_cookie(r,cfg->cookiename ? cfg->cookiename : COOKIENAME))){
-    cfg->failed = BAD_AUTH;
+  if(!(cookie = get_cookie(r,cfg->cookiename ? cfg->cookiename : PBC_COOKIENAME))){
+    cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
 
   decoded = pstrdup(r->pool, cookie);
 
   if(!base64_decode(cookie, decoded)) {
-    cfg->failed = BAD_AUTH;
+    cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
 
   EVP_VerifyInit(&md_ctx, EVP_md5());
-  EVP_VerifyUpdate(&md_ctx, decoded+SIG_LEN, strlen(decoded+SIG_LEN)); 
-  if(EVP_VerifyFinal(&md_ctx, decoded, SIG_LEN, public_key) != 1) {
-    cfg->failed = BAD_AUTH;
+  EVP_VerifyUpdate(&md_ctx, decoded+PBC_SIG_LEN, strlen(decoded+PBC_SIG_LEN)); 
+  if(EVP_VerifyFinal(&md_ctx, decoded, PBC_SIG_LEN, public_key) != 1) {
+    cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
 
-  if(!(ptr = strchr(decoded+SIG_LEN, ':'))) {
-    cfg->failed = BAD_AUTH;
+  if(!(ptr = strchr(decoded+PBC_SIG_LEN, ':'))) {
+    cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
 
   *ptr = 0;
   ptr++;
-  cookie_time = strtol(decoded + SIG_LEN, NULL, 16);
+  cookie_time = strtol(decoded + PBC_SIG_LEN, NULL, 16);
 
-  if((cookie_time + (cfg->expire ? cfg->expire:DEFAULT_EXPIRE)) > time(NULL)) {
+  if((cookie_time + (cfg->expire ? cfg->expire:PBC_DEFAULT_EXPIRE)) > time(NULL)) {
     r->connection->user = pstrdup(r->pool, ptr);
     return OK;
   } else {
-    cfg->failed = BAD_AUTH;
+    cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
 }
@@ -284,7 +280,7 @@ int pubcookie_auth (request_rec *r) {
     }
   }
 
-  cfg->failed = BAD_USER;
+  cfg->failed = PBC_BAD_USER;
   return OK;
 }
 
@@ -297,11 +293,11 @@ static int pubcookie_typer(request_rec *r) {
 
   if(!cfg->failed) {
     return DECLINED;
-  } else if(cfg->failed == BAD_AUTH) {
-    r->handler = AUTH_FAILED_HANDLER;
+  } else if(cfg->failed == PBC_BAD_AUTH) {
+    r->handler = PBC_AUTH_FAILED_HANDLER;
     return OK;
-  } else if (cfg->failed == BAD_USER) {
-    r->handler = BAD_USER_HANDLER;
+  } else if (cfg->failed == PBC_BAD_USER) {
+    r->handler = PBC_BAD_USER_HANDLER;
     return OK;
   } else {
     return DECLINED;
@@ -372,8 +368,8 @@ command_rec pubcookie_commands[] = {
 };
 
 handler_rec pubcookie_handlers[] = {
-  { AUTH_FAILED_HANDLER, auth_failed},
-  { BAD_USER_HANDLER, bad_user},
+  { PBC_AUTH_FAILED_HANDLER, auth_failed},
+  { PBC_BAD_USER_HANDLER, bad_user},
   { NULL }
 };
 

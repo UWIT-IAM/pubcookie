@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_verify.c,v 1.1 1998-06-25 03:00:58 willey Exp $
+    $Id: pbc_verify.c,v 1.2 1998-07-15 00:21:22 willey Exp $
  */
 
 
@@ -15,27 +15,38 @@
 int main(int argc, char **argv) {
     char buf[4096];
     char *cookie = buf + PBC_SIG_LEN;
-    context_plus	*ctx_plus;
+    md_context_plus	*ctx_plus;
     pbc_cookie_data	*cookie_data;
+    FILE		*fp;
+    char		in[4096];
+    crypt_stuff         *c_stuff;
 
     memset(buf, 0, sizeof(buf));
 
-    if(argc != 2) {
-        fprintf(stderr, "usage: %s cookie\n", argv[0]);
-        exit(1);
-    }
+    fp = fopen("out", "r");
+    fgets(in, 4096, fp);
+    fclose(fp);
 
-    if(strlen(argv[1]) > 512) {
-        fprintf(stderr, "Cookie is too long.\n");
-        exit(1);
-    }
+//    if(argc != 2) {
+//        fprintf(stderr, "usage: %s cookie\n", argv[0]);
+//        exit(1);
+//    }
+
+//    if(strlen(argv[1]) > 512) {
+//        fprintf(stderr, "Cookie is too long.\n");
+//        exit(1);
+//    }
 
     ctx_plus = libpbc_verify_init();
-    if( ! (cookie_data = libpbc_unbundle_cookie(argv[1], ctx_plus)) ) {
+    c_stuff = libpbc_init_crypt();
+//    if( ! (cookie_data = libpbc_unbundle_cookie(argv[1], ctx_plus)) ) {
+    if( ! (cookie_data = libpbc_unbundle_cookie(in, ctx_plus, c_stuff)) ) {
 	fprintf(stderr, "Could not verify signature.\n");
 	exit(1);
     }
 
+    printf("user is %s\n", (*cookie_data).broken.user);
+    printf("app_id is %s\n", (*cookie_data).broken.app_id);
     printf("%s\n", cookie);
     exit(0);
 }
