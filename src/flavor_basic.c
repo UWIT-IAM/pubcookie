@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.55 2004-04-28 21:04:49 willey Exp $
+ * $Id: flavor_basic.c,v 1.56 2004-05-13 16:08:58 fox Exp $
  */
 
 
@@ -731,13 +731,7 @@ static login_result process_basic(pool *p, const security_context *context,
                              l->user == NULL ? "(null)" : l->user,
                              *errstr);
 
-            /* make sure 'l' reflects that */
-
-            if ( ! libpbc_config_getswitch(p, "retain_username_on_failed_authn", 0)) {
-                l->user = NULL;	/* in case wrong username */
-            }
-            print_login_page(p, l, c, FLB_BAD_AUTH);
-
+            /* possibly reset username */
             if ( ! libpbc_config_getswitch(p, "retain_username_on_failed_authn", 0)) {
                 l->user = NULL;	/* in case wrong username */
             }
