@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.5 2002-06-11 20:18:01 greenfld Exp $
+# $Id: Makefile.login,v 1.6 2002-06-12 20:09:58 jjminer Exp $
 
 include Makefile.settings
 
@@ -28,7 +28,7 @@ EXTRA_LIBS += -ldl
 
 ## HAVE_KRB5 - you want the kerberos 5 verifier
 DEFINES += -DHAVE_KRB5
-EXTRA_LIBS += -ldes -lkrb5 -ldes
+EXTRA_LIBS += -ldes -lkrb5
 
 ## HAVE_LDAP - you want the ldap verifier
 # DEFINES += -DHAVE_LDAP
@@ -155,15 +155,15 @@ index.cgi: $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB)
 
 index.cgi.o $(VERIFIERS) flavor_$(FLAVOR).o: $(MAKEFILES) $(LIB_HEAD) $(INDEX_HEAD)
 
-keyserver: keyserver.o
+keyserver: keyserver.o $(LIB_OBJ)
 		$(CC) ${CFLAGS} -o $@ keyserver.o $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS)
 
-keyclient: keyclient.o
+keyclient: keyclient.o $(LIB_OBJ)
 		$(CC) ${CFLAGS} -o $@ keyclient.o $(LIB_OBJ) $(LDFLAGS)
 
 clean::
 	$(FORCE_RM) $(INDEX_FILES) $(INDEX_OBJ) $(TEST_OBJ) $(UTIL_OBJ) \
-			 $(UTIL_FILES) $(TEST_FILES)
+			 	$(UTIL_FILES) $(TEST_FILES)
 
 tests: $(TEST_FILES)
 
