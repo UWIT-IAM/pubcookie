@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.70 2002-01-04 01:21:54 willey Exp $
+    $Id: mod_pubcookie.c,v 1.71 2002-02-07 23:56:55 willey Exp $
  */
 
 /* apache includes */
@@ -1197,7 +1197,7 @@ static int pubcookie_user(request_rec *r) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
 
       if( cfg->super_debug )
-        libpbc_debug("pubcookie_user: No G or S cookie; uri: %s appid: %s cookie_data->broken.appid: %s sess_cookie_name: %s\n", r->uri, appid(r), ((NULL != NULL) ? cookie_data->broken.appid : "Null"), sess_cookie_name);
+        libpbc_debug("pubcookie_user: No G or S cookie; uri: %s appid: %s cookie_data->broken.appid: %s sess_cookie_name: %s\n", r->uri, appid(r), ((NULL != NULL) ? cookie_data->broken.appid : (unsigned char *)"Null"), sess_cookie_name);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
       return OK;
