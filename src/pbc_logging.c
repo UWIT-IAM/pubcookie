@@ -10,7 +10,7 @@ void pbc_log_init()
 /* open syslog - we are appending the PID to the log, and prepending 
     the string "pubcookie login server" to make it easily greppable 
 */
-    openlog("pubcookie login server", LOG_PID, LOG_LOCAL2);
+    openlog("pubcookie login server", LOG_PID, LOG_AUTHPRIV);
 }
 
 
@@ -30,16 +30,15 @@ void pbc_log_activity(int logging_level, const char *message,...)
 #else
       vsnprintf(log, sizeof(log)-1, message, args);
 #endif
+      va_end(args);
       /* write to syslog, making it a "private auth"  message.
-     This seemed to be the most reasonable option...I originally had
-     it a configurable option, but decided against it. */
+	 This seemed to be the most reasonable option...I originally had
+	 it a configurable option, but decided against it. */
 
       if (logging_level != PBC_LOG_ERROR)
-	syslog(LOG_MAKEPRI(LOG_AUTHPRIV, LOG_INFO), message);
+	  syslog(LOG_INFO, log);
       else
-	syslog(LOG_MAKEPRI(LOG_AUTHPRIV, LOG_ERR), message);
-
-      va_end(args);
+	  syslog(LOG_ERR, log);
     }
 }
 
