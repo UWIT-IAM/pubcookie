@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.67 $
+ * $Revision: 1.68 $
  */
 
 
@@ -312,8 +312,8 @@ int get_cookie(char *name, char *result, int max)
     }
     
     /* make us a local copy */
-    strncpy(target, s, PBC_20K-1);
-    
+    strlcpy(target, s, PBC_20K-1);
+
     if (!(wkspc=strstr(target, name))) {
 	free(target);
         return(PBC_FAIL);
@@ -326,8 +326,16 @@ int get_cookie(char *name, char *result, int max)
             *p = '\0';
             break;
         }
+	if (*p == '=') {
+	    /* somehow we're getting junk on the end of some base64-ized
+	       cookies. this works around the problem. xxx */
+	    break;
+	}
         p++;
     }
+    /* make sure that after we hit an '=', there's no other junk at the end */
+    while (*p == '=') p++;
+    *p = '\0';
 
     strncpy(result, wkspc, max);
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
@@ -431,12 +439,6 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
     if ( (l_cookie = malloc(PBC_4K)) == NULL )
         abend("out of memory");
 
-    if (init_crypt(NULL) == PBC_FAIL) {
-       pbc_log_activity(PBC_LOG_ERROR, 
-			"expire_login_cookie: unable to initialize crypt key");
-       return (PBC_FAIL);
-    }
-
     if( c == NULL || c->user == NULL ) {
         if( l == NULL || l->user == NULL )
             user = strdup("unknown");
@@ -455,7 +457,7 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
                        23,                  
 		       time(NULL),  
                        l_cookie,
-                       login_private_keyfile(),
+			  NULL, /* sending it to myself */
                        PBC_4K);
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW,
@@ -744,77 +746,6 @@ const char *enterprise_domain()
 
 }
 
-char *keyfile(char *prefix)
-{
-    char	*file;
-    char	*host;
-
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,"keyfile(%s): hello", prefix);
-
-    host = get_my_hostname();
-
-    /* plus one for \0 and plus one for the '.' in the format */
-    file = calloc(strlen(PBC_KEY_DIR) + 1 +
-                  strlen(prefix) +
-                  strlen(host=get_my_hostname()) + 1 + 1, sizeof(char));
-    if (file == NULL ) 
-        abend("out of memory");
-    sprintf(file, "%s/%s.%s", PBC_KEY_DIR, prefix, host);
-
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
-			 "keyfile(%s): returning %s", prefix, file);
-
-
-    return(file);
-
-}
-
-char *login_private_keyfile()
-{
-    return PBC_L_KEYFILE;
-}
-
-char *login_public_keyfile()
-{
-    return PBC_L_CERTFILE;
-}
-
-char *granting_private_keyfile()
-{
-    return PBC_G_KEYFILE;
-}
-
-/**
- * reads the crypt key
- * @param peername of the peer who's key should be read
- *        or read the local host's key if NULL
- * @returns PBC_FAIL on failure, PBC_OK on success
- */
-int init_crypt(char * peername) 
-{
-    int free_peer = 0;
-
-    if (peername == NULL) {
-        peername = get_my_hostname();
-        if (peername == NULL) {
-           return(PBC_FAIL);
-        }
-        free_peer = 1;
-    }
-
-    c_stuff = libpbc_init_crypt(peername);
-
-    if (free_peer == 1) {
-       free(peername);
-    }
-
-    if (c_stuff == NULL ) {
-        return(PBC_FAIL);
-    } else {
-        return(PBC_OK);
-    }
-}
-
 int has_login_cookie()
 {
     if (getenv("HTTP_COOKIE") && 
@@ -891,7 +822,7 @@ char *decode_granting_request(char *in, char **peerp)
     }
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "decode_granting_request: out: %s\n", out);
+		     "decode_granting_request: out: %s\n", out);
 
 
     return(out);
@@ -1367,6 +1298,8 @@ int cgiMain()
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, "cgiMain() done initializing...");
 
+    sleep(libpbc_config_getint("sleepfor", 0));
+
     /* always print out the standard headers */
     print_http_header();
 
@@ -1485,10 +1418,6 @@ char *check_l_cookie(login_rec *l, login_rec *c)
     char	*l_version;
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "check_l_cookie: hello\n");
-
-    if (init_crypt(NULL) == PBC_FAIL) {
-        return("check_l_cookie: couldn't initialize crypt key");
-    }
 
     if (c == NULL )
         c = verify_unload_login_cookie(l);
@@ -1867,37 +1796,9 @@ void print_redirect_page(login_rec *l, login_rec *c)
     }
     serial = get_next_serial();
 
-    if (init_crypt(NULL) == PBC_FAIL) {
-
-        sprintf( message, "%s%s%s%s%s%s",
-                 PBC_EM1_START,
-                 TROUBLE_CREATING_COOKIE,
-                 PBC_EM1_END,
-                 PBC_EM2_START,
-                 PROBLEMS_PERSIST,
-                 PBC_EM2_END);
-        pbc_log_activity(PBC_LOG_AUDIT, message );
-	/* xxx it's kinda hard to jump to print_login_page, because
-	   what flavor should we be printing here? */
-#if 0
-        print_login_page(l, c, message, "cookie create failed", 
-			 NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-#endif
-	pbc_log_activity(PBC_LOG_ERROR,
-		  "Not able to create cookie for user %s at %s-%s", 
-		  l->user, l->appsrvid, l->appid);
-	free(message);
-        return;
-    }
-
     pbc_log_activity(PBC_LOG_AUDIT, "l->user=%s l->appsrvid=%s l->appid=%s",
 		    l->user, l->appsrvid, l->appid);
 
-    /* cook up them cookies */
-    if (init_crypt(NULL) == PBC_FAIL) {
-	pbc_log_activity(PBC_LOG_ERROR,
-			 "print_redirect_page: can't initialize crypt key");
-    }
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
     l_res = create_cookie(url_encode(l->user),
@@ -1908,13 +1809,8 @@ void print_redirect_page(login_rec *l, login_rec *c)
         serial,
 	(c == NULL || c->expire_ts < time(NULL) ? compute_l_expire(l) : c->expire_ts),
         l_cookie,
-        login_private_keyfile(),
+        NULL, /* sending it to myself */
         PBC_4K);
-
-    if (init_crypt(l->host) == PBC_FAIL) {
-	 pbc_log_activity(PBC_LOG_ERROR,
-			 "print_redirect_page: can't initialize crypt key");
-    }
 
     /* since the flavor responsible for 'creds_from_greq' returned
        LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
@@ -1927,7 +1823,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         serial,
         0,
         g_cookie,
-        granting_private_keyfile(),
+        l->host,
         PBC_4K);
 
     /* if we have a problem then bail with a nice message */
@@ -2258,17 +2154,10 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     new = malloc(sizeof(login_rec));
     init_login_rec(new);
 
-    if ((ctx_plus = libpbc_verify_init(login_public_keyfile())) == NULL )
-        abend("Couldn't load public login key");
-
-    if (init_crypt(NULL) == PBC_FAIL) {
-	pbc_log_activity(PBC_LOG_ERROR,
-			 "verify_unload_login_cookie: failed to initialize crypt key");
+    cookie_data = libpbc_unbundle_cookie(cookie, NULL);
+    if (!cookie_data) {
         return((login_rec *)NULL);
     }
-
-    if ((cookie_data=libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff))	== NULL)
-        return((login_rec *)NULL);
 
     new->user =  (char *) (*cookie_data).broken.user;
     new->version = (char *) (*cookie_data).broken.version;
@@ -2301,7 +2190,7 @@ int create_cookie(char *user_buf,
                   int serial,
 		  time_t expire,
                   char *cookie,
-                  char *priv_key_file,
+                  const char *peer,
  	          int max)
 {
     /* special data structs for the crypt stuff */
@@ -2323,23 +2212,16 @@ int create_cookie(char *user_buf,
     strncpy( (char *) appid, appid_buf, sizeof(appid));
     appid[sizeof(appid)-1] = '\0';
 
-    if ((ctx_plus = libpbc_sign_init(priv_key_file)) == NULL ) {
-        abend("Cound not load private key file");
-    }
-    
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
 		 "create_cookie: ready to go get cookie, with expire_ts: %d\n", 
 		       (int)expire);
 
     /* go get the cookie */
     cookie_local = (char *) libpbc_get_cookie_with_expire(user, type, creds, serial, 
-			             expire, appsrvid, appid, ctx_plus, 
-                                     c_stuff);
+							  expire, appsrvid, appid, peer);
     
     strncpy (cookie, cookie_local, max);
 
-    /* free ctx_plus */
-    libpbc_free_md_context_plus(ctx_plus);
     if (cookie_local) {
 	/* dynamically allocated by libpbc_get_cookie_with_expire() */
 	free(cookie_local);
