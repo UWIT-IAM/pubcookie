@@ -4,7 +4,7 @@ OBJS=mod_pubcookie.o libpubcookie.o base64.o
 mod_pubcookie.a:	$(OBJS)
 
 .c.o:
-	$(CC) -c $(INCLUDES) $(CFLAGS) -DAPACHE1_3 $(SSL_CFLAGS) $<
+	$(CC) -c $(INCLUDES) $(CFLAGS) -DAPACHE1_3 $(SSL_CFLAGS) -I$(SSL_INCDIR)/openssl -I$(SSL_INCDIR) $<
 
 #Dependencies
 
