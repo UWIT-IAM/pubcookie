@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.29 2001-10-17 18:50:46 willey Exp $
+    $Id: index.cgi.c,v 1.30 2001-10-29 23:11:46 willey Exp $
  */
 
 
@@ -39,6 +39,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <fcntl.h>
 /* openssl */
 #include <pem.h>
 /* kerberos  */
@@ -374,6 +375,7 @@ login_rec *load_login_rec(login_rec *l)
     l->referer 		= get_string_arg(PBC_GETVAR_REFERER, NO_NEWLINES_FUNC);
     l->session_reauth 	= get_int_arg(PBC_GETVAR_SESSION_REAUTH);
     l->reply 		= get_int_arg(PBC_GETVAR_REPLY) + 48;
+    l->duration 	= get_int_arg(PBC_GETVAR_DURATION);
 
 #ifdef DEBUG
     fprintf(stderr, "load_login_rec: bye\n");
@@ -710,12 +712,14 @@ int vector_request(login_rec *l, login_rec *c)
 
 #ifdef DEBUG
     fprintf(stderr, "vector_request: hello\n");
+    fprintf(stderr, "vector_request: l->creds: %c\n", l->creds);
 #endif
 
     if ( l->reply == FORM_REPLY ) {      /* a reply from the login page */
         res = check_login(l, c);
         if( strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
             log_message("%s Authentication failed: %s type: %c %s", l->first_kiss, l->user, l->creds, res);
+            l->user = NULL; /* just in case the username is wrong */
             if( !strcmp(res, CHECK_LOGIN_RET_FAIL) ) {
                 snprintf(message, sizeof(message)-1, "%s%s%s<P>%s",
                     PBC_EM1_START,
@@ -735,7 +739,7 @@ int vector_request(login_rec *l, login_rec *c)
         log_message("%s Authentication success: %s type: %c", l->first_kiss, l->user, l->creds);
     }
     else if( l->creds == PBC_CREDS_CRED3 ) {             /* securid */
-        print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_SECURID, YES_CLEAR_LOGIN, YES_CLEAR_GREQ);
+        print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_SECURID, NO_CLEAR_LOGIN, YES_CLEAR_GREQ);
         return(PBC_FAIL);
     }
     else if ( !has_login_cookie() ) {          /* no l cookie, must login */
@@ -771,6 +775,10 @@ int cgiMain()
 {
     login_rec	*l=NULL;   /* culled from various sources */
     login_rec	*c=NULL;   /* only from login cookie */
+
+#ifdef DEBUG
+    fprintf(stderr, "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
+#endif
 
     /* make the effective uid nobody */
     if( setreuid(0, 65534) != 0 )
@@ -865,7 +873,7 @@ int cgiMain()
 #define FIELD_TYPE_EMPTY_EDITTABLE 0
 #define FIELD_TYPE_PREFILLED_EDITTABLE 1
 #define FIELD_TYPE_PREFILLED_NONEDITTABLE 2
-#define FIELD_TYPE_FREE_RIDE 2
+#define FIELD_TYPE_FREE_RIDE 3
 
 #define FIELD_ECHO_YES 0
 #define FIELD_ECHO_STARS 1
@@ -883,22 +891,35 @@ void print_form_field(char *field, char *var, int echo, int field_type, char *va
     print_out("<P>\n");
     print_out("%s\n", field);
 
-    if( field_type==FIELD_TYPE_EMPTY_EDITTABLE || field_type==FIELD_TYPE_PREFILLED_EDITTABLE ) {
+#ifdef DEBUG
+    log_message("print_form_field: field: %s, field_type %d, value %s", field, field_type, value);
+#endif
+
+    if( field_type == FIELD_TYPE_EMPTY_EDITTABLE || 
+        field_type == FIELD_TYPE_PREFILLED_EDITTABLE ) {
          print_out("<INPUT TYPE=\"%s\"", echo==FIELD_ECHO_YES ? "text" : "password");
          if( field_type==FIELD_TYPE_PREFILLED_EDITTABLE )
              print_out(" NAME=\"%s\" SIZE=\"20\" VALUE=\"%s\">\n", var, value);
          else
              print_out(" NAME=\"%s\" SIZE=\"20\">\n", var);
-    } else if( field_type==FIELD_TYPE_FREE_RIDE ) {
+    } else if( field_type == FIELD_TYPE_FREE_RIDE ) {
          print_out("%s\n", FREE_RIDE_MESSAGE);
          print_out("<INPUT TYPE=\"hidden\"");
          print_out(" NAME=\"%s\" VALUE=\"%s\">\n", var, value);
-    } else if( field_type==FIELD_TYPE_PREFILLED_NONEDITTABLE ) {
+    } else if( field_type == FIELD_TYPE_PREFILLED_NONEDITTABLE ) {
          print_out("<span style=\"background: #eeeeee; color:black\"><tt>%s</tt></span>\n", value);
+         print_out("<INPUT TYPE=\"hidden\"");
+         print_out(" NAME=\"%s\" VALUE=\"%s\">\n", var, value);
     }
 
 }
 
+/* 
+char *field_prompts[] = {
+	PROMPT_PASSWD, 
+	PROMPT_NONE, 
+	PROMPT_SECURID };
+ */
 
 void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, int need_clear_login, int need_clear_greq)
 {
@@ -910,6 +931,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     char	focus[PBC_1K];
     char	message_out[PBC_1K];
     char	*hostname = strdup(get_domain_hostname());
+    char	*prefilled_user = NULL;
     int		field_type = 0;
     int		field1_type = 0;
 /* work in progress 
@@ -946,15 +968,11 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         break;
     }
 
-    log_message("print_login_page field1_prompt: %s", field1_prompt);
-
     /* tell the stoopid browser where to put the cursor */
     sprintf(focus, "onLoad=\"document.query.%s.focus()\"", focus_field);
 
-    log_message("print_login_page focus: %s", focus);
-
     /* text before the form fields */
-    if( message == NULL || strcmp(message, PRINT_LOGIN_PLEASE) != 0 ) {
+    if( message == NULL || strcmp(message, PRINT_LOGIN_PLEASE) == 0 ) {
         sprintf(message_out, "<P>The resource you requested requires you to log in with your %s.</P>\n", log_in_with);
     }
     else {
@@ -984,25 +1002,31 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
             G_REQ_RECIEVED,
             PBC_ENTRPRS_DOMAIN);
 
-
-    tmpl_print_out(TMPL_FNAME "login_part1", focus, reason, message_out);
+    /* need to come back and fix the cursor focus stuff */
+    tmpl_print_out(TMPL_FNAME "login_part1", "", reason, message_out);
 
 #ifndef FORM_FIELDS_IN_TMPL
     if(field1_prompt != NULL) {
-        if( c != NULL && c->user != NULL )
+        if( c != NULL && c->user != NULL ) {
             field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
+            prefilled_user = strdup(c->user);
+        }
+        if( l != NULL && l->user != NULL ) {
+            field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
+            prefilled_user = strdup(l->user);
+        }
         if( l->ride_free_creds == PBC_CREDS_CRED1 )
             print_form_field(field1_prompt, 
                              "user", 
                              FIELD_ECHO_YES, 
                              FIELD_TYPE_FREE_RIDE, 
-                             l->user);
+                             c->user);
         else
             print_form_field(field1_prompt, 
                              "user", 
                              FIELD_ECHO_YES, 
                              field1_type, 
-                             l->user);
+                             prefilled_user);
     }
 
     if(field2_prompt != NULL) {
@@ -1027,10 +1051,6 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
                              field_type, 
                              "");
 
-    print_out("</form>\n");
-    print_out("</td>\n");
-    print_out("<td width=\"9\">&nbsp;</td>\n");
-
 #endif
 
     print_login_page_hidden_stuff(l);
@@ -1038,20 +1058,27 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
 
 }
 
-char *check_login_uwnetid(const char *user, const char *pass)
+char *check_login_uwnetid(login_rec *l)
 {
 #ifdef DEBUG
     fprintf(stderr, "check_login_uwnetid: hello\n");
 #endif 
 
-    if( user == NULL || pass == NULL ) {
+    if( l->ride_free_creds == PBC_CREDS_CRED1 ) {
+#ifdef DEBUG
+        fprintf(stderr, "check_login_uwnetid: free ride for this cred\n");
+#endif 
+        return(CHECK_LOGIN_RET_SUCCESS);
+    }
+
+    if( l->user == NULL || l->pass == NULL ) {
 #ifdef DEBUG
         fprintf(stderr, "check_login_uwnetid: user or pass absent\n");
 #endif 
         return(CHECK_LOGIN_RET_FAIL);
     }
 
-    if( auth_kdc(user, pass) == NULL ) {
+    if( auth_kdc(l->user, l->pass) == NULL ) {
 #ifdef DEBUG
         fprintf(stderr, "check_login_uwnetid: auth_kdc say ok\n");
 #endif 
@@ -1114,12 +1141,13 @@ char *check_login(login_rec *l, login_rec *c)
     strcpy(ret, CHECK_LOGIN_RET_BAD_CREDS);
 
     if( l->creds == PBC_CREDS_CRED1 ) {
-        strcpy(ret, check_login_uwnetid(l->user, l->pass));
+        strcpy(ret, check_login_uwnetid(l));
     }
     else if( l->creds == PBC_CREDS_CRED3 ) {
         strcpy(ret, check_login_securid(l->user, l->pass2, l->next_securid, l));
         if( !strcmp(ret, CHECK_LOGIN_RET_SUCCESS) ) {
-            strcpy(ret, check_login_uwnetid(l->user, l->pass));
+            /* now check the uwnetid part */
+            strcpy(ret, check_login_uwnetid(l));
         }
         else {
             return ret;
@@ -1167,21 +1195,29 @@ char ride_free_zone(login_rec *l, login_rec *c)
     }
 
     if( (c->create_ts + RIDE_FREE_TIME) < (t=time(NULL)) ) {
+#ifdef DEBUG
         log_message("%s No Free Ride login cookie created: %d now: %d user: %s",
 			l->first_kiss,
 			c->create_ts, 
                         t,
 			c->user);
+#endif
         return(PBC_CREDS_NONE);
     }
     else {
+#ifdef DEBUG
         log_message("%s Yeah! Free Ride!!! login cookie created: %d now: %d user: %s",
 			l->first_kiss,
 			c->create_ts, 
                         t,
 			c->user);
-        l->user = c->user;
-        l->creds = c->creds;
+#endif
+        if( l->user == NULL )
+            l->user = c->user;
+/* 
+        if( l->creds == 0 )
+	    l->creds = c->creds;
+ */
         return(PBC_CREDS_CRED1);
     }
 
@@ -1773,7 +1809,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         /*                                                               */
         /* non-post redirect area                 non-post redirect area */
         /*                                                               */
-        tmpl_print_out(TMPL_FNAME "nonpost_redirect", REFRESH, redirect_final,redirect_final);
+        tmpl_print_out(TMPL_FNAME "nonpost_redirect", redirect_final, REFRESH, redirect_final, redirect_final);
     } /* end if post_stuff */
 
     free(g_cookie);
