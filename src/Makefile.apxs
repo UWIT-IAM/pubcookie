@@ -1,11 +1,11 @@
 # -*- make -*-
 #
-#  $Id: Makefile.apxs,v 1.13 2002-06-05 16:52:29 greenfld Exp $
+#  $Id: Makefile.apxs,v 1.14 2002-06-07 21:15:41 jjminer Exp $
 
 include Makefile.settings
 
 # if the apache binaries aren't in your path
-APXS=/usr/www/bin/apxs
+APXS=/usr/local/apache/bin/apxs
 
 # some mod_pubcookie compile flags
 #  -DAPACHE1_2 - for old apaches
@@ -44,7 +44,7 @@ DOCS=$(GENERAL_DOCS) \
 	 ../doc/CHANGES.mod_pubcookie.txt
 
 mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) ${MAKEFILES}
-	$(APXS) -c $(CFLAGS) $(MOD_SRC) $(LIB_SRC) $(LIBS)
+	$(APXS) -c $(CFLAGS) $(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 
 install:: all
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so

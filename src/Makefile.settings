@@ -4,11 +4,11 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.settings,v 1.3 2002-06-05 16:52:29 greenfld Exp $
+# $Id: Makefile.settings,v 1.4 2002-06-07 21:15:41 jjminer Exp $
 
 CC=cc
 
-SSL_BASE=/usr/local/
+SSL_BASE=/usr/local/ssl
 SSL_OTHER_INC_DIR=
 SSL_OTHER_LIB_DIR=
 
@@ -16,7 +16,7 @@ EXTRA_CFLAGS=
 EXTRA_LDFLAGS=
 EXTRA_LIBS=
 
-PUBCOOKIE_DIR=/usr/www/pubcookie
+PUBCOOKIE_DIR=/usr/local/pubcookie
 KEY_DIR=$(PUBCOOKIE_DIR)/keys
 TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
 
