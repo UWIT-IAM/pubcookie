@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.34 2003-07-03 04:25:21 willey Exp $
+ * $Id: keyclient.c,v 2.35 2003-07-04 07:41:58 ryanc Exp $
  */
 
 
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-        libpbc_base64_encode(cp, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
 
         /* we're uploading! */
         snprintf(buf, sizeof(buf),
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
                         /* chomp new line */
                         *strchr(cp, '\r') = '\0';
                     }
-                    ret = libpbc_base64_decode(cp, (unsigned char *) cp, thekey, &osize);
+                    ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         fprintf(stderr, "keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
                         exit(1);
@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
                         exit(1);
                     }
 
-                    if (libpbc_set_crypt_key(cp, (const char *) thekey, hostname) != PBC_OK) {
+                    if (libpbc_set_crypt_key(p, (const char *) thekey, hostname) != PBC_OK) {
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
                     }
