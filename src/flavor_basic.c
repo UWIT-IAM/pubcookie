@@ -81,7 +81,9 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 	     "  %s</p>\n", *errstr ? *errstr : "");
 
     tmpl_print_html(TMPL_FNAME "login_part1", 
-		    "", "this reason not implemented", message_out);
+		    "", "this reason not implemented", 
+		    PBC_LOGIN_URI,
+		    message_out);
 
     /* keep all of the state around we need */
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", 

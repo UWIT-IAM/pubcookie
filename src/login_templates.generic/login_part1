@@ -16,7 +16,9 @@
      <!-- %s --><!-- embed a readable reason for the login-->
 
 
-     <form name="query" method="POST" action="/" enctype="application/x-www-form-urlencoded" autocomplete="off">
+      <!--- action below is the login server URI --->
+     <form name="query" method="POST" action="%s"
+	enctype="application/x-www-form-urlencoded" autocomplete="off">
 
      <P>
               <table border="0" cellpadding="0" cellspacing="2" width="271" height="70">
