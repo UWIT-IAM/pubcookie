@@ -26,6 +26,8 @@ The Apache module (mod_pubcookie) distribution contains the following files:
        	libpubcookie.c
        	libpubcookie.h
        	mod_pubcookie.c
+       	pbc_myconfig.c
+       	pbc_myconfig.h
        	pbc_config.h
        	pbc_version.h
        	pubcookie.h
@@ -51,6 +53,8 @@ The pubcookie login server distribution contains the following files:
 	index.cgi_securid.c
 	libpubcookie.c
 	libpubcookie.h
+       	pbc_myconfig.c
+       	pbc_myconfig.h
 	securid.c
 	securid.h
 	pbc_config.h
@@ -75,5 +79,5 @@ The pubcookie login server distribution contains the following files:
 	contrib/*   
 
 
-$Id: README.txt,v 1.14 2002-03-06 23:54:02 willey Exp $
+$Id: README.txt,v 1.15 2002-06-06 19:32:56 willey Exp $
 
