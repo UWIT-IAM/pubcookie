@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.98 2002-08-30 21:51:03 willey Exp $
+    $Id: mod_pubcookie.c,v 1.99 2002-08-30 21:58:35 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1192,8 +1192,8 @@ void pubcookie_dir_defaults(pubcookie_dir_rec *cfg) {
 
     if( cfg->inact_exp == PBC_UNSET_INACT_EXPIRE )
         cfg->inact_exp = PBC_DEFAULT_INACT_EXPIRE;
-    if( cfg->hard_exp == PBC_UNSET_INACT_EXPIRE )
-        cfg->hard_exp = PBC_DEFAULT_INACT_EXPIRE;
+    if( cfg->hard_exp == PBC_UNSET_HARD_EXPIRE )
+        cfg->hard_exp = PBC_DEFAULT_HARD_EXPIRE;
 }
 
 /* when there is stuff in the server rec with non-zero defaults put them here */
