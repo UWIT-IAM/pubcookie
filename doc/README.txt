@@ -5,7 +5,7 @@ http://www.washington.edu/computing/pubcookie/
 
 Installation specific docs live at:
 
-http://www.washington.edu/computing/pubcookie/installa.htm
+http://www.washington.edu/computing/pubcookie/apache/install.html
 
 The Pubcookie distribution contains the following files: 
 	README - most recent notes
