@@ -3,30 +3,44 @@ if (!defined &PUBCOOKIE_CONFIG) {
     if (defined ( &APACHE1_2) || defined ( &APACHE1_3)) {
 	eval 'sub APACHE () {1;}' unless defined(&APACHE);
     }
+    eval 'sub PBC_NUWNETID_AUTHTYPE () {"uwnetid";}' unless defined(&PBC_NUWNETID_AUTHTYPE);
+    eval 'sub PBC_SECURID_AUTHTYPE () {"securid";}' unless defined(&PBC_SECURID_AUTHTYPE);
+    eval 'sub PBC_REFRESH_TIME () {0;}' unless defined(&PBC_REFRESH_TIME);
+    eval 'sub PBC_ENTRPRS_DOMAIN () {".washington.edu";}' unless defined(&PBC_ENTRPRS_DOMAIN);
+    eval 'sub PBC_DEFAULT_INACT_EXPIRE () {30* 60;}' unless defined(&PBC_DEFAULT_INACT_EXPIRE);
+    eval 'sub PBC_DEFAULT_HARD_EXPIRE () {8* 60* 60;}' unless defined(&PBC_DEFAULT_HARD_EXPIRE);
+    eval 'sub PBC_MAX_HARD_EXPIRE () {12* 60* 60;}' unless defined(&PBC_MAX_HARD_EXPIRE);
+    eval 'sub PBC_DEFAULT_EXPIRE_LOGIN () {8* 60* 60;}' unless defined(&PBC_DEFAULT_EXPIRE_LOGIN);
+    eval 'sub PBC_GRANTING_EXPIRE () {20;}' unless defined(&PBC_GRANTING_EXPIRE);
+    eval 'sub PBC_BAD_AUTH () {1;}' unless defined(&PBC_BAD_AUTH);
+    eval 'sub PBC_BAD_USER () {2;}' unless defined(&PBC_BAD_USER);
+    eval 'sub PBC_FORCE_REAUTH () {3;}' unless defined(&PBC_FORCE_REAUTH);
     eval 'sub PBC_L_COOKIENAME () {"pubcookie_l";}' unless defined(&PBC_L_COOKIENAME);
     eval 'sub PBC_G_COOKIENAME () {"pubcookie_g";}' unless defined(&PBC_G_COOKIENAME);
     eval 'sub PBC_G_REQ_COOKIENAME () {"pubcookie_g_req";}' unless defined(&PBC_G_REQ_COOKIENAME);
     eval 'sub PBC_S_COOKIENAME () {"pubcookie_s";}' unless defined(&PBC_S_COOKIENAME);
     eval 'sub PBC_PRE_S_COOKIENAME () {"pubcookie_p_res";}' unless defined(&PBC_PRE_S_COOKIENAME);
-    eval 'sub PBC_TEST_COOKIENAME () {"pubcookie_test_cookie";}' unless defined(&PBC_TEST_COOKIENAME);
-    eval 'sub PBC_TEST_COOKIECONTENTS () {"yes";}' unless defined(&PBC_TEST_COOKIECONTENTS);
+    eval 'sub PBC_FORM_MP_COOKIENAME () {"pubcookie_formmultipart";}' unless defined(&PBC_FORM_MP_COOKIENAME);
     eval 'sub PBC_AUTH_FAILED_HANDLER () {"pubcookie-failed-handler";}' unless defined(&PBC_AUTH_FAILED_HANDLER);
     eval 'sub PBC_BAD_USER_HANDLER () {"pubcookie-bad-user";}' unless defined(&PBC_BAD_USER_HANDLER);
+    eval 'sub PBC_POST_NO_JS_HTML1 () {"<HTML><HEAD></HEAD>\\n <BODY BGCOLOR=\\"white\\" onLoad=\\"document.query.submit.click()\\">\\n <CENTER>\\n <FORM METHOD=\\"POST\\" ACTION=\\"";}' unless defined(&PBC_POST_NO_JS_HTML1);
+    eval 'sub PBC_POST_NO_JS_HTML2 () {"\\" NAME=\\"query\\">\\n <INPUT TYPE=\\"hidden\\" NAME=\\"post_stuff\\" VALUE=\\"";}' unless defined(&PBC_POST_NO_JS_HTML2);
+    eval 'sub PBC_POST_NO_JS_HTML3 () {"\\">\\n <TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520><TR><TD WIDTH=300 VALIGN=\\"MIDDLE\\"> <IMG SRC=\\"";}' unless defined(&PBC_POST_NO_JS_HTML3);
+    eval 'sub PBC_POST_NO_JS_HTML4 () {"\\" ALT=\\"UW NetID Login\\" HEIGHT=\\"64\\" WIDTH=\\"208\\"> \\n <SCRIPT LANGUAGE=\\"JavaScript\\">\\ndocument.write(\\"<P>Your browser should move to the next page in a few seconds.  If it doesn\'t, please click the button to continue.<P>\\")\\n </SCRIPT> <NOSCRIPT> <P>You do not have Javascript turned on, please click the button to continue.<P>\\n </NOSCRIPT>\\n</TABLE>\\n <INPUT TYPE=\\"SUBMIT\\" NAME=\\"submit\\" VALUE=\\"";}' unless defined(&PBC_POST_NO_JS_HTML4);
+    eval 'sub PBC_POST_NO_JS_HTML5 () {"\\">\\n </FORM>\\n";}' unless defined(&PBC_POST_NO_JS_HTML5);
+    eval 'sub PBC_POST_NO_JS_HTML6 () {"</CENTER>\\n </BODY></HTML>\\n";}' unless defined(&PBC_POST_NO_JS_HTML6);
+    eval 'sub PBC_HTML_COPYRIGHT () {"<P><address>&#169; 1999 University of Washington</address><P>\\n";}' unless defined(&PBC_HTML_COPYRIGHT);
+    eval 'sub PBC_POST_NO_JS_BUTTON () {"Click here to continue";}' unless defined(&PBC_POST_NO_JS_BUTTON);
+    eval 'sub PBC_UWNETID_LOGO () {"images/login.gif";}' unless defined(&PBC_UWNETID_LOGO);
     eval 'sub PBC_LOGIN_PAGE () {"https://weblogin.washington.edu/";}' unless defined(&PBC_LOGIN_PAGE);
-    eval 'sub PBC_CRYPT_KEYFILE () {"/usr/local/pubcookie/c_key";}' unless defined(&PBC_CRYPT_KEYFILE);
-    eval 'sub PBC_MASTER_CRYPT_KEYFILE () {"/usr/local/pubcookie/m_key";}' unless defined(&PBC_MASTER_CRYPT_KEYFILE);
-    eval 'sub PBC_DEFAULT_INACT_EXPIRE () {30* 60;}' unless defined(&PBC_DEFAULT_INACT_EXPIRE);
-    eval 'sub PBC_DEFAULT_HARD_EXPIRE () {8* 60* 60;}' unless defined(&PBC_DEFAULT_HARD_EXPIRE);
-    eval 'sub PBC_MAX_HARD_EXPIRE () {12* 60* 60;}' unless defined(&PBC_MAX_HARD_EXPIRE);
-    eval 'sub PBC_DEFAULT_EXPIRE_LOGIN () {8* 60* 60;}' unless defined(&PBC_DEFAULT_EXPIRE_LOGIN);
-    eval 'sub PBC_GRANTING_EXPIRE () {60;}' unless defined(&PBC_GRANTING_EXPIRE);
-    eval 'sub PBC_BAD_AUTH () {1;}' unless defined(&PBC_BAD_AUTH);
-    eval 'sub PBC_BAD_USER () {2;}' unless defined(&PBC_BAD_USER);
-    eval 'sub PBC_FORCE_REAUTH () {3;}' unless defined(&PBC_FORCE_REAUTH);
-    eval 'sub PBC_NUWNETID_AUTHTYPE () {"uwnetid";}' unless defined(&PBC_NUWNETID_AUTHTYPE);
-    eval 'sub PBC_SECURID_AUTHTYPE () {"securid";}' unless defined(&PBC_SECURID_AUTHTYPE);
-    eval 'sub PBC_REFRESH_TIME () {0;}' unless defined(&PBC_REFRESH_TIME);
-    eval 'sub PBC_ENTRPRS_DOMAIN () {".washington.edu";}' unless defined(&PBC_ENTRPRS_DOMAIN);
+    if (defined ( &WIN32)) {
+	eval 'sub PBC_CRYPT_KEYFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\c_key";}' unless defined(&PBC_CRYPT_KEYFILE);
+	eval 'sub PBC_MASTER_CRYPT_KEYFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\m_key";}' unless defined(&PBC_MASTER_CRYPT_KEYFILE);
+    }
+    else {
+	eval 'sub PBC_CRYPT_KEYFILE () {"/usr/local/pubcookie/c_key";}' unless defined(&PBC_CRYPT_KEYFILE);
+	eval 'sub PBC_MASTER_CRYPT_KEYFILE () {"/usr/local/pubcookie/m_key";}' unless defined(&PBC_MASTER_CRYPT_KEYFILE);
+    }
     eval 'sub PBC_GETVAR_APPSRVID () {"one";}' unless defined(&PBC_GETVAR_APPSRVID);
     eval 'sub PBC_GETVAR_APPID () {"two";}' unless defined(&PBC_GETVAR_APPID);
     eval 'sub PBC_GETVAR_CREDS () {"three";}' unless defined(&PBC_GETVAR_CREDS);
@@ -40,22 +54,36 @@ if (!defined &PUBCOOKIE_CONFIG) {
     eval 'sub PBC_CREDS_NONE () {ord(\'0\');}' unless defined(&PBC_CREDS_NONE);
     eval 'sub PBC_CREDS_UWNETID () {ord(\'1\');}' unless defined(&PBC_CREDS_UWNETID);
     eval 'sub PBC_CREDS_SECURID () {ord(\'2\');}' unless defined(&PBC_CREDS_SECURID);
-    eval 'sub PBC_CREDS_MCIS () {ord(\'3\');}' unless defined(&PBC_CREDS_MCIS);
+    eval 'sub PBC_CREDS_UWNETID_SECURID () {ord(\'3\');}' unless defined(&PBC_CREDS_UWNETID_SECURID);
     eval 'sub PBC_COOKIE_TYPE_NONE () {ord(\'0\');}' unless defined(&PBC_COOKIE_TYPE_NONE);
     eval 'sub PBC_COOKIE_TYPE_G () {ord(\'1\');}' unless defined(&PBC_COOKIE_TYPE_G);
     eval 'sub PBC_COOKIE_TYPE_S () {ord(\'2\');}' unless defined(&PBC_COOKIE_TYPE_S);
     eval 'sub PBC_COOKIE_TYPE_L () {ord(\'3\');}' unless defined(&PBC_COOKIE_TYPE_L);
-    eval 'sub PBC_L_CERTFILE () {"/usr/local/pubcookie/pubcookie_login.cert";}' unless defined(&PBC_L_CERTFILE);
-    eval 'sub PBC_L_KEYFILE () {"/usr/local/pubcookie/pubcookie_login.key";}' unless defined(&PBC_L_KEYFILE);
-    eval 'sub PBC_S_CERTFILE () {"/usr/local/pubcookie/pubcookie_session.cert";}' unless defined(&PBC_S_CERTFILE);
-    eval 'sub PBC_S_KEYFILE () {"/usr/local/pubcookie/pubcookie_session.key";}' unless defined(&PBC_S_KEYFILE);
-    eval 'sub PBC_G_CERTFILE () {"/usr/local/pubcookie/pubcookie_granting.cert";}' unless defined(&PBC_G_CERTFILE);
-    eval 'sub PBC_G_KEYFILE () {"/usr/local/pubcookie/pubcookie_granting.key";}' unless defined(&PBC_G_KEYFILE);
+    if (defined ( &WIN32)) {
+	eval 'sub PBC_L_CERTFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\pubcookie_login.cert";}' unless defined(&PBC_L_CERTFILE);
+	eval 'sub PBC_L_KEYFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\pubcookie_login.key";}' unless defined(&PBC_L_KEYFILE);
+	eval 'sub PBC_S_CERTFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\pubcookie_session.cert";}' unless defined(&PBC_S_CERTFILE);
+	eval 'sub PBC_S_KEYFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\pubcookie_session.key";}' unless defined(&PBC_S_KEYFILE);
+	eval 'sub PBC_G_CERTFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\pubcookie_granting.cert";}' unless defined(&PBC_G_CERTFILE);
+	eval 'sub PBC_G_KEYFILE () {"C:\\\\WINNT\\\\System32\\\\inetsrv\\\\pubcookie\\\\pubcookie_granting.key";}' unless defined(&PBC_G_KEYFILE);
+    }
+    else {
+	eval 'sub PBC_L_CERTFILE () {"/usr/local/pubcookie/pubcookie_login.cert";}' unless defined(&PBC_L_CERTFILE);
+	eval 'sub PBC_L_KEYFILE () {"/usr/local/pubcookie/pubcookie_login.key";}' unless defined(&PBC_L_KEYFILE);
+	eval 'sub PBC_S_CERTFILE () {"/usr/local/pubcookie/pubcookie_session.cert";}' unless defined(&PBC_S_CERTFILE);
+	eval 'sub PBC_S_KEYFILE () {"/usr/local/pubcookie/pubcookie_session.key";}' unless defined(&PBC_S_KEYFILE);
+	eval 'sub PBC_G_CERTFILE () {"/usr/local/pubcookie/pubcookie_granting.cert";}' unless defined(&PBC_G_CERTFILE);
+	eval 'sub PBC_G_KEYFILE () {"/usr/local/pubcookie/pubcookie_granting.key";}' unless defined(&PBC_G_KEYFILE);
+    }
     if (defined &APACHE1_2) {
 	eval 'sub pbc_malloc {
 	    local($x) = @_;
 	    eval " &palloc( &p, $x)";
 	}' unless defined(&pbc_malloc);
+	eval 'sub pbc_free {
+	    local($x) = @_;
+	    eval " &libpbc_void($x)";
+	}' unless defined(&pbc_free);
 	eval 'sub pbc_strdup {
 	    local($x) = @_;
 	    eval " &pstrdup( &p, $x)";
@@ -78,6 +106,10 @@ if (!defined &PUBCOOKIE_CONFIG) {
 	    local($x) = @_;
 	    eval " &ap_palloc( &p, $x)";
 	}' unless defined(&pbc_malloc);
+	eval 'sub pbc_free {
+	    local($x) = @_;
+	    eval " &libpbc_void($x)";
+	}' unless defined(&pbc_free);
 	eval 'sub pbc_strdup {
 	    local($x) = @_;
 	    eval " &ap_pstrdup( &p, $x)";
@@ -100,6 +132,12 @@ if (!defined &PUBCOOKIE_CONFIG) {
 	    local($x) = @_;
 	    eval " &malloc($x)";
 	}' unless defined(&pbc_malloc);
+    }
+    if (!defined &pbc_free) {
+	eval 'sub pbc_free {
+	    local($x) = @_;
+	    eval " &free($x)";
+	}' unless defined(&pbc_free);
     }
     if (!defined &pbc_strdup) {
 	eval 'sub pbc_strdup {
@@ -126,6 +164,10 @@ if (!defined &PUBCOOKIE_CONFIG) {
 	}' unless defined(&pbc_fclose);
     }
     if (defined ( &APACHE1_2) || defined ( &APACHE1_3)) {
+	eval 'sub libpbc_gen_granting_req {
+	    local($a,$b,$c,$d,$e,$f,$g,$h,$i,$j,$k) = @_;
+	    eval " &libpbc_gen_granting_req_p( &p, $a,$b,$c,$d,$e,$f,$g,$h,$i,$j,$k, &l)";
+	}' unless defined(&libpbc_gen_granting_req);
 	eval 'sub libpbc_get_cookie {
 	    local($a,$b,$c,$d,$e,$f,$g,$h) = @_;
 	    eval " &libpbc_get_cookie_p( &p, $a,$b,$c,$d,$e,$f,$g,$h)";
@@ -196,8 +238,20 @@ if (!defined &PUBCOOKIE_CONFIG) {
 	    local($a) = @_;
 	    eval " &libpbc_stringify_cookie_data_p( &p, $a)";
 	}' unless defined(&libpbc_stringify_cookie_data);
+	eval 'sub libpbc_free_md_context_plus {
+	    local($a) = @_;
+	    eval " &libpbc_free_md_context_plus_p( &p, $a)";
+	}' unless defined(&libpbc_free_md_context_plus);
+	eval 'sub libpbc_free_crypt {
+	    local($a) = @_;
+	    eval " &libpbc_free_crypt_p( &p, $a)";
+	}' unless defined(&libpbc_free_crypt);
     }
     else {
+	eval 'sub libpbc_gen_granting_req {
+	    local($a,$b,$c,$d,$e,$f,$g,$h,$i,$j,$k) = @_;
+	    eval " &libpbc_gen_granting_req_np($a,$b,$c,$d,$e,$f,$g,$h,$i,$j,$k)";
+	}' unless defined(&libpbc_gen_granting_req);
 	eval 'sub libpbc_get_cookie {
 	    local($a,$b,$c,$d,$e,$f,$g,$h) = @_;
 	    eval " &libpbc_get_cookie_np($a,$b,$c,$d,$e,$f,$g,$h)";
@@ -256,6 +310,14 @@ if (!defined &PUBCOOKIE_CONFIG) {
 	    local($a) = @_;
 	    eval " &libpbc_stringify_cookie_data_np($a)";
 	}' unless defined(&libpbc_stringify_cookie_data);
+	eval 'sub libpbc_free_md_context_plus {
+	    local($a) = @_;
+	    eval " &libpbc_free_md_context_plus_np($a)";
+	}' unless defined(&libpbc_free_md_context_plus);
+	eval 'sub libpbc_free_crypt {
+	    local($a) = @_;
+	    eval " &libpbc_free_crypt_np($a)";
+	}' unless defined(&libpbc_free_crypt);
     }
 }
 1;
