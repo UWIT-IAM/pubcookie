@@ -6,7 +6,22 @@ Legend:
 M - module changes
 L - library changes
 H - only .h files changed
-O - other :)
+O - other (Makefile, Makefile.apxs, etc.)
+
+a5 release6 27Jan2000 rcs references: m1.40 l2.9
+M  - added super-debugging which can be turned on a directory level
+M  - cleaned-up some log lines for consistancy and clarity
+M  - made timeout defaults more reasonsable, plus added bounds checking
+M  - fixed bug where requests w/o explicit appids and get args would include 
+     the get args in the assumed appid, thus failing to compair against
+     solely the directory name and causing login server loops.
+M  - module uses different apache functions for hostname
+M  - more info is sent to the login server via the granting request cookie,
+     including: real hostname, redirect reason, misc flag (currently unused),
+     upload file location (for file upload), referer uri.
+O  - USE_SECURID is default in makefile and Makefile.apxs
+L  - WIN32 library changes (JimB)
+L  - changed some exits() to returns() to percolate up some error msgs (JimB)
 
 a5 release5 1Sep1999 rcs references: m1.38 l2.7
 M  - stopped using apache's base64 functions in apache1.3
