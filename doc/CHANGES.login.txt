@@ -7,6 +7,7 @@ cryptic messages)
 
 a5 1.20 24April2001
 - Use creds from granting request for granting cookie, not login cookie
+- First version covered by external distribution license
 
 
 revision 1.19
