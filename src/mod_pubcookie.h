@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.11 2004-08-10 23:09:04 fox Exp $
+    $Id: mod_pubcookie.h,v 2.12 2004-08-17 21:46:57 fox Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -83,6 +83,8 @@ typedef struct {
   char			*login;
   unsigned char		*appsrvid;
   char			*authtype_names; /* raw arg string from conf */
+  int                   use_post;
+  char                  *post_reply_url;
   security_context      *sectext;
 } pubcookie_server_rec;
 

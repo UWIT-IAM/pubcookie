@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.13 2004-08-10 23:09:04 fox Exp $
+ * $Id: pbc_apacheconfig.c,v 2.14 2004-08-17 21:46:57 fox Exp $
  */
 
 
@@ -124,10 +124,8 @@ const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *
     if (!(sr=find_server_from_pool(p))) {
        rr = find_request_from_pool(p);
        if (!rr) {
-         printf("gstr could not find: %s\n", key);
           return (def);
        }
-       printf("gstr using request rec\n");
        sr = rr->server;
     }
 

@@ -6,9 +6,11 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.149 2004-08-11 20:59:21 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.150 2004-08-17 21:46:57 fox Exp $
  */
 
+#define MAX_POST_DATA 2048  /* arbitrary */
+int use_post = 1;
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -69,6 +71,7 @@ typedef apr_table_t table;
 #include "security.h"
 #include "mod_pubcookie.h"
 #include "pbc_configure.h"
+#include "html.h"
 
 /* system stuff */
 #ifdef HAVE_TIME_H
@@ -146,6 +149,12 @@ typedef unsigned short apr_port_t;
 
 #endif /* which apache */
 
+/* Cookies are secure except for execptional cases */
+#ifdef PORT80_TEST
+static char *secure_cookie = "";
+#else
+char *secure_cookie = " secure";
+#endif
 
 void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
     ap_log_rerror(PC_LOG_DEBUG, r,
@@ -245,42 +254,41 @@ request_rec *find_request_from_pool(pool *p)
 
 
 /**
- * read the post stuff and spit it back out
+ * get the post stuff 
  * @param r reuquest_rec
  * @return int 
  */
-int put_out_post(request_rec *r) {
-   char argsbuffer[HUGE_STRING_LEN];
-   int retval;
+char *get_post_data(request_rec *r, int post_len) {
+   char *buffer;
+   char *bp;
+   int rem = post_len;
 
-   /* checkout http_protocols.c for reading the body info */
-   if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
-        return retval;
+   if (rem<=0) return (ap_pstrdup(r->pool, ""));
+
+   buffer = (char*) ap_palloc(r->pool, post_len+1);
+   *buffer = '\0';
+   bp = buffer;
+   if (ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)) return (buffer);
 
    if (ap_should_client_block(r)) {
-        int len_read;
+        int len;
 
 #ifdef APACHE1_3
         ap_hard_timeout("copy script args", r); 
 #endif
-        while ((len_read =
-                ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN)) > 0) {
+        while ((len=ap_get_client_block(r, bp, rem)) > 0) {
 #ifdef APACHE1_3
             ap_reset_timeout(r);
 #endif
-            if (ap_rwrite(argsbuffer, len_read, r) < len_read) {
-                /* something went wrong writing, chew up the rest */
-                while(ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
-                    /* dump it */
-                }
-                break;
-            }
+            bp += len;
+            rem -= len;
         }
 #ifdef APACHE1_3
         ap_kill_timeout(r);
 #endif
     }
-    return(1);
+    *bp = '\0';
+    return(buffer);
 
 }
 
@@ -469,11 +477,6 @@ static void set_session_cookie(request_rec *r, pubcookie_server_rec *scfg,
     char                 *new_cookie;
     unsigned char        *cookie;
     pool *p = r->pool;
-#ifdef PORT80_TEST
-    char *secure = "";
-#else
-    char *secure = " secure";
-#endif
 
     if( firsttime != 1 ) {
         /* just update the idle timer */
@@ -500,7 +503,7 @@ static void set_session_cookie(request_rec *r, pubcookie_server_rec *scfg,
                              appid(r)),
 			     cookie, 
 			     "/",
-                             secure);
+                             secure_cookie);
 
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 
@@ -540,7 +543,7 @@ static void set_session_cookie(request_rec *r, pubcookie_server_rec *scfg,
                                                           appid(r)),
                                  base64,
                                  "/",
-                                 secure);
+                                 secure_cookie);
         ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 
 	/* xxx eventually when these are just cookie extensions, they'll
@@ -552,18 +555,13 @@ static void set_session_cookie(request_rec *r, pubcookie_server_rec *scfg,
 /** clear granting cookie */
 void clear_granting_cookie(request_rec *r) {
     char   *new_cookie;
-#ifdef PORT80_TEST
-    char *secure = "";
-#else
-    char *secure = " secure";
-#endif
     pool *p = r->pool;
 
     new_cookie = ap_psprintf(p, 
                  "%s=; domain=%s; path=/; expires=%s;%s", 
        PBC_G_COOKIENAME, 
        PBC_ENTRPRS_DOMAIN,
-       EARLIEST_EVER, secure);
+       EARLIEST_EVER, secure_cookie);
 
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 }
@@ -571,18 +569,13 @@ void clear_granting_cookie(request_rec *r) {
 /* clear cred transfer cookie */
 void clear_transfer_cookie(request_rec *r) {
     char   *new_cookie;
-#ifdef PORT80_TEST
-    char *secure = "";
-#else
-    char *secure = " secure";
-#endif
     pool *p = r->pool;
 
     new_cookie = ap_psprintf(p, 
                              "%s=; domain=%s; path=/; expires=%s;%s", 
                              PBC_CRED_TRANSFER_COOKIENAME,
                              PBC_ENTRPRS_DOMAIN,
-                             EARLIEST_EVER, secure);
+                             EARLIEST_EVER, secure_cookie);
     
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 }
@@ -590,17 +583,12 @@ void clear_transfer_cookie(request_rec *r) {
 /** clear pre session cookie */
 void clear_pre_session_cookie(request_rec *r) {
     char   *new_cookie;
-#ifdef PORT80_TEST
-    char *secure = "";
-#else
-    char *secure = " secure";
-#endif
     pool *p = r->pool;
 
     new_cookie = ap_psprintf(p, 
                  "%s=; path=/; expires=%s;%s", 
        PBC_PRE_S_COOKIENAME, 
-       EARLIEST_EVER, secure);
+       EARLIEST_EVER, secure_cookie);
 
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 
@@ -609,11 +597,6 @@ void clear_pre_session_cookie(request_rec *r) {
 void clear_session_cookie(request_rec *r) {
     char   *new_cookie;
     pubcookie_req_rec    *rr;
-#ifdef PORT80_TEST
-    char *secure = "";
-#else
-    char *secure = " secure";
-#endif
     pool *p = r->pool;
 
     rr = (pubcookie_req_rec *) ap_get_module_config(r->request_config, 
@@ -626,7 +609,7 @@ void clear_session_cookie(request_rec *r) {
                 make_session_cookie_name(p, PBC_S_COOKIENAME, appid(r)), 
 	        PBC_CLEAR_COOKIE,
                 EARLIEST_EVER,
-                secure);
+                secure_cookie);
                              
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 
@@ -639,7 +622,7 @@ void clear_session_cookie(request_rec *r) {
                                                           appid(r)), 
                                  PBC_CLEAR_COOKIE,
                                  EARLIEST_EVER,
-                                 secure);
+                                 secure_cookie);
         
         ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
     }
@@ -653,15 +636,10 @@ void clear_session_cookie(request_rec *r) {
  *
  * Called from the check user hook 
  */
-static int do_end_session_redirect(request_rec *r) {
-    pubcookie_dir_rec    *cfg;
-    pubcookie_server_rec *scfg;
+static int do_end_session_redirect(request_rec *r, pubcookie_server_rec *scfg,
+         pubcookie_dir_rec *cfg) {
     char                 *refresh;
     pool *p = r->pool;
-
-    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
-                                         &pubcookie_module);
-    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, &pubcookie_module);
 
     ap_log_rerror(PC_LOG_DEBUG, r, "do_end_session_redirect: hello");
       
@@ -684,13 +662,7 @@ static int do_end_session_redirect(request_rec *r) {
 		PBC_GETVAR_APPSRVID,
 		appsrvid(r));
 
-    ap_rprintf(r, "<HTML>\n");
-    ap_rprintf(r, " <HEAD>\n");
-    ap_rprintf(r, "  <meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\">\n", refresh);
-    ap_rprintf(r, " </HEAD>\n");
-    ap_rprintf(r, " <BODY BGCOLOR=\"#FFFFFF\">\n");
-    ap_rprintf(r, " </BODY>\n");
-    ap_rprintf(r, "</HTML>\n");
+    ap_rprintf(r, redirect_html, refresh);
 
     return(OK);
 }
@@ -718,19 +690,8 @@ static int stop_the_show(request_rec *r, pubcookie_server_rec *scfg,
 
     ap_send_http_header(r);
 
-    ap_rprintf(r, "<HTML>\n");
-    ap_rprintf(r, " <HEAD>\n");
-    ap_rprintf(r, "  <TITLE>A problem has occurred</TITLE>\n");
-    ap_rprintf(r, " </HEAD>\n");
-    ap_rprintf(r, " <BODY BGCOLOR=\"#FFFFFF\">\n");
-    ap_rprintf(r, "  <H1>A problem has occurred</H1>\n");
-    ap_rprintf(r, "  <P>Please contact %s</P>\n", r->server->server_admin);
-    ap_rprintf(r, "  <P>Error message: \"%s\"</P>\n", 
-		(rr->stop_message == NULL ? "" : rr->stop_message) );
-    ap_rprintf(r, "  <P>Hitting Refresh will attempt to ");
-    ap_rprintf(r, "  resubmit your request</P>\n");
-    ap_rprintf(r, " </BODY>\n");
-    ap_rprintf(r, "</HTML>\n");
+    ap_rprintf(r, stop_html, r->server->server_admin,
+       rr->stop_message? rr->stop_message: "");
 
     return(OK);
 
@@ -834,11 +795,7 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
     const char           *referer;
     int			 pre_sess_tok;
     apr_port_t           port;
-#ifdef PORT80_TEST
-    char *secure = "";
-#else
-    char *secure = " secure";
-#endif
+    char *post_data;
 
     ap_log_rerror(PC_LOG_DEBUG, r,
         "auth_failed_handler: hello");
@@ -853,7 +810,7 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
     /* reset these dippy flags */
     rr->failed = 0;
 
-    /* deal with GET args */
+    /* acquire any GET args */
     if ( r->args ) {
         args = ap_pcalloc (p, (strlen (r->args) + 3) / 3 * 4 + 1);
         libpbc_base64_encode(p, (unsigned char *) r->args, 
@@ -963,17 +920,6 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
     libpbc_base64_encode(p, (unsigned char *) g_req_contents,
          (unsigned char *) e_g_req_contents, strlen(g_req_contents));
 
-    /* create whole g req cookie */
-    ap_snprintf(g_req_cookie, PBC_4K-1, 
-                "%s=%s; domain=%s; path=/;%s",
-                PBC_G_REQ_COOKIENAME, 
-                e_g_req_contents,
-                PBC_ENTRPRS_DOMAIN,
-                secure);
-    
-    ap_log_rerror(PC_LOG_DEBUG, r,
-        "g_req length %d cookie: %s", strlen(g_req_cookie), g_req_cookie);
-
     /* make the pre-session cookie */
 
     pre_s = (char *) libpbc_get_cookie(p,
@@ -992,59 +938,83 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
               			PBC_PRE_S_COOKIENAME,
               			pre_s, 
               			"/",
-              			secure);
+              			secure_cookie);
 
     ap_table_add(r->headers_out, "Set-Cookie", pre_s_cookie);
 
     /* load and send the header */
-    ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
   
     set_no_cache_headers(r);
 
-    /* we handle multipart/form-data by setting a cookie that tells       */
-    /* the login server to put up an error page.  now that we can detect  */
-    /* multipart/form-data reliably it will be easier to deal with it     */
+    /* multipart/form-data is not allowed */
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
-
-        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/;%s",
-                    PBC_FORM_MP_COOKIENAME, 
-                    "1",
-                    PBC_ENTRPRS_DOMAIN,
-                    secure);
-        ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
-        ap_log_rerror(PC_LOG_DEBUG, r,
-            "auth_failed_handler: setting Form/Multipart cookie");
+        rr->stop_message = ap_pstrdup(p, "multipart/form-data not allowed");
+        stop_the_show(r, scfg, cfg, rr);
     }
 
-    refresh_e = ap_os_escape_path(p, refresh, 0);
+    /* we handle post data unless it is too large, in which */
+    /* case we treat it much like multi-part form data. */
+
+    post_data = ap_pstrdup(p, "");
+    if (lenp) {
+       int post_data_len;
+       if (((post_data_len=strtol(lenp, NULL, 10))<=0) ||
+            (post_data_len>MAX_POST_DATA) ||
+            (!(post_data = get_post_data(r, post_data_len)))) {
+         rr->stop_message = ap_pstrdup(p, "invalid post data");
+         stop_the_show(r, scfg, cfg, rr);
+       }
+    }
+
+
+    if (!use_post) {
+       /* GET method puts granting request in a cookie */
+       ap_snprintf(g_req_cookie, PBC_4K-1, 
+                "%s=%s; domain=%s; path=/;%s",
+                PBC_G_REQ_COOKIENAME, 
+                e_g_req_contents,
+                PBC_ENTRPRS_DOMAIN,
+                secure_cookie);
+    
+       ap_log_rerror(PC_LOG_DEBUG, r,
+           "g_req length %d cookie: %s", strlen(g_req_cookie), g_req_cookie);
+       ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
+
+       refresh_e = ap_os_escape_path(p, refresh, 0);
+
 #ifdef REDIRECT_IN_HEADER
-/* warning, this will break some browsers */
-    if ( !(tenc || lenp) )
-        ap_table_add(r->headers_out, "Refresh", refresh_e);
+      /* warning, this will break some browsers */
+       if ( !(tenc || lenp) )
+           ap_table_add(r->headers_out, "Refresh", refresh_e);
 #endif
+
+    }
+
     ap_send_http_header(r);
 
-    /* now deal with the body */
-    if ( (ctype && strncmp(ctype,"multipart/fo",strlen("multipart/fo"))) &&
-        (tenc || lenp || r->method_number == M_POST) ) {
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
-        ap_rprintf(r, "%s", scfg->login);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
-        put_out_post(r);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
-        ap_rprintf(r, "%s", scfg->login);
-        ap_rprintf(r, "%s", PBC_WEBISO_LOGO);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML4);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_BUTTON);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML5);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML6);
-    }
-    else {
+    /* If we're using the post method, just bundle everything
+       in a post to the login server. */
+    
+    if (use_post) {
+       char cp[24];
+       if (port==80 || port==443) cp[0] = '\0';
+       else sprintf(cp,":%d", port);
+       ap_rprintf(r, post_request_html, scfg->login,
+          e_g_req_contents, post_data,
+          ap_get_server_name(r), cp,
+          scfg->post_reply_url);
+
+    } else if (ctype && (tenc || lenp || r->method_number == M_POST) ) {
+
+        ap_rprintf(r, get_post_request_html,  scfg->login,
+           post_data, scfg->login, PBC_WEBISO_LOGO, PBC_POST_NO_JS_BUTTON);
+
+    } else {
 #ifdef REDIRECT_IN_HEADER
 /* warning, this will break some browsers */
-        ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
+        ap_rprintf(r, nullpage_html);
 #else
-        ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
+        ap_rprintf(r, redirect_html, refresh);
 #endif
     }
 
@@ -1243,6 +1213,8 @@ static void pubcookie_init(server_rec *main_s, pool *pconf)
                      scfg->login);
       }
 
+      if (!scfg->post_reply_url) scfg->post_reply_url = "PubCookie.reply";
+
     } /* end of per-server loop */
 
 #ifdef APACHE2
@@ -1263,6 +1235,8 @@ static void *pubcookie_server_create(pool       *p, server_rec *s) {
   scfg->configlist = ap_make_table(p, CONFIGLISTGROWSIZE);
   scfg->dirdepth = PBC_DEFAULT_DIRDEPTH;
   scfg->authtype_names = NULL;
+  scfg->use_post = 0;
+  scfg->post_reply_url = NULL;
 
   return (void *)scfg;
 }
@@ -1299,6 +1273,10 @@ static void *pubcookie_server_merge(pool       *p, void *parent, void *newloc) {
 		nscfg->noblank : pscfg->noblank;
     scfg->authtype_names = nscfg->authtype_names ? 
 		nscfg->authtype_names : pscfg->authtype_names;
+    scfg->use_post = nscfg->use_post ? 
+		nscfg->use_post : pscfg->use_post;
+    scfg->post_reply_url = nscfg->post_reply_url ? 
+		nscfg->post_reply_url : pscfg->post_reply_url;
     scfg->configlist = ap_overlay_tables(p, nscfg->configlist,
                                          pscfg->configlist);
 
@@ -1487,7 +1465,7 @@ static int pubcookie_user_hook(request_rec *r)
   }
 
     if( check_end_session(r) & PBC_END_SESSION_REDIR ) { 
-      do_end_session_redirect(r);
+      do_end_session_redirect(r, scfg, cfg);
       return DONE;
     }
     else if( check_end_session(r) & PBC_END_SESSION_ANY ) { 
@@ -2065,6 +2043,9 @@ static int pubcookie_hparse(request_rec *r)
 static int pubcookie_post_read(request_rec *r)
 {
    pubcookie_req_rec *rr = ap_pcalloc(r->pool, sizeof(pubcookie_req_rec));
+   pubcookie_server_rec *scfg = 
+     (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
+                                                       &pubcookie_module);
 
    ap_log_rerror(PC_LOG_DEBUG, r, 
 		"pubcookie_post_read: sr=%x", r->server);
@@ -2075,8 +2056,14 @@ static int pubcookie_post_read(request_rec *r)
    apr_pool_userdata_setn(r, PBC_REQUEST_REC_KEY, NULL, r->pool);
 #endif
    
+printf("post_read set rr, uri=%s\n", r->uri);
    ap_set_module_config(r->request_config, &pubcookie_module, rr);
 
+   if (scfg->use_post && *r->uri=='/' &&
+         !strcmp(r->uri+1, scfg->post_reply_url)) {
+      printf("hparse: is post response\n");
+      r->handler = "pubcookie-post-reply";
+   }
    return DECLINED;
 }
 
@@ -2495,6 +2482,28 @@ const char *set_noprompt(cmd_parms *cmd, void *mconfig, const int f) {
     return NULL;
 }
 
+static const char *pubcookie_set_method(cmd_parms *cmd,
+       void *mconfig, const char *v) {
+    pubcookie_server_rec *scfg = 
+      (pubcookie_server_rec *) ap_get_module_config(cmd->server->module_config,
+                                                   &pubcookie_module);
+
+    if (!strcasecmp(v,"get")) scfg->use_post = 0;
+    if (!strcasecmp(v,"post")) scfg->use_post = 1;
+    else return ("Invalid pubcookie login method");
+    return NULL;
+}
+
+static const char *pubcookie_set_post_url(cmd_parms *cmd,
+       void *mconfig, const char *v) {
+    pubcookie_server_rec *scfg = 
+      (pubcookie_server_rec *) ap_get_module_config(cmd->server->module_config,
+                                                   &pubcookie_module);
+
+    scfg->post_reply_url = ap_pstrdup(cmd->pool, v);
+    return NULL;
+}
+
 /*                                                                            */
 #ifdef APACHE1_3
 #define AP_INIT_TAKE1(d,f,c,w,h) { d,f,c,w,TAKE1,h}
@@ -2618,6 +2627,16 @@ static const command_rec pubcookie_commands[] = {
          set_noprompt,
          NULL, OR_AUTHCFG,
          "Do not prompt for id and password if not already logged in."
+    ),
+    AP_INIT_TAKE1("PubCookieLoginMethod",
+         pubcookie_set_method,
+         NULL, RSRC_CONF,
+         "Set login method (GET/POST).  Def = GET"
+    ),
+    AP_INIT_TAKE1("PubCookiePostURL",
+         pubcookie_set_post_url,
+         NULL, RSRC_CONF,
+         "Set post response URL.  Def = /PubCookie.reply"
     ),
     AP_INIT_FLAG("PubCookieSuperDebug",
          set_super_debug,
@@ -2792,8 +2811,170 @@ static int pubcookie_cleanup(request_rec *r)
 }
 
 
+/* Handle the post-method reply from the login server.
+   Activated by:
+       <Location /PubCookie.reply>
+         SetHandler pubcookie-post-reply
+       </Location>
+  */
+
+/* read and parse query_string args */
+static void scan_args(table *argtbl, char *arg)
+{
+   char *p,*q, *s;
+
+   p = arg;
+   if (!p) return;
+   while (q=strchr(p, '&')) {
+      *q++ = '\0';
+      if (s=strchr(p,'=')) *s++ = '\0';
+      else s = "";
+      ap_unescape_url(s);
+      ap_table_set(argtbl, p, s);
+      p = q;
+   }
+   if (p) {
+      if (s=strchr(p,'=')) *s++ = '\0';
+      else s = "";
+      ap_unescape_url(s);
+      ap_table_set(argtbl, p, s);
+   }
+   return;
+}
+
+/* see if we need to use a textarea */
+static int need_area(char *in)
+{
+  for (; *in; in++) {
+      if (*in=='"') return (1);
+      if (*in=='\n') return (1);
+      if (*in=='\r') return (1);
+  }
+  return (0);
+}
+
+/* Handle the granting reply */
+static int login_reply_handler(request_rec *r)
+{
+    pubcookie_server_rec *scfg;
+    pubcookie_dir_rec    *cfg;
+    table *args = ap_make_table(r->pool, 5);
+    char *greply;
+    char *arg;
+    const char *lenp = ap_table_get(r->headers_in, "Content-Length");
+    char *post_data;
+    char *gr_cookie;
+    char *r_url;
+    pool *p = r->pool;
+
+
+    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,                                         &pubcookie_module);
+
+    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config,
+                                         &pubcookie_module);
+
+#ifdef APACHE2
+    if (strcmp(r->handler, "pubcookie-post-reply")) return DECLINED;
+#endif
+
+    ap_log_rerror(PC_LOG_DEBUG, r,
+        "login_reply_handler: hello");
+
+    r->content_type = "text/html";
+    set_no_cache_headers(r);
+
+    /* Get the request data */
+
+    if (r->args) {
+       arg = ap_pstrdup(p, r->args);
+       scan_args(args, arg);
+    }
+    if (lenp) {
+       int post_data_len;
+       if (((post_data_len=strtol(lenp, NULL, 10))>0) &&
+            (post_data_len<MAX_POST_DATA) &&
+            ((post_data = get_post_data(r, post_data_len)))) {
+          scan_args(args, post_data);
+       }
+    }
+
+    greply = ap_table_get(args, PBC_G_COOKIENAME);
+    if (!greply) {
+       /* Send out bad call error */
+       ap_send_http_header(r);
+    }
+
+    r_url = ap_table_get(args, "redirect_url");
+    if (!r_url) {
+       /* Send out bad call error */
+       ap_send_http_header(r);
+    }
+
+    gr_cookie = ap_psprintf(p,
+                 "%s=%s; domain=%s; path=/;%s",
+       PBC_G_COOKIENAME, greply, 
+       PBC_ENTRPRS_DOMAIN,
+       secure_cookie);
+
+
+    ap_table_add(r->headers_out, "Set-Cookie", gr_cookie);
+
+    ap_send_http_header(r);
+
+    /* see if we do GET or POST */
+    post_data = ap_table_get(args, PBC_GETVAR_POST_STUFF);
+    if (post_data&&*post_data) {
+      char *a, *v;
+      int needclick = 0;
+
+      if (strstr(post_data, "submit=")) needclick = 1;
+      printf("relay is post, click=%d\n", needclick);
+
+      /* send post form with original elements */
+      ap_rprintf(r, post_reply_1_html,
+         needclick? POST_REPLY_CLICK: POST_REPLY_SUBMIT, r_url);
+
+      do {
+         if (a=strchr(post_data, '&')) *a++ = '\0';
+         if (*post_data) {
+
+            if (v=strchr(post_data, '=')) *v++ = '\0';
+            /* WebTemplate_assign(W, "ARGNAME", post);
+            p = WebTemplate_html2text(v);
+            WebTemplate_assign(W, "ARGVAL", p);
+             */
+            ap_unescape_url(v);
+
+            if (need_area(v)) {
+               ap_rprintf(r, post_reply_area_html, post_data, v);
+            } else {
+               ap_rprintf(r, post_reply_arg_html, post_data, v);
+            }
+         }
+      } while (post_data = a);
+
+      ap_rprintf(r, post_reply_2_html);
+
+    } else {  /* do a get */
+      char *a = ap_table_get(args, "get_args");
+      printf("relay is get\n");
+      
+      if (a&&*a) arg = ap_psprintf(p,"%d;URL=%s?%s",PBC_REFRESH_TIME,r_url,a);
+      else arg = ap_psprintf(p, "%d;URL=%s", PBC_REFRESH_TIME,  r_url);
+      ap_rprintf(r, redirect_html, arg);
+
+    }
+
+
+    return (OK);
+}
+
 
 #ifdef APACHE1_3
+handler_rec pubcookie_handlers[] = {
+    { "pubcookie-post-reply", login_reply_handler},
+    { NULL }
+};
 
 module pubcookie_module = {
     STANDARD_MODULE_STUFF,
@@ -2803,7 +2984,7 @@ module pubcookie_module = {
     pubcookie_server_create,     /* server config */
     pubcookie_server_merge,      /* merge server config */
     pubcookie_commands,          /* command table */
-    NULL,                        /* handlers */
+    pubcookie_handlers,          /* handlers */
     NULL,                        /* filename translation */
     pubcookie_user_hook,              /* check authentication */
     pubcookie_authz_hook,             /* check authorization */
@@ -2827,6 +3008,7 @@ static void register_hooks(pool      * p) {
     ap_hook_header_parser(pubcookie_hparse, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_log_transaction(pubcookie_cleanup, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_read_request(pubcookie_post_read, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_handler(login_reply_handler, NULL, NULL, APR_HOOK_FIRST);
 }
 module AP_MODULE_DECLARE_DATA pubcookie_module = {
     STANDARD20_MODULE_STUFF,
