@@ -38,7 +38,8 @@ Login server installation documentation, lives in INSTALL.login
 The pubcookie login server distribution contains the following files:
 	CHANGES.login - version history
 	INSTALL.login - installation docs
-	Makefile.index.cgi
+	Makefile.index.cgi - Makefile for login cgi
+	Makefile - Makefile for tools and junk
 	README - this file
        	LICENSE - you hav the right ...
 	base64.c
@@ -51,13 +52,14 @@ The pubcookie login server distribution contains the following files:
 	securid.c
 	securid.h
 	make_crypted_bit.c
-	mkc_key_generic.c
-	mkc_key_local.c
-	mkc_key_local.txt
+	pbc_key_generic.c
+	pbc_key_local.c
+	pbc_key_local.txt
 	pbc_config.h
 	pbc_version.h
 	pubcookie.h
+	contrib/*   
 
 
-$Id: README.txt,v 1.9 2001-05-15 22:54:20 willey Exp $
+$Id: README.txt,v 1.10 2001-10-24 22:24:09 willey Exp $
 
