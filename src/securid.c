@@ -1,10 +1,11 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.2 2000-09-08 19:22:08 willey Exp $
+/* $Id: securid.c,v 1.3 2000-09-08 22:14:25 willey Exp $
 
    function: securid  
    args:     reason - points to a reason string
              user - the UWNetID
-             s_prn - the PRN
+             card_id - the username for the card
+             s_crn - CRN, if the user sends one
              log - to extra stuff to stderr and syslog
              type - SECURID_TYPE_NORM - normal
                     SECURID_TYPE_NEXT - next prn was requested
@@ -38,7 +39,7 @@ void securid_cleanup ()
 
 }
 
-int securid (char *reason, char *user, char *s_prn, int log, int typ, int doit)
+int securid (char *reason, char *user, char *card_id, char *s_prn, int log, int typ, int doit)
 {
       /* use stderr for blather info */
       FILE *ouf = stderr;
@@ -90,7 +91,7 @@ int securid (char *reason, char *user, char *s_prn, int log, int typ, int doit)
       vec = MGOvectorize (lst);
       if( *vec != NULL && *(vec +1) != NULL ) {    /* first form          */
          MGOkeyword (*vec, tmp, sizeof (tmp), 0);
-         for( i = 0; strcmp(tmp, user) != 0; i++ )
+         for( i = 0; strcmp(tmp, card_id) != 0; i++ )
              MGOkeyword (*(vec+i), tmp, sizeof (tmp), 0);
          if ( MGOvalue (*(vec+i), crn, sizeof (crn), 1) < 0 ) {
             snprintf(tmp_res, 999, "Trouble finding CRN: field %s", *vec);
