@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.22 $)
+AC_REVISION($Revision: 1.23 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -74,6 +74,7 @@ AC_PATH_PROG(TAR, tar, tar)
 AC_PATH_PROG(GZIP, gzip, gzip)
 AC_PATH_PROG(MKDIR, mkdir, mkdir)
 AC_PATH_PROG(MV, mv, mv)
+AC_PATH_PROG(CHMOD, chmod, chmod)
 
 
 if test "$enable_apache" = "yes"; then
@@ -247,8 +248,7 @@ if test "$enable_login" = yes; then
     CPPFLAGS="$CPPFLAGS -I$srcdir/cgic/"
     LDFLAGS="$LDFLAGS -L\$(builddir)/cgic/"
 
-AC_CHECK_HEADERS([cgic.h])
-    LIBS="$LIBS -lcgic"
+AC_CHECK_HEADERS([cgic.h], AC_SUBST(CGIC_LIB, "-lcgic"))
 
 AC_ARG_ENABLE(krb5,
     AC_HELP_STRING([--enable-krb5],[Enable Kerberos 5 Verifier]),

@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.21 2002-11-14 22:10:40 jjminer Exp $
+# $Id: Makefile.in,v 1.22 2002-11-18 23:53:18 jjminer Exp $
 
 @SET_MAKE@
 
@@ -39,12 +39,13 @@ AWK=@AWK@
 SED=@SED@
 TAR=@TAR@
 GZIP=@GZIP@
+CHMOD=@CHMOD@
 
 LIBS=@LIBS@
 CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src
 CFLAGS=@CFLAGS@ $(CPPFLAGS)
 LDFLAGS=@LDFLAGS@ $(LIBS)
-LOGINLIBS=@LOGINLIBS@
+LOGINLIBS=@LOGINLIBS@ @CGIC_LIB@
 
 APXS=@APXS@
 
@@ -210,12 +211,14 @@ all: $(builddir)/Makefile @login_server@ @apache_module@
 
 $(srcdir)/configure: $(srcdir)/configure.ac
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
-	cd $(srcdir) && autoconf
+	$(FORCE_RM) $(srcdir)/configure
+	cd $(srcdir) && autoconf $(srcdir)/configure.ac > $(srcdir)/configure
+	$(CHMOD) +x $(srcdir)/configure
 
 # autoheader might not change config.h.in, so touch a stamp file.
 $(srcdir)/src/config.h.in: $(srcdir)/stamp-h.in
 $(srcdir)/stamp-h.in: $(srcdir)/configure.ac
-	cd $(srcdir) && autoheader
+	cd $(srcdir) && autoheader $(srcdir)/configure.ac
 	echo timestamp > $(srcdir)/stamp-h.in
 
 $(builddir)/src/config.h: $(builddir)/stamp-h
