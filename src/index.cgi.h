@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.8 2001-05-29 20:51:58 willey Exp $
+    $Id: index.cgi.h,v 1.9 2001-08-23 21:17:29 willey Exp $
  */
 
 typedef struct {
@@ -91,9 +91,6 @@ int get_next_serial();
 char *url_encode();
 char *get_cookie_created(char *);
 char *decode_granting_request(char *);
-
-#define OK 1
-#define FAIL 0
 
 #define LOGIN_DIR "/"
 #define THIS_CGI "cindex.cgi"
