@@ -100,10 +100,11 @@
 				<p>Accurate system time</p>
 			<li>
 				<p>Domain name registered in DNS (e.g. <i>appserver.example.edu</i>).</p>
-				<p>Note: If your server doesn't share a common DNS subdomain (e.g. .example.edu) 
-					with your site's Pubcookie login server (e.g. weblogin.example.edu) you will 
-					have to install and use the Pubcookie relay cgi to authenticate across DNS 
-					domains.</p>
+				<p>Note: If your server doesn't share a common DNS subdomain (e.g. <i>.example.edu</i>) 
+					with your site's Pubcookie login server (e.g. <i>weblogin.example.edu</i>) or if
+                                        your enterprise domain is in a country code top-level domain (e.g.
+                                        <i>example.ca</i>) you will have to install and use the Pubcookie relay cgi to
+                                        authenticate across DNS domains.</p>
 			<LI>
 				<P>An SSL enabled web site. All intended users should be able to reach your website 
 					via HTTPS at your registered DNS name without errors.</P>
@@ -163,7 +164,7 @@
 		<p>For the cleanest upgrade from an earlier version of Pubcookie, remove previous 
 			versions before installing the current one.</p>
 		<P>To remove previous versions (optional):</P>
-		<UL>
+		<ol>
 			<li>
 				<p>Stop IIS.</p>
 			<li>
@@ -171,7 +172,7 @@
 			<LI>
 				<P>Start IIS.</P>
 			</LI>
-		</UL>
+		</ol>
 		<P>Then run the installer for Pubcookie 3.1</P>
 		<p>Note: the installer won't overwrite the web properties (registry settings) 
 			you've assigned to your website, folders, or resources. It will 
