@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 2.1 1999-04-06 00:00:34 willey Exp $
+    $Id: libpubcookie.c,v 2.2 1999-04-28 22:12:40 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -11,16 +11,24 @@
 #include "http_protocol.h"
 #include "util_script.h"
 #endif
+
+#if defined (WIN32)
+#include <windows.h>
+typedef  int pid_t;  /* win32 process ID */
+#include <process.h>  /* getpid */
+#else
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
+#include <string.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <netinet/in.h>
-#include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+#endif
+
 /* ssleay lib stuff */
 #include <pem.h>
 #include <des.h>
@@ -45,19 +53,37 @@ char *libpbc_time_string(time_t t)
     return buf;
 }
 
+#if defined (WIN32)
+extern FILE *debugFile;  /* from PubcookieFilter */
+#endif
+
 /* when things fail too badly to go on ...                                    */
 void *libpbc_abend(const char *format,...)
 {
     time_t	now;
     va_list	args;
     char	format_w_time[PBC_1K];
+#if defined (WIN32)
+    char        buff[PBC_4K];
+#endif
     
     va_start(args, format);
     now = time(NULL);
     sprintf(format_w_time, "%s: ABEND: %s", libpbc_time_string(now), format);
-    vprintf(format_w_time, args);
+#if defined (WIN32)
+    vsprintf(buff, format_w_time, args);
+    OutputDebugString(buff);  /* win32 debugging */
+    if ( debugFile )
+        fprintf(debugFile,"%s",buff);
+#else
+    vfprintf(stderr,format_w_time, args);
+#endif
     va_end(args);
+#if defined (WIN32)
+    return NULL;
+#else
     exit (EXIT_FAILURE);
+#endif
 }
 
 /*                                                                            */
@@ -71,19 +97,53 @@ int libpbc_debug(const char *format,...)
     time_t      now;
     va_list     args;
     char        format_w_time[PBC_4K];
+#if defined (WIN32)
+    char        buff[PBC_4K];
+#endif
 
     va_start(args, format);
     now = time(NULL);
     sprintf(format_w_time, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
+#if defined (WIN32)
+    vsprintf(buff, format_w_time, args);
+    OutputDebugString(buff);  /* win32 debugging */
+    if ( debugFile )
+        fprintf(debugFile,"%s",buff);
+#else
     vfprintf(stderr, format_w_time, args);
+#endif
     va_end(args);
     return 1;
+}
+
+void libpbc_void(void *thing) {
+}
+
+void *malloc_debug(size_t x) {
+    void *p;
+    p = malloc (x);
+    libpbc_debug("  pbc_malloc(%d)= x%X\n",x,p);
+    return p;
+}
+
+void free_debug(void *p) {
+    libpbc_debug("  pbc_free= x%X\n",p);
+    free(p);
 }
 
 /* keep pumping stuff into the random state                                   */
 void libpbc_augment_rand_state(unsigned char *array, int len)
 {
 
+/*  Window only has milliseconds */
+#if defined (WIN32)
+    SYSTEMTIME   ts;
+    unsigned char buf[sizeof(ts.wMilliseconds)];
+
+    GetLocalTime(&ts);
+    memcpy(buf, &ts.wMilliseconds, sizeof(ts.wMilliseconds));
+    RAND_seed(buf, sizeof(ts.wMilliseconds));
+#else
     struct timeval 	tv; 
     struct timezone 	tz;
     unsigned char	buf[sizeof(tv.tv_usec)];
@@ -91,6 +151,7 @@ void libpbc_augment_rand_state(unsigned char *array, int len)
     gettimeofday(&tv, &tz);
     memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
     RAND_seed(buf, sizeof(tv.tv_usec));
+#endif
 
 }
 
@@ -126,6 +187,8 @@ void libpbc_pubcookie_init_np()
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
 
+/*  libpbc_debug("libpbc_pubcookie_init\n");  */
+
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
@@ -155,8 +218,12 @@ unsigned char *libpbc_alloc_init_np(int len)
 {
     unsigned char	*pointer;
 
+/* Skip the rand_malloc for Windows ISAPI filter, too much overhead */
+#if !defined (WIN32)
     libpbc_rand_malloc();
-    if( (pointer = pbc_malloc(len)) ) 
+#endif
+
+    if( (pointer = (unsigned char *)pbc_malloc(len)) ) 
 	memset(pointer, 0, len);
     else
         libpbc_abend("libpbc_alloc_init: Failed to malloc space\n");
@@ -174,6 +241,8 @@ void libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
 
     FILE	*key_fp;
     EVP_PKEY	*key;
+
+/*  libpbc_debug("libpbc_get_private_key\n");  */
 
     if( ! keyfile )
         libpbc_abend("libpbc_get_private_key: No keyfile specified\n");
@@ -202,6 +271,8 @@ void libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
     X509	*x509;
     EVP_PKEY	*key;
 
+/*  libpbc_debug("libpbc_get_public_key\n"); */
+
     if( ! certfile )
         libpbc_abend("libpbc_get_public_key: No certfile specified\n");
 
@@ -229,7 +300,6 @@ pbc_cookie_data *libpbc_init_cookie_data_np()
     pbc_cookie_data *cookie_data;
 
     cookie_data=(pbc_cookie_data *)libpbc_alloc_init(sizeof(pbc_cookie_data));
-
     return cookie_data;
 }
 
@@ -296,20 +366,45 @@ md_context_plus *libpbc_init_md_context_plus_np()
 
 /*                                                                            */
 #ifdef APACHE
+void libpbc_free_md_context_plus_p(pool *p, md_context_plus *ctx_plus)
+#else
+void libpbc_free_md_context_plus_np(md_context_plus *ctx_plus)
+#endif
+{
+    pbc_free(ctx_plus->ctx);
+    pbc_free(ctx_plus->public_key);
+    pbc_free(ctx_plus->private_key);
+    pbc_free(ctx_plus);
+}
+
+/*                                                                            */
+#ifdef APACHE
 unsigned char *libpbc_gethostip_p(pool *p)
 #else
 unsigned char *libpbc_gethostip_np()
 #endif
 {
-    struct utsname      myname;
     struct hostent      *h;
     unsigned char       *addr;
+
+#if defined (WIN32)
+    char                hostname[PBC_1K];
+    int                 err;
+    
+    hostname[0] = '\0';
+    err=gethostname(hostname, sizeof(hostname));
+    if( (h = gethostbyname(hostname)) == NULL ) {
+        libpbc_abend("gethostname error= %d, %s: host unknown.\n", err,hostname);
+    }
+#else
+    struct utsname      myname;
 
     if ( uname(&myname) < 0 )
 	libpbc_abend("problem doing uname lookup\n");
 
     if ( (h = gethostbyname(myname.nodename)) == NULL ) 
        	libpbc_abend("%s: host unknown.\n", myname.nodename);
+#endif
 
     addr = libpbc_alloc_init(h->h_length);
     memcpy(addr, h->h_addr_list[0], h->h_length);
@@ -339,13 +434,15 @@ void libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *keyfile)
 void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 #endif
 {
-    FILE 		*fp;
-    char		*key_in;
-    unsigned char	*addr;
+    FILE             *fp;
+    char             *key_in;
+    unsigned char    *addr;
+
+/*  libpbc_debug("libpbc_get_crypt_key\n"); */
 
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
-    if( ! (fp = pbc_fopen(keyfile, "r")) )
+    if( ! (fp = pbc_fopen(keyfile, "rb")) )  /* win32 - must be binary */
         libpbc_abend("libpbc_crypt_key: Failed open: %s\n", keyfile);
     
     if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF)
@@ -355,7 +452,8 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 
     addr = libpbc_gethostip();
     memcpy(c_stuff->key_a, libpbc_mod_crypt_key(key_in, addr), sizeof(c_stuff->key_a));
-
+    pbc_free(key_in);
+    pbc_free(addr);
 }
 
 /*                                                                            */
@@ -367,11 +465,23 @@ crypt_stuff *libpbc_init_crypt_np(char *keyfile)
 {
     crypt_stuff	*c_stuff;
 
+/*  libpbc_debug("libpbc_init_crypt: keyfile= %s\n",keyfile); */
+
     c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
 
     libpbc_get_crypt_key(c_stuff, keyfile);
 
     return c_stuff;
+}
+
+/*                                                                            */
+#ifdef APACHE
+void libpbc_free_crypt_p(pool *p, crypt_stuff *c_stuff)
+#else
+void libpbc_free_crypt_np(crypt_stuff *c_stuff)
+#endif
+{
+    pbc_free(c_stuff);  
 }
 
 /*                                                                            */
@@ -390,8 +500,10 @@ unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_pl
     EVP_SignUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
     if( EVP_SignFinal(ctx_plus->ctx, sig, &sig_len, ctx_plus->private_key) )
         return sig;
-    else
+    else {
+        pbc_free(sig);
         return (unsigned char *)NULL;
+    }
 }
 
 /* check a signature after context is established                             */
@@ -411,7 +523,7 @@ unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, un
 {
     int			seg_len;
 
-    seg_len = ( len < strlen(seg) ) ? len : strlen(seg);
+    seg_len = ( len < strlen((const char *)seg) ) ? len : strlen((const char *)seg);
     memcpy(start, seg, seg_len);
     return start + len;
 }
@@ -500,19 +612,22 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     }
 
     /* find a random index into the char key array and make a key shedule */
+
+/*  libpbc_debug("libpbc_encrypt_cookie: before setting des_check_key= %d\n",des_check_key); */
+
     des_check_key = 1;
     memset(key, 0, sizeof(key));
-    while ( des_key_sched(&key, ks) != 0 && --tries ) {
+    while ( des_key_sched(key, ks) != 0 && --tries ) {
         index1=libpbc_get_crypt_index();
 	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-        des_set_odd_parity(&key);
+        des_set_odd_parity(key);
     }
     if ( ! tries ) {
        libpbc_debug("libpbc_encrypt_cookie: Coudn't find a good key\n");
        return 0;
     }
 
-    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
+    des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_ENCRYPT);
     libpbc_augment_rand_state(ivec, sizeof(ivec));
 
     /* stick the indices on the end of the train */
@@ -543,13 +658,13 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     /* use the supplied index into the char key array and make a key shedule */
     memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-    des_set_odd_parity(&key);
-    if ( des_key_sched(&key, ks) ) {
+    des_set_odd_parity(key);
+    if ( des_key_sched(key, ks) ) {
        libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
        return 0;
     }
 
-    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
+    des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_DECRYPT);
 
     return 1;
 
@@ -568,15 +683,15 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 			  unsigned char *app_id) 
 {
 
-    strncpy((*cookie_data).broken.user, (unsigned char *)user, PBC_USER_LEN-1);
-    strncpy((*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
+    strncpy((char *)(*cookie_data).broken.user, (const char *)user, PBC_USER_LEN-1);
+    strncpy((char *)(*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
     (*cookie_data).broken.serial = serial;
     (*cookie_data).broken.create_ts = time(NULL);
     (*cookie_data).broken.last_ts = time(NULL);
-    strncpy((*cookie_data).broken.appsrv_id, appsrv_id, PBC_APPSRV_ID_LEN-1);
-    strncpy((*cookie_data).broken.app_id, app_id, PBC_APP_ID_LEN-1);
+    strncpy((char *)(*cookie_data).broken.appsrv_id, (const char *)appsrv_id, PBC_APPSRV_ID_LEN-1);
+    strncpy((char *)(*cookie_data).broken.app_id, (const char *)app_id, PBC_APP_ID_LEN-1);
 
 }
 
@@ -610,6 +725,7 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
     }
 
     memcpy(buf, sig, PBC_SIG_LEN);
+    pbc_free(sig);
     memcpy(buf+PBC_SIG_LEN, cookie_string, sizeof(pbc_cookie_data));
 
     /* two bytes get added on in libpbc_encrypt_cookie */
@@ -633,6 +749,8 @@ md_context_plus *libpbc_verify_init_np(char *certfile)
 {
     md_context_plus *ctx_plus;
 
+/*  libpbc_debug("libpbc_verify_init: certfile= %s\n",certfile); */
+
     ctx_plus = libpbc_init_md_context_plus();
     libpbc_get_public_key(ctx_plus, certfile);
 
@@ -649,6 +767,8 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 #endif
 {
     md_context_plus *ctx_plus;
+
+/*  libpbc_debug("libpbc_sign_init: keyfile= %s\n",keyfile); */
 
     ctx_plus = libpbc_init_md_context_plus();
     libpbc_get_private_key(ctx_plus, keyfile);
@@ -680,15 +800,19 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
 {
 
     pbc_cookie_data 		*cookie_data;
-    unsigned char		*cookie_string;
-    unsigned char		*cookie;
+    unsigned char			*cookie_string;
+    unsigned char			*cookie;
+
+/*  libpbc_debug("libpbc_get_cookie\n"); */
 
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
     libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, appsrv_id, app_id);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
+    pbc_free(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
+    pbc_free(cookie_string);
 
     return cookie;
 }
@@ -706,6 +830,8 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     unsigned char	sig[PBC_SIG_LEN];
     unsigned char	buf[PBC_4K];
     unsigned char	buf2[PBC_4K];
+
+/*  libpbc_debug("libpbc_unbundle_cookie\n"); */
 
     memset(buf, 0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
@@ -738,7 +864,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
         return cookie_data;
     }
     else {
-	libpbc_debug("libpbc_unbundle_cookie_p: sig verify failed\n");
+	libpbc_debug("libpbc_unbundle_cookie: sig verify failed\n");
         return NULL;
     }
 }
@@ -765,3 +891,4 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
     return cookie;
 
 }
+
