@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.6 2002-06-13 20:46:54 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.7 2002-07-02 16:38:31 jjminer Exp $
  */
 #include <stdlib.h>
 
@@ -240,14 +240,18 @@ static int get_dn( LDAP * ld,
     
     if (*dn == NULL) {
         ldap_msgfree(results);
+#ifdef NETSCAPE_LDAP_SDK
         ldap_msgfree(entry);
+#endif
         *errstr = "error getting ldap dn -- auth failed";
         /* Again not fatal, probably a server error. */
         return -2;
     }
 
     ldap_msgfree( results );
+#ifdef NETSCAPE_LDAP_SDK
     ldap_msgfree( entry );
+#endif
 
     if( debug ) {
         fprintf( stderr, "get_dn: bye!\n" );
