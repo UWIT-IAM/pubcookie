@@ -22,7 +22,7 @@ void *main() {
     printf("in is %s\n", in);
     if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) )
         exit(0);
-//    printf("intermediate out is %s\n", intermediate);
+/*    printf("intermediate out is %s\n", intermediate); */
     if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen(in)) )
         exit(0);
     printf("out is %s\n", out);
@@ -35,7 +35,7 @@ void *main() {
     printf("in is %s\n", in);
     if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) )
         exit(0);
-//    printf("intermediate out is %s\n", intermediate);
+/*    printf("intermediate out is %s\n", intermediate); */
     if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen(in)) )
         exit(0);
     printf("out is %s\n", out);

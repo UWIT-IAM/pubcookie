@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_verify.c,v 1.6 1998-07-31 21:08:13 willey Exp $
+    $Id: pbc_verify.c,v 1.7 1998-12-18 16:03:49 willey Exp $
  */
 
 /*                                                                            */
@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
     printf("version: %s\n", (*cookie_data).broken.version);
     printf("type: %c\n", (*cookie_data).broken.type);
     printf("creds: %c\n", (*cookie_data).broken.creds);
+    printf("serial: %d\n", (*cookie_data).broken.serial);
     printf("appsrv_id: %s\n", (*cookie_data).broken.appsrv_id);
     printf("app_id: %s\n", (*cookie_data).broken.app_id);
     printf("create_ts: %d\n", (int)(*cookie_data).broken.create_ts);

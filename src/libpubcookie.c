@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.11 1998-10-14 19:34:19 willey Exp $
+    $Id: libpubcookie.c,v 1.12 1998-12-18 16:03:49 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -429,6 +429,8 @@ unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data)
     ptr++;
     *ptr = (*cookie_data).broken.creds;
     ptr++;
+    memcpy(ptr, &(*cookie_data).broken.serial, sizeof(int));
+    ptr += sizeof(int);
     memcpy(ptr, &(*cookie_data).broken.create_ts, sizeof(time_t));
     ptr += sizeof(time_t);
     memcpy(ptr, &(*cookie_data).broken.last_ts, sizeof(time_t));
@@ -528,6 +530,7 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 	                  char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
+			  int serial,
 			  unsigned char *appsrv_id,
 			  unsigned char *app_id) 
 {
@@ -536,6 +539,7 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
     strncpy((*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
+    (*cookie_data).broken.serial = serial;
     (*cookie_data).broken.create_ts = time(NULL);
     (*cookie_data).broken.last_ts = time(NULL);
     strncpy((*cookie_data).broken.appsrv_id, appsrv_id, PBC_APPSRV_ID_LEN-1);
@@ -624,6 +628,7 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 unsigned char *libpbc_get_cookie_p(pool *p, char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
+			  int serial,
 			  unsigned char *appsrv_id,
 			  unsigned char *app_id,
 			  md_context_plus *ctx_plus,
@@ -632,6 +637,7 @@ unsigned char *libpbc_get_cookie_p(pool *p, char *user,
 unsigned char *libpbc_get_cookie_np(char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
+			  int serial,
 			  unsigned char *appsrv_id,
 			  unsigned char *app_id,
 			  md_context_plus *ctx_plus,
@@ -646,7 +652,7 @@ unsigned char *libpbc_get_cookie_np(char *user,
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
-    libpbc_populate_cookie_data(cookie_data, user, type, creds, appsrv_id, app_id);
+    libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, appsrv_id, app_id);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
 
@@ -688,15 +694,18 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     cookie_data = libpbc_init_cookie_data();
     memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
 
+#ifndef NO_VERIFY
     if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
+#endif
         cookie_data = libpbc_destringify_cookie_data(cookie_data);
-	libpbc_debug("libpbc_unbundle_cookie_p: sig verify passwd\n");
         return cookie_data;
+#ifndef NO_VERIFY
     }
     else {
 	libpbc_debug("libpbc_unbundle_cookie_p: sig verify failed\n");
         return NULL;
     }
+#endif
 }
     
 /*                                                                            */

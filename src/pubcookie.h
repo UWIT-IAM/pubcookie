@@ -1,5 +1,5 @@
 /*
-    $Id: pubcookie.h,v 1.4 1998-07-20 10:34:34 willey Exp $
+    $Id: pubcookie.h,v 1.5 1998-12-18 16:03:49 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -7,9 +7,9 @@
 
 #define PBC_USER_LEN 42
 #define PBC_VER_LEN 4
-#define PBC_APPSRV_ID_LEN 20
-#define PBC_APP_ID_LEN 20
-#define PBC_TOT_COOKIE_DATA 96
+#define PBC_APPSRV_ID_LEN 40
+#define PBC_APP_ID_LEN 128
+#define PBC_TOT_COOKIE_DATA 228
 #define PBC_DES_KEY_BUF 2048
 
 #define PBC_4K 4096
@@ -28,6 +28,7 @@ typedef struct {
     unsigned char	app_id[PBC_APP_ID_LEN];
     unsigned char	type;
     unsigned char	creds;
+    int			serial;
     time_t		create_ts;
     time_t		last_ts;
 } cookie_data_struct;

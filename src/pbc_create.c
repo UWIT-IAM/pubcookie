@@ -1,11 +1,11 @@
 /*
-    $Id: pbc_create.c,v 1.5 1998-07-28 23:03:57 willey Exp $
+    $Id: pbc_create.c,v 1.6 1998-12-18 16:03:49 willey Exp $
  */
 
 /* this is not meant to be user friendly, no friendlyness for anyone          */
 /*   but me and i have the src code                                           */
 /*                                                                            */
-/* args are: user appsrv_id app_id type creds                                 */
+/* args are: user appsrv_id app_id type creds serial                          */
 /*    (anything too big is just truncated)                                    */
 /*                                                                            */
 
@@ -13,6 +13,7 @@
 #include <time.h>
 #include <string.h>
 #include <pem.h>
+#include <stdlib.h>
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
@@ -26,10 +27,11 @@ int main(int argc, char **argv) {
     unsigned char 	app_id[PBC_APP_ID_LEN];
     unsigned char 	type;
     unsigned char 	creds;
+    int 		serial;
 
     unsigned char 	*cookie;
 
-    if(argc != 6)
+    if(argc != 7)
         exit(1);
 
     strncpy(user, argv[1], sizeof(user));
@@ -40,6 +42,7 @@ int main(int argc, char **argv) {
     appsrv_id[sizeof(app_id)-1] = '\0';
     type = argv[4][0];
     creds = argv[5][0];
+    serial = atoi(argv[6]);
 
     if ( type == PBC_COOKIE_TYPE_G ) 
         ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
@@ -52,7 +55,7 @@ int main(int argc, char **argv) {
 
     c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
 
-    cookie = libpbc_get_cookie(user, type, creds, appsrv_id, app_id, ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, ctx_plus, c_stuff);
 
     printf("%s", cookie);
     

@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.h,v 1.5 1998-10-14 19:34:19 willey Exp $
+    $Id: libpubcookie.h,v 1.6 1998-12-18 16:03:49 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -11,6 +11,7 @@
 unsigned char *libpbc_get_cookie_p(ap_pool *, char *, 
 	                         unsigned char, 
 				 unsigned char, 
+				 int,
 				 unsigned char *, 
 				 unsigned char *, 
 				 md_context_plus *, 
@@ -34,6 +35,7 @@ crypt_stuff *libpbc_init_crypt_p(pool *, char *);
 unsigned char *libpbc_get_cookie_np(char *, 
 	                         unsigned char, 
 				 unsigned char, 
+				 int,
 				 unsigned char *, 
 				 unsigned char *, 
 				 md_context_plus *, 

@@ -1,4 +1,10 @@
 
+Basic pubcookie documentation containing a rough overview and installation
+instructions.
+
+For more documentation please see:
+	http://veil.cac.washington.edu/pubcookie
+
 Introduction
 ------------
 This package attempts to provide a system for transferring authentication
@@ -32,33 +38,15 @@ This solution is based upon the Netscape cookie protocol
 In short, the solution is:
 
  1) User authenticates to a login server
- 2) The login server sends a signed cookie to client
- 3) The client sends the cookie to local servers with all of its requests
- 4) The local servers validate the cookie and accept the user as 
-    authenticated.
+ 2) The login server sends signed cookies to client
+ 3) The client users one of the the cookies to authenticate itself to local servers.
+ 4) The local server issues it's own cookie that the client send with each request.
  
-
-Cookie Format
--------------
-A cookie is formed by creating a string:
-
-  time:username
-
-Where "time" is the creation date of the cookie and is an 8 character
-hexadecimal string representing the number of seconds since 00:00:00
-GMT, January 1, 1970 and "username" is a simple login name.  (This may
-become a full krb5 principal name at some point).
-
-A 128 byte signature of this string is generated using an RSA private
-key and an MD5 hash.  The signature is prepended to the above string
-without a separator.   Finally, the string is encoded with base64 (without
-line breaks).  The current code generates signatures using the EVPSign*
-routines from SSLeay (see http://www.psy.uq.oz.au/~ftp/Crypto).
-
 Client Requirements
 -------------------
-Clients simply need to understand the Netscape cookie protocol.  As
-of now NS, IE and Lynx all support cookies.
+Clients need to understand the Netscape cookie protocol.  As
+of now NS, IE and Lynx all support cookies.  Also, clients should 
+allow javascript to run.
 
 Server Requirements
 -------------------
@@ -69,23 +57,49 @@ for Netscape servers and Microsoft servers are under consideration/development.
 The server needs to have a copy of the public key that matches the private
 key with which the login servers signs cookies.
 
-Login Server Requirements
--------------------------
-The login server must know how to create cookies.  Some sample code
-for creating cookies is included.
+Installation
+------------
 
-The login server needs a public/private keypair for signing cookies.
+The apache module must be built with the APACHE1_3 option if apache
+version 1.3.* is being used.
 
-The login server needs some method of authenticating users.  How the
-login server chooses to authenticate users is not important to this
-solution.  At the moment a prototype Kerberos authentication system
-and an SSL enabled Basic Auth system have been tested.
+Apache Directives
+-----------------
 
-The login server needs to send cookies to clients using the following
-format:
+The Apache module can use the following directive to
+modify it's behaviour.
 
-  Set-Cookie:  pubcookie={base64 cookie string}; domain=.washington.edu; path=/
+PubCookieInactiveExpire <seconds>
+        The inactivity expire time for pubcookie logins.  The default is
+        PBC_DEFAULT_INACT_EXPIRE defined in pbc_config.h.
+PubCookieHardExpire <seconds>
+        The hard expire time for pubcookie logins.  The default is
+        PBC_DEFAULT_HARD_EXPIRE defined in pbc_config.h.
+PubCookieLogin <url>
+        The login page for pubcookie.  The default is PBC_LOGIN_PAGE
+        defined in pbc_config.h.
+PubCookieGrantingCertfile <file>
+        The name of the certfile for Granting PubCookies.
+PubCookieSessionKeyfile <file>
+        The name of the keyfile for Session PubCookies.
+PubCookieSessionCertfile <file>
+        The name of the certfile for Session PubCookies.
+PubCookieCryptKeyfile <file>
+        The name of the encryption keyfile for PubCookies.
+PubCookieAppID <app_name>
+        The name of the application.
+ForceReauth <url>
+        Force the reauth loop through the login server
 
-$Id: pubcookie.doc,v 1.2 1998-03-20 01:32:28 willey Exp $
+Except for ForceReauth and PubCookieAppID these directives can only be used
+in the configuration files outside of <Directory> or <Location>.
+
+Keys and Certificates 
+---------------------
+
+To get keys and the login server certificate please send email to 
+pubcookie@u.washington.edu with the ip's of the web server machines.
+
+$Id: pubcookie.doc,v 1.3 1998-12-18 16:03:49 willey Exp $
 
 
