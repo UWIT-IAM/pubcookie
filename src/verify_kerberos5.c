@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.8 $
+ * $Revision: 1.9 $
  */
 
 /* login cgi includes */
@@ -288,10 +288,13 @@ static int k5support_verify_tgt(krb5_context context,
 
     keytabname = (krb5_pointer) libpbc_config_getstring("kerberos5_keytab",
                                                         NULL);
-
-    if (krb5_kt_resolve(context, keytabname, &keytab)) {
-       *errstr = "unable to resolve keytab";
-       goto fini;
+    if (keytabname) {
+	if (krb5_kt_resolve(context, keytabname, &keytab)) {
+	    *errstr = "unable to resolve keytab";
+	    goto fini;
+	}
+    } else {
+	keytab = NULL;
     }
 
     if (krb5_kt_read_service_key(context, keytabname, server, 0,
@@ -524,39 +527,12 @@ static int kerberos5_v(const char *userid,
     return result;
 }
 
+verifier kerberos5_verifier = { "kerberos_v5", 
+				&kerberos5_v, &creds_free, &creds_derive };
+
 #else /* HAVE_KRB5 */
 
-static void creds_free(struct credentials *creds)
-{
-    /* No-op 'cuz we aren't doing krb5! */
-}
-static int creds_derive(struct credentials *creds,
-			const char *app,
-			const char *target,
-			struct credentials **outcredsp)
-{
-    /* No-op 'cuz we aren't doing krb5! */
-    /* Return success 'cuz nothing happened. */
-     
-    return 0;
-}
-
-static int kerberos5_v(const char *userid,
-		       const char *passwd,
-		       const char *service,
-		       const char *user_realm,
-		       struct credentials **creds,
-		       const char **errstr)
-{
-    if (creds) *creds = NULL;
-
-    *errstr = "kerberos5 not implemented";
-    return -1;
-}
-
-
+verifier kerberos5_verifier = { "kerberos_v5", NULL, NULL, NULL };
 
 #endif /* HAVE_KRB5 */
 
-verifier kerberos5_verifier = { "kerberos_v5", 
-				&kerberos5_v, &creds_free, &creds_derive };
