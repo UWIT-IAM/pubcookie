@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.10 2002-06-25 19:54:05 greenfld Exp $
+    $Id: keyserver.c,v 2.11 2002-06-26 19:29:36 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -228,8 +228,10 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
         case SETKEY:
             {
-                char *thekey, *thepeer;
-
+                char *thekey64, *thepeer;
+		char *thekey;
+		int ksize;
+		
                 /* someone has asked us to set a key */
 
                 /* verify that 'peer' is a fellow login server */
@@ -241,15 +243,23 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
                 /* find <peer>;<key> */
                 thepeer = strdup(newkey);
-                thekey = strchr(thepeer, ';');
-                if (!thekey) {
+                thekey64 = strchr(thepeer, ';');
+                if (!thekey64) {
                     myprintf("NO bad form for new key\r\n");
                     /* xxx log */
                     return(1);
                 }
-                *thekey++ = '\0';
+                *thekey64++ = '\0';
 
-                /* xxx base64 decode thekey */
+                /* base64 decode thekey64 */
+		thekey = (char *) malloc(strlen(thekey64));
+		if (!thekey || 
+		    !libpbc_base64_decode(thekey64, thekey, &ksize) || 
+		    ksize != PBC_DES_KEY_BUF) {
+		    myprintf("NO couldn't decode key\r\n");
+		    /* xxx log */
+		    return (1);
+		}
 
                 /* go ahead and write it to disk */
                 if (libpbc_set_crypt_key(thekey, thepeer) != PBC_OK) {
@@ -257,6 +267,8 @@ int doit(const char *peer, enum optype op, const char *newkey)
                     /* xxx log */
                     return(1);
                 }
+
+		free(thekey);
 
                 myprintf("OK key set\r\n");
                 break;
