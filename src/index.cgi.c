@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.46 $
+ * $Revision: 1.47 $
  */
 
 
@@ -475,7 +475,7 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
       		PBC_EM2_START,
 		PROBLEMS_PERSIST,
          	PBC_EM2_END);
-          // XXX print_login_page(l, c, "cookie create failed");
+          /* XXX print_login_page(l, c, "cookie create failed"); */
           log_error(1, "system-problem", 0,
 		    "Not able to create cookie for user %s at %s-%s",
 		    l->user, l->appsrvid, l->appid);
