@@ -1,8 +1,25 @@
+/*
 
-/* Copyright 1999, University of Washington.  All rights reserved. */
+    Copyright 1999, University of Washington.  All rights reserved.
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More info: https:/www.washington.edu/pubcookie/
+    Written by the Pubcookie Team
+
+    this is a pubcookie include file for macros that define the 
+    way the pubcookie module does stuff
+
+ */
 
 /*
-    $Id: pbc_config.h,v 1.24 1999-08-11 23:00:50 willey Exp $
+    $Id: pbc_config.h,v 1.25 1999-08-21 00:36:45 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -29,11 +46,15 @@
 /* the cookies; l, g, and s have the same format g request and pre s
    are different internally
  */
+/* the formmulti part will probably only hang around until will correctly
+   handle form/multipart
+ */
 #define PBC_L_COOKIENAME "pubcookie_l"
 #define PBC_G_COOKIENAME "pubcookie_g"
 #define PBC_G_REQ_COOKIENAME "pubcookie_g_req"
 #define PBC_S_COOKIENAME "pubcookie_s"
 #define PBC_PRE_S_COOKIENAME "pubcookie_p_res"
+#define PBC_FORM_MP_COOKIENAME "pubcookie_formmultipart"
 
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
