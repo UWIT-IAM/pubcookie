@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.7 2001-08-22 23:24:15 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.8 2001-09-13 23:11:05 willey Exp $
 #
 
 # your compiler here
@@ -60,17 +60,6 @@ all:	index.cgi
 
 index.cgi:	index.cgi.o  securid.o libpubcookie.o base64.o index.cgi_securid.o index.cgi_krb.o 
 		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_securid.o index.cgi_krb.o libpubcookie.o base64.o securid.o /usr/local/lib/libcgic.a $(LDFLAGS)
-
-uwnetid_stub:	uwnetid_stub.o  uwnetid_stub.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o $(LDFLAGS)
-
-securid_stub:	securid_stub.o  securid.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ securid_stub.o libpubcookie.o base64.o securid.o $(LDFLAGS)
-
-h2ph:
-	co -l *.ph; \
-	h2ph -d . *.h; \
-	ci -mauto_update -u *.ph
 
 base64.o: base64.c ${GEN_HEAD} ${MAKEFILE}
 candv.o: candv.c ${GEN_HEAD} ${MAKEFILE}
