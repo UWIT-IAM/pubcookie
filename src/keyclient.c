@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.9 2002-06-27 22:07:24 jteaton Exp $
+    $Id: keyclient.c,v 2.10 2002-06-27 22:51:42 jjminer Exp $
  */
 
 #include <stdio.h>
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-libpbc_augment_rand_state(buf, 50);
+    libpbc_augment_rand_state(buf, 50);
 
     newkeyp = 1;
     while ((c = getopt(argc, argv, "apc:k:C:D:nudh:L:")) != -1) {
@@ -348,19 +348,31 @@ libpbc_augment_rand_state(buf, 50);
             }
 
             if (newkeyp != -1) {
+                if (strchr(p, '\r')) {
+                    /* chomp new line */
+                    *(strchr(p, '\r')) = '\0';
+                }
+                if (strchr(p, '\n')) {
+                    /* chomp new line */
+                    *(strchr(p, '\n')) = '\0';
+                }
+
                 if (noop) {
-                    if (strchr(p, '\r')) {
-                        /* chomp new line */
-                        *strchr(p, '\r') = '\0';
-                    }
                     printf("would have set key to '%s'\n", p);
                 } else {
-		    int osize;
-                    libpbc_base64_decode( (unsigned char *) p, thekey, &osize);
-		    if (osize != PBC_DES_KEY_BUF) {
+                    int osize;
+                    int ret;
+                    ret = libpbc_base64_decode( (unsigned char *) p, thekey, &osize);
+
+                    if (! ret) {
+                        fprintf( stderr, "Bad base64 decode.\n" );
+                        exit(1);
+                    }
+
+                    if (osize != PBC_DES_KEY_BUF) {
                         fprintf(stderr, "keyserver returned wrong key size\n");
                         exit(1);
-		    }
+                    }
                     if (libpbc_set_crypt_key( (const char *) thekey, hostname) != PBC_OK) {
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
