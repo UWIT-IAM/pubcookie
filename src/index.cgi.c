@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.12 2000-08-25 22:07:56 willey Exp $
+    $Id: index.cgi.c,v 1.13 2000-09-08 16:27:54 willey Exp $
  */
 
 
@@ -463,6 +463,10 @@ int cgiMain()
     char	*res;
     char	message[PBC_4K];
 
+    /* make the effective uid nobody */
+    if( setreuid(0, 65534) != 0 )
+        log_message("main: not able to setuid to nobody");
+
 #ifdef DEBUG
     fprintf(stderr, "cgiMain: hello\n");
 #endif
@@ -655,6 +659,7 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
     if( need_clear_login ) 
         print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
             PBC_L_COOKIENAME, 
+            "done",
             hostname, 
             LOGIN_DIR, 
             EARLIEST_EVER);
@@ -720,11 +725,22 @@ char *check_login_uwnetid(const char *user, const char *pass)
 
 char *check_login_securid(char *user, char *sid, int next, login_rec *l)
 {
+
+#ifdef DEBUG
+    fprintf(stderr, "check_login_securid: hello\n");
+#endif 
+
     if( auth_securid(user, sid, next, l) == NULL ) {
+#ifdef DEBUG
+        fprintf(stderr, "check_login_securid: auth_securid say ok\n");
+#endif 
         clear_error("securid-fail", "securid auth ok");
         return(CHECK_LOGIN_RET_SUCCESS);
     }
     else {
+#ifdef DEBUG
+        fprintf(stderr, "check_login_securid: auth_securid say NOPE!\n");
+#endif 
         log_error(2, "securid-err", 1, "problem doing securid auth");
         return(CHECK_LOGIN_RET_FAIL);
     }
