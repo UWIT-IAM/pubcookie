@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.43 2004-03-31 16:53:57 fox Exp $
+ * $Id: keyclient.c,v 2.44 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -67,6 +67,7 @@ typedef void pool;
 
 #include "pbc_config.h"
 #include "pbc_configure.h"
+#include "pbc_logging.h"
 #include "libpubcookie.h"
 #include "strlcpy.h"
 #include "snprintf.h"
@@ -515,15 +516,15 @@ int main(int argc, char *argv[])
                     exit(1);
                 }
 
-                if (s=strchr(cp, '\r')) *s = '\0';
-                if (s=strchr(cp, '\n')) *s = '\0';
+                if ((s=strchr(cp, '\r'))) *s = '\0';
+                if ((s=strchr(cp, '\n'))) *s = '\0';
 
                 if (noop) {
                     printf("would have set key to '%s'\n", cp);
                 } else {
 		    int osize = 0;
                     int ret;
-                    if (s=strchr(cp, '\r')) *s = '\0';
+                    if ((s=strchr(cp, '\r'))) *s = '\0';
                     ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         fprintf(stderr, "keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
@@ -564,7 +565,7 @@ jump:
     if (!done) {
         printf("operation failed: %s\n", buf);
     } else {
-        printf("operation succeeded\n", buf);
+        printf("operation succeeded: %s\n", buf);
     }
 
     close(sd);

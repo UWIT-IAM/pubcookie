@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.h
  * header file for Runtime configuration
  *
- * $Id: pbc_myconfig.h,v 1.20 2004-02-13 18:57:04 fox Exp $
+ * $Id: pbc_myconfig.h,v 1.21 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -64,6 +64,12 @@ extern int libpbc_myconfig_getswitch(pool *p, const char *key, int def);
  * @return a NULL terminated array of NUL terminated strings.
  * the array must be free() when the caller is done */
 extern char **libpbc_myconfig_getlist(pool *p, const char *key);
+
+/**
+ * int=dddS, dddM, dddH 
+ */
+extern int libpbc_myconfig_str2int(const char *val, int def);
+
 
 #else  //Win32 declarations.  Descriptions same as above.
 

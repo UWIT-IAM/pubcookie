@@ -17,7 +17,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.31 2004-03-09 20:06:02 jteaton Exp $
+ * $Id: verify_kerberos5.c,v 1.32 2004-04-07 04:59:38 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -31,6 +31,7 @@ typedef void pool;
 #include "index.cgi.h"
 #include "verify.h"
 #include "pbc_config.h"
+#include "pbc_configure.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"
 #include "snprintf.h"
@@ -274,7 +275,7 @@ static int cred_derive(pool *p, struct credentials *creds,
 }
 
 static int creds_derive(pool *p, struct credentials *creds,
-                        const char *app,
+                        login_rec *l,
                         const char **target_array,
                         struct credentials **outcredsp)
 {
@@ -287,10 +288,10 @@ static int creds_derive(pool *p, struct credentials *creds,
     int r = -1;
 
     assert(creds != NULL);
-    assert(app != NULL && target_array != NULL);
+    assert(l->host != NULL && target_array != NULL);
 
-    snprintf(tfname, sizeof(tfname), "/tmp/k5cc_%d", getpid());
-    snprintf(tfname_target, sizeof(tfname_target), "/tmp/k5cc_%d_%d", getpid(), i);
+    snprintf(tfname, sizeof(tfname), "/tmp/k5cc_%d_%s@%s", getpid(), l->user, l->realm);
+    snprintf(tfname_target, sizeof(tfname_target), "%s_target", tfname);
 
     /* unpack 'creds' into a ticket file */
     if (unsave_tf(p, tfname, creds) < 0) {
@@ -319,7 +320,7 @@ static int creds_derive(pool *p, struct credentials *creds,
 
 
     for(i = 0; target_array[i] != NULL; i++) {
-        if (cred_derive(p, creds, app, target_array[i], i, context, ccache, ccache_target) != 0) {
+        if (cred_derive(p, creds, l->host, target_array[i], i, context, ccache, ccache_target) != 0) {
            goto cleanup;
         }
     }
@@ -501,7 +502,8 @@ static int kerberos5_v(pool *p, const char *userid,
     }
 
     /* create a new CCACHE so we don't stomp on anything */
-    snprintf(tfname,sizeof(tfname), "/tmp/k5cc_%d", getpid());
+    snprintf(tfname,sizeof(tfname), "/tmp/k5cc_%d_%s@%s", getpid(), userid,
+             user_realm);
     if (krb5_cc_resolve(context, tfname, &ccache)) {
 	krb5_free_principal(context, auth_user);
 	krb5_free_context(context);
@@ -528,9 +530,9 @@ static int kerberos5_v(pool *p, const char *userid,
     krb5_get_init_creds_opt_set_address_list(&opts,&no_addrs);
 #endif
     krb5_get_init_creds_opt_set_tkt_life(&opts, KRB5_DEFAULT_LIFE);
-    if (k5_retcode = krb5_get_init_creds_password(context, &creds, 
+    if ((k5_retcode = krb5_get_init_creds_password(context, &creds, 
 				     auth_user, localpwd, NULL, NULL, 
-                     0, NULL, &opts)) {
+                                     0, NULL, &opts))) {
         krb5_cc_destroy(context, ccache);
         krb5_free_principal(context, auth_user);
         krb5_free_context(context);
@@ -648,7 +650,8 @@ static int kerberos5_v(pool *p, const char *userid,
 }
 
 verifier kerberos5_verifier = { "kerberos_v5", &kerberos5_v,
-				&creds_free, &creds_derive };
+				&creds_free,
+                                &creds_derive };
 
 #else /* ENABLE_KRB5 */
 

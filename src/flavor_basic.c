@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.52 2004-03-21 04:46:59 fox Exp $
+ * $Id: flavor_basic.c,v 1.53 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -69,6 +69,8 @@ typedef void pool;
 static verifier *v = NULL;
 extern int debug;
 
+extern int get_kiosk_duration(pool *p, login_rec *l);
+
 /* The types of reasons for printing the login page.. 
  * Should this be in a header?  I don't think I need it outside this file.. */
 
@@ -88,7 +90,7 @@ extern int debug;
 static int init_basic()
 {
     const char *vname;
-    void *p;
+    void *p = NULL;
     
     /* find the verifier configured */
     vname = libpbc_config_getstring(p, "basic_verifier", NULL);
@@ -347,7 +349,6 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
        we always clear the greq cookie */
     int need_clear_login = 0;
     int need_clear_greq = 1;
-    char message_out[1024];
     const char * reasonpage = NULL;
 
     char *hidden_fields = NULL;
@@ -472,7 +473,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
-                                      "<input type=\"hidden\" name=\"%s\" value=\"%u\">\n",
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%ld\">\n",
                                       PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : ""),
                                       PBC_GETVAR_APPID, (l->appid ? l->appid : ""),
                                       "creds_from_greq", l->creds_from_greq,
@@ -526,7 +527,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
         } 
     }
 
-    snprintf(now, sizeof(now), "%d", time(NULL));
+    snprintf(now, sizeof(now), "%ld", time(NULL));
 
     /* what should the user field look like? */
     user_field = flb_get_user_field(p, l, c, reason);

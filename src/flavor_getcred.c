@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.26 2004-03-31 23:39:53 fox Exp $
+ * $Id: flavor_getcred.c,v 1.27 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -212,7 +212,7 @@ static login_result process_getcred(pool *p, const security_context *context,
     }
 
     /* split target into component parts to make an array of targets  */
-    for (i=0, j=1; target[i] != NULL; i++) {
+    for (i=0, j=1; target[i] != 0; i++) {
         if (target[i] == ';') {
            j++;
         }
@@ -221,7 +221,7 @@ static login_result process_getcred(pool *p, const security_context *context,
 
     target_array = malloc(num_creds * sizeof(char *));
     target_array[0] = target;
-    for (i=0, j=1; target[i] != NULL; i++) {
+    for (i=0, j=1; target[i] != 0; i++) {
        if (target[i] == ';') {
           target[i] = 0;
           target_array[j++] = &target[i+1];
@@ -305,7 +305,7 @@ static login_result process_getcred(pool *p, const security_context *context,
     /* derive those credentials and throw them in a cookie */
     /* we pass 'l->host' in to cred_derive because that's what we're going
        to use as the peer when we encrypt newcreds */
-    if (v->cred_derive(p, master, l->host, target_array, &newcreds)) {
+    if (v->cred_derive(p, master, l, (const char **)target_array, &newcreds)) {
 	pbc_log_activity(p, PBC_LOG_ERROR, "flavor_getcred: cred_derive failed");
 	*errstr = "cred_derive failed";
 	free(master->str);
@@ -332,9 +332,13 @@ static login_result process_getcred(pool *p, const security_context *context,
                           (unsigned char *) out64, outlen);
 
     /* check the length of out64 here, and divide up into multiple cookies
-       if necessary.  each cookie should be no more than 2k */
+       if necessary.  each cookie should be no more than 4k */
 
-    char cookiestr[2048];
+    /* really, PBC_TRANSCRED_MAX_COOKIE_LENGTH is set to 3900 because
+       some number of browsers limit cookies to 4000 bytes instead of 
+       4096 bytes, so we err on the safe side.  yay standards. */
+
+    char cookiestr[4096];
     for (i = 0, j = 0;
          i < strlen(out64) && j < PBC_TRANSCRED_MAX_COOKIES;
          i += PBC_TRANSCRED_MAX_COOKIE_LENGTH, j++) {
@@ -395,7 +399,7 @@ static int init_getcred()
 {
     const char *vname;
     int r;
-    void *p;
+    void *p = NULL;
 
     v = NULL;
 

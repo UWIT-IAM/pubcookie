@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.137 2004-04-01 03:39:48 jteaton Exp $
+ * $Id: mod_pubcookie.c,v 1.138 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -1877,7 +1877,7 @@ static int pubcookie_user(request_rec *r) {
         }
 
         /* set a random KRB5CCNAME */
-        krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d", getpid());
+        krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d_%s", getpid(), cfg->user);
         if (!res) {
             /* save these creds in that file */
 #ifdef APACHE2
@@ -2061,7 +2061,8 @@ static int pubcookie_fixups(request_rec *r)
                                                      &pubcookie_module);
     
     if (cfg->cred_transfer) {
-        char *krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d", getpid());
+        char *krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d_%s", getpid(),
+                                       cfg->user);
     
         ap_table_setn(e, "KRB5CCNAME", krb5ccname);
     }
@@ -2811,6 +2812,39 @@ static int load_keyed_directives(request_rec *r, char *key) {
     return (0);
 }
 
+static int pubcookie_cleanup(request_rec *r)
+{
+    pubcookie_dir_rec *cfg;
+    table *e = r->subprocess_env;
+
+    ap_log_rerror(PC_LOG_DEBUG, r, "cleanup");
+
+    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config,
+                                                     &pubcookie_module);
+
+    if (cfg->cred_transfer) {
+        struct stat sb;
+        const char *krb5ccname = ap_table_get(e, "KRB5CCNAME");
+
+        if (!krb5ccname || stat(krb5ccname, &sb) == -1) {
+            ap_log_rerror(PC_LOG_DEBUG, r,
+                          "pubcookie_cleanup: missing credential cache [%s]",
+                           krb5ccname);
+        } else {
+            if (unlink(krb5ccname) == -1) {
+                ap_log_rerror(PC_LOG_ERR, r,
+                              "pubcookie_cleanup: cannot destroy credential cache [%s]",
+                              krb5ccname);
+            } else {
+                ap_log_rerror(PC_LOG_DEBUG, r, "deleted credential cache %s", krb5ccname);
+            }
+        }
+    }
+
+    return OK;
+}
+
+
 
 #ifdef APACHE1_3
 
@@ -2836,7 +2870,7 @@ module pubcookie_module = {
     NULL,                        /* check access */
     pubcookie_typer,             /* type_checker */
     pubcookie_fixups,            /* fixups */
-    NULL,                        /* logger */
+    pubcookie_cleanup,           /* logger */
     pubcookie_hparse,            /* header parser */
     NULL,                        /* child init */
     NULL,                        /* exit/cleanup */
@@ -2864,6 +2898,7 @@ static void register_hooks(pool      * p) {
     ap_hook_handler(auth_failed_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_handler(do_end_session_redirect_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_handler(bad_user_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_log_transaction(pubcookie_cleanup, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(pc_post_config, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_read_request(pubcookie_post_read, NULL, NULL, APR_HOOK_MIDDLE);
 }

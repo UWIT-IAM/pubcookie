@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: verify.h,v 1.12 2004-02-10 00:42:15 willey Exp $
+    $Id: verify.h,v 1.13 2004-04-07 04:59:38 jteaton Exp $
  */
 
 #ifndef INCLUDED_VERIFY_H
@@ -13,6 +13,8 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#include "index.cgi.h"
 
 /*
   VERIFIERS
@@ -82,8 +84,8 @@ typedef void credentials_free(pool *p, struct credentials *creds);
  * @returns 0 on success, non-zero on failure
  */
 typedef int credentials_derive(pool *p, struct credentials *creds,
-			       const char *app,
-			       const char *target,
+			       login_rec *l, 
+			       const char **target_array,
 			       struct credentials **newcreds);
 
 typedef struct verifier_s {

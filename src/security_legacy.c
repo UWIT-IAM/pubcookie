@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.38 2004-02-19 23:07:03 fox Exp $
+ * $Id: security_legacy.c,v 1.39 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -487,7 +487,7 @@ int security_init(pool *p, security_context **contextp)
         return -2;
     }
 
-    if( cb_read = fread(context->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
+    if((cb_read = fread(context->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp)) != PBC_DES_KEY_BUF) {
         pbc_log_activity(p, PBC_LOG_ERROR,
 			"can't read crypt key %s: short read: %d", cryptkey, cb_read);
         pbc_fclose(p, fp);
@@ -620,6 +620,7 @@ int libpbc_mk_priv(pool *p, const security_context *context,
 
     memset(key, 0, sizeof(key));
     des_set_odd_parity(&key);
+    index1 = 0;
     while (des_set_key_checked(&key, ks) < 0 && --tries) {
 	r_byte = 0;	/* why isn't 0 allowed? */
 	while (r_byte == 0) RAND_bytes(&r_byte, 1);

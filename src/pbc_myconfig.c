@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.43 2004-02-19 23:07:03 fox Exp $
+ * $Id: pbc_myconfig.c,v 1.44 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -292,7 +292,7 @@ static void myconfig_read(pool *p, const char *alt_config, int required)
     int plineno = 0;
     int alloced = 0;
     char buf[8192];
-    char *ptr, *q, *key;
+    char *ptr, *key;
     char *bp = buf;
     
     filename = alt_config ? alt_config : PBC_CONFIG;

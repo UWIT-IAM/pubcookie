@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.122 2004-04-02 17:36:04 fox Exp $
+ * $Id: index.cgi.c,v 1.123 2004-04-07 04:59:38 jteaton Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1162,7 +1162,7 @@ static void get_kiosk_parameters(pool *p)
     vals = libpbc_config_getlist(p, "kiosk");
    
     for (i=0; vals && vals[i]; i++) {
-       if (t=libpbc_myconfig_str2int(vals[i],0)) {
+       if ((t=libpbc_myconfig_str2int(vals[i],0))) {
           ktime = t;
           continue;
        }
@@ -1199,7 +1199,7 @@ static void get_kiosk_parameters(pool *p)
           N->type = KIOSK_AGENT;
           N->str = strdup(vals[i]);
        } else {
-          if (v=strchr(vals[i],'*')) {      /* ip star format */
+          if ((v=strchr(vals[i],'*'))) {      /* ip star format */
              N->type = KIOSK_STAR; 
              *v = '\0';
              N->str = strdup(vals[i]);
@@ -1231,7 +1231,7 @@ static void get_kiosk_parameters(pool *p)
 
     if(keys) {
        for(i=0; keys[i] && vals[i]; i++) {
-          if (ktime=libpbc_myconfig_str2int(vals[i],0)) {
+          if ((ktime=libpbc_myconfig_str2int(vals[i],0))) {
             N = (KioskDef) malloc(sizeof(KioskDef_));
             N->next = NULL;
             *K = N;
@@ -1258,7 +1258,6 @@ static void get_kiosk_parameters(pool *p)
 
 int get_kiosk_duration(pool *p, login_rec *l)
 {
-    int         i;
     KioskDef K;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
@@ -1724,14 +1723,70 @@ int pinit(pool *p, const security_context *context, login_rec *l, login_rec *c)
 
 }
 
+/*  Load the ok_browsers file: copy to memory, create a list of lines. */
+static void init_user_agent(pool *p)
+{
+    FILE *ifp;
+    long ifplen;
+    char *s, *txt;
+    int nl = 0;
+    char **ok;
+
+    ifp = fopen(OK_BROWSERS_FILE, "r");
+    if (ifp) {
+      fseek(ifp, 0, SEEK_END);
+      ifplen = ftell(ifp);
+      if (ifplen>0) {
+         txt = (char*) malloc(ifplen+1);
+         fseek(ifp, 0, SEEK_SET);
+         if (fread(txt,ifplen,1,ifp)==1) {
+            txt[ifplen] = '\0';
+
+            /* lowercase and break into lines */
+
+            for (s=txt;*s;*s++) {
+               if (*s=='\n') nl++;
+               else if (isupper(*s)) *s = tolower(*s);
+            }
+            ok = ok_user_agents = (char**) malloc((nl+1)*sizeof(char*));
+
+            while (*txt) {
+               if (*txt=='#') while ((*txt) && (*txt!='\n')) txt++;
+               while (*txt && *txt=='\n') txt++;
+               if ((s=strchr(txt,'\n'))) *s = '\0';
+               if (*txt) *ok++ = txt;
+               if (!s) break;
+               else txt = ++s;
+            }
+            *ok++ = NULL;
+         } else {
+            free(ok_user_agents);
+            ok_user_agents = NULL;
+         }
+
+      }
+      fclose(ifp);
+    }
+
+    if (ok_user_agents) {
+        char **a;
+        for (a=ok_user_agents; a && *a; a++) {
+           pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+                  "  ok browser: %s", *a);
+        }
+    } else pbc_log_activity(p, PBC_LOG_ERROR,
+                  "can't open ok browsers file: %s, continuing",
+                  OK_BROWSERS_FILE);
+
+}
+
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 /*	main line                                                          */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
 int cgiMain_init()
 {
-   void *p;
-   const char *s;
+   void *p = NULL;
    libpbc_config_init(p, NULL, "logincgi");
    debug = libpbc_config_getint(p, "debug", 0);
    pbc_log_init_syslog(p, "pubcookie login server");
@@ -1742,6 +1797,7 @@ int cgiMain_init()
    if (max_cgi_count<0) max_cgi_count = 0;
    pbc_log_activity(p, PBC_LOG_ERROR, "Pubcookie login initialized, "
             "max/process = %d\n", max_cgi_count);
+   return(0);
 }
 
 /**
@@ -1752,8 +1808,10 @@ int cgiMain()
     login_rec *l = NULL;   /* culled from various sources */
     login_rec *c = NULL;   /* only from login cookie */
     const char *mirrorfile;
-    void *p; /* we pass a pointer around that is an Apache memory pool if we're
-                using apache, here we just pass a void pointer */
+
+    /* we pass a pointer around that is an Apache memory pool if we're
+       using apache, here we just pass a void pointer */
+    void *p = NULL;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
               "cgiMain() Hello (%d)\n", cgi_count++);
@@ -2157,7 +2215,7 @@ int cookie_test(pool *p, const security_context *context, login_rec *l, login_re
     if (l->host) {
         char *th = strdup(l->host);
         char *thc;
-        if (thc=strchr(th,':')) *thc = '\0';
+        if ((thc=strchr(th,':'))) *thc = '\0';
         if (!libpbc_test_crypt_key(p, th)) {
             ntmpl_print_html(p, TMPL_FNAME,
                  libpbc_config_getstring(p, "tmpl_login_unauth_grant",
@@ -2234,67 +2292,6 @@ char *to_lower(pool *p, char *in)
 
 }
 
-
-/*  Load the ok_browsers file: copy to memory, create a list of lines. */
-
-int init_user_agent(pool *p)
-{
-    FILE *ifp;
-    long ifplen;
-    char *s, *txt;
-    int nl = 0;
-    char **ok;
-
-    ifp = fopen(OK_BROWSERS_FILE, "r");
-    if (ifp) {
-      fseek(ifp, 0, SEEK_END);
-      ifplen = ftell(ifp);
-      if (ifplen>0) {
-         int bol = 1;
-         txt = (char*) malloc(ifplen+1);
-         fseek(ifp, 0, SEEK_SET);
-         if (fread(txt,ifplen,1,ifp)==1) {
-            txt[ifplen] = '\0';
-
-            /* lowercase and break into lines */
-
-            for (s=txt;*s;*s++) {
-               if (*s=='\n') nl++;
-               else if (isupper(*s)) *s = tolower(*s);
-            }
-            ok = ok_user_agents = (char**) malloc((nl+1)*sizeof(char*));
-            
-            while (*txt) {
-               if (*txt=='#') while ((*txt) && (*txt!='\n')) txt++;
-               while (*txt && *txt=='\n') txt++;
-               if (s=strchr(txt,'\n')) *s = '\0';
-               if (*txt) *ok++ = txt;
-               if (!s) break;
-               else txt = ++s;
-            }
-            *ok++ = NULL;
-         } else {
-            free(ok_user_agents);
-            ok_user_agents = NULL;
-         }
-        
-      }
-      fclose(ifp);
-    }
-
-    if (ok_user_agents) {
-        char **a;
-        for (a=ok_user_agents; a && *a; a++) {
-           pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-		  "  ok browser: %s", *a);
-        }
-    } else pbc_log_activity(p, PBC_LOG_ERROR,
-		  "can't open ok browsers file: %s, continuing", 
-		  OK_BROWSERS_FILE);
-
-}
-    
-    
 /**
  *  check_user_agent: checks the user_agent string from the browser
  *  to see if it contains any of the lines of OK_BROWSERS_FILE as

@@ -6,7 +6,7 @@
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.27 2004-03-31 16:53:57 fox Exp $
+ * $Id: pbc_logging.c,v 1.28 2004-04-07 04:59:38 jteaton Exp $
  */
 
 
@@ -149,7 +149,8 @@ static void mylog(pool *p, int logging_level, const char *mymsg)
 #endif
 
 /* The log level is use a lot - no sense recomputing it each time. */
-static cfg_logging_level = (-1);
+static int cfg_logging_level = (-1);
+
 int myloglevel(pool *p)
 {
    if (cfg_logging_level<0)
