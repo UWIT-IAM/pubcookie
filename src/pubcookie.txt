@@ -1,11 +1,28 @@
 
 #include "pbc_config.h"
 
-Basic pubcookie documentation containing a rough overview and installation
-instructions.
+OBSOLETE DOCUMENT: 
+
+
+
+Pubcookie documentation lives at:
+
+http://www.washington.edu/cluster/pubcookie/
+
+Installation specific docs live at:
+
+http://www.washington.edu/cluster/pubcookie/installa.htm
+
+
+12Jan1999 steve
+
+
 
 For more documentation please see:
-	http://veil.cac.washington.edu/pubcookie
+	http://www.washington.edu/cluster/pubcookie
+
+Basic pubcookie documentation containing a rough overview and installation
+instructions.
 
 Introduction
 ------------
@@ -308,6 +325,6 @@ src/global.h, line 26 needs to change from 'unsigned long int' to
 
 
 
-$Id: pubcookie.txt,v 1.7 1999-01-12 00:20:56 willey Exp $
+$Id: pubcookie.txt,v 1.8 1999-01-13 02:01:36 willey Exp $
 
 
