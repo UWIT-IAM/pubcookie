@@ -66,6 +66,7 @@ typedef void credentials_free(struct credentials *creds);
  *        IMAP server)
  * @param newcreds returns the new credentials to be passed to 'app',
  *        which must later be free'd with credentials_free()
+ * @returns 0 on success, non-zero on failure
  */
 typedef int credentials_derive(struct credentials *creds,
 			       const char *app,
