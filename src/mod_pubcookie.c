@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.114 2003-04-16 16:07:25 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.115 2003-04-19 17:16:52 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1020,6 +1020,9 @@ static void pubcookie_init(server_rec *s, pool *p) {
     ap_add_version_component(
             ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION_STRING, NULL));
 
+    ap_log_error(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, s,
+        "pubcookie_init: hello");
+
     /* bail if PubcookieAuthTypes not set */
     if( scfg->authtype_names == NULL ) {
         ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
@@ -1037,11 +1040,6 @@ static void pubcookie_init(server_rec *s, pool *p) {
 		"PubCookieSessionCertFile configuration directive must be set!");
 	exit(1);
     }
-    if (ap_table_get(scfg->configlist, "granting_cert_file") == NULL) {
-        ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
-            "PubCookieGrantingCertFile configuration directive not set, using %s/%s", 
-             PBC_KEY_DIR, "pubcookie_granting.cert");
-    }
 
     /* old config way */
     /* libpbc_config_init(p, NULL, "mod_pubcookie"); */
@@ -1055,6 +1053,12 @@ static void pubcookie_init(server_rec *s, pool *p) {
         &libpbc_apacheconfig_getstring,
         &libpbc_apacheconfig_getswitch);
 
+    if (ap_table_get(scfg->configlist, "granting_cert_file") == NULL) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
+            "PubCookieGrantingCertFile configuration directive not set, using %s/%s", 
+             PBC_KEY_DIR, "pubcookie_granting.cert");
+    }
+
 
     /* libpubcookie initialization */
     libpbc_pubcookie_init(p);
@@ -1067,6 +1071,9 @@ static void pubcookie_init(server_rec *s, pool *p) {
                      "pubcookie_init(): login from PBC_LOGIN_URI: %s",
                      scfg->login);
     }
+
+    ap_log_error(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, s,
+        "pubcookie_init: bye");
 }
 
 /*                                                                            */
