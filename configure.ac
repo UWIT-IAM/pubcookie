@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.58 $)
+AC_REVISION($Revision: 1.59 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -163,12 +163,51 @@ fi
 
 if test "$enable_apache" = "yes"; then
 
+# look for the static module build
+apache_src=
+AC_MSG_CHECKING(for apache src)
+AC_ARG_WITH(apache-src,
+[  --with-apache-src=DIR   Build static Apache module.  DIR is the path
+                           to the top-level Apache source directory.],
+[
+   if test "$withval" = "yes"; then
+      AC_MSG_ERROR(You need to specify a directory with --with-apache-src)
+   fi
+   if test -d $withval/modules && \
+      test -f $withval/include/httpd.h; then  # apache2
+         APACHE_VERSION=2
+         apache_src=$withval
+         apache_target=$withval/modules/pubcookie
+         apache_src_ref=$PWD
+#        I can't get it to work on apache2
+         AC_MSG_ERROR(Cannot build static Apache 2 module)
+   fi
+   if test -d $withval/src/modules && \
+      test -f $withval/src/include/httpd.h; then
+         APACHE_VERSION=1_3
+         apache_src=$withval
+         apache_target=$withval/src/modules/pubcookie
+         apache_src_ref=$PWD
+   fi
+   if test "x$apache_src" = "x"; then
+         AC_MSG_ERROR(Cannot find the apache source)
+   fi
+   APXS=
+   AC_SUBST(apache_module, "")
+   AC_SUBST(install_apache, "")
+   AC_MSG_RESULT($withval)
+
+],[
+    AC_MSG_RESULT(no)
+])
+
+
 AC_ARG_WITH(apxs,
     AC_HELP_STRING([--with-apxs=PATH],[/path/to/apxs]),
 [ case "$withval" in
    no)
       OLDPATH=$PATH
-      PATH="/usr/local/apache/bin:/usr/www/bin:/usr/sbin:$PATH"
+      PATH="/usr/local/apache/bin:/usr/local/apache2/bin:/usr/www/bin:/usr/sbin:$PATH"
       AC_PATH_PROG(APXS, apxs)
       PATH=$OLDPATH
       ;;
@@ -185,7 +224,10 @@ AC_ARG_WITH(apxs,
       PATH=$OLDPATH
       ;;
   esac ],[
-AC_PATH_PROG(APXS, apxs)
+ if test "x$apache_src" = "x"; then
+     PATH="/usr/local/apache/bin:/usr/local/apache2/bin:/usr/www/bin:/usr/sbin:$PATH"
+     AC_PATH_PROG(APXS, apxs)
+ fi
 ])
 
 if ! test "x$APXS" = "x"; then
@@ -248,43 +290,6 @@ if ! test "x$APXS" = "x"; then
   apache_src_ref=".."
 
 fi # if apxs
-
-# look for the static module build
-apache_src=
-AC_MSG_CHECKING(for apache src)
-AC_ARG_WITH(apache-src,
-[  --with-apache-src=DIR   Build static Apache module.  DIR is the path
-                           to the top-level Apache source directory.],
-[
-   if test "$withval" = "yes"; then
-      AC_MSG_ERROR(You need to specify a directory with --with-apache-src)
-   fi
-   if test -d $withval/modules && \
-      test -f $withval/include/httpd.h; then  # apache2
-         APACHE_VERSION=2
-         apache_src=$withval
-         apache_target=$withval/modules/pubcookie
-         apache_src_ref=$PWD
-#        I can't get it to work on apache2
-         AC_MSG_ERROR(Cannot build static Apache 2 module)
-   fi
-   if test -d $withval/src/modules && \
-      test -f $withval/src/include/httpd.h; then
-         APACHE_VERSION=1_3
-         apache_src=$withval
-         apache_target=$withval/src/modules/pubcookie
-         apache_src_ref=$PWD
-   fi
-   if test "x$apache_src" = "x"; then
-         AC_MSG_ERROR(Cannot find the apache source)
-   fi
-   APXS=
-   AC_SUBST(apache_module, "")
-   AC_MSG_RESULT($withval)
-
-],[
-    AC_MSG_RESULT(no)
-])
 
 
 # if module was wanted make sure one will be built
