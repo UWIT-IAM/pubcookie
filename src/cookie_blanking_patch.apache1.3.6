@@ -68,20 +68,3 @@
   	else {
   	    ap_table_addn(e, http2env(r->pool, hdrs[i].key), hdrs[i].val);
   	}
-***************
-*** 1013,1019 ****
-  
-  	if (!strncmp("/~", r->uri, 2)) {
-  	    gid_t user_gid;
-! 	    char *username = ap_pstrdup(r->pool, r->uri + 2);
-  	    char *pos = strchr(username, '/');
-  
-  	    if (pos) {
---- 1054,1060 ----
-  
-  	if (!strncmp("/~", r->uri, 2)) {
-  	    gid_t user_gid;
-!             char *username = ap_pstrdup(r->pool, r->uri + 2);
-  	    char *pos = strchr(username, '/');
-  
-  	    if (pos) {
