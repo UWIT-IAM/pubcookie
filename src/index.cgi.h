@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.13 2001-10-18 21:35:14 willey Exp $
+    $Id: index.cgi.h,v 1.14 2001-11-08 22:45:16 willey Exp $
  */
 
 typedef struct {
@@ -53,6 +53,50 @@ typedef struct {
     char	*first_kiss;
     char	reply;
 } login_rec;
+
+/*
+
+Each credential type is constituted by a set of credential fields.
+At the UWash the credential fields for CRED1 at uwnetid and password.
+
+a cred_field is a structure describing a credential field.
+
+credential fields may hav different attributes for different credential
+types
+
+a credential definition defines what how a credential acts and what
+credential fields it has.  The scructure that defines it is cred_def.
+
+
+credential fields attributes:
+        GRACE           - field may be subject to ride-free timer
+        ECHO_STARS      - form field entry should echo asterisks
+        PREFILL         - form field may be prefilled
+
+*/
+
+typedef struct {
+    char	*name;
+    char	*prompt;
+    int		attr;
+    char	*form_field;
+} cred_field;
+
+typedef struct {
+    char	*name;
+    cred_field  cred_fields;
+    int		cred_fields_extra_attrs;
+    char	*prompt_with;
+    char	*prompt_with_aux;
+    char	*auth_handler;
+} cred_def;
+
+cred_def	cred_defs[8];
+
+#define CRED_ATTR_NONE 0
+#define CRED_ATTR_GRACE 1		/* credential field honors ride free */
+#define CRED_ATTR_ECHO_STARs 2		/* form field echo astrisks */
+#define CRED_ATTR_PREFILL 4		/* pre-fill form field if possilble */
 
 /* prototypes */
 int cgiMain();
