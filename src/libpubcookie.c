@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.27 2002-06-25 19:44:41 greenfld Exp $
+    $Id: libpubcookie.c,v 2.28 2002-06-26 13:58:00 greenfld Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -79,6 +79,10 @@ const char *redirect_reason[] = {
     "Wrong creds"		/* 11 */
 };
 
+/* lives only on login servers */
+char PBC_L_CERTFILE[1024];
+/* lives only on login server */
+char PBC_L_KEYFILE[1024];
 /* lives only on application server */
 char PBC_S_CERTFILE[1024];
 /* lives only on application server */
@@ -322,6 +326,7 @@ void libpbc_pubcookie_init_np()
 {
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
+    const char *ptr;
 
 /*  libpbc_debug("libpbc_pubcookie_init\n"); */
 
@@ -329,14 +334,60 @@ void libpbc_pubcookie_init_np()
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
 
-    snprintf(PBC_S_CERTFILE, sizeof(PBC_S_CERTFILE),
-	     "%s/%s", PBC_KEY_DIR, "pubcookie_session.cert");
-    snprintf(PBC_S_KEYFILE, sizeof(PBC_S_CERTFILE),
-	     "%s/%s", PBC_KEY_DIR, "pubcookie_session.key");
-    snprintf(PBC_G_CERTFILE, sizeof(PBC_S_CERTFILE),
-	     "%s/%s", PBC_KEY_DIR, "pubcookie_granting.cert");
-    snprintf(PBC_G_KEYFILE, sizeof(PBC_S_CERTFILE),
-	     "%s/%s", PBC_KEY_DIR, "pubcookie_granting.key");
+    /* xxx compare this to security_legacy.c:security_init() */
+
+    /* login keys */
+    /* if we can use the SSL keys, do so; otherwise, use the login files */
+    ptr = libpbc_config_getstring("ssl_cert_file", NULL);
+    if (ptr && !access(ptr, R_OK | F_OK)) {
+	strlcpy(PBC_L_CERTFILE, ptr, sizeof PBC_L_CERTFILE);
+    } else {
+	snprintf(PBC_L_CERTFILE, sizeof(PBC_L_CERTFILE),
+		 "%s/%s", PBC_KEY_DIR, "pubcookie_login.cert");
+    }
+
+    ptr = libpbc_config_getstring("ssl_key_file", NULL);
+    if (ptr && !access(ptr, R_OK | F_OK)) {
+	strlcpy(PBC_L_KEYFILE, ptr, sizeof PBC_L_KEYFILE);
+    } else {
+	snprintf(PBC_L_KEYFILE, sizeof(PBC_L_KEYFILE),
+		 "%s/%s", PBC_KEY_DIR, "pubcookie_login.key");
+    }
+
+    
+    /* session keys */
+    /* if we can use the SSL keys, do so; otherwise, use the session files */
+    ptr = libpbc_config_getstring("ssl_cert_file", NULL);
+    if (ptr && !access(ptr, R_OK | F_OK)) {
+	strlcpy(PBC_S_CERTFILE, ptr, sizeof PBC_S_CERTFILE);
+    } else {
+	snprintf(PBC_S_CERTFILE, sizeof(PBC_S_CERTFILE),
+		 "%s/%s", PBC_KEY_DIR, "pubcookie_session.cert");
+    }
+
+    ptr = libpbc_config_getstring("ssl_key_file", NULL);
+    if (ptr && !access(ptr, R_OK | F_OK)) {
+	strlcpy(PBC_S_KEYFILE, ptr, sizeof PBC_S_KEYFILE);
+    } else {
+	snprintf(PBC_S_KEYFILE, sizeof(PBC_S_KEYFILE),
+		 "%s/%s", PBC_KEY_DIR, "pubcookie_session.key");
+    }
+
+    /* granting keys */
+    ptr = libpbc_config_getstring("granting_cert_file", NULL);
+    if (ptr) {
+	strlcpy(PBC_G_CERTFILE, ptr, sizeof(PBC_G_CERTFILE));
+    } else {
+	snprintf(PBC_G_CERTFILE, sizeof(PBC_G_CERTFILE),
+		 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.cert");
+    }
+    ptr = libpbc_config_getstring("granting_key_file", NULL);
+    if (ptr) {
+	strlcpy(PBC_G_KEYFILE, ptr, sizeof(PBC_G_KEYFILE));
+    } else {
+	snprintf(PBC_G_KEYFILE, sizeof(PBC_G_KEYFILE),
+		 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.key");
+    }
 
     if (security_init()) {
 	syslog(LOG_ERR, "security_init failed");

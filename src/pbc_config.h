@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.55 2002-06-26 00:47:44 willey Exp $
+    $Id: pbc_config.h,v 1.56 2002-06-26 13:58:00 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -51,7 +51,7 @@
 
 /* names of the login servers */
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
-#define PBC_LOGIN_URI (libpbc_config_getstring("login_uri", ""))
+#define PBC_LOGIN_URI (libpbc_config_getstring("login_uri", "https://weblogin.washington.edu/"))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring("enterprise_domain", ".washington.edu"))
 
 #if defined (WIN32)
@@ -66,13 +66,10 @@
 	#define SYSTEM_ROOT (libpbc_config_getstring("System_Root","")) /*blank for Windows System*/
 #endif
 
-/* keys */
-#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
-#define PBC_MASTER_CRYPT_KEYFILE (PBC_PATH "m_key")
 /* lives only on login servers */
-#define PBC_L_CERTFILE (PBC_PATH "pubcookie_login.cert")
+extern char PBC_L_CERTFILE[1024];
 /* lives only on login server */
-#define PBC_L_KEYFILE (PBC_PATH "pubcookie_login.key")
+extern char PBC_L_KEYFILE[1024];
 
 /* lives only on application server */
 extern char PBC_S_CERTFILE[1024];
@@ -87,10 +84,6 @@ extern char PBC_G_KEYFILE[1024];
 
 /* the login server builds it's key Filenames from the hostname     */
 #define PBC_KEY_DIR (libpbc_config_getstring("keydir", PBC_PATH "keys"))
-#define PBC_CRYPT_KEY_PREFIX "c_key"
-#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login.cert"
-#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login.key"
-#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting.key"
 
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )

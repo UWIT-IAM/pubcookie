@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.64 $
+ * $Revision: 1.65 $
  */
 
 
@@ -864,17 +864,17 @@ char *keyfile(char *prefix)
 
 char *login_private_keyfile()
 {
-    return(keyfile(PBC_L_PRIVKEY_FILE_PREFIX));
+    return PBC_L_KEYFILE;
 }
 
 char *login_public_keyfile()
 {
-    return(keyfile(PBC_L_PUBKEY_FILE_PREFIX));
+    return PBC_L_CERTFILE;
 }
 
 char *granting_private_keyfile()
 {
-    return(keyfile(PBC_G_PRIVKEY_FILE_PREFIX));
+    return PBC_G_KEYFILE;
 }
 
 /**
