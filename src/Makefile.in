@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 2.1 2002-07-05 23:35:48 jjminer Exp $
+# $Id: Makefile.in,v 2.2 2002-07-07 21:27:20 greenfld Exp $
 
 @SET_MAKE@
 
@@ -29,6 +29,7 @@ clean:
 distclean:
 	$(MAKE) -f Makefile.login distclean
 	$(MAKE) -f Makefile.apxs distclean
+	$(FORCE_RM) $(GEN_MAKEFILES)
 
 install: clean
 	$(MAKE) -f Makefile.login install
