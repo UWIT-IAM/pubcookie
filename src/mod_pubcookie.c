@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.57 2001-08-10 16:58:23 willey Exp $
+    $Id: mod_pubcookie.c,v 1.58 2001-08-22 19:18:29 willey Exp $
  */
 
 /* apache includes */
@@ -145,9 +145,7 @@ int get_pre_s_token() {
 
 /*                                                                            */
 unsigned char *get_app_path(request_rec *r, const char *path) {
-    char *ptr;
     char *path_out;
-    int i;
     int truncate;
     pool *p = r->pool;
     pubcookie_server_rec *scfg;
@@ -858,73 +856,80 @@ char *get_cookie(request_rec *r, char *name) {
 
 /*                                                                            */
 static void pubcookie_init(server_rec *s, pool *p) {
-  pubcookie_server_rec *scfg;
-  char *fname;
+    pubcookie_server_rec *scfg;
+    char *fname;
 
 #ifdef APACHE1_2
-  scfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
+    scfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
                                                    &pubcookie_module);
 #else
-  ap_add_version_component(ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION, "/", PBC_PUBID, NULL));
-  scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
+    ap_add_version_component(ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION, "/", PBC_PUBID, NULL));
+    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
 #endif
-  libpbc_pubcookie_init();
+    libpbc_pubcookie_init();
 
-  /* fix file path, read, and init crypt key */
+    /* fix file path, read, and init crypt key */
 
 #ifdef APACHE1_2
-  fname = server_root_relative (p, 
+    fname = server_root_relative (p, 
 	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
 #else
-  fname = ap_server_root_relative (p,
+    fname = ap_server_root_relative (p,
 	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
 #endif
 
-  scfg->c_stuff = libpbc_init_crypt(fname);
+    scfg->c_stuff = libpbc_init_crypt(fname);
+    if(scfg->c_stuff==0)
+        ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read init crypt file '%s'",fname);
 
-  /* read and init session public key */
+    /* read and init session public key */
 
 #ifdef APACHE1_2
-  fname = server_root_relative (p, 
+    fname = server_root_relative (p, 
 	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
 #else
-  fname = ap_server_root_relative (p,
+    fname = ap_server_root_relative (p,
 	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
 #endif
 
-  scfg->session_verf_ctx_plus = libpbc_verify_init(fname);
+    scfg->session_verf_ctx_plus = libpbc_verify_init(fname);
+    if(scfg->session_verf_ctx_plus==0 )
+        ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read session cert file '%s'",fname);
 
-  /* read and init session private key */
+    /* read and init session private key */
 
 #ifdef APACHE1_2
-  fname = server_root_relative (p,
+    fname = server_root_relative (p,
 	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
 #else
-  fname = ap_server_root_relative (p,
+    fname = ap_server_root_relative (p,
 	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
 #endif
 
-  scfg->session_sign_ctx_plus = libpbc_sign_init(fname);
+    scfg->session_sign_ctx_plus = libpbc_sign_init(fname);
+    if(scfg->session_sign_ctx_plus==0 )
+      	ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read session crypt file '%s'",fname);
 
-  /* read and init granting public key */
+    /* read and init granting public key */
 
 #ifdef APACHE1_2
-  fname = server_root_relative (p,
+    fname = server_root_relative (p,
 	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
 #else
-  fname = ap_server_root_relative (p,
+    fname = ap_server_root_relative (p,
 	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
 #endif
 
-  scfg->granting_verf_ctx_plus = libpbc_verify_init(fname);
+    scfg->granting_verf_ctx_plus = libpbc_verify_init(fname);
+    if(scfg->granting_verf_ctx_plus==0 )
+        ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read granting crypt file '%s'",fname);
 
 }
 
 /*                                                                            */
 static void *pubcookie_server_create(pool *p, server_rec *s) {
   pubcookie_server_rec *scfg;
-  struct stat sb;
 #ifdef APACHE1_2
   scfg = (pubcookie_server_rec *) pcalloc(p, sizeof(pubcookie_server_rec));
 #else
@@ -1439,7 +1444,8 @@ static int pubcookie_hparse(request_rec *r)
     while (nextcookie) {
         char *c = nextcookie;
 
-        if (nextcookie = strchr (c, ';')) {
+        nextcookie = strchr (c, ';');
+        if( nextcookie != 0 ) {
             *nextcookie++ = '\0';
             while (*nextcookie && *nextcookie == ' ')
                 ++nextcookie;
@@ -1699,7 +1705,6 @@ const char *pubcookie_set_s_certf(cmd_parms *cmd, void *mconfig, char *v) {
 const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
     server_rec *s = cmd->server;
     pubcookie_server_rec *scfg;
-    struct stat sb;
 
 #ifdef APACHE1_2
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
@@ -1736,13 +1741,9 @@ const char *set_super_debug(cmd_parms *cmd, void *mconfig, char *v) {
     server_rec *s = cmd->server;
     pubcookie_server_rec *scfg;
 #ifdef APACHE1_2
-    pool *p = cmd->pool;
-
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
                                                    &pubcookie_module);
 #else
-    ap_pool *p = cmd->pool;
-
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
 #endif
