@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.140 2004-09-01 21:13:36 fox Exp $
+ * $Id: index.cgi.c,v 1.141 2004-09-16 20:37:10 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2253,7 +2253,7 @@ int cookie_test(pool *p, const security_context *context, login_rec *l, login_re
                  NULL);
             clear_greq_cookie(p);
             pbc_free(p,th);
-            pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
+            pbc_log_activity(p, PBC_LOG_AUDIT, 
 		 "Host: %s not authorized to access login server\n", l->host);
             return (PBC_FAIL);
         }
