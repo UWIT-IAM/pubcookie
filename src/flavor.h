@@ -15,6 +15,9 @@ typedef enum {
 } login_result;
 
 struct login_flavor {
+    /* the unique byte representing this flavor.
+       all values < 0x80 are reserved for the pubcookie distribution;
+       all values >= 0x80 are available for local use. */
     const char id;
 
     /* initialize this flavor; if non-zero return, this flavor is not
@@ -27,5 +30,11 @@ struct login_flavor {
     login_result (*process_request)(login_rec *l, login_rec *c, 
 				    const char **errstr);
 };
+
+/**
+ * given a flavor id, return the corresponding login_flavor
+ * @param id the unique byte representing the flavor 
+ * @returns the struct login_flavor if supported, NULL otherwise */
+struct login_flavor *get_flavor(const char id);
 
 #endif /* INCLUDED_FLAVOR_H */
