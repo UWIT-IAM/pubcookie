@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.93 2002-08-06 15:59:49 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.94 2002-08-06 17:02:36 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1305,8 +1305,10 @@ static int pubcookie_user(request_rec *r) {
   if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
       cookie_data = libpbc_unbundle_cookie(cookie, ap_get_server_name(r));
       if( !cookie_data) {
-	  libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
-	  libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
+          ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+	  		"can't unbundle G cookie; uri: %s\n", r->uri);
+          ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+	  		"cookie is:\n%s\n", cookie);
 	  cfg->failed = PBC_BAD_AUTH;
 	  cfg->redir_reason_no = PBC_RR_BADG_CODE;
 	  return OK;
@@ -1330,7 +1332,8 @@ static int pubcookie_user(request_rec *r) {
 
       cookie_data = libpbc_unbundle_cookie(cookie, NULL);
       if( ! cookie_data ) {
-	  libpbc_debug("pubcookie_user: can't unbundle S cookie; uri: %s\n", r->uri);
+          ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+	  		"can't unbundle S cookie; uri: %s\n", r->uri);
 	  cfg->failed = PBC_BAD_AUTH;
 	  cfg->redir_reason_no = PBC_RR_BADS_CODE;
 	  return OK;
@@ -1341,7 +1344,8 @@ static int pubcookie_user(request_rec *r) {
       r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 
       if( libpbc_check_exp((*cookie_data).broken.create_ts, cfg->hard_exp) == PBC_FAIL ) {
-        libpbc_debug("S cookie hard expired; user: %s cookie timestamp: %d timeout: %d now: %d uri: %s\n", 
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+        	"S cookie hard expired; user: %s cookie timestamp: %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
                 (*cookie_data).broken.create_ts, 
                 cfg->hard_exp,
@@ -1354,7 +1358,8 @@ static int pubcookie_user(request_rec *r) {
 
       if( cfg->inact_exp != -1 &&
           libpbc_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp) == PBC_FAIL ) {
-        libpbc_debug("S cookie inact expired; user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+        	"S cookie inact expired; user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
                 (*cookie_data).broken.last_ts, 
                 cfg->inact_exp,
