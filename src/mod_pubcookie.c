@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.140 2004-04-14 20:49:41 jteaton Exp $
+ * $Id: mod_pubcookie.c,v 1.141 2004-04-14 20:52:40 jteaton Exp $
  */
 
 
@@ -1702,7 +1702,7 @@ static int pubcookie_user(request_rec *r) {
                       "no realm in userid: %s returning UNAUTHORIZED", 
                       (char *) (*cookie_data).broken.user);
                    return  HTTP_UNAUTHORIZED;
-<                 }
+                }
 
                 while (*okrealms && !realmmatched &&
                        (thisrealm=ap_getword_white_nc(p,&okrealms))){
