@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.108 2003-07-03 04:25:21 willey Exp $
+ * $Id: index.cgi.c,v 1.109 2003-12-04 21:40:24 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -492,13 +492,15 @@ char *clean_username(pool *p, char *in)
 {
     char	*ptr;
     int		word_start = 0;
+    int         trim2amp = libpbc_config_getswitch(p, 
+					"trim_username_to_ampersand", 1);
 
     ptr = in;
     while(*ptr) {
-        /* no email addresses or full principals */
-        if(*ptr == '@')
-            *ptr = '\0';
-
+        if ( trim2amp ) /* allow things like email addresses or principals */
+            if(*ptr == '@')
+                *ptr = '\0';
+        
         /* no spaces at the beginning of the username */
         if(*ptr == ' ' && !word_start)
             in = ptr + 1;
