@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.52 2004-04-14 18:26:59 fox Exp $
+# $Id: Makefile.in,v 1.53 2004-05-04 18:55:36 dors Exp $
 
 @SET_MAKE@
 
@@ -187,6 +187,7 @@ MOD_HEAD=$(srcdir)/src/mod_pubcookie.h \
 LIB_TESTS=base64 pbc_myconfig myconf
 
 LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
+		$(srcdir)/src/login_templates.generic/form_expired \
 		$(srcdir)/src/login_templates.generic/login \
 		$(srcdir)/src/login_templates.generic/login_auth_prob_uwsecurid \
 		$(srcdir)/src/login_templates.generic/login_bad_auth \
