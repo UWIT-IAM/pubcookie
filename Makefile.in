@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.37 2003-05-14 23:38:52 jjminer Exp $
+# $Id: Makefile.in,v 1.38 2003-05-15 00:20:12 jjminer Exp $
 
 @SET_MAKE@
 
@@ -195,7 +195,8 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
 				$(srcdir)/src/login_templates.generic/pinit_response1 \
 				$(srcdir)/src/login_templates.generic/pinit_response2 \
 				$(srcdir)/src/login_templates.generic/status \
-				$(srcdir)/src/login_templates.generic/welcome_back
+				$(srcdir)/src/login_templates.generic/welcome_back \
+				$(srcdir)/src/login_templates.generic/login_pinit
 
 LOGIN_IMAGES=$(srcdir)/src/login_templates.generic/images/check.gif \
 			 $(srcdir)/src/login_templates.generic/images/icon-excl.gif \
