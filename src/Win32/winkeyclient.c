@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.1 2003-07-04 09:02:24 ryanc Exp $
+  $Id: winkeyclient.c,v 1.2 2003-07-04 09:08:11 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -370,13 +370,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	cp = Reply;
     /* look for the 'OK' */
     while (*cp) {
-		int q;//debug
         if (cp[0] == '\r' && cp[1] == '\n' &&
             cp[2] == 'O' && cp[3] == 'K' &&
             cp[4] == ' ') {
             cp += 5;
-			q = strlen(cp);//debug
-			Messagef("%s",cp+2048);//debug
             /* cp points to a base64 key we should decode */
             if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
                 Messagef("key too long\n");
