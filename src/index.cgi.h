@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.48 2004-04-13 02:29:52 jteaton Exp $
+  $Id: index.cgi.h,v 1.49 2004-04-13 02:36:04 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -136,12 +136,6 @@ void print_header(pool *, const char *format, ...);
 #define STATUS_HTML_REFRESH "<meta http-equiv=\"Refresh\" content=\"%d;URL=/?countdown=%d\">"
 #define STATUS_INIT_SIZE 256
 
-/* why print login page ? */
-#define LOGIN_REASON_AUTH_FAIL   "bad auth"
-#define LOGIN_REASON_SECURID     "securid requires reauth"
-#define LOGIN_REASON_NO_L        "no L cookie yet"
-#define LOGIN_REASON_SESS_REAUTH "session timeout requires reauth"
-
 /* the pinit cookie is used to transition from a pinit login to 
    a pinit responce */
 #define PBC_PINIT_COOKIENAME "pinit"
@@ -158,9 +152,6 @@ void print_header(pool *, const char *format, ...);
 
 /* tags the request as a reply from the form */
 #define FORM_REPLY 1
-
-/* replacement string for g req cookies once they hav gone thru the cgi */
-#define G_REQ_RECEIVED "g req received"
 
 /* how we accentuate warning messages */
 #define PBC_EM1_START "<P><B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">" 
