@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.51 2004-05-03 21:32:45 willey Exp $
+ * $Id: keyserver.c,v 2.52 2004-05-05 18:43:22 willey Exp $
  */
 
 
@@ -312,6 +312,8 @@ int doit(const char *peer, security_context *context, enum optype op, const char
     char *thekey64;
     FILE *gcf;
     int lgcf;
+    char **keymgt_peers = libpbc_config_getlist(p, "keymgt_peers");
+    int x, found;
 
     /* no HTML headers for me */
     myprintf("\r\n");
@@ -410,12 +412,21 @@ int doit(const char *peer, security_context *context, enum optype op, const char
 
                 /* someone has asked us to set a key */
 
-                /* verify that 'peer' is a fellow login server */
+                /* verify that 'peer' is a fellow login server
+                   OR in the list of keymgt_peers.  this allows the pool of 
+		   key management hosts to push keys to servers outside their 
+                   cluster */
                 if (strcasecmp(peer, PBC_LOGIN_HOST)) {
-                    pbc_log_activity(p, PBC_LOG_ERROR,
+                    found = 0;
+                    for (x = 0; keymgt_peers[x] != NULL && !found ; x++) 
+                        if ( !strcasecmp(peer, keymgt_peers[x])) 
+                            found = 1;
+                    if ( ! found ) {
+                        pbc_log_activity(p, PBC_LOG_ERROR,
                                      "%s attempted to set a key!", peer);
-                    myprintf("NO you are not authorized to set keys\r\n");
-                    return (1);
+                        myprintf("NO you are not authorized to set keys\r\n");
+                        return (1);
+                    }
                 }
 
                 /* find <peer>;<key> */
