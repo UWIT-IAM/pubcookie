@@ -14,6 +14,7 @@
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
+#include "strlcpy.h"
 
 #include "security.h"
 #include "pubcookie.h"
