@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.42 2000-02-04 22:14:33 willey Exp $
+    $Id: mod_pubcookie.c,v 1.43 2000-03-07 23:36:05 willey Exp $
  */
 
 /* apache includes */
@@ -310,18 +310,18 @@ int blank_cookie(request_rec *r, char *name) {
 static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
     char                 *refresh = palloc(r->pool, PBC_1K);
-    char                 *new_cookie = palloc(r->pool, PBC_1K);
-    char                 *g_req_contents = palloc(r->pool, PBC_1K);
-    char                 *e_g_req_contents = palloc(r->pool, PBC_1K);
+    char                 *new_cookie = palloc(r->pool, PBC_4K);
+    char                 *g_req_contents = palloc(r->pool, PBC_4K);
+    char                 *e_g_req_contents = palloc(r->pool, PBC_4K);
     const char *tenc = table_get(r->headers_in, "Transfer-Encoding");
     const char *ctype = table_get(r->headers_in, "Content-type");
     const char *lenp = table_get(r->headers_in, "Content-Length");
     const char *this_server = get_server_name(r);
 #else
     char                 *refresh = ap_palloc(r->pool, PBC_1K);
-    char                 *new_cookie = ap_palloc(r->pool, PBC_1K);
-    char                 *g_req_contents = ap_palloc(r->pool, PBC_1K);
-    char                 *e_g_req_contents = ap_palloc(r->pool, PBC_1K);
+    char                 *new_cookie = ap_palloc(r->pool, PBC_4K);
+    char                 *g_req_contents = ap_palloc(r->pool, PBC_4K);
+    char                 *e_g_req_contents = ap_palloc(r->pool, PBC_4K);
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
     const char *ctype = ap_table_get(r->headers_in, "Content-type");
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
@@ -361,6 +361,10 @@ static int auth_failed(request_rec *r) {
         args = ap_palloc (r->pool, (strlen (r->args) + 3) / 3 * 4);
 #endif
         base64_encode(r->args, args, strlen(r->args));
+        if( scfg->super_debug ) {
+            libpbc_debug("super-debug: GET args before encoding length %d, string: %s\n", strlen(r->args), r->args);
+            libpbc_debug("super-debug: GET args after encoding length %d, string: %s\n", strlen(args), args);
+        }
     }
     else
 #ifdef APACHE1_2
@@ -406,7 +410,7 @@ static int auth_failed(request_rec *r) {
     /* the granting request is a cookie that we set  */
     /* that gets sent up to the login server cgi, it */
     /* is our main way of communicating with it      */
-    ap_snprintf(g_req_contents, PBC_1K-1, 
+    ap_snprintf(g_req_contents, PBC_4K-1, 
           "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%c", 
           PBC_GETVAR_APPSRVID,
           this_server,
@@ -442,7 +446,7 @@ static int auth_failed(request_rec *r) {
           misc_flag);
 
     if( scfg->super_debug )
-        libpbc_debug("super-debug: g_req before encoding: %s\n", g_req_contents);
+        libpbc_debug("super-debug: g_req before encoding length %d, string: %s\n", strlen(g_req_contents), g_req_contents);
 
     /* setup the client pull */
     ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
@@ -470,16 +474,16 @@ static int auth_failed(request_rec *r) {
     base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 
 #ifdef PORT80_TEST
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/;",
+    ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
 #else
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
+    ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
 #endif
           PBC_G_REQ_COOKIENAME, 
           e_g_req_contents,
           PBC_ENTRPRS_DOMAIN);
 
     if( scfg->super_debug )
-        libpbc_debug("super-debug: g_req cookie: %s\n", new_cookie);
+        libpbc_debug("super-debug: g_req length %d cookie: %s\n", strlen(new_cookie), new_cookie);
 
     if ( cfg->force_reauth )
         cfg->force_reauth = NULL;
@@ -499,9 +503,9 @@ static int auth_failed(request_rec *r) {
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
 #ifdef PORT80_TEST
-        ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/;",
+        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
 #else
-        ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
+        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
 #endif
           PBC_FORM_MP_COOKIENAME, 
           "1",
@@ -529,9 +533,9 @@ static int auth_failed(request_rec *r) {
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
 #ifdef PORT80_TEST
-        ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/;",
+        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
 #else
-        ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
+        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
 #endif
           PBC_FORM_MP_COOKIENAME, 
           "1",
