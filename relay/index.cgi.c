@@ -1,4 +1,13 @@
-/* Pubcookie login relay */
+/*
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
+/** @file index.cgi.c
+ * Pubcookie login relay
+ *
+ * $Id: index.cgi.c,v 1.2 2004-02-13 21:51:36 dors Exp $
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
