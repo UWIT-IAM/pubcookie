@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.44 $)
+AC_REVISION($Revision: 1.45 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -523,6 +523,15 @@ AC_ARG_WITH(krb5-lib-dir,
 
     AC_CHECK_HEADERS([com_err.h krb5.h])
     AC_CHECK_LIB(krb5, krb5_init_context)
+
+# check to see if we're using Heimdal Kerberos
+# thanks to Leif Johansson <leifj@it.su.se>
+# and Love Hörnquist Åstrand <lha@it.su.se>
+AC_CHECK_TYPE([krb5_addresses], 
+  AC_DEFINE(KRB5_HEIMDAL, 1, [set to 1 if using Heimdal Kerberos]), 
+  ,
+  [#include <krb5.h>])
+
 fi
 
 AC_ARG_ENABLE(ldap,
@@ -735,7 +744,9 @@ SNPRINTF_C="\$(srcdir)/src/snprintf.c"
 AC_SUBST( SNPRINTF_0, $SNPRINTF_O )
 AC_SUBST( SNPRINTF_C, $SNPRINTF_C )
 
-AM_MAINTAINER_MODE
+# autoconf 2.57 doesn't seem to support this
+# might turn it back on later
+#AM_MAINTAINER_MODE
 
 AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
