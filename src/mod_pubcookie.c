@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.28 1999-06-25 22:10:12 willey Exp $
+    $Id: mod_pubcookie.c,v 1.29 1999-06-29 01:39:49 willey Exp $
  */
 
 /* apache includes */
@@ -304,7 +304,10 @@ static int auth_failed(request_rec *r) {
     /* deal with GET args */
     if ( r->args )
 #ifdef APACHE1_2
-        args = uuencode(r->pool, r->args);
+    {
+	args = palloc (r->pool, (strlen (r->args) + 2) / 3 * 4);
+	base64_encode(r->args, args, strlen(r->args));
+    }
 #else
         args = ap_uuencode(r->pool, r->args);
 #endif
@@ -353,7 +356,8 @@ static int auth_failed(request_rec *r) {
     /*   the body of the redirect                    */
 
 #ifdef APACHE1_2
-    e_g_req_contents = uuencode(r->pool, g_req_contents);
+    e_g_req_contents = palloc (r->pool, (strlen (g_req_contents) + 2) / 3 * 4);
+    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 #else
     e_g_req_contents = ap_uuencode(r->pool, g_req_contents);
 #endif
