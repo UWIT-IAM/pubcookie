@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.46 2002-03-26 01:14:21 willey Exp $
+    $Id: pbc_config.h,v 1.47 2002-05-08 19:31:12 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -40,7 +40,7 @@
 
 #ifndef PBC_PATH
 #  if defined (WIN32)
-#    define PBC_PATH "C:\\WINNT\\System32\\inetsrv\\pubcookie\\"
+#    define PBC_PATH "\\System32\\inetsrv\\pubcookie\\"
 #  else 
 #    define PBC_PATH "/usr/local/pubcookie/"
 #  endif
