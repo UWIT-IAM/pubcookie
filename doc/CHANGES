@@ -8,6 +8,14 @@ L - library changes
 H - only .h files changed
 O - other :)
 
+a5 release3 6Aug1999
+M  - set ap_auth_type in the connection record so we know who did the auth
+
+a5 release2 m1.32: 22Jul1999
+M  - Apache 1.2.x patches
+M  - better cookie blanking done in the module that doesn't require
+     the util_scripts.c patch
+
 a5 release2: 21Jul1999 rcs reference: m1.31l2.4
 M  - changes session cookies to be directory scoped to '/'.  This fixes 
      a problem when multiple apps used the same 'appid' but lived in
@@ -21,7 +29,7 @@ a5 release1: 8Jul1999 rcs reference: m1.30l2.4
 M  - ammended the logic for identifing POST content or a POST request.
 M  - changed some text messages to the user (pbc_config.h).
 
-a5 m1.29: 28Jun1999:
+a5 reebok2m1.29: 28Jun1999:
 M  - apache1.x doesn't have ap_uuencode so we tried a different uuencode
      (./patch_archive/a5rebook2_patch1_fmf)
 M  - but that uuencode it's right so apache1.2 is back to using base64
