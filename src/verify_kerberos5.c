@@ -17,7 +17,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.28 2003-07-03 04:25:21 willey Exp $
+ * $Id: verify_kerberos5.c,v 1.29 2003-08-05 19:56:11 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -418,6 +418,9 @@ static int kerberos5_v(pool *p, const char *userid,
     krb5_principal auth_user;
     krb5_creds creds;
     krb5_get_init_creds_opt opts;
+#ifdef KRB5_HEIMDAL
+    krb5_addresses no_addrs;
+#endif
     krb5_error_code k5_retcode;
     int result = -1;
     char tfname[40];
@@ -491,6 +494,11 @@ static int kerberos5_v(pool *p, const char *userid,
         return 1;
 
     krb5_get_init_creds_opt_init(&opts);
+#ifdef KRB5_HEIMDAL
+    no_addrs.len = 0;
+    no_addrs.val = NULL;
+    krb5_get_init_creds_opt_set_address_list(&opts,&no_addrs);
+#endif
     krb5_get_init_creds_opt_set_tkt_life(&opts, KRB5_DEFAULT_LIFE);
     if (k5_retcode = krb5_get_init_creds_password(context, &creds, 
 				     auth_user, localpwd, NULL, NULL, 
