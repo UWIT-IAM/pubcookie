@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.38 2001-10-18 01:27:53 willey Exp $
+    $Id: pbc_config.h,v 1.39 2001-10-18 21:35:37 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -200,6 +200,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 /* new in Aug 2001 */
 #define PBC_GETVAR_SESSION_REAUTH "sess_re" /* session delta force reauth */
 #define PBC_GETVAR_REPLY "reply"            /* tags a reply from the form */
+/* new in oct 2001 */
+#define PBC_GETVAR_DURATION "duration" 
 
 /* 
  things that are used both places (module and the library)
