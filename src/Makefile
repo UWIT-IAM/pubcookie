@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.37 2001-10-24 19:24:11 willey Exp $
+#   $Id: Makefile,v 1.38 2001-10-24 19:35:37 willey Exp $
 #
 
 # your compiler here
@@ -147,7 +147,8 @@ moduletar:
 	done; \
 	$(GZIP) -f $$TARFILE; \
 	$(RM) -rf $$DIR_NAME; \
-	echo Created $$TARFILE.gz
+	echo Created $$TARFILE.gz ; \
+	ls -l $$TARFILE.gz
 
 
 logintar:
@@ -161,10 +162,10 @@ logintar:
 	do \
 	        $(TAR) rvf $$TARFILE $$DIR_NAME/$$i; \
 	done; \
-	$(TAR) cvf $$TARFILE $$DIR_NAME; \
 	$(GZIP) -f $$TARFILE; \
 	$(RM) -rf $$DIR_NAME; \
-	echo Created $$TARFILE
+	echo Created $$TARFILE.gz; \
+	ls -l $$TARFILE.gz
 
 base64.o: base64.c ${GENERALHEAD} ${MAKEFILE}
 candv.o: candv.c ${GENERALHEAD} ${MAKEFILE}
