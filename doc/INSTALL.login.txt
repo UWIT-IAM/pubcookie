@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.9 2001-12-13 22:22:32 willey Exp $
+    $Id: INSTALL.login.txt,v 1.10 2002-01-10 23:14:58 willey Exp $
  */
 
 
@@ -286,9 +286,43 @@ You will need a c_key for all pubcookie hosts, whether login server or
 appliction webserver.  If you managing the login server and infrastructure
 be prepared for requests from sysadmins for c_key files.
 
-10. Ancillary tools
+12. Test to verify encryption key (c_key) on application webserver is correct
 
-Old Tools That Might Be Handy for Debugging:
+This test involves two programs named make_crypted_blob and 
+check_crypted_blob.  Run make_crypted_blob on your login server, this will 
+net an encrypted blob.  Transfer the encrypted blob to your application 
+webserver and run check_crypted_blob on it.
+
+make_crypted_blob - encrypts a plaintext sentance with a pubcookie c_key and
+outputs the encrypted blob.  The usage is:
+
+make_crypted_blob [-o out_file] [-k c_key_file] [-h]
+
+	-o out_file
+		Where the output goes.  default is stdout.
+	-k c_key_file
+		c_key file.  default is PBC_CRYPT_KEYFILE 
+	-h prints usage
+
+check_crypted_blob - decrypts a blob with a pubcookie c_key and displays the 
+plaintext and declares if the encryption and decryption worked correctly.
+The usage is:
+
+check_crypted_blob -c crypted_file [-k c_key_file] [-h]
+
+	-c crypted_file
+		crypted stuff to be decrypted
+	-k c_key_file
+		c_key file.  default is PBC_CRYPT_KEYFILE 
+	-h prints usage
+
+
+These two programs use the same pubcookie encryption functions as the rest 
+of pubcookie.  If they are able to create and decrypt text then, in theory, 
+other parts of pubcookie should be able to encrypt and decrypt cookies.
+
+
+11. Old Tools That Might Be Handy for Debugging:
 
 pbc_create - creates a pubcookie cookie, convenient for creating cookies 
 ad hoc.  Arguments come in via stdin and the cookie is put out on stdout. 
