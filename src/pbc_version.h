@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.40 2002-08-16 15:33:37 jjminer Exp $
+    $Id: pbc_version.h,v 1.41 2002-08-16 20:10:12 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
@@ -44,6 +44,6 @@
  * in configure.ac and re-run autoconf and autoheader.
  */
 
-#define PBC_VERSION_STRING "3.0.0 pre-beta1"
+#define PBC_VERSION_STRING "3.0.0 beta1"
 
 #endif /* !PUBCOOKIE_VERSION */
