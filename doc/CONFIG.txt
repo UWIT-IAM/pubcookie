@@ -1,11 +1,14 @@
+Pubcookie Config File Variables
 
 The following should be an authoratative list of run-time configurable
-variables on the login server.
+variables for the login server, keyserver, keyclient and mod_pubcookie.
+Currently, you get to pick which variables go with which component.
 
 Name            Type    Description
 -------------------------------------------------------------------------------
 debug           int     Non-zero value enables debug logging. The higher the
                         number, the more debugging output that is generated.
+logging_level   int     Increase with your level of frustration.
 mirrorfile      string  full path to a file to keep a mirrored copy of all
                         output sent to the client by the most recent
                         call to the login cgi
@@ -22,8 +25,11 @@ ssl_ca_file     string  Path and filename of the Cerificate Authority which
                         signed our SSL key
 ssl_ca_path     string  Path of directory containing CA certificates named by
                         their hashes for all CAs that we should trust
-ssl_cert_file   string  Path to our SSL certificate
-ssl_key_file    string  Path to our SSL key
+ssl_cert_file   string  Path and filename of our SSL certificate
+ssl_key_file    string  Path and filename of our SSL key
+
+granting_key_file   string  Path and filename of keyclient-generated key
+granting_cert_file  string  Path and filename of our pubcookie_granting.cert
 
 default_l_expire    int 
 min_countdown       int 
