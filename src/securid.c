@@ -1,8 +1,9 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.1 2000-08-08 00:38:12 willey Exp $
+/* $Id: securid.c,v 1.2 2000-09-08 19:22:08 willey Exp $
 
    function: securid  
-   args:     user - the UWNetID
+   args:     reason - points to a reason string
+             user - the UWNetID
              s_prn - the PRN
              log - to extra stuff to stderr and syslog
              type - SECURID_TYPE_NORM - normal
@@ -37,18 +38,20 @@ void securid_cleanup ()
 
 }
 
-int securid (char *user, char *s_prn, int log, int typ, int doit)
+int securid (char *reason, char *user, char *s_prn, int log, int typ, int doit)
 {
-      /* use stdout for blather info */
-      FILE *ouf = stdout;
+      /* use stderr for blather info */
+      FILE *ouf = stderr;
       char **vec, *lst, crn[33], tmp[33];
       int  i, prn, ret;
+      char tmp_res[1000];
 
       vec = NULL; lst = NULL; ret = 0; *crn = ESV; prn = EIV;
 
       /* move prn if we got one */
       if ( s_prn == NULL ) {
          fprintf (ouf, "No PRN, bye\n");
+         reason = strdup("No PRN");
          securid_cleanup();
          return(SECURID_PROB);
       }
@@ -64,17 +67,19 @@ int securid (char *user, char *s_prn, int log, int typ, int doit)
        */
 
       if (MGOconnect () < 1) {
-         syslog (LOG_ERR, "Connect error: %d %s.\n", 
-			MGOerrno, MGOerrmsg);
-         fprintf (ouf, "Cannot connect to server error %d: %s\n", 
-			MGOerrno, MGOerrmsg);
+         snprintf(tmp_res, 999, "Connect error: %d %s.", MGOerrno, MGOerrmsg);
+         syslog (LOG_ERR, "%s\n", tmp_res);
+         fprintf (ouf, "%s\n", tmp_res);
+         reason = strdup(tmp_res);
          securid_cleanup();
          return(SECURID_PROB);
       }
 
       if (MGOgetcrn (&lst, user) < 1) {
-         if (log) syslog (LOG_WARNING, "No card list for %s.\n", user);
-         fprintf (ouf, "No crn authorization found\n");
+         snprintf(tmp_res, 999, "No card list for %s.", user);
+         if (log) syslog (LOG_WARNING, "%s\n", tmp_res);
+         fprintf (ouf, "%s\n", tmp_res);
+         reason = strdup(tmp_res);
          securid_cleanup();
          return(SECURID_PROB);
       }
@@ -88,7 +93,9 @@ int securid (char *user, char *s_prn, int log, int typ, int doit)
          for( i = 0; strcmp(tmp, user) != 0; i++ )
              MGOkeyword (*(vec+i), tmp, sizeof (tmp), 0);
          if ( MGOvalue (*(vec+i), crn, sizeof (crn), 1) < 0 ) {
-            fprintf (ouf, "Trouble finding CRN: field %s\n", *vec);
+            snprintf(tmp_res, 999, "Trouble finding CRN: field %s", *vec);
+            fprintf (ouf, "%s\n", tmp_res);
+            reason = strdup(tmp_res);
             securid_cleanup();
             return(SECURID_PROB);
          }
@@ -102,30 +109,37 @@ int securid (char *user, char *s_prn, int log, int typ, int doit)
 
       /* this is the bail-out option */
       if( doit == SECURID_ONLY_CRN ) {
-          fprintf (ouf, "no securid check was done for user: %s crn: %s\n", 
-         		user, crn);
+          snprintf(tmp_res, 999, "no securid check was done for user: %s crn: %s", user, crn);
+          fprintf (ouf, "%s\n", tmp_res);
+          reason = strdup(tmp_res);
           securid_cleanup();
           return(SECURID_BAILOUT);
       }
 
       if (MGOsidcheck (user, crn, prn, typ) < 1) {
          if (MGOerrno == MGO_E_NPN) {
-            if(log) syslog (LOG_INFO, "Asking for next prn: id=%s, crn=%s, prn=%d.", user, crn, prn);
+            snprintf(tmp_res, 999, "Asking for next prn: id=%s, crn=%s, prn=%d.", user, crn, prn);
+            if(log) syslog (LOG_INFO, "%s", tmp_res);
             ret = SECURID_WANTNEXT;
          } else if (MGOerrno == MGO_E_CRN) {
-            if(log) syslog (LOG_INFO, "Failed SecurID check: id=%s, crn=%s, prn=%d.", user, crn, prn);
-            if(log) fprintf (ouf, "Foo, you are nothing but a charlatan!\n");
+            snprintf(tmp_res, 999, "Failed SecurID check: id=%s, crn=%s, prn=%d.", user, crn, prn);
+            if(log) syslog (LOG_INFO, "%s", tmp_res);
+            if(log) fprintf (ouf, "%s\n", tmp_res);
             ret = SECURID_FAIL;
          } else {
-            syslog (LOG_ERR, "Unexpected error: %d %s.\n", MGOerrno, MGOerrmsg);
-            fprintf (ouf, "Unexpected error: %d %s\n", MGOerrno, MGOerrmsg);
+            snprintf(tmp_res, 999, "Unexpected error: %d %s.", 
+			MGOerrno, MGOerrmsg);
+            syslog (LOG_ERR, "%s\n", tmp_res);
+            fprintf (ouf, "%s\n", tmp_res);
             ret = SECURID_PROB;
          }
       } else {
-         if(log) syslog (LOG_INFO, "OK SecurID check: id=%s, crn=%s", user, crn);
+         snprintf(tmp_res, 999, "OK SecurID check: id=%s, crn=%s", user, crn);
+         if(log) syslog (LOG_INFO, "%s", tmp_res);
          ret = SECURID_OK;
       }
  
+      reason = strdup(tmp_res);
       securid_cleanup();
       return(ret);
 
