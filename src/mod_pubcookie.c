@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.35 1999-08-23 19:13:41 willey Exp $
+    $Id: mod_pubcookie.c,v 1.36 1999-09-01 17:20:41 willey Exp $
  */
 
 /* apache includes */
@@ -327,34 +327,18 @@ static int auth_failed(request_rec *r) {
     cfg->failed = 0;
 
     /* deal with GET args */
-    if ( r->args )
-#ifdef APACHE1_2
-    {
-	args = palloc (r->pool, (strlen (r->args) + 2) / 3 * 4);
-	base64_encode(r->args, args, strlen(r->args));
-    }
-#else
-        args = ap_uuencode(r->pool, r->args);
-#endif
-    else
-#ifdef APACHE1_2
-        args = pstrdup(r->pool, "");
-#else
-        args = ap_pstrdup(r->pool, "");
-#endif
-
-    /* deal with GET args */
-#ifdef APACHE1_2
     if ( r->args ) {
+#ifdef APACHE1_2
 	args = palloc (r->pool, (strlen (r->args) + 2) / 3 * 4);
+#else
+	args = ap_palloc (r->pool, (strlen (r->args) + 2) / 3 * 4);
+#endif
 	base64_encode(r->args, args, strlen(r->args));
     }
     else
+#ifdef APACHE1_2
         args = pstrdup(r->pool, "");
 #else
-    if ( r->args )
-        args = ap_uuencode(r->pool, r->args);
-    else
         args = ap_pstrdup(r->pool, "");
 #endif
 
