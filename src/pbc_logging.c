@@ -34,6 +34,7 @@ typedef void pool;
 #endif
 
 #include "libpubcookie.h"
+#include "pbc_configure.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"
 #include "snprintf.h"

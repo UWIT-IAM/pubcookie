@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.23 2003-03-24 22:52:56 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.24 2003-04-14 13:30:51 jteaton Exp $
  */
 
 
@@ -76,6 +76,7 @@ typedef void pool;
 #include "snprintf.h"
 #include "pubcookie.h"
 #include "libpubcookie.h"
+#include "pbc_configure.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
@@ -93,20 +94,20 @@ struct configlist {
 static struct configlist *configlist;
 static int nconfiglist;
 
-static void config_read(pool *p, const char *alt_config);
+static void myconfig_read(pool *p, const char *alt_config);
 static void fatal(pool *p, const char *s, int ex);
 
 #ifndef WIN32
 
-int libpbc_config_init(pool *p, const char *alt_config, const char *ident)
+int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
 {
     const char *val;
     int umaskval = 0;
     
-    config_read(p, alt_config);
+    myconfig_read(p, alt_config);
     
     /* Look up umask */
-    val = libpbc_config_getstring(p, "umask", "022");
+    val = libpbc_myconfig_getstring(p, "umask", "022");
     while (*val) {
         if (*val >= '0' && *val <= '7') umaskval = umaskval*8 + *val - '0';
         val++;
@@ -131,7 +132,7 @@ int libpbc_config_init(pool *p, const char *alt_config, const char *ident)
     return 0;
 }
 
-const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
+const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
 {
     int opt;
 
@@ -150,9 +151,9 @@ const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 }
 
 /* output must be free'd.  (no subpointers should be free'd.) */
-char **libpbc_config_getlist(pool *p, const char *key)
+char **libpbc_myconfig_getlist(pool *p, const char *key)
 {
-    const char *tval = libpbc_config_getstring(p, key, NULL);
+    const char *tval = libpbc_myconfig_getstring(p, key, NULL);
     char *val;
     char **ret;
     char *ptr;
@@ -191,9 +192,9 @@ char **libpbc_config_getlist(pool *p, const char *key)
     return ret;
 }
 
-int libpbc_config_getint(pool *p, const char *key, int def)
+int libpbc_myconfig_getint(pool *p, const char *key, int def)
 {
-    const char *val = libpbc_config_getstring(p, key, (char *)0);
+    const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
     
     if (!val) return def;
     if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
@@ -201,9 +202,9 @@ int libpbc_config_getint(pool *p, const char *key, int def)
     return atoi(val);
 }
 
-int libpbc_config_getswitch(pool *p, const char *key, int def)
+int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
 {
-    const char *val = libpbc_config_getstring(p, key, (char *)0);
+    const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
 
     if (!val) return def;
     
@@ -220,7 +221,7 @@ int libpbc_config_getswitch(pool *p, const char *key, int def)
 }
 
 #define CONFIGLISTGROWSIZE 30 /* 100 */
-static void config_read(pool *p, const char *alt_config)
+static void myconfig_read(pool *p, const char *alt_config)
 {
     FILE *infile;
     int lineno = 0;
@@ -319,9 +320,9 @@ int main(int argc, char *argv[])
     char **v;
     int c;
 
-    libpbc_config_init((argc > 1) ? argv[1] : "myconf", NULL);
+    libpbc_myconfig_init((argc > 1) ? argv[1] : "myconf", NULL);
 
-    v = libpbc_config_getlist("foo");
+    v = libpbc_myconfig_getlist("foo");
     if (v) {
         c = 0;
         while (v[c]) {
@@ -359,7 +360,7 @@ int main(int argc, char *argv[])
 
 
 
-const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
+const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
 {
     int opt;
     
@@ -371,9 +372,9 @@ const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 }
 
 
-int libpbc_config_getint(pool *p, const char *key, int def)
+int libpbc_myconfig_getint(pool *p, const char *key, int def)
 {
-    const char *val = libpbc_config_getstring(p, key, (char *)0);
+    const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
     
     if (!val) return def;
     if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
@@ -382,7 +383,7 @@ int libpbc_config_getint(pool *p, const char *key, int def)
 }
 
 
-int libpbc_config_init(pool *p, const char *alt_config, const char *ident)
+int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
 {
 	int rslt;
 	HKEY hKey;

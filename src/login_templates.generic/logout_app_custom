@@ -1,0 +1,6 @@
+<!-- begin tmpl logout_app_custom -->
+<p>
+<img src="/images/check.gif" align="absmiddle" alt="" height="35" width="35">
+%text%
+</p>
+<!-- end tmpl logout_app_custom -->

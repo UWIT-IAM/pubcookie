@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.h,v 1.8 2003-03-06 23:47:17 ryanc Exp $
+    $Id: pbc_myconfig.h,v 1.9 2003-04-14 13:30:51 jteaton Exp $
  */
 
 #ifndef INCLUDED_PBC_MYCONF_H
@@ -36,7 +36,7 @@
  * @param ident the identity of the calling program used
  * @return 0 for success, non-zero for failure
  */
-extern int libpbc_config_init(pool *p, const char *alt_config, const char *ident);
+extern int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident);
 
 /**
  * return a string variable identified by key
@@ -46,7 +46,7 @@ extern int libpbc_config_init(pool *p, const char *alt_config, const char *ident
  * @return the value of the option or def if it isn't found.  the
  * string belongs to the config library---it should not be changed or
  * free().  */
-extern const char *libpbc_config_getstring(pool *p, const char *key, const char *def);
+extern const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def);
 
 /**
  * return an int variable identified by key
@@ -55,7 +55,7 @@ extern const char *libpbc_config_getstring(pool *p, const char *key, const char 
  * @param def the default value to return if the key isn't found
  * @return the value of the option or def if it isn't found
  */
-extern int libpbc_config_getint(pool *p, const char *key, int def);
+extern int libpbc_myconfig_getint(pool *p, const char *key, int def);
 
 /**
  * return a switch variable (true/false, yes/no, 1/0) identified by key
@@ -65,7 +65,7 @@ extern int libpbc_config_getint(pool *p, const char *key, int def);
  * @return the value (1 for true, 0 for false) of the option or def if
  * it isn't found 
  */
-extern int libpbc_config_getswitch(pool *p, const char *key, int def);
+extern int libpbc_myconfig_getswitch(pool *p, const char *key, int def);
 
 /**
  * find a space seperated list in the config list
@@ -73,7 +73,7 @@ extern int libpbc_config_getswitch(pool *p, const char *key, int def);
  * @param key the string key
  * @return a NULL terminated array of NUL terminated strings.
  * the array must be free() when the caller is done */
-extern char **libpbc_config_getlist(pool *p, const char *key);
+extern char **libpbc_myconfig_getlist(pool *p, const char *key);
 
 #ifdef WIN32
   const char *AddSystemRoot(const char *subdir); 

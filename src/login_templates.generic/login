@@ -16,7 +16,7 @@
    <img src="/images/login.gif" alt="" height="64" width="208">
 
    <!--- action below is the login server URI --->
-   <form name="query" method="POST" action="%s"
+   <form name="query" method="POST" action="%loginuri%"
     enctype="application/x-www-form-urlencoded" autocomplete="off">
 
     <P>
@@ -24,13 +24,13 @@
      <tr>
 
 <!-- The reason we were sent here. -->
-%s
+%message%
 <!-- The end of reasons. -->       
 
      </tr>
      <tr>
       <td>User ID</td>
-      <td><input type="text" name="user"  size="24" maxlength="8" value=""></td>
+      <td><input type="text" name="user"  size="24" maxlength="8" value="%user%"></td>
      </tr>
      <tr>
       <td>Password</td>
@@ -40,9 +40,9 @@
     <p>
 
 <!-- The hidden fields -->
-%s
+%hiddenfields%
 <!-- The GetCred target, if defined -->
-%s
+%getcredhidden%
 <!-- End of inserted stuff. -->
     <P>
     <input type="SUBMIT" name="submit" value="Log in">

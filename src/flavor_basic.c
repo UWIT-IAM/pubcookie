@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.33 2003-04-02 23:55:29 willey Exp $
+    $Id: flavor_basic.c,v 1.34 2003-04-14 13:30:51 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -66,6 +66,7 @@ typedef void pool;
 
 #include "pbc_config.h"
 #include "pbc_logging.h"
+#include "pbc_configure.h"
 #include "libpubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
@@ -205,6 +206,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char * getcred_hidden = NULL;
 
     char * reason_html = NULL;
+    char now[64];
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
 
@@ -347,15 +349,19 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
         } 
     }
 
-    /* Display the login form. */
+    snprintf(now, sizeof(now), "%d", time(NULL));
 
-    tmpl_print_html(p, TMPL_FNAME,
-                    libpbc_config_getstring(p, "tmpl_login",
+    /* Display the login form. */
+    ntmpl_print_html(p, TMPL_FNAME,
+                     libpbc_config_getstring(p, "tmpl_login",
                                             "login"),
-                    PBC_LOGIN_URI,
-                    reason_html != NULL ? reason_html : "",
-                    hidden_fields,
-                    getcred_hidden != NULL ? getcred_hidden : ""
+                    "loginuri", PBC_LOGIN_URI,
+                    "message", reason_html != NULL ? reason_html : "",
+                    "user", l->user ? l->user : "",
+                    "curtime", now, 
+                    "hiddenfields", hidden_fields,
+                    "getcredhidden", getcred_hidden != NULL ? getcred_hidden : "",
+                    NULL
                    );
 
     /* this tags the incoming request as a form reply */

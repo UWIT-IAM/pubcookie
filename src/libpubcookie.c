@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.51 2003-03-24 21:28:14 jjminer Exp $
+    $Id: libpubcookie.c,v 2.52 2003-04-14 13:30:51 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -114,6 +114,7 @@ typedef void pool;
 #include "strlcpy.h"
 #include "security.h"
 #include "pbc_logging.h"
+#include "pbc_configure.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))

@@ -65,6 +65,7 @@ typedef void pool;
 #include "pbc_logging.h"
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
+#include "pbc_configure.h"
 #include "strlcpy.h"
 #include "snprintf.h"
 

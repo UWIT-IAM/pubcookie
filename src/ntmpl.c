@@ -1,9 +1,32 @@
-#include <stdlib.h>
-#include <string.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+# include "pbc_path.h"
+#endif
 
-#include "index.cgi.h"
+typedef void pool;
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif /* HAVE_STRINGS_H */
+
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif
+
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
 
 #include "pbc_logging.h"
+#include "pbc_config.h"
 
 /* hmm, bad place for this prototype. */
 extern FILE *htmlout;
@@ -23,18 +46,39 @@ static long file_size(FILE *afile)
   return len;
 }
 
+
 /*
  * return a template html file
  */
-static char *get_file_template(pool *p, const char *fname)
+static char *get_file_template(pool *p, const char * fpath, const char *fname)
 {
-  char *template;
-  long len, readlen;
-  FILE *tmpl_file;
+    char *templatefile;
+    char *template;
+    long len, readlen;
+    FILE *tmpl_file;
 
-  tmpl_file = pbc_fopen (p, fname,"r");
+    /* +2 for the "/" between and the trailing null */
+    len = strlen(fpath) + strlen(fname) + 2;
+    templatefile = (char *) malloc(len * sizeof(char));
+    if (templatefile == NULL) {
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "unable to malloc %d bytes for template filename %s", 
+                         len, fname);
+        return NULL;
+    }
+    if ( snprintf(templatefile, len, "%s%s%s", fpath,
+                  fpath[strlen(fpath) - 1 ] == '/' ? "" : "/",
+                  fname) > len)  {
+       pbc_log_activity(p, PBC_LOG_ERROR, 
+		       "template filename overflow");
+      return NULL;
+   }
+
+
+  tmpl_file = (FILE *) pbc_fopen(p, templatefile, "r");
   if (tmpl_file == NULL) {
-    pbc_log_activity(PBC_LOG_ERROR, "abend - cant open template file", fname);
+    pbc_log_activity(p, PBC_LOG_ERROR, "cant open template file %s",
+                     templatefile);
     return NULL;
   }
 
@@ -43,10 +87,10 @@ static char *get_file_template(pool *p, const char *fname)
       return NULL;
   }
 
-  template = malloc (len+1);
+  template = (char *) malloc((len+1) * sizeof (char));
   if (template == NULL) {
-       pbc_log_activity(PBC_LOG_ERROR, 
-		       "unable to mallow %d bytes for template file %s", 
+       pbc_log_activity(p, PBC_LOG_ERROR, 
+		       "unable to malloc %d bytes for template file %s", 
 		       len+1, fname);
       return NULL;
   }
@@ -54,8 +98,8 @@ static char *get_file_template(pool *p, const char *fname)
   *template=0;
   readlen = fread(template, 1, len, tmpl_file);
   if (readlen != len) {
-      pbc_log_activity(PBC_LOG_ERROR,
-		 "abend: read %d bytes when expecting %d for template file %s", 
+      pbc_log_activity(p, PBC_LOG_ERROR,
+		 "read %d bytes when expecting %d for template file %s", 
 		 readlen, len, fname);
       pbc_free(p, template);
       return NULL;
@@ -75,22 +119,22 @@ static char *get_file_template(pool *p, const char *fname)
  * with "%<attr>%"; the entire string is then replaced with the next
  * parameter.  the caller must pass a NULL after all attributes
  */
-void ntmpl_print_html(pool *p, const char *fname, ...)
+void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
 {
     const char *attr;
     const char *subst;
     va_list ap;
-    char *template = get_file_template(p, fname);
+    char *template = get_file_template(p, fpath, fname);
     char *t;
     char *percent;
     char candidate[256];
     int i;
 
-FILE *htmlout;
+    memset(candidate, 0, 256);
 
     t = template;
     /* look for the next possible substitution */
-    while ((percent = strchr(t, '%')) != 0) {
+    while ((percent = strchr(t, '%')) != NULL) {
         fwrite(t, percent - t, 1, htmlout);
 
         /* look to see if this is a legitimate candidate for substitution */
@@ -198,7 +242,7 @@ int main(int argc, char *argv[])
         fclose(f);
 
         /* do the substitution */
-        ntmpl_print_html(p, "/tmp/tmpl_test",
+        ntmpl_print_html(p, "/tmp", "tmpl_test",
                          "name", "Harry Bovik",
                          "none", NULL,
                          "userid", "bovik",

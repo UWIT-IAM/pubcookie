@@ -2,16 +2,16 @@
 <html>
   <head>
     <SCRIPT LANGUAGE="JavaScript">
-      window.location.replace("%s");
+      window.location.replace("%url%");
     </SCRIPT> 
     <NOSCRIPT>
-      <meta http-equiv="Refresh" content="%s;URL=%s">
+      <meta http-equiv="Refresh" content="%delay%;URL=%url%">
     </NOSCRIPT> 
     <title>pubcookie redirect</title>
   </head>
 
   <body bgcolor="white">
-    <!--redirecting to %s-->
+    <!-- redirecting to %url% -->
   </body>
 </html>
 

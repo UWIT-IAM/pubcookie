@@ -19,8 +19,8 @@
 
   <p>
   <center>
-  <b>%s</b>: <!--- flavor name ---> 
-  %s <!--- error message --->
+  <b>%flavor%</b>: <!--- flavor name ---> 
+  %error% <!--- error message --->
   </center>
   </p>
 

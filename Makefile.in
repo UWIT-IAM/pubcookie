@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.25 2003-03-05 00:14:00 jjminer Exp $
+# $Id: Makefile.in,v 1.26 2003-04-14 13:30:51 jteaton Exp $
 
 @SET_MAKE@
 
@@ -102,12 +102,15 @@ VERIFY_SRC=$(srcdir)/src/verify.c \
 		   $(srcdir)/src/verify_ldap.c
 
 FLAVOR_SRC=$(srcdir)/src/flavor.c \
+		   $(srcdir)/src/ntmpl.c \
 		   $(srcdir)/src/snprintf.c \
 		   $(srcdir)/src/flavor_basic.c \
 		   $(srcdir)/src/flavor_getcred.c
 
 INDEX_OBJ=$(builddir)/src/index.cgi.o $(builddir)/src/flavor.o \
-		  $(builddir)/src/flavor_basic.o $(builddir)/src/flavor_getcred.o \
+		  $(builddir)/src/flavor_basic.o \
+		  $(builddir)/src/flavor_getcred.o \
+		  $(builddir)/src/ntmpl.o \
 		  $(builddir)/src/snprintf.o \
 		  $(VERIFIERS)
 
@@ -135,7 +138,9 @@ LIB_HEAD=$(srcdir)/src/pbc_config.h \
 		 $(srcdir)/src/security.h \
 		 $(srcdir)/src/pbc_logging.h \
 		 $(srcdir)/src/strlcpy.h \
-		 $(srcdir)/src/snprintf.h
+		 $(srcdir)/src/snprintf.h \
+		 $(srcdir)/src/pbc_configure.h
+
 
 LIB_SRC=$(srcdir)/src/libpubcookie.c \
 		$(srcdir)/src/base64.c \
@@ -144,7 +149,8 @@ LIB_SRC=$(srcdir)/src/libpubcookie.c \
 		$(srcdir)/src/pbc_myconfig.c \
 		$(srcdir)/src/security_legacy.c \
 		$(srcdir)/src/pbc_logging.c \
-		$(srcdir)/src/capture_cmd_output.c
+		$(srcdir)/src/capture_cmd_output.c \
+		$(srcdir)/src/pbc_configure.c
 
 LIB_OBJ=$(builddir)/src/libpubcookie.o \
 		$(builddir)/src/base64.o \
@@ -153,9 +159,11 @@ LIB_OBJ=$(builddir)/src/libpubcookie.o \
 		$(builddir)/src/pbc_myconfig.o \
 		$(builddir)/src/security_legacy.o \
 		$(builddir)/src/pbc_logging.o \
-		$(builddir)/src/capture_cmd_output.o
+		$(builddir)/src/capture_cmd_output.o \
+		$(builddir)/src/pbc_configure.o
 
-MOD_SRC=$(srcdir)/src/mod_pubcookie.c
+MOD_SRC=$(srcdir)/src/mod_pubcookie.c \
+                $(srcdir)/src/pbc_apacheconfig.c
 
 LIB_TESTS=base64 pbc_myconfig myconf
 

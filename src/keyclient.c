@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.28 2003-03-24 21:28:14 jjminer Exp $
+    $Id: keyclient.c,v 2.29 2003-04-14 13:30:51 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -78,7 +78,7 @@ typedef void pool;
 #endif /* OPENSSL_IN_DIR */
 
 #include "pbc_config.h"
-#include "pbc_myconfig.h"
+#include "pbc_configure.h"
 #include "libpubcookie.h"
 #include "strlcpy.h"
 #include "snprintf.h"

@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: flavor_getcred.c,v 1.14 2003-04-05 03:14:35 jteaton Exp $
+    $Id: flavor_getcred.c,v 1.15 2003-04-14 13:30:51 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -67,6 +67,7 @@ typedef void pool;
 #include "security.h"
 #include "verify.h"
 #include "pbc_logging.h"
+#include "pbc_configure.h"
 #include "libpubcookie.h"
 
 #ifdef HAVE_DMALLOC_H

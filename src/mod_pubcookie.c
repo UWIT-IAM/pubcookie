@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.112 2003-03-24 22:52:56 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.113 2003-04-14 13:30:51 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -57,6 +57,8 @@
 #include "pbc_config.h"
 #include "pbc_version.h"
 #include "security.h"
+#include "mod_pubcookie.h"
+#include "pbc_apacheconfig.h"
 
 /* system stuff */
 #ifdef HAVE_TIME_H
@@ -78,39 +80,6 @@
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
-
-/* misc prototype */
-char *make_session_cookie_name(pool *, char *, unsigned char *);
-
-module pubcookie_module;
-
-typedef struct {
-  int                   dirdepth;
-  int                   noblank;
-  char			*login;
-  unsigned char		*appsrvid;
-  char			*authtype_names; /* raw arg string from conf */
-} pubcookie_server_rec;
-
-typedef struct {
-  int           inact_exp;
-  int           hard_exp;
-  int           failed;
-  int           has_granting;
-  int           non_ssl_ok;
-  unsigned char *appid;
-  char          creds;
-  char          *end_session;
-  int           redir_reason_no;
-  char          *stop_message;
-  int           session_reauth;
-  pbc_cookie_data *cookie_data;
-  unsigned char *addl_requests;
-
-    /* for flavor_getcred */
-    char *cred_transfer;
-    int cred_transfer_len;
-} pubcookie_dir_rec;
 
 void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
@@ -1057,8 +1026,35 @@ static void pubcookie_init(server_rec *s, pool *p) {
 	exit(1);
     }
 
-    libpbc_config_init(p, NULL, "mod_pubcookie");
+    if (ap_table_get(scfg->configlist, "ssl_key_file") == NULL) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
+		"PubCookieSessionKeyFile configuration directive must be set!");
+	exit(1);
+    }
+    if (ap_table_get(scfg->configlist, "ssl_cert_file") == NULL) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
+		"PubCookieSessionCertFile configuration directive must be set!");
+	exit(1);
+    }
+    if (ap_table_get(scfg->configlist, "granting_cert_file") == NULL) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
+            "PubCookieGrantingCertFile configuration directive not set, using %s/%s", 
+             PBC_KEY_DIR, "pubcookie_granting.cert");
+    }
+
+    /* old config way */
+    /* libpbc_config_init(p, NULL, "mod_pubcookie"); */
     pbc_log_init(p, "mod_pubcookie", NULL, &mylog, NULL);
+
+    pbc_configure_init(p, "mod_pubcookie", 
+        &libpbc_apacheconfig_init,
+        scfg,
+        &libpbc_apacheconfig_getint,
+        &libpbc_apacheconfig_getlist,
+        &libpbc_apacheconfig_getstring,
+        &libpbc_apacheconfig_getswitch,
+        NULL);
+
 
     /* libpubcookie initialization */
     libpbc_pubcookie_init(p);
@@ -1077,7 +1073,8 @@ static void pubcookie_init(server_rec *s, pool *p) {
 static void *pubcookie_server_create(pool *p, server_rec *s) {
   pubcookie_server_rec *scfg;
   scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
-
+        
+  scfg->configlist = ap_make_table(p, CONFIGLISTGROWSIZE);
   scfg->dirdepth = PBC_DEFAULT_DIRDEPTH;
   scfg->authtype_names = NULL;
 
@@ -1760,7 +1757,32 @@ const char *pubcookie_set_login(cmd_parms *cmd, void *mconfig, char *v) {
         uptr.path = ap_pstrdup(cmd->pool, "/");
     
     scfg->login = ap_unparse_uri_components(cmd->pool, &uptr, 0);
+    ap_table_set(scfg->configlist, "login_uri", (char *)&uptr);
 
+    return NULL;
+}
+
+/**
+ *  handle the PubCookieDomain directive
+ */
+const char *pubcookie_set_domain(cmd_parms *cmd, void *mconfig, char *v) {
+    server_rec           *s = cmd->server;
+    pubcookie_server_rec *scfg = (pubcookie_server_rec *)
+                                 ap_get_module_config(s->module_config,
+                                 &pubcookie_module);
+    ap_table_set(scfg->configlist, "enterprise_domain", v);
+    return NULL;
+}
+
+/**
+ *  handle the PubCookieKeyDir directive
+ */
+const char *pubcookie_set_keydir(cmd_parms *cmd, void *mconfig, char *v) {
+    server_rec           *s = cmd->server;
+    pubcookie_server_rec *scfg = (pubcookie_server_rec *)
+                                 ap_get_module_config(s->module_config,
+                                 &pubcookie_module);
+    ap_table_set(scfg->configlist, "keydir", v);
     return NULL;
 }
 
@@ -1862,39 +1884,52 @@ const char *pubcookie_set_dirdepth(cmd_parms *cmd, void *mconfig, unsigned char 
     return NULL;
 }
 
-/*                                                                            */
+/**
+ *  handle the PubCookieGrantingCertFile directive
+ */
 const char *pubcookie_set_g_certf(cmd_parms *cmd, void *mconfig, char *v) {
 
-    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
-		"PubCookieGrantingCertfile: Defunk directive, please remove.");
+    pubcookie_server_rec * scfg = (pubcookie_server_rec *)
+        ap_get_module_config(cmd->server->module_config, &pubcookie_module);
 
+    ap_table_set(scfg->configlist, "granting_cert_file", v);
     return NULL;
 }
 
-/*                                                                            */
+/**
+ *  handle the PubCookieSessionKeyFile directive
+ */
 const char *pubcookie_set_s_keyf(cmd_parms *cmd, void *mconfig, char *v) {
 
-    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
-		"PubCookieSessionKeyfile: Defunk directive, please remove.");
+    pubcookie_server_rec * scfg = (pubcookie_server_rec *)
+        ap_get_module_config(cmd->server->module_config, &pubcookie_module);
 
+    ap_table_set(scfg->configlist, "ssl_key_file", v);
     return NULL;
 }
 
-/*                                                                            */
+/**
+ *  handle the PubCookieSessionCertFile directive
+ */
 const char *pubcookie_set_s_certf(cmd_parms *cmd, void *mconfig, char *v) {
+    pubcookie_server_rec * scfg = (pubcookie_server_rec *)
+        ap_get_module_config(cmd->server->module_config, &pubcookie_module);
 
-    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
-		"PubCookieSessionCertfile: Defunk directive, please remove.");
-
+    ap_table_set(scfg->configlist, "ssl_cert_file", v);
     return NULL;
 }
 
-/*                                                                            */
+/**
+ *  handle the PubCookieCryptKeyFile directive
+ *
+ *  I don't think this is actually used anywhere.  I think it always uses
+ *  keydir/hostname instead. 
+ */
 const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
+    pubcookie_server_rec * scfg = (pubcookie_server_rec *)
+        ap_get_module_config(cmd->server->module_config, &pubcookie_module);
 
-    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
-		"PubCookieCryptKeyfile: Defunk directive, please remove.");
-
+    ap_table_set(scfg->configlist, "crypt_key", v);
     return NULL;
 }
 
@@ -1993,6 +2028,11 @@ command_rec pubcookie_commands[] = {
      "Set the hard expire time for PubCookies."},
     {"PubCookieLogin", pubcookie_set_login, NULL, RSRC_CONF, TAKE1,
      "Set the login page for PubCookies."},
+    {"PubCookieDomain", pubcookie_set_domain, NULL, RSRC_CONF, TAKE1,
+     "Set the domain for PubCookies."},
+    {"PubCookieKeyDir", pubcookie_set_keydir, NULL, RSRC_CONF, TAKE1,
+     "Set the location of PubCookie encryption keys."},
+
     {"PubCookieGrantingCertfile", pubcookie_set_g_certf, NULL, RSRC_CONF, TAKE1,
      "Set the name of the certfile for Granting PubCookies."},
     {"PubCookieSessionKeyfile", pubcookie_set_s_keyf, NULL, RSRC_CONF, TAKE1,
@@ -2001,24 +2041,29 @@ command_rec pubcookie_commands[] = {
      "Set the name of the certfile for Session PubCookies."},
     {"PubCookieCryptKeyfile", pubcookie_set_crypt_keyf, NULL, RSRC_CONF, TAKE1,
      "Set the name of the encryption keyfile for PubCookies."},
-    {"PubCookieAppID", pubcookie_set_appid, NULL, OR_OPTIONS, TAKE1,
+
+    {"PubCookieNoBlank", pubcookie_set_no_blank, NULL, RSRC_CONF, TAKE1,
+     "Do not blank cookies."},
+    {"PubCookieAuthTypeNames", set_authtype_names, NULL, RSRC_CONF, RAW_ARGS,
+     "Sets the text names for authtypes."},
+
+    {"PubCookieAppID", pubcookie_set_appid, NULL, OR_AUTHCFG, TAKE1,
      "Set the name of the application."},
     {"PubCookieAppSrvID", pubcookie_set_appsrvid, NULL, RSRC_CONF, TAKE1,
      "Set the name of the server(cluster)."},
     {"PubCookieDirDepthforAppID", pubcookie_set_dirdepth, NULL, RSRC_CONF, TAKE1,
      "Specify the Directory Depth for generating default AppIDs."},
-    {"PubCookieSuperDebug", set_super_debug, NULL, OR_OPTIONS, FLAG,
-     "Does nothing, don't use"},
+
     {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_OPTIONS, FLAG,
      "Force reauthentication for new sessions and session timeouts"},
     {"PubcookieEndSession", set_end_session, NULL, OR_OPTIONS, RAW_ARGS,
      "End application session and possibly login session"},
-    {"PubCookieNoBlank", pubcookie_set_no_blank, NULL, RSRC_CONF, TAKE1,
-     "Do not blank cookies."},
-    {"PubCookieAuthTypeNames", set_authtype_names, NULL, RSRC_CONF, RAW_ARGS,
-     "Sets the text names for authtypes."},
     {"PubCookieAddlRequest", pubcookie_add_request, NULL, OR_OPTIONS, ITERATE,
      "Send the following options to the login server along with authentication requests"},
+
+    {"PubCookieSuperDebug", set_super_debug, NULL, OR_OPTIONS, FLAG,
+     "Deprecated, do not use"},
+
 /* maybe for future exploration
     {"PubCookieNoSSLOK", pubcookie_set_no_ssl_ok, NULL, OR_OPTIONS, TAKE1,
      "Allow session to go non-ssl."},
