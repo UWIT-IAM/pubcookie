@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.13 2002-06-27 19:41:42 jteaton Exp $
+    $Id: keyserver.c,v 2.14 2002-06-27 20:41:27 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -122,14 +122,14 @@ int pushkey(const char *peer)
 
     if (!lservers) {
         /* only me here */
-        return;
+        return(0);
     }
 
     hostname = get_my_hostname();
     if (!hostname) {
-	syslog(LOG_ERR, "get_my_hostname() failed? %m");
-	perror("get_my_hostname");
-	exit(1);
+        syslog(LOG_ERR, "get_my_hostname() failed? %m");
+        perror("get_my_hostname");
+        exit(1);
     }
 
     x = 0;
@@ -183,9 +183,9 @@ int pushkey(const char *peer)
         wait(&res);
         syslog(LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
                WEXITSTATUS(res) == 0 ? "done" : "error");
-	if (WEXITSTATUS(res) != 0) {
-	    fail++;
-	}
+        if (WEXITSTATUS(res) != 0) {
+            fail++;
+        }
     }
 
     free(lservers);
@@ -229,9 +229,9 @@ int doit(const char *peer, enum optype op, const char *newkey)
         case SETKEY:
             {
                 char *thekey64, *thepeer;
-		char *thekey;
-		int ksize;
-		
+                char *thekey;
+                int ksize;
+
                 /* someone has asked us to set a key */
 
                 /* verify that 'peer' is a fellow login server */
@@ -252,15 +252,15 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 *thekey64++ = '\0';
 
                 /* base64 decode thekey64 */
-		thekey = (char *) malloc(strlen(thekey64));
-		if (!thekey || 
-		    !libpbc_base64_decode( (unsigned char *) thekey64,
+                thekey = (char *) malloc(strlen(thekey64));
+                if (!thekey || 
+                    !libpbc_base64_decode( (unsigned char *) thekey64,
                                    (unsigned char *) thekey, &ksize) || 
-		    ksize != PBC_DES_KEY_BUF) {
-		    myprintf("NO couldn't decode key\r\n");
-		    /* xxx log */
-		    return (1);
-		}
+                    ksize != PBC_DES_KEY_BUF) {
+                    myprintf("NO couldn't decode key\r\n");
+                    /* xxx log */
+                    return (1);
+                }
 
                 /* go ahead and write it to disk */
                 if (libpbc_set_crypt_key(thekey, thepeer) != PBC_OK) {
@@ -269,7 +269,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
                     return(1);
                 }
 
-		free(thekey);
+                free(thekey);
 
                 myprintf("OK key set\r\n");
                 break;
@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* look for 'setkey' */
-	else if (*p == '?' && !strncmp(p+1, "setkey", 6)) {
+	else if (*p == '?' && !strncmp(p+1, "setkey=", 7)) {
 	    char *q;
 
 	    p++; /* ? */
