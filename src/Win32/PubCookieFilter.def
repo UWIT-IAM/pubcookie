@@ -1,7 +1,5 @@
 LIBRARY PubCookieFilter
 
-DESCRIPTION 'PubCookie ISAPI Filter'
-
 EXPORTS
    HttpFilterProc
    GetFilterVersion

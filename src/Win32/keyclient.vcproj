@@ -156,6 +156,9 @@
 				RelativePath="WebClient.h">
 			</File>
 			<File
+				RelativePath="..\pbc_config.h">
+			</File>
+			<File
 				RelativePath=".\winkeyclient.h">
 			</File>
 		</Filter>

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.2 2003-07-04 09:08:11 ryanc Exp $
+  $Id: winkeyclient.c,v 1.3 2003-08-07 04:17:20 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -197,7 +197,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     crypt_stuff c_stuff;
     char *hostname;
 	struct hostent *h;
-    int newkeyp;
+    int newkeyp,ret;
     int done = 0;
     const char *keymgturi = NULL;
     char *keyhost = NULL;
@@ -215,25 +215,28 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	char *Reply = NULL;
 	char sztmp[1024];
 
-	SystemRoot = malloc(MAX_PATH*sizeof(char));
-	GetEnvironmentVariable ("windir",SystemRoot,MAX_PATH);
-	strcat(SystemRoot,"\\System32");
 	strcpy(Instance,"KeyClient");  
 		
-
 	if( WSAStartup((WORD)0x0101, &wsaData ) ) 
 	{  
 		Messagef("Unable to initialize WINSOCK: %d\n", WSAGetLastError() );
-		return -1;
+		return ERROR_INSTALL_FAILURE;
 	}
     if(!LoadSecurityLibrary(&lpSecurityFunc))
     {
         Messagef("Error initializing the security library\n");
-        return -1;
+        return ERROR_INSTALL_FAILURE;
     }
 
-
     libpbc_config_init(p, NULL, "keyclient");
+
+	SystemRoot = malloc(MAX_PATH*sizeof(char));
+	if (strlen(PBC_SYSTEM_ROOT) > 0) {
+		strcpy(SystemRoot,PBC_SYSTEM_ROOT);
+	}
+	else {
+		GetSystemDirectory(SystemRoot,MAX_PATH);
+	}
 
 	gethostname(sztmp, sizeof(sztmp)-1);
 	h = gethostbyname(sztmp);
@@ -248,11 +251,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	{
 		if (Status == SEC_E_NO_CREDENTIALS) {
 			Messagef("Error creating credentials.  Could not find server certificate for %s",hostname);
-			return 2;
+			return ERROR_INSTALL_FAILURE;
 		}
 		else {
 			Messagef("Error creating credentials. Error code: 0x%x\n", Status);
-			return 2;
+			return ERROR_INSTALL_FAILURE;
 		}
 	}
 
@@ -278,10 +281,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     /* connect to the keyserver */
 
-    if(ConnectToServer(keyhost, keyport, &Socket))
+    if(ret = ConnectToServer(keyhost, keyport, &Socket))
     {
-        Messagef("Error connecting to server\n");
-        return 2;
+		Messagef("Cannot connect to %s:%u\n",keyhost,keyport);
+        return ERROR_INSTALL_FAILURE;
     }
 
 
@@ -296,7 +299,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                               &ExtraData))
     {
         Messagef("Error performing handshake\n");
-        return 2;
+        return ERROR_INSTALL_FAILURE;
     }
 
 
@@ -311,7 +314,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     if(Status != SEC_E_OK)
     {
         Messagef("Error 0x%x querying remote certificate\n", Status);
-        return 2;
+        return ERROR_INSTALL_FAILURE;
     }
 
     // Display server certificate chain.
@@ -325,7 +328,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     {
         Messagef("Error authenticating server credentials.  Check to make sure that your server has a certificate that is trusted by your machine.\n");
 
-        exit(3);
+        exit(ERROR_INSTALL_FAILURE);
     }
 
 
@@ -336,7 +339,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
         if (get_crypt_key(&c_stuff, hostname) != PBC_OK) {
             Messagef("couldn't retrieve key\r\n");
-            exit(1);
+            exit(ERROR_INSTALL_FAILURE);
         }
 
         libpbc_base64_encode(cp, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
@@ -355,7 +358,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     if (noop && newkeyp) {
         Messagef("-n specified; not performing any writes:\n");
         Messagef("%s", buf);
-        exit(1);
+        exit(ERROR_INSTALL_FAILURE);
     }
     if(HttpsGetFile(Socket, 
                     &hClientCreds,
@@ -363,8 +366,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     buf,
 					&Reply))
     {
-        Messagef("Error fetching file from server\n");
-        return 3;
+        Messagef("Error fetching file from server.\n");
+        return ERROR_INSTALL_FAILURE;
     }
 
 	cp = Reply;
@@ -377,7 +380,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             /* cp points to a base64 key we should decode */
             if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
                 Messagef("key too long\n");
-                exit(1);
+                exit(ERROR_INSTALL_FAILURE);
             }
 
             if (newkeyp != -1) {
@@ -402,17 +405,17 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     ret = libpbc_base64_decode(cp, (unsigned char *) cp, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         Messagef("keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
-                        exit(1);
+                        exit(ERROR_INSTALL_FAILURE);
                     }
 
                     if (! ret) {
                         Messagef( "Bad base64 decode.\n" );
-                        exit(1);
+                        exit(ERROR_INSTALL_FAILURE);
                     }
 
                     if (set_crypt_key((const char *) thekey, hostname) != PBC_OK) {
-                        Messagef("set_crypt_key() failed\n");
-                        exit(1);
+                        Messagef("Cannot store key.  Make sure that key path (%s) exists and can be written to.\n",PBC_KEY_DIR);
+                        exit(ERROR_INSTALL_FAILURE);
                     }
                 }
             }
@@ -421,10 +424,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             break;
         }
         cp++;
-    }
-
-    if (!done) {
-        Messagef("operation failed: %s\n", buf);
     }
 
     //
@@ -449,5 +448,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     // Close certificate store.
     CertCloseMyStore();
 
-    return 0;
+	if (!done) {
+		Messagef("Operation failed.\nYou will need to sucessfully run keyclient and obtain a key before using the Pubcookie filter.\n\nServer Reply:\n%s", Reply);
+		exit(ERROR_INSTALL_FAILURE);
+    }
+
+
+    return ERROR_SUCCESS;
 }

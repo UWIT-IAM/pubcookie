@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.19 2003-05-06 23:51:19 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.20 2003-08-07 04:17:19 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -33,41 +33,14 @@ typedef void pool;
 }
 
 char *SystemRoot;
+char *WinKeyDir;
 
 pool *p=NULL;
 
 int  Ignore_Poll;     // Set to "1" to ignore Network Dispatcher "/" polls
 //char Web_Login[MAX_PATH];  // default is https://weblogin.washington.edu/
 //char Enterprise_Domain[MAX_PATH];  // default is ".washington.edu"
-char Error_Page[MAX_PATH]; // Redirect user to this page on fatal errors
-
-
-VOID ReportPFEvent(PTSTR string1,PTSTR string2,PTSTR string3,PTSTR string4,
-               WORD eventType, WORD eventID) 
-{
-   HANDLE hEvent;
-   PTSTR pszaStrings[4];
-   WORD cStrings;
-
-   // Check to see how many strings were passed
-   cStrings = 0;
-   if ((pszaStrings[0] = string1) && (string1[0])) cStrings++;
-   if ((pszaStrings[1] = string2) && (string2[0])) cStrings++;
-   if ((pszaStrings[2] = string3) && (string3[0])) cStrings++;
-   if ((pszaStrings[3] = string4) && (string4[0])) cStrings++;
-   if (cStrings == 0)
-      return;
-   
-   hEvent = RegisterEventSource(NULL,"W3SVC");
-   if (hEvent) 
-   {
-      ReportEvent(hEvent, eventType, NULL, eventID, NULL, cStrings, NULL,                  
-                (const char **)pszaStrings, NULL);                   
-      DeregisterEventSource(hEvent);
-   }
-
-   DebugMsg((DEST,"\n*** %s\n\n",string2));
-}
+//char Error_Page[MAX_PATH]; // Redirect user to this page on fatal errors
 
 
 
@@ -178,7 +151,8 @@ BOOL Reset_Defaults ()
 	else {
 		GetSystemDirectory(SystemRoot,MAX_PATH);
 	}
-	
+    snprintf(WinKeyDir,MAX_PATH,"%s\\inetsrv\\pubcookie\\keys",SystemRoot);
+
 	Debug_Trace = PBC_DEBUG_TRACE;
 	strcpy(Debug_Dir,SystemRoot);
 	strcat(Debug_Dir,PBC_DEBUG_DIR);
@@ -254,10 +228,7 @@ BOOL Pubcookie_Init ()
 //	rslt=SHGetFolderPath(NULL,CSIDL_SYSTEM,NULL,0,System_Path);
 
 	SystemRoot=(char *)malloc(MAX_PATH+1);
-	rslt = GetEnvironmentVariable ("windir",szBuff,MAX_PATH);
-	snprintf(SystemRoot,MAX_PATH,"%s\\system32",szBuff);
-
-//	DebugMsg((DEST,"  SystemRoot    = %s, rslt = %d\n",SystemRoot,rslt));
+	WinKeyDir=(char *)malloc(MAX_PATH+1);
 
 	if (!Reset_Defaults()) {
 		return FALSE;
@@ -269,16 +240,16 @@ BOOL Pubcookie_Init ()
 		
 	
 	if ( rslt = WSAStartup((WORD)0x0101, &wsaData ) ) 
-		{
-		sprintf(szBuff,"[Pubcookie_Init] Unable to initialize WINSOCK: %d",rslt);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
-	    return FALSE;
-		}
+	{
+		syslog(LOG_ERR,"[Pubcookie_Init] Unable to initialize WINSOCK: %d",rslt);
+		return FALSE;
+	}
 
 	// Initialize Pubcookie Stuff
 
-    libpbc_pubcookie_init(p);
+	if (!libpbc_pubcookie_init(p)) {
+		return FALSE;
+	}
 
 
 	// HTTP_FILTER_CONTEXT is not available at DllMain time
@@ -289,10 +260,8 @@ BOOL Pubcookie_Init ()
 	szBuff[0] = NULL;
 
     if ( rslt = gethostname(szBuff, sizeof(szBuff)) ) {
-		sprintf(szBuff,"[Pubcookie_Init] Gethostname failed = %d, LastErr= %d",
+		syslog(LOG_ERR,"[Pubcookie_Init] Gethostname failed = %d, LastErr= %d",
 				rslt,WSAGetLastError());
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
 		return FALSE;
 	}
  
@@ -301,10 +270,8 @@ BOOL Pubcookie_Init ()
 	strcpy((char *)scfg.server_hostname, szBuff);
 	
 	if ( !(hp = gethostbyname(szBuff)) ) {
-		sprintf(szBuff,"[Pubcookie_Init] Gethostbyname failed, LastErr= %d",
+		syslog(LOG_ERR,"[Pubcookie_Init] Gethostbyname failed, LastErr= %d",
 				WSAGetLastError());
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
 		return FALSE;
 	}
 
@@ -444,10 +411,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	/* deal with GET args */
 	if ( strlen(dcfg->args) > 0 ) {
 		if ( strlen(dcfg->args) > sizeof(args) ) {  // ?? does base64 double size ??
-			sprintf(szTemp,"[Pubcookie_Init] Invalid Args Length = %d; remote_host: %s",
+			syslog(LOG_ERR,"[Pubcookie_Init] Invalid Args Length = %d; remote_host: %s",
 				strlen(dcfg->args), dcfg->remote_host);
-			ReportPFEvent("[PubcookieFilter]",szTemp,
-				   "","",EVENTLOG_ERROR_TYPE,3);
 			strcpy(args, "");
 		} else
 			libpbc_base64_encode(p, (unsigned char *)dcfg->args, (unsigned char *)args,
@@ -522,10 +487,14 @@ int Bad_User (HTTP_FILTER_CONTEXT* pFC)
 {
 	char szTemp[1024];
 	DWORD dwSize;
+	pubcookie_dir_rec* dcfg;
+
+	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
+
 
 	DebugMsg((DEST," Bad_User\n")); 
 
-	if ( strlen(Error_Page) == 0 ) {
+	if ( strlen(dcfg->Error_Page) == 0 ) {
 
 		pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 								"200 OK",NULL,NULL);
@@ -538,7 +507,7 @@ int Bad_User (HTTP_FILTER_CONTEXT* pFC)
 		pFC->WriteClient (pFC, szTemp, &dwSize, 0);
 
 	} else {
-		Redirect(pFC, Error_Page);
+		Redirect(pFC, dcfg->Error_Page);
 	}
 
 	return OK;
@@ -566,15 +535,12 @@ int Is_Pubcookie_Auth (pubcookie_dir_rec *dcfg)
 /* b is from the module                                                       */
 int Pubcookie_Check_Version (unsigned char *a, unsigned char *b) 
 {
-	char szBuff[1024];
 	DebugMsg((DEST," Pubcookie_Check_Version\n"));
 
 	if ( a[0] == b[0] && a[1] == b[1] )
 		return 1;
 	if ( a[0] == b[0] && a[1] != b[1] ) {
-		sprintf(szBuff,"[Pubcookie_Check_Version] Minor version mismatch cookie: %s your version: %s", a, b);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
+		syslog(LOG_ERR,"[Pubcookie_Check_Version] Minor version mismatch cookie: %s your version: %s", a, b);
 		return 1;
 	}
 
@@ -607,7 +573,6 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 	char *cookie_header;
 	char cookie_data[MAX_COOKIE_SIZE+1];
 	char name_w_eq [256];
-	char szBuff[1024];
 	char *cookie, *ptr;
 	DWORD cbSize, dwError;
 
@@ -620,10 +585,7 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 		DebugMsg((DEST," GetServerVariable[HTTP_COOKIE] failed = %d (%x), buffer size= %d\n",
 			dwError,dwError,cbSize));
 		if ( dwError == ERROR_INSUFFICIENT_BUFFER) {  // Should quit if too much cookie
-			sprintf(szBuff,"[Get_Cookie] Cookie Data too large : %d", 
-				cbSize);
-			ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
+			syslog(LOG_ERR,"[Get_Cookie] Cookie Data too large : %d", cbSize);
 	//		return ERROR_INSUFFICIENT_BUFFER
 		}
 	//	else	
@@ -658,9 +620,7 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 	
     cookie = (char *)pbc_malloc(p, strlen(cookie_header)+1);
 	if (!cookie) {
-		sprintf(szBuff,"[Get_Cookie] Error allocating memory");
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
+		syslog(LOG_ERR,"[Get_Cookie] Error allocating memory");
 		return NULL;
 	}
 
@@ -896,8 +856,6 @@ void Add_Header_Values(HTTP_FILTER_CONTEXT* pFC,
 	char temp[16];
 	pubcookie_dir_rec* dcfg;
 
-	DebugMsg((DEST,"Add_Header_Values"));  //debug
-
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	// Set Pubcookie Appid, User and Creds level
@@ -1094,10 +1052,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		else {
 
 		if( ! (cookie_data = libpbc_unbundle_cookie(p, cookie, NULL)) ) {
-			sprintf(szBuff,"[Pubcookie_User] Can't unbundle Session cookie for URL %s; remote_host: %s",
+			syslog(LOG_ERR,"[Pubcookie_User] Can't unbundle Session cookie for URL %s; remote_host: %s",
 				dcfg->uri, dcfg->remote_host);
-			ReportPFEvent("[PubcookieFilter]",szBuff,
-						"","",EVENTLOG_ERROR_TYPE,3);
 			dcfg->failed = PBC_BAD_SESSION_CERT;
 			pbc_free(p, cookie);
 			return OK;
@@ -1172,10 +1128,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 
 		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, get_my_hostname())) ) {
-			sprintf(szBuff,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
+			syslog(LOG_ERR,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
 				dcfg->uri, dcfg->remote_host);
-			ReportPFEvent("[PubcookieFilter]",szBuff,
-				  "","",EVENTLOG_ERROR_TYPE,3);
 			dcfg->failed = PBC_BAD_GRANTING_CERT;
 			pbc_free(p, cookie);
 			return OK;
@@ -1207,10 +1161,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			 dcfg->AuthType = AUTH_SECURID;
 
 		if( ! Pubcookie_Check_Exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
-			sprintf(szBuff,"[Pubcookie_User] Granting cookie expired for user: %s  elapsed: %d limit: %d; remote_host: %s", 
+			syslog(LOG_INFO,"[Pubcookie_User] Granting cookie expired for user: %s  elapsed: %d limit: %d; remote_host: %s", 
 				(*cookie_data).broken.user,(time(NULL)-(*cookie_data).broken.create_ts), PBC_GRANTING_EXPIRE, dcfg->remote_host);
-			ReportPFEvent("[PubcookieFilter]",szBuff,
-						"","",EVENTLOG_INFORMATION_TYPE,2);
 			dcfg->failed = PBC_BAD_AUTH;
 			pbc_free(p, cookie_data);
 			return OK;
@@ -1222,10 +1174,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	current_appid = dcfg->appid;
 	if( _strnicmp((const char *)current_appid, (const char *)(*cookie_data).broken.appid, 
 					sizeof((*cookie_data).broken.appid)-1) != 0 ) {
-	//	sprintf(szBuff,"[Pubcookie_User] Wrong appid; current: %s cookie: %s; remote_host: %s", 
+	//	syslog(LOG_ERR,"[Pubcookie_User] Wrong appid; current: %s cookie: %s; remote_host: %s", 
 	//		current_appid, (*cookie_data).broken.appid, dcfg->remote_host);
-	//	ReportPFEvent("[PubcookieFilter]",szBuff,
-	//         "","",EVENTLOG_ERROR_TYPE,3);
 		dcfg->failed = PBC_BAD_AUTH;   // PBC_BAD_APPID;  // Left over from failed application
 		pbc_free(p, cookie_data);
 		return OK;
@@ -1235,10 +1185,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	/* Use server_hostname instead of appsrvid so we only need one c_key per server */
 	if( _strnicmp((const char *)scfg.server_hostname, (const char *)(*cookie_data).broken.appsrvid, 
 					sizeof((*cookie_data).broken.appsrvid)-1) != 0 ) {
-		sprintf(szBuff,"[Pubcookie_User] Wrong app server id; current: %s cookie: %s; remote_host: %s", 
+		syslog(LOG_WARN,"[Pubcookie_User] Wrong app server id; current: %s cookie: %s; remote_host: %s", 
 				scfg.server_hostname, (*cookie_data).broken.appsrvid, dcfg->remote_host);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_INFORMATION_TYPE,2);
 		dcfg->failed = PBC_BAD_AUTH;  // PBC_BAD_SERVERID;
 		pbc_free(p, cookie_data);
 		return OK;  
@@ -1246,10 +1194,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	if( !Pubcookie_Check_Version((*cookie_data).broken.version, 
 			(unsigned char *)PBC_VERSION)){
-		sprintf(szBuff,"[Pubcookie_User] Wrong version id; module: %d cookie: %d", 
+		syslog(LOG_ERR,"[Pubcookie_User] Wrong version id; module: %d cookie: %d", 
 				PBC_VERSION, (*cookie_data).broken.version);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
 		dcfg->failed = PBC_BAD_VERSION;
 		pbc_free(p, cookie_data);
 		return OK;
@@ -1258,10 +1204,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	if(dcfg->AuthType == AUTH_NETID ) {
 		if( (*cookie_data).broken.creds != AUTH_NETID &&
 			(*cookie_data).broken.creds != AUTH_SECURID    ) {
-			sprintf(szBuff,"[Pubcookie_User] Wrong creds directory; %c cookie: %c", 
+			syslog(LOG_ERR,"[Pubcookie_User] Wrong creds directory; %c cookie: %c", 
 				AUTH_NETID, (*cookie_data).broken.creds);
-			ReportPFEvent("[PubcookieFilter]",szBuff,
-				  "","",EVENTLOG_ERROR_TYPE,3);
 			dcfg->failed = PBC_BAD_AUTH;
 			pbc_free(p, cookie_data);
 			return OK;
@@ -1272,10 +1216,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	else
 	if(dcfg->AuthType == AUTH_SECURID ) {
 		if( (*cookie_data).broken.creds != AUTH_SECURID ) {
-			sprintf(szBuff,"  Pubcookie_User: Wrong creds directory; %c cookie: %c", 
+			syslog(LOG_ERR,"  Pubcookie_User: Wrong creds directory; %c cookie: %c", 
 				AUTH_SECURID, (*cookie_data).broken.creds);
-			ReportPFEvent("[PubcookieFilter]",szBuff,
-				  "","",EVENTLOG_ERROR_TYPE,3);
 			dcfg->failed = PBC_BAD_AUTH;
 			pbc_free(p, cookie_data);
 			return OK;
@@ -1432,7 +1374,6 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 {
-	char szBuff[1024];
 
 	// The version of the web server this is running on
 	DebugMsg(( DEST, "\nPBC_GetFilterVersion: Web Server is version is %d.%d\n",
@@ -1445,13 +1386,7 @@ BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 	// The description
 	strcpy( pVer->lpszFilterDesc, Pubcookie_Version );
 	
-	sprintf(szBuff,"[GetFilterVersion] %s",Pubcookie_Version);
-	ReportPFEvent( "[PubcookieFilter]",
-                   szBuff,
-                   "",
-                   "",
-                   EVENTLOG_INFORMATION_TYPE,
-                   2 ); 
+	syslog(LOG_INFO,"[GetFilterVersion] %s",Pubcookie_Version);
 
 	// Only need two marked below for functionality, rest for debug
 
@@ -1540,9 +1475,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	//		(VOID*) pFC->AllocMem(pFC,sizeof(pubcookie_dir_rec),0);
 
 	if (!pFC->pFilterContext) {
-		sprintf(szBuff,"[PBC_OnPreprocHeaders] Error allocating memory");
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
+		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error allocating memory");
 		return SF_STATUS_REQ_ERROR;
 	}
 
@@ -1604,26 +1537,6 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	pFC->GetServerVariable(pFC,"LOCAL_ADDR",
 							szBuff, &dwBuffSize);
 	DebugMsg((DEST,"  Server LOCAL_ADDR : %s\n",szBuff));
-
-	// Don't use reverse lookup for appsrvid. Breaks cname->server case (alias).
-/*
-	net_addr = inet_addr(szBuff);
-
-	if ( !(hp = gethostbyaddr((const char *)&net_addr,sizeof(net_addr),AF_INET)) ) {
-		sprintf(szBuff,"[PBC_OnPreprocHeaders] gethostbyaddr failed, LastErr= %d",
-					WSAGetLastError());
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
-		return SF_STATUS_REQ_ERROR;
-	}
-
-	DebugMsg((DEST,"  gethostbyaddr = %s\n",  //    alias[0]= %s\n",
-			hp->h_name)); // ,hp->h_aliases[0]));
-
-	// May need to search through aliases if we have local hosts file
-	strncpy(dcfg->appsrvid, hp->h_name, PBC_APPSRV_ID_LEN);
-
-*/
 
 	szBuff[0]= NULL; dwBuffSize=1024;
 	pFC->GetServerVariable(pFC,"SERVER_PORT",
@@ -1701,10 +1614,8 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 					return_rslt = SF_STATUS_REQ_FINISHED;
 					break;
 				default:
-					sprintf(szBuff,"[PBC_OnPreprocHeaders] Unexpected dcfg->handler value = %d",
+					syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Unexpected dcfg->handler value = %d",
 						dcfg->handler);
-					ReportPFEvent("[PubcookieFilter]",szBuff,
-						"","",EVENTLOG_ERROR_TYPE,3);
 					return_rslt = SF_STATUS_REQ_ERROR;
 					break;
 				}
@@ -1957,7 +1868,6 @@ DWORD OnEndOfNetSession (HTTP_FILTER_CONTEXT* pFC)
 DWORD WINAPI HttpFilterProc (HTTP_FILTER_CONTEXT* pFC,
                              DWORD NotificationType, VOID* pvData)
 {
-	char szBuff[1024];
 	DWORD dwRet;
 
 	// Send this notification to the right function
@@ -1994,10 +1904,8 @@ DWORD WINAPI HttpFilterProc (HTTP_FILTER_CONTEXT* pFC,
 		dwRet = OnEndOfNetSession( pFC );
 		break;
 	default:
-		sprintf(szBuff,"[PBC_HttpFilterProc] Unknown notification type, %d",
+		syslog(LOG_ERR,"[PBC_HttpFilterProc] Unknown notification type, %d",
 					NotificationType);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-				"","",EVENTLOG_ERROR_TYPE,3);
 		dwRet = SF_STATUS_REQ_NEXT_NOTIFICATION;
 		break;
 	}

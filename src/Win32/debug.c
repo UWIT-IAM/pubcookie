@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.8 2003-07-04 09:02:24 ryanc Exp $
+//  $Id: debug.c,v 1.9 2003-08-07 04:17:20 ryanc Exp $
 //
 
 #include <windows.h>
@@ -41,22 +41,36 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
     char      log[4096];
 	HANDLE hEvent;
 	PTSTR pszaStrings[1];
-
-        
-    if (logging_level <= (libpbc_config_getint(p,"logging_level", Debug_Trace)))    {
+	unsigned short errortype;
+	
+    if ((logging_level < LOG_WARN) || (libpbc_config_getint(p,"logging_level", Debug_Trace)))    {
+		
+		switch (logging_level) {
+		case LOG_INFO:
+            errortype = EVENTLOG_INFORMATION_TYPE;
+            break;
+		case LOG_DEBUG:
+            errortype = EVENTLOG_INFORMATION_TYPE;
+            break;
+		case LOG_ERR:
+            errortype = EVENTLOG_ERROR_TYPE;
+			break;
+		case LOG_WARN:
+		default:
+			errortype = EVENTLOG_WARNING_TYPE;
+			
+		}
 		
         _vsnprintf(log, sizeof(log)-1, format, args);
 		pszaStrings[0] = log;
         hEvent = RegisterEventSource(NULL,"W3SVC");
 		if (hEvent) 
 		{
-			ReportEvent(hEvent, EVENTLOG_ERROR_TYPE, 0, (DWORD)8675309, NULL, (WORD)1, 0,                  
+			ReportEvent(hEvent, errortype, 0, (DWORD)8675309, NULL, (WORD)1, 0,                  
                 (const char **)pszaStrings, NULL);                   
 			DeregisterEventSource(hEvent);
 		}
-		
-		
-  }
+	}
 }
 
 extern void syslog(int whichlog, const char *message, ...) {
@@ -126,9 +140,6 @@ BOOL Open_Debug_Trace ()
 	time_t ltime;
 	struct tm *today;
 
-//	DebugMsg((DEST,"Open_Debug_Trace\n"));  //debug
-
-
 	time(&ltime);
 	today = localtime(&ltime);
 
@@ -147,10 +158,10 @@ BOOL Open_Debug_Trace ()
 	debugFile = fopen(szName, "a");
 
 	if ( !debugFile ) {
-		syslog(1,"[Open_Debug_Trace] Failed to open trace file %s",szName);
+		syslog(LOG_ERR,"[Open_Debug_Trace] Failed to open trace file %s",szName);
 			}
 	else
-			syslog(1,"[Open_Debug_Trace] opened trace file %s",szName);
+			syslog(LOG_INFO,"[Open_Debug_Trace] opened trace file %s",szName);
 
 		
 	DebugMsg((DEST, "\n**********************************************************************\n %s\n\n Opening Debug File %s\n\n",

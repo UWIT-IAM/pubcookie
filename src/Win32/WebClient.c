@@ -327,12 +327,14 @@ ConnectToServer(
 
     if(connect(Socket, (struct sockaddr *)&sin, sizeof(sin)) == SOCKET_ERROR)
     {
+		int wsaerrornum;
+		wsaerrornum = WSAGetLastError();
         printf("**** Error %d connecting to \"%s\" (%s)\n", 
-            WSAGetLastError(),
+            wsaerrornum,
             pszServerName, 
             inet_ntoa(sin.sin_addr));
         closesocket(Socket);
-        return WSAGetLastError();
+        return wsaerrornum;
     }
 
     if(fUseProxy)

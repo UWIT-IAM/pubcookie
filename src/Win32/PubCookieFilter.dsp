@@ -152,6 +152,10 @@ SOURCE=..\pbc_configure.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\pbc_myconfig.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\pbc_version.h
 # End Source File
 # Begin Source File
