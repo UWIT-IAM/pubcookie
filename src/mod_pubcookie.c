@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.143 2004-05-03 19:42:41 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.144 2004-05-03 20:58:16 willey Exp $
  */
 
 
@@ -1517,8 +1517,8 @@ int get_pre_s_from_cookie(request_rec *r)
 
     cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config, 
                 &pubcookie_module);
-    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
-                                            &pubcookie_module);
+    scfg = (pubcookie_server_rec *) ap_get_module_config(
+		r->server->module_config, &pubcookie_module);
 
     if( (cookie = get_cookie(r, PBC_PRE_S_COOKIENAME)) == NULL )
         ap_log_rerror(PC_LOG_INFO, r, 
@@ -1532,9 +1532,6 @@ int get_pre_s_from_cookie(request_rec *r)
         ap_log_rerror(PC_LOG_INFO, r, 
       		"get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", 
 		r->uri);
-	cfg->failed = PBC_BAD_G_STATE;
-        cfg->stop_message = ap_pstrdup(p, "Couldn't decode pre-session cookie");
-	cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
 	return -1;
     }
  
@@ -1792,7 +1789,8 @@ static int pubcookie_user(request_rec *r) {
         ap_log_rerror(PC_LOG_DEBUG, r, 
         	"pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s", 
 	  (*cookie_data).broken.pre_sess_token, pre_sess_from_cookie, r->uri);
-        cfg->failed = PBC_BAD_AUTH;
+        cfg->failed = PBC_BAD_G_STATE;
+        cfg->stop_message = ap_pstrdup(p, "Couldn't decode pre-session cookie");
         cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
         return OK;
       }
