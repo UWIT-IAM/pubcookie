@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.33 2001-05-29 20:51:58 willey Exp $
+    $Id: pbc_config.h,v 1.34 2001-08-10 19:51:08 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -36,13 +36,49 @@
 #define APACHE
 #endif
 
-/* names of the login servers */
+
 /****** non University of Washington customers must change these ****/
-#define PBC_LOGIN_PAGE "https://weblogin.washington.edu/"
+/* names of the login servers */
+#define PBC_CONFIGED
 #define PBC_LOGIN_HOST "weblogin.washington.edu"
-#define PBC_LOGIN_TEST_PAGE "https://weblogintest.cac.washington.edu/"
-#define PBC_LOGIN_TEST_HOST "weblogintest.cac.washington.edu"
+#define PBC_LOGIN_URI "/"
+#define PBC_LOGIN_PAGE "https://" PBC_LOGIN_HOST "/" PBC_LOGIN_URI
+#define PBC_LOGIN_TEST_PAGE PBC_LOGIN_PAGE
+#define PBC_LOGIN_TEST_HOST PBC_LOGIN_HOST
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
+
+/* keys */
+#if defined (WIN32)
+#define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
+#define PBC_MASTER_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\m_key"
+/* lives only on login servers */
+#define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
+/* lives only on login server */
+#define PBC_L_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.key"
+/* lives only on application server */
+#define PBC_S_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.cert"
+/* lives only on application server */
+#define PBC_S_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.key"
+/* lives on application servers */
+#define PBC_G_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.cert"
+/* lives only on login server */
+#define PBC_G_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.key"
+#else
+#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
+#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
+/* lives only on login servers */
+#define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
+/* lives only on login server */
+#define PBC_L_KEYFILE "/usr/local/pubcookie/pubcookie_login.key"
+/* lives only on application server */
+#define PBC_S_CERTFILE "/usr/local/pubcookie/pubcookie_session.cert"
+/* lives only on application server */
+#define PBC_S_KEYFILE "/usr/local/pubcookie/pubcookie_session.key"
+/* lives on application servers */
+#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
+/* lives only on login server */
+#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
+#endif
 
 #define PBC_UWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
@@ -136,14 +172,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_POST_NO_JS_BUTTON "Click here to continue"
 #define PBC_UWNETID_LOGO "images/login.gif"
 
-#if defined (WIN32)
-#define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
-#define PBC_MASTER_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\m_key"
-#else
-#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
-#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
-#endif
-
 /* 
  for the GET line to the login server
  this is used in the login script too
@@ -180,45 +208,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_COOKIE_TYPE_L     '3'
 #define PBC_COOKIE_TYPE_PRE_S '4'
 
-#if defined (WIN32)
-#define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
-
-/* lives only on login server */
-#define PBC_L_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.key"
-
-/* lives only on application server */
-#define PBC_S_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.cert"
-
-/* lives only on application server */
-#define PBC_S_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.key"
-
-/* lives on application servers */
-#define PBC_G_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.cert"
-
-/* lives only on login server */
-#define PBC_G_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.key"
-
-#else
-
-/* lives only on login servers */
-#define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
-
-/* lives only on login server */
-#define PBC_L_KEYFILE "/usr/local/pubcookie/pubcookie_login.key"
-
-/* lives only on application server */
-#define PBC_S_CERTFILE "/usr/local/pubcookie/pubcookie_session.cert"
-
-/* lives only on application server */
-#define PBC_S_KEYFILE "/usr/local/pubcookie/pubcookie_session.key"
-
-/* lives on application servers */
-#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
-
-/* lives only on login server */
-#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
-
-#endif
 
 /* macros to support older version of apache */
 
