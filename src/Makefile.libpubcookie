@@ -4,13 +4,14 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.libpubcookie,v 1.3 2002-06-05 16:52:29 greenfld Exp $
+# $Id: Makefile.libpubcookie,v 1.4 2002-06-25 20:51:49 greenfld Exp $
 
-LIB_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h
+LIB_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h \
+	security.h
 
-LIB_SRC=libpubcookie.c base64.c strlcpy.c pbc_myconfig.c
+LIB_SRC=libpubcookie.c base64.c strlcpy.c pbc_myconfig.c security_legacy.c
 
-LIB_OBJ=libpubcookie.o base64.o strlcpy.o pbc_myconfig.o
+LIB_OBJ=libpubcookie.o base64.o strlcpy.o pbc_myconfig.o security_legacy.o
 
 MAKEFILES += Makefile.libpubcookie
 
