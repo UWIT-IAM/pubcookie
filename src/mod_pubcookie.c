@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.160 2004-11-18 23:34:59 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.161 2004-11-25 01:08:42 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -2927,7 +2927,7 @@ static int login_reply_handler(request_rec *r)
 
     gr_cookie = ap_psprintf(p, "%s=%s; domain=%s; path=/;%s",
        PBC_G_COOKIENAME, greply, 
-       PBC_ENTRPRS_DOMAIN,
+       ap_get_server_name(r),
        secure_cookie);
     ap_table_add(r->headers_out, "Set-Cookie", gr_cookie);
 
