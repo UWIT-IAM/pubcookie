@@ -20,7 +20,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.27 2005-02-07 22:26:38 willey Exp $
+ * $Id: verify_ldap.c,v 1.28 2005-02-18 23:41:27 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -339,8 +339,6 @@ static int ldap_connect (pool * p, LDAP ** ld,
     free (tmp_uri);
 #else
 # ifdef LDAP_SUN
-    if (exts != NULL)
-        free (exts);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "Server: %s Port: %d SSL: %d", ludp->lud_host,
