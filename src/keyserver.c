@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: keyserver.c,v 2.27 2002-11-11 14:35:40 jjminer Exp $
+    $Id: keyserver.c,v 2.28 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -84,6 +84,16 @@
 #include "pbc_config.h"
 #include "pbc_logging.h"
 #include "libpubcookie.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+
+#  ifdef __STDC__
+extern char * optarg;
+#  endif /* __STDC__ */
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 int debug = 0;
 

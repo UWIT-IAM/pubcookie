@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.17 2002-11-01 22:22:41 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.18 2002-11-14 21:12:12 jjminer Exp $
  */
 
 
@@ -62,6 +62,12 @@
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "snprintf.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 extern int errno;
 
@@ -117,9 +123,12 @@ const char *libpbc_config_getstring(const char *key, const char *def)
 
     if ( key == NULL )
         return def;
-    
+
     for (opt = 0; opt < nconfiglist; opt++) {
-        if (*key == configlist[opt].key[0] &&
+        if (configlist[opt].key == NULL ) {
+            libpbc_abend( "Option key suddenly became NULL!  Somebody fudged a pointer!" );
+        }
+        if ( *key == configlist[opt].key[0] &&
             !strcmp(key, configlist[opt].key))
 	    return configlist[opt].value;
     }
@@ -249,8 +258,14 @@ static void config_read(const char *alt_config)
 	
         if (nconfiglist == alloced) {
             alloced += CONFIGLISTGROWSIZE;
-            configlist = (struct configlist *)
-                realloc((char *)configlist, alloced*sizeof(struct configlist));
+
+            if (configlist == NULL) {
+                configlist = (struct configlist *)
+                    malloc(alloced*sizeof(struct configlist));
+            } else {
+                configlist = (struct configlist *)
+                    realloc((char *)configlist, alloced*sizeof(struct configlist));
+            }
             if (!configlist) {
                 fatal("out of memory", EX_OSERR);
             }

@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.27 2002-11-11 16:13:25 jjminer Exp $
+    $Id: flavor_basic.c,v 1.28 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -56,6 +56,12 @@
 #include "pbc_logging.h"
 #include "libpubcookie.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 static verifier *v = NULL;
 extern int debug;
 
@@ -66,6 +72,10 @@ extern int debug;
 #define FLB_REAUTH            2
 #define FLB_LCOOKIE_ERROR     3
 #define FLB_CACHE_CREDS_WRONG 4
+
+/* The beginning size for the hidden fields */
+#define INIT_HIDDEN_SIZE 2048
+#define GETCRED_HIDDEN_MAX 512
 
 static int init_basic(void)
 {
@@ -93,6 +103,80 @@ static int init_basic(void)
     return 0;
 }
 
+/*
+ * return the length of the passed file in bytes or 0 if we cant tell
+ * resets the file postion to the start
+ */
+static long file_size(FILE *afile)
+{
+  long len;
+  if (fseek(afile, 0, SEEK_END) != 0)
+      return 0;
+  len=ftell(afile);
+  if (fseek(afile, 0, SEEK_SET) != 0)
+      return 0;
+  return len;
+}
+
+/* get the reason for our existing.  Returns NULL for an empty file. */
+
+char * get_reason( const char * reasonpage ) {
+    char * reasonfile;
+    const char * reasonpath = TMPL_FNAME;
+    int reasonfilelen;
+    int reason_len;
+    FILE *reason_file;
+    char * reasonhtml;
+    int readlen;
+
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_reason: hello");
+
+    reasonfilelen = strlen(reasonpath) + strlen("/") + strlen(reasonpage) + 1;
+
+    reasonfile = malloc( reasonfilelen * sizeof(char) );
+
+    if ( snprintf( reasonfile, reasonfilelen, "%s%s%s",
+                   reasonpath,
+                   reasonpath[strlen(reasonpath) - 1 ] == '/' ? "" : "/",
+                   reasonpage ) > reasonfilelen )  {
+        /* Need to do something, we would have overflowed. */
+        abend("Reason filename overflow!\n");
+    }
+
+    reason_file = fopen( reasonfile, "r" );
+
+    if (reason_file == NULL) {
+        libpbc_abend( "Cannot open reasonfile %s", reasonfile );
+    }
+
+    reason_len = file_size( reason_file );
+
+    if (reason_len == 0)
+        return NULL;
+
+    reasonhtml = malloc( (reason_len + 1) * sizeof( char ) );
+
+    if ( reasonhtml == NULL ) {
+        /* Out of memory! */
+        libpbc_abend( "Out of memory allocating to read reason file" );
+    }
+
+    readlen = fread( reasonhtml, 1, reason_len, reason_file );
+
+    if (readlen != reason_len) {
+        libpbc_abend( "read %d when expecting %d on reason file read.",
+                      readlen, reason_len );
+    }
+
+    reasonhtml[reason_len] = '\0';
+    fclose(reason_file);
+    free(reasonfile);
+
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_reason: goodbye");
+
+    return reasonhtml;
+}
+
 static void print_login_page(login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
@@ -102,6 +186,13 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
     char message_out[1024];
     const char * reasonpage = NULL;
 
+    char * hidden_fields = NULL;
+    int hidden_len = 0;
+    int hidden_needed_len = INIT_HIDDEN_SIZE;
+    char * getcred_hidden = NULL;
+
+    char * reason_html = NULL;
+    
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
 
     /* set the cookies */
@@ -121,14 +212,6 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
                      PBC_ENTRPRS_DOMAIN);
 
     }
-
-    /* I removed the "" being passed as the cursor focus grabbing javascript.
-     * It was obviously not being used much. :) */
-    tmpl_print_html(TMPL_FNAME, 
-                    libpbc_config_getstring("tmpl_login_top",
-                                            "login_top"),
-                    PBC_LOGIN_URI
-                   );
 
     switch (reason) {
         case FLB_BAD_AUTH:
@@ -154,80 +237,124 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
         /* We shouldn't be here, but handle it anyway, of course. */
         libpbc_abend( "Reasonpage is null, this is impossible." );
     }
+    
+    /* Get the HTML for the error reason */
+    
+    reason_html = get_reason(reasonpage);
 
-    /* Display the reason that we got here.. */
-    tmpl_print_html( TMPL_FNAME, reasonpage );
+    while (hidden_needed_len > hidden_len) {
 
-    /* Display the start of the form. */
-    /* 11/11/2002 - Removed all the parameters, they pretty much all seem to be
-     * unused. */
-    tmpl_print_html(TMPL_FNAME,
-                    libpbc_config_getstring("tmpl_login_part1",
-                                            "login_part1")
-                   );
+        /* Just in case there's a bad implementation of realloc() .. */
+        if (hidden_fields == NULL) {
+            hidden_fields = malloc( hidden_needed_len * sizeof(char) );
+        } else {
+            hidden_fields = realloc( hidden_fields, hidden_needed_len * sizeof(char) );
+        }
 
-    /* keep all of the state around we need */
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", 
-               PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_APPID, (l->appid ? l->appid : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
-               "creds_from_greq", l->creds_from_greq);
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
-               PBC_GETVAR_CREDS, l->creds);
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_VERSION, (l->version ? l->version : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_METHOD, (l->method ? l->method : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_HOST, (l->host ? l->host : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_URI, (l->uri ? l->uri : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_ARGS, (l->args ? l->args : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_FR, (l->fr ? l->fr : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:"") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_APPSRV_ERR, (l->appsrv_err ? l->appsrv_err : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_FILE_UPLD, (l->file ? l->file : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_FLAG, (l->flag ? l->flag : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_REFERER, (l->referer ? l->referer : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : "") );
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-               PBC_GETVAR_SESSION_REAUTH, l->session_reauth);
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-               PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok);
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-               "first_kiss", (l->first_kiss ? l->first_kiss : "") );
+        if (hidden_fields == NULL) {
+            /* Out of memory, ooops. */
+            libpbc_abend( "Out of memory allocating for hidden fields!" );
+        }
+        
+        hidden_len = hidden_needed_len;
+
+        /* Yeah, this sucks, but I don't know a better way. 
+         * That doesn't mean there isn't one. */
+
+        hidden_needed_len = snprintf( hidden_fields, hidden_len,
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%c\">\n" 
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%c\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
+                                      PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : ""),
+                                      PBC_GETVAR_APPID, (l->appid ? l->appid : ""),
+                                      "creds_from_greq", l->creds_from_greq,
+                                      PBC_GETVAR_CREDS, l->creds,
+                                      PBC_GETVAR_VERSION, (l->version ? l->version : ""),
+                                      PBC_GETVAR_METHOD, (l->method ? l->method : ""),
+                                      PBC_GETVAR_HOST, (l->host ? l->host : ""),
+                                      PBC_GETVAR_URI, (l->uri ? l->uri : ""),
+                                      PBC_GETVAR_ARGS, (l->args ? l->args : ""),
+                                      PBC_GETVAR_FR, (l->fr ? l->fr : ""),
+                                      PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:""),
+                                      PBC_GETVAR_APPSRV_ERR, (l->appsrv_err ? l->appsrv_err : ""),
+                                      PBC_GETVAR_FILE_UPLD, (l->file ? l->file : ""),
+                                      PBC_GETVAR_FLAG, (l->flag ? l->flag : ""),
+                                      PBC_GETVAR_REFERER, (l->referer ? l->referer : ""),
+                                      PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : ""),
+                                      PBC_GETVAR_SESSION_REAUTH, l->session_reauth,
+                                      PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok,
+                                      "first_kiss", (l->first_kiss ? l->first_kiss : ""),
+                                      PBC_GETVAR_REPLY, FORM_REPLY
+                                    );
+    }
 
     /* xxx save add'l requests */
     {
         /* xxx sigh, i have to explicitly save this */
         char *target = get_string_arg(PBC_GETVAR_CRED_TARGET,
                                       NO_NEWLINES_FUNC);
+
         if (target) {
-            print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-                       PBC_GETVAR_CRED_TARGET, target);
-        }
+            int needed_len;
+
+            getcred_hidden = malloc( GETCRED_HIDDEN_MAX * sizeof(char) );
+
+            if (getcred_hidden == NULL) {
+                /* Out of memory */
+                libpbc_abend( "Out of memory allocating for GetCred" );
+            }
+
+            needed_len = snprintf( getcred_hidden, GETCRED_HIDDEN_MAX, 
+                                   "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+                                   PBC_GETVAR_CRED_TARGET, target );
+
+            if ( needed_len > GETCRED_HIDDEN_MAX ) {
+                /* We were going to overflow, oops. */
+                libpbc_abend( "Almost overflowed writing GetCred" );
+            }
+        } 
     }
 
+    /* Display the login form. */
+
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_login",
+                                            "login"),
+                    PBC_LOGIN_URI,
+                    reason_html != NULL ? reason_html : "",
+                    hidden_fields,
+                    getcred_hidden != NULL ? getcred_hidden : ""
+                   );
+
     /* this tags the incoming request as a form reply */
-    print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-               PBC_GETVAR_REPLY, FORM_REPLY);
 
     print_html("\n");
 
-    /* finish off the customized login page */
-    tmpl_print_html(TMPL_FNAME,
-                    libpbc_config_getstring("tmpl_login_part2",
-                                            "login_part2")
-                   );
+    if (reason_html != NULL)
+        free( reason_html );
+
+    if (hidden_fields != NULL)
+        free( hidden_fields );
+
+    if (getcred_hidden != NULL)
+        free( getcred_hidden );
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
 }

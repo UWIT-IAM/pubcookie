@@ -281,18 +281,69 @@ make it less specific to the University of Washington.
 </p>
 
 <p>
-However, preliminary work has been done with login templates
-(specifying the look of each page the login CGI serves up) and the
-run-time configuration file.  These pages should live in
-<tt>{PUBCOOKIE_DIR}/login_templates</tt>.  We recommend you start with
-the files in <tt>src/login_templates.generic/</tt> and customize them
-as you see fit. The Washington and CMU files (or an older version of
-them) is supplied for your amusement in
-<tt>src/login_templates.uw</tt> and <tt>src/login_templates.cmu</tt>
-respectively.
+However, preliminary work has been done with login templates (specifying
+the look of each page the login CGI serves up) and the run-time
+configuration file.  These pages by default live in
+<tt>{PUBCOOKIE_DIR}/login_templates</tt>, but the location can be set by
+changing <tt>template_root</tt> in <tt>{PUBCOOKIE_DIR}/config</tt>. 
+Generic templates are installed by default in
+<tt>{PUBCOOKIE_DIR}/login_templates.default</tt>.  These should be
+copied to <tt>{PUBCOOKIE_DIR}/login_templates</tt> and should serve as a
+starting point.
 </p>
 
-<h4><a name="moreconfig">More configuration: User agent blocking via ok_browsers file</a></h4>
+<p>
+Copies of CMU and Washington's templates (of some vintage) are provided
+in <tt>src/login_templates.cmu</tt> and <tt>src/login_templates.uw</tt>
+(respectively) in the source distribution for reference.
+</p>
+
+<p>
+The name of all template files can be set via the
+<tt>{PUBCOOKIE_DIR}/config</tt> file.  The name for each config
+attribute is tmpl_{default_file_name}, and they are relative to the
+<tt>template_root</tt>.  (For example, the attribute that controls the
+name of the login page is <tt>tmpl_login</tt>.)
+
+<p>
+We are in the process of reworking the template files to make them more user-friendly.  The list below will be updated as work progresses.
+</p>
+
+<p>Template Files (incomplete)</p>
+<dl compact="compact">
+ <dt>login</dt>
+ <dd>The Login HTML page.
+  <ol>Paramters
+   <li>Login Server URL</li>
+   <li>The reason for the redirect (pulled from the <tt>login_*</tt>
+    snippits)</li>
+   <li>Hidden fields maintaining state</li>
+   <li>GetCred Hidden fields</li>
+  </ol>
+ </dd>
+ <dt>login_bad_auth</dt>
+ <dd>The error displayed when the authentication failed.</dd>
+ <dt>login_cache_creds_wrong</dt>
+ <dd>The error displayed when the single-signon credential is not the type
+  that the application is requesting.  (Rarely seen.)</dd>
+ <dt>login_nolcookie</dt>
+ <dd>The error displayed when the user doesn't have or has an invalid login
+  cookie</dd>
+ <dt>login_reauth</dt>
+ <dd>The error displayed when the application has requested that the user
+  reauthenticate.</dd>
+ <dt>status</dt>
+ <dd>The status page displaying the time remaining on the login.
+  <ol>Parameters
+   <li>Refresh header</li>
+   <li>User name</li>
+   <li>Time remaining.</li>
+  </ol>
+ </dd>
+</dl>
+
+<h4><a name="moreconfig">More configuration: User agent blocking via
+ok_browsers file</a></h4>
 
 <p>
 The <tt>{PUBCOOKIE_DIR}/ok_browsers</tt> file contains a list of acceptable
@@ -540,7 +591,7 @@ Copyright 1999-2002, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.3 2002-10-02 21:41:00 dors Exp $
+$Id: install-login.html,v 1.4 2002-11-14 21:12:12 jjminer Exp $
 </pre>
 </body>
 

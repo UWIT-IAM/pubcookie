@@ -81,6 +81,12 @@
 # include <cgic.h>
 #endif /* HAVE_CGIC_H */
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 
 // extra debugging
 FILE	*mirror;

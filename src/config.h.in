@@ -1,5 +1,8 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 to enable dmalloc debugging */
+#undef ENABLE_DMALLOC
+
 /* Define to 1 to support krb5 verifiers */
 #undef ENABLE_KRB5
 
@@ -35,6 +38,9 @@
 
 /* Define to 1 if you have the <des.h> header file. */
 #undef HAVE_DES_H
+
+/* Define to 1 if you have the <dmalloc.h> header file. */
+#undef HAVE_DMALLOC_H
 
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
@@ -89,6 +95,9 @@
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
+
+/* Define to 1 if you have the `dmalloc' library (-ldmalloc). */
+#undef HAVE_LIBDMALLOC
 
 /* Define to 1 if you have the `krb5' library (-lkrb5). */
 #undef HAVE_LIBKRB5

@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.69 2002-11-11 14:35:40 jjminer Exp $
+    $Id: pbc_config.h,v 1.70 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -42,6 +42,12 @@
 
 #include "pbc_myconfig.h" 
 #include "pbc_path.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 /* names of the login servers */
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))

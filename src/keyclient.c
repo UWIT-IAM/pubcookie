@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.24 2002-11-01 22:22:41 jjminer Exp $
+    $Id: keyclient.c,v 2.25 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -81,6 +81,16 @@
 #include "strlcpy.h"
 #include "snprintf.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+
+#  ifdef __STDC__
+extern char * optarg;
+#  endif /* __STDC__ */
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 #ifdef WIN32
    char *SystemRoot;
 #  include "Win32/debug.h"
@@ -90,8 +100,6 @@
 #  define pid_t int
 #  define snprintf _snprintf
 #endif
-
-
 
 /* globals */
 int noop = 0;

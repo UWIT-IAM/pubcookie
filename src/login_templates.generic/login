@@ -1,0 +1,66 @@
+
+<!-- 
+     think of this as a big format string for a printf statement
+     there are substitution tokens thru-out
+     comments hav been added to explain what will be substitued
+  -->
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+ <head>
+  <title>pubcookie generic Login</title>
+ </head>
+
+ <body bgcolor="#FFFFFF">
+  <center>
+   <img src="/images/login.gif" alt="" height="64" width="208">
+
+   <!--- action below is the login server URI --->
+   <form name="query" method="POST" action="%s"
+    enctype="application/x-www-form-urlencoded" autocomplete="off">
+
+    <P>
+    <table border="0" cellpadding="0" cellspacing="2" width="271" height="70">
+     <tr>
+
+<!-- The reason we were sent here. -->
+%s
+<!-- The end of reasons. -->       
+
+     </tr>
+     <tr>
+      <td>User ID</td>
+      <td><input type="text" name="user"  size="24" maxlength="8" value=""></td>
+     </tr>
+     <tr>
+      <td>Password</td>
+      <td><input type="password" name="pass" size="24"></td>
+     </tr>
+    </table>
+    <p>
+
+<!-- The hidden fields -->
+%s
+<!-- The GetCred target, if defined -->
+%s
+<!-- End of inserted stuff. -->
+    <P>
+    <input type="SUBMIT" name="submit" value="Log in">
+    </P>
+
+   </form>
+
+   <p>
+   Login gives you 8-hour access without repeat login to protected Web resources.
+   </p>
+   <p>
+   <strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>
+   Completely exit your Web browser when you are finished.
+   </p>
+
+   <small>Copyright &#169; 2002 U. Foo .edu </small>
+
+  </center>
+
+ </body>
+</html>

@@ -67,6 +67,12 @@
 
 #include "snprintf.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 /*
  * dopr(): poor man's version of doprintf
  */

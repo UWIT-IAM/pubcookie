@@ -147,16 +147,164 @@ the "basic" flavor</td> </tr>
 <tr>
  <td>kiosk_values</td><td>    list</td>
  <td>Duration of login cookie for kiosk machines (same order as
-  <tt>kiosk_keys</tt>
+  <tt>kiosk_keys</tt>)
  </td>
 </tr>
 
 <tr>
 <td>min_countdown</td><td>       int </td>
+<td>The minimum countdown for automatically reloading the status page.</td>
 </tr>
 
 <tr>
-<td>countdown</td><td>       int </td>
+<th colspan="3">Template File Options</th>
+</tr>
+
+<tr>
+ <td>template_root</td>
+ <td>string</td>
+ <td>The root directory for the templates.  Default:
+  <tt>{PUBCOOKIE_DIR}/login_templates</tt>.
+ </td>
+</tr>
+
+<tr>
+ <td>tmpl_login</td>
+ <td>string</td>
+ <td>The template for the login page.  Default: login</td>
+</tr>
+
+<tr>
+ <td>tmpl_login_bad_auth</td>
+ <td>string</td>
+ <td>File containing HTML snippet to display on the login page when 
+  authentication fails. Default: login_bad_auth.
+ </td>
+</tr>
+
+<tr>
+ <td>tmpl_login_reauth</td>
+ <td>string</td>
+ <td>File containing HTML snippet to display on the login page when the 
+  application requests reauthentication.  Default: login_reauth.</td>
+</tr>
+ 
+<tr>
+ <td>tmpl_login_cache_creds_wrong</td>
+ <td>string</td>
+ <td>File containing HTML snippet to display on the login page when the 
+  application requests credentials that are different from those in use 
+  already by the weblogin service.  Default: login_reauth.</td>
+</tr>
+
+<tr>
+ <td>tmpl_error</td>
+ <td>string</td>
+ <td>Template displayed when there is an internal error.  Default: 
+  error</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_app</td>
+ <td>string</td>
+ <td>Default: logout_app.</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_app_custom_prefix</td>
+ <td>string</td>
+ <td>Default: logout_app_custom_prefix</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_app_custom_suffix</td>
+ <td>string</td>
+ <td>Default: logout_app_custom_suffix</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_part1</td>
+ <td>string</td>
+ <td>Default: logout_part1</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_part2</td>
+ <td>string</td>
+ <td>Default: logout_part2</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_already_weblogin</td>
+ <td>string</td>
+ <td>Default: logout_already_weblogin</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_postscript_still_others</td>
+ <td>string</td>
+ <td>Default: logout_postscript_still_others</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_still_weblogin</td>
+ <td>string</td>
+ <td>Default: logout_still_weblogin</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_time_remaining</td>
+ <td>string</td>
+ <td>Default: logout_time_remaining</td>
+</tr>
+
+<tr>
+ <td>tmpl_logout_postscript_still_weblogin</td>
+ <td>string</td>
+ <td>Default: logout_postscript_still_weblogin</td>
+</tr>
+
+<tr>
+ <td>tmpl_status</td>
+ <td>string</td>
+ <td>The template for the status page displayed when the user goes to the 
+  weblogin server directly.  Default: status</td>
+</tr>
+
+<tr>
+ <td>tmpl_nonpost_redirect</td>
+ <td>string</td>
+ <td>Template for the redirect back to the app after login.</td>
+</tr>
+
+<tr>
+ <td>tmpl_notok_part1</td>
+ <td>string</td>
+ <td>Default: notok_part1</td>
+</tr>
+
+<tr>
+ <td>tmpl_notok_part2</td>
+ <td>string</td>
+ <td>Default: notok_part2</td>
+</tr>
+
+<tr>
+ <td>tmpl_pinit_responce1</td>
+ <td>string</td>
+ <td>Default: pinit_responce1</td>
+</tr>
+
+<tr>
+ <td>tmpl_pinit_responce2</td>
+ <td>string</td>
+ <td>Default: pinit_responce2</td>
+</tr>
+
+<tr>
+ <td>tmpl_welcome_back</td>
+ <td>string</td>
+ <td>Default: welcome_back</td>
 </tr>
 
 <tr>

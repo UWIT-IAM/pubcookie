@@ -10,6 +10,12 @@
 
 #include "verify.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 static int kerberos4_v(const char *userid,
 		       const char *passwd,
 		       const char *service,

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: verify.c,v 1.12 2002-10-24 20:11:20 jjminer Exp $
+    $Id: verify.c,v 1.13 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -39,6 +39,12 @@
 #endif /* HAVE_STRING_H */
 
 #include "verify.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 /* verifiers we might have access to */
 extern verifier kerberos4_verifier;

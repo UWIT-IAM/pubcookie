@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.19 $)
+AC_REVISION($Revision: 1.20 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -60,6 +60,7 @@ fi
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
@@ -362,6 +363,25 @@ AC_ARG_ENABLE(shadow,
 if test "$enable_shadow" = "yes"; then
     AC_CHECK_HEADERS([shadow.h crypt.h])
     AC_CHECK_LIB(crypt, crypt)
+fi
+
+AC_ARG_ENABLE(dmalloc,
+    AC_HELP_STRING([--enable-dmalloc],[Enable dmalloc debugging]),
+[ case "${enableval}" in
+   yes)
+    AC_DEFINE(ENABLE_DMALLOC, 1, [Define to 1 to enable dmalloc debugging])
+    ;;
+  esac ])
+
+if test "$enable_dmalloc" = "yes"; then
+    AC_CHECK_HEADERS([dmalloc.h],,,[ ])
+    AC_CHECK_LIB(dmalloc, dmalloc_shutdown)
+
+    if test "x$GCC" = "x"; then
+        OLDCC=$CC
+        CC="$CC -Xc"
+        AC_TRY_COMPILE( [], [], [], CC=$OLDCC )
+    fi
 fi
 
 fi # End of stuff we skip if we're not enabling the login server.

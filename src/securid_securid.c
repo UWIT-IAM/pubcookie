@@ -1,5 +1,5 @@
 /*
- $Id: securid_securid.c,v 1.5 2002-08-15 22:50:06 jjminer Exp $
+ $Id: securid_securid.c,v 1.6 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -58,6 +58,12 @@
 #include "index.cgi.h"
 
 #include "li-access.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 #define MSGM_MARKER	0xfe
 

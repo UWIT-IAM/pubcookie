@@ -20,6 +20,12 @@
 # include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 
 /* call a program and save the output
  *

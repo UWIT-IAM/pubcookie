@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.46 2002-10-09 21:06:18 jjminer Exp $
+    $Id: libpubcookie.c,v 2.47 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -109,6 +109,12 @@ typedef  int pid_t;  /* win32 process ID */
 #include "strlcpy.h"
 #include "security.h"
 #include "pbc_logging.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 /* CONSTANTS */
 

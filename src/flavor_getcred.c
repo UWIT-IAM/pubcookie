@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: flavor_getcred.c,v 1.9 2002-11-11 14:35:40 jjminer Exp $
+    $Id: flavor_getcred.c,v 1.10 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -56,6 +56,12 @@
 #include "verify.h"
 #include "pbc_logging.h"
 #include "libpubcookie.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 /* we inherit from login_flavor_basic */
 extern struct login_flavor login_flavor_basic;

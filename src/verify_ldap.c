@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.13 2002-11-01 22:22:41 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.14 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -45,6 +45,12 @@
 
 /* Error logging! */
 #include "pbc_logging.h"
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 /**
  * Generates the name for the config file key
@@ -459,6 +465,9 @@ static int ldap_v( const char *userid,
             /* close ldap connection */
             ldap_unbind(ld);
         }
+
+        if (ldap_uri != NULL)
+            free(ldap_uri);
 
         i++;
     }

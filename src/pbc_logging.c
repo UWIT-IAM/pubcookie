@@ -24,6 +24,12 @@
 #include "pbc_logging.h"
 #include "snprintf.h"
 
+#ifdef HAVE_DMALLOC_H
+# if (!defined(APACHE) && !defined(APACHE1_3))
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 #ifdef NEED_SYSLOG_NAMES
 
 typedef struct _code {

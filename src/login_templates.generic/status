@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>pubcookie generic Login</TITLE>
+%s
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+
+<CENTER>
+
+<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=580>
+<TR>
+<TD VALIGN="MIDDLE">
+<IMG SRC="/images/login/weblogin.gif" ALT="pubcookie generic Login" height="57" width="198">
+
+
+<p>
+<img src="/images/login/icon-excl.gif" align="absmiddle" alt="" height="35" width="35">
+<font size="+1">You are still logged in to <b>pubcookie</b> 
+as <b>%s</b></font></p>
+
+<p>
+<img src="/images/login/icon-time.gif" align="absmiddle" alt="" height="35" width="35">
+<font size="+1">Time remaining: %s</font></p>
+
+
+<P><font size="+1"> <b>Warning:</b> You are still logged in to pubcookie
+(and possibly other application web sites you visited
+this session). To protect your privacy and prevent unauthorized use,
+<strong>completely exit your Web browser</strong> when you are
+finished browsing. 
+</font></P>
+
+
+<p><small>Copyright &#169; 2002 ?</small></p>
+
+</td>
+</tr>
+
+</TABLE>
+
+</CENTER>
+</BODY></HTML>
+

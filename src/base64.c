@@ -8,6 +8,12 @@
 # include <string.h>  /* for win32 */
 #endif /* HAVE_STRING_H */
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 
 /* BASE64 encoding stuff. */
 

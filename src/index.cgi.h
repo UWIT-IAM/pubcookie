@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.36 $
+ * $Revision: 1.37 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -145,6 +145,9 @@ void print_header(const char *format, ...);
 #define DEFAULT_LOGIN_EXPIRE (8 * 60 * 60)
 #define APP_LOGOUT_STR "app_logout_string"
 #define APP_LOGOUT_STR_SEP '-'
+
+#define STATUS_HTML_REFRESH "<meta http-equiv=\"Refresh\" content=\"%d;URL=/?countdown=%d\">"
+#define STATUS_INIT_SIZE 256
 
 /* why print login page ? */
 #define LOGIN_REASON_AUTH_FAIL   "bad auth"

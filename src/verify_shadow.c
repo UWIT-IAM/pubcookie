@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: verify_shadow.c,v 1.7 2002-08-20 20:31:18 greenfld Exp $
+    $Id: verify_shadow.c,v 1.8 2002-11-14 21:12:12 jjminer Exp $
  */
 
 /**
@@ -52,6 +52,12 @@
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 static int shadow_v(const char *userid,
 		    const char *passwd,

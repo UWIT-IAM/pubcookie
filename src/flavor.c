@@ -6,6 +6,12 @@
 
 #include "flavor.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 extern struct login_flavor login_flavor_basic;
 extern struct login_flavor login_flavor_getcred;
 

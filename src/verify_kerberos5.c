@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.17 $
+ * $Revision: 1.18 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,6 +64,12 @@
 #ifdef HAVE_KRB5_H
 # include <krb5.h>
 #endif /* HAVE_KRB5_H */
+
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 #define KRB5_DEFAULT_OPTIONS 0
 #define KRB5_DEFAULT_LIFE (PBC_DEFAULT_EXPIRE_LOGIN)

@@ -14,6 +14,12 @@
 
 #include "verify.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 extern int debug;
 
 int alwaystrue_v(const char *userid,

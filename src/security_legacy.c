@@ -59,6 +59,12 @@
 #include "security.h"
 #include "pubcookie.h"
 
+#ifdef HAVE_DMALLOC_H
+# ifndef APACHE
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
+
 #define PBC_SIG_LEN 128
 
 /* privacy format is:
@@ -147,65 +153,65 @@ int security_init(void)
     /* first we try to use the ssl files */
     keyfile = mystrdup(libpbc_config_getstring("ssl_key_file", NULL));
     if (keyfile && access(keyfile, R_OK | F_OK)) {
-	free(keyfile);
-	/* not there ? */
-	keyfile = NULL;
+        free(keyfile);
+        /* not there ? */
+        keyfile = NULL;
     }
     certfile = mystrdup(libpbc_config_getstring("ssl_cert_file", NULL));
     if (certfile && access(certfile, R_OK | F_OK)) {
-	free(certfile);
-	/* not there ? */
-	certfile = NULL;
+        free(certfile);
+        /* not there ? */
+        certfile = NULL;
     }
 
     if (!keyfile && !certfile) {
-	/* fall back to the pubcookie_session files */
-	keyfile = malloc(1025);
-	snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
-		 "pubcookie_session.key");
+        /* fall back to the pubcookie_session files */
+        keyfile = malloc(1025);
+        snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+                 "pubcookie_session.key");
 
-	certfile = malloc(1025);
-	snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
-		 "pubcookie_session.cert");
+        certfile = malloc(1025);
+        snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+                 "pubcookie_session.cert");
 
-	if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
-	    /* session keys not valid */
-	    free(keyfile);
-	    free(certfile);
-	    keyfile = NULL;
-	    certfile = NULL;
-	}
+        if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
+            /* session keys not valid */
+            free(keyfile);
+            free(certfile);
+            keyfile = NULL;
+            certfile = NULL;
+        }
     }
 
     if (!keyfile && !certfile) {
-	/* try the pubcookie_login files */
-	keyfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
-	snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
-		 "pubcookie_login.key");
+        /* try the pubcookie_login files */
+        keyfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+        snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+                 "pubcookie_login.key");
 
-	certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
-	snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
-		 "pubcookie_login.cert");
+        certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+        snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+                 "pubcookie_login.cert");
 
-	if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
-	    /* login keys not valid */
- 	    free(keyfile);
-	    free(certfile);
-	    keyfile = NULL;
-	    certfile = NULL;
-	}
+        if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
+            /* login keys not valid */
+            free(keyfile);
+            free(certfile);
+            keyfile = NULL;
+            certfile = NULL;
+        }
     }
 
     if (!keyfile) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't find session keyfile (try setting ssl_key_file?)");
-	return -1;
+        return -1;
     }
 
     if (!certfile) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't find session certfile (try setting ssl_cert_file?)");
-	return -1;
+        return -1;
     }
 
     /* it's generally easier to find the granting key/cert */
@@ -214,29 +220,29 @@ int security_init(void)
 
 
     if (!g_keyfile) {
-	g_keyfile = malloc(1025); /* Windows snprintf broken  8/21/02 RJC */
-	snprintf(g_keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
-		 "pubcookie_granting.key");
+        g_keyfile = malloc(1025); /* Windows snprintf broken  8/21/02 RJC */
+        snprintf(g_keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+                 "pubcookie_granting.key");
     }
 
     if (!g_certfile) {
-	g_certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
-	snprintf(g_certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
-		 "pubcookie_granting.cert");
+        g_certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+        snprintf(g_certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+                 "pubcookie_granting.cert");
     }
     /* test g_keyfile */
     if (access(g_keyfile, R_OK | F_OK)) {
         /* this is only a problem for login servers */
-	pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
                          "couldn't find granting keyfile (try setting granting_key_file?)");
-	g_keyfile = NULL;
+        g_keyfile = NULL;
     }
 
     /* test g_certfile; it's a fatal error if this isn't found */
     if (access(g_certfile, R_OK | F_OK)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
-	return -1;
+        return -1;
     }
 
     /* now read them into memory */
@@ -246,36 +252,36 @@ int security_init(void)
     fp = fopen(keyfile, "r");
 
     if (!fp) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't read keyfile: fopen %s: %m", keyfile);
-	return -1;
+        return -1;
     }
 
     sess_key = (EVP_PKEY *) PEM_ASN1_read((char *(*)())d2i_PrivateKey, 
 					  PEM_STRING_EVP_PKEY,
 					  fp, NULL, NULL, NULL);
     if (!sess_key) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't parse session key: %s", keyfile);
-	return -1;
+        return -1;
     }
     fclose(fp);
 
     /* session cert */
     fp = fopen(certfile, "r");
     if (!fp) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't read certfile: fopen %s: %m", certfile);
-	return -1;
+        return -1;
     }
     sess_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
 				       PEM_STRING_X509,
 				       fp, NULL, NULL, NULL);
     if (!sess_cert) {
-	/* xxx openssl errors */
-	pbc_log_activity(PBC_LOG_ERROR, 
+        /* xxx openssl errors */
+        pbc_log_activity(PBC_LOG_ERROR, 
                          "couldn't parse session certificate: %s", certfile);
-	return -1;
+        return -1;
     }
     sess_pub = X509_extract_key(sess_cert);
     myname = X509_NAME_oneline (X509_get_subject_name (sess_cert),0,0);
@@ -355,6 +361,16 @@ int security_init(void)
 	RAND_seed(buf, sizeof(tv.tv_usec));
     }
 #endif
+
+    if (keyfile != NULL)
+        free(keyfile);
+    if (certfile != NULL)
+        free(certfile);
+    if (g_keyfile != NULL)
+        free(g_keyfile);
+    if (g_certfile != NULL)
+        free(g_certfile);
+    
     pbc_log_activity(PBC_LOG_DEBUG_LOW, "security_init: goodbye\n");
 
     return 0;

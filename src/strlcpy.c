@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: strlcpy.c,v 2.4 2002-08-20 20:17:51 greenfld Exp $
+    $Id: strlcpy.c,v 2.5 2002-11-14 21:12:12 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -37,6 +37,12 @@
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
+
+#ifdef HAVE_DMALLOC_H
+# if (!defined(APACHE) && !defined(APACHE1_3))
+#  include <dmalloc.h>
+# endif /* ! APACHE */
+#endif /* HAVE_DMALLOC_H */
 
 #ifndef HAVE_STRLCPY
 /* strlcpy -- copy string smartly.
