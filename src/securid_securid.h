@@ -1,0 +1,2 @@
+int securid(char *, char *);
+
