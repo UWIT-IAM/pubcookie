@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.30 2003-04-19 18:45:18 jjminer Exp $
+# $Id: Makefile.in,v 1.31 2003-04-19 21:22:03 jjminer Exp $
 
 @SET_MAKE@
 
@@ -23,6 +23,7 @@ KEY_DIR=$(PUBCOOKIE_DIR)/keys
 TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
 LOGIN_DIR=$(PUBCOOKIE_DIR)/login
 CERT_DB_DIR=$(PUBCOOKIE_DIR)/keys
+LOGIN_IMG_DIR=$(PUBCOOKIE_DIR)/login/images
 
 CERT_DB_SOURCE=@CERT_DB_PATH@
 
@@ -191,6 +192,9 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
 				$(srcdir)/src/login_templates.generic/status \
 				$(srcdir)/src/login_templates.generic/welcome_back
 
+LOGIN_IMAGES=$(srcdir)/src/login_templates.generic/images/check.gif \
+			 $(srcdir)/src/login_templates.generic/images/icon-excl.gif \
+			 $(srcdir)/src/login_templates.generic/images/icon-time.gif
 
 DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/CREDITS.txt \
@@ -305,9 +309,12 @@ keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 
 install: $(KEY_DIR) @install_login@ @install_apache@
 
-install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) login_server
+install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
+	$(INSTALL_OTHER) $(LOGIN_IMAGES) $(TEMPLATE_DIR).default/images
+	-test ! -f $(LOGIN_IMG_DIR)/check.gif && \
+		$(INSTALL_OTHER) $(LOGIN_IMAGES) $(LOGIN_IMG_DIR)
 	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
 	-test "x$(CERT_DB_SOURCE)" != "x" && \
 		$(INSTALL_OTHER) $(CERT_DB_SOURCE)/cert7.db $(CERT_DB_SOURCE)/key3.db \
@@ -326,11 +333,17 @@ $(KEY_DIR): $(PUBCOOKIE_DIR)
 $(LOGIN_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(LOGIN_DIR)
 
+$(LOGIN_IMG_DIR): $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(LOGIN_IMG_DIR)
+
 $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR)
 
 $(TEMPLATE_DIR).default: $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR).default
+
+$(TEMPLATE_DIR).default/images: $(TEMPLATE_DIR).default/images
+	$(INSTALL_DIR) $(TEMPLATE_DIR).default/images
 
 $(LIB_OBJ): $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 
