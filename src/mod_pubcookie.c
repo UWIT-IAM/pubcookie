@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.4 1998-07-15 00:21:22 willey Exp $
+    $Id: mod_pubcookie.c,v 1.5 1998-07-20 10:34:34 willey Exp $
  */
 
 #include <pem.h>
@@ -15,11 +15,12 @@
 #include "http_main.h"
 #include "http_protocol.h"
 #include "util_script.h"
-/* #include <envelope.h> */
 
 module pubcookie_module;
 
-static EVP_PKEY *public_key = NULL;
+static md_context_plus     *s_ctx_plus = NULL;
+static md_context_plus     *v_ctx_plus = NULL;
+static crypt_stuff         *c_stuff = NULL;
 
 typedef struct {
   char *certfile;
@@ -91,9 +92,11 @@ char *get_cookie(request_rec *r, char *name) {
   char *cookie_header; 
   char *cookie, *ptr;
 
+  /* get cookies */
   if(!(cookie_header = table_get(r->headers_in, "Cookie")))
     return NULL;
 
+  /* find the one that's pubcookie */
   if(!(cookie_header = strstr(cookie_header, name)))
     return NULL;
 
@@ -113,34 +116,15 @@ char *get_cookie(request_rec *r, char *name) {
 
 static void pubcookie_init(server_rec *s, pool*p) {
   pubcookie_server_rec *cfg;
-  FILE *fp;
-  X509 *x509;
-  md_context_plus *sign_ctx_plus;
-  md_context_plus *verify_ctx_plus;
-
-  sign_ctx_plus = libpbc_verify_init();
-  verify_ctx_plus = libpbc_sign_init();
 
   cfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
 						   &pubcookie_module);
 
-  if(!(fp = pfopen(p, cfg->certfile ? cfg->certfile : PBC_CERTFILE, "r"))) {
-    fprintf(stderr, "PUBCOOKIE: Could not open the certificate file: %s.\n", cfg->certfile);
-    exit(1);
-  }
+  libpbc_debug("we are in pubcookie_init\n");
+  c_stuff = libpbc_init_crypt();
+  s_ctx_plus = libpbc_sign_init();
+  v_ctx_plus = libpbc_verify_init();
 
-  if(!(x509 = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509, PEM_STRING_X509,
-				     fp, NULL, NULL))) {
-    fprintf(stderr, "PUBCOOKIE: Could not read the certificate file.\n");
-    exit(1);
-  }
-
-  if(!(public_key = X509_extract_key(x509))) {
-    fprintf(stderr, "PUBCOOKIE: Could not convert certificate to public key.\n");
-    exit(1);
-  }
-
-  pfclose(p, fp);
 }
 
 static void *pubcookie_server_create(pool *p, server_rec *s) {
@@ -185,7 +169,7 @@ static int pubcookie_user(request_rec *r) {
   pubcookie_rec *cfg;
   char *cookie, *decoded, *ptr;
   int cookie_time;
-  EVP_MD_CTX md_ctx;
+  pbc_cookie_data     *cookie_data;
 
   if(!auth_type(r))
     return DECLINED;
@@ -200,37 +184,30 @@ static int pubcookie_user(request_rec *r) {
     cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
-
-  decoded = pstrdup(r->pool, cookie);
-
-  if(!base64_decode(cookie, decoded)) {
+  
+  if( ! (cookie_data = libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
     cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
 
-  EVP_VerifyInit(&md_ctx, EVP_md5());
-  EVP_VerifyUpdate(&md_ctx, decoded+PBC_SIG_LEN, strlen(decoded+PBC_SIG_LEN)); 
-  if(EVP_VerifyFinal(&md_ctx, decoded, PBC_SIG_LEN, public_key) != 1) {
-    cfg->failed = PBC_BAD_AUTH;
-    return OK;
-  }
+  r->connection->user = pstrdup(r->pool, (*cookie_data).broken.user);
+  libpbc_debug("pubcookie_user: got cookie unbundled for user %s\n", r->connection->user);
+  return OK;
 
-  if(!(ptr = strchr(decoded+PBC_SIG_LEN, ':'))) {
-    cfg->failed = PBC_BAD_AUTH;
-    return OK;
-  }
+  // to do here
+  //  check time-out
+  //  check cred type
 
-  *ptr = 0;
-  ptr++;
-  cookie_time = strtol(decoded + PBC_SIG_LEN, NULL, 16);
-
-  if((cookie_time + (cfg->expire ? cfg->expire:PBC_DEFAULT_EXPIRE)) > time(NULL)) {
-    r->connection->user = pstrdup(r->pool, ptr);
-    return OK;
-  } else {
-    cfg->failed = PBC_BAD_AUTH;
-    return OK;
-  }
+//  *ptr = 0;
+//  ptr++;
+//  cookie_time = strtol(decoded + PBC_SIG_LEN, NULL, 16);
+//
+//  if((cookie_time + (cfg->expire ? cfg->expire:PBC_DEFAULT_EXPIRE)) > time(NULL)) {
+//    return OK;
+//  } else {
+//    cfg->failed = PBC_BAD_AUTH;
+//    return OK;
+//  }
 }
 
 int pubcookie_auth (request_rec *r) {
@@ -241,7 +218,7 @@ int pubcookie_auth (request_rec *r) {
   int x;
   const char *line_ptr, *word_ptr;
 
-  if(strcmp(auth_type(r), "PubCookie"))
+  if( strcmp(auth_type(r), "PubCookie") != 0)
      return DECLINED;
 
   cfg = (pubcookie_rec *)get_module_config(r->per_dir_config,
