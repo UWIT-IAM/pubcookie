@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.41 2002-03-05 22:39:59 jteaton Exp $
+    $Id: index.cgi.c,v 1.42 2002-03-07 22:03:18 willey Exp $
  */
 
 
@@ -80,7 +80,7 @@ char *prodtest_hosts[] = {"webloginprodtest.cac.washington.edu",
 /* of course it is overwritten each time this runs                 */
 FILE	*mirror;
 
-/* do we want debugging? /*
+/* do we want debugging? */
 int debug;
 
 crypt_stuff         *c_stuff = NULL;
@@ -181,7 +181,6 @@ void print_out(char *format,...)
  */
 static void tmpl_print_out(const char *fname,...)
 {
-  char *format;
   char buf[MAX_EXPANDED_TEMPLATE_SIZE];
   va_list args;
 
@@ -573,7 +572,7 @@ void abend(char *message)
 
 }
 
-void init_mirror_file(char * mirrorfile) 
+void init_mirror_file(const char * mirrorfile) 
 {
     if (mirrorfile != NULL) {
 	mirror = fopen(mirrorfile, "w");
@@ -600,7 +599,7 @@ char *get_my_hostname()
 
 }
 
-char *get_domain_hostname() 
+const char *get_domain_hostname() 
 {
     char	*host;
     int		i;
@@ -1005,7 +1004,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message,
     char	*focus_field = NULL;
     char	focus[PBC_1K];
     char	message_out[PBC_1K];
-    char	*hostname = strdup(get_domain_hostname());
+    const char	*hostname = strdup(get_domain_hostname());
     char	*prefilled_user = NULL;
     int		field1_type = FIELD_TYPE_EMPTY_ALTERABLE;
     int		field2_type = FIELD_TYPE_EMPTY_ALTERABLE;
