@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.151 2004-08-18 00:14:00 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.152 2004-08-18 19:32:23 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -2858,12 +2858,12 @@ static int login_reply_handler(request_rec *r)
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec    *cfg;
     table *args = ap_make_table(r->pool, 5);
-    char *greply;
+    const char *greply;
     char *arg;
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
-    char *post_data;
+    const char *post_data;
     char *gr_cookie;
-    char *r_url;
+    const char *r_url;
     pool *p = r->pool;
 
 
@@ -2893,7 +2893,7 @@ static int login_reply_handler(request_rec *r)
        if (((post_data_len=strtol(lenp, NULL, 10))>0) &&
             (post_data_len<MAX_POST_DATA) &&
             ((post_data = get_post_data(r, post_data_len)))) {
-          scan_args(args, post_data);
+          scan_args(args, (char *)post_data);
        }
     }
 
@@ -2955,7 +2955,7 @@ static int login_reply_handler(request_rec *r)
       ap_rprintf(r, post_reply_2_html);
 
     } else {  /* do a get */
-      char *a = ap_table_get(args, "get_args");
+      const char *a = ap_table_get(args, "get_args");
       printf("relay is get\n");
       
       if (a&&*a) arg = ap_psprintf(p,"%d;URL=%s?%s",PBC_REFRESH_TIME,r_url,a);
