@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.5 2001-10-24 19:17:09 willey Exp $
+    $Id: INSTALL.login.txt,v 1.6 2001-12-09 09:09:39 willey Exp $
  */
 
 
@@ -198,9 +198,84 @@ pbc_make_generic - Makes a blob of bits that can be used for a master c_key.
 Tool rarely used for debugging:
 test_local_c_key
 
-Obsolete tools that might be handy for debugging:
-pbc_create - creates a pubcookie cookie, see src for usage.
-pbc_verify - decrypts/verifies/displays pubcookie cookies.
+Old Tools That Might Be Handy for Debugging:
 
+pbc_create - creates a pubcookie cookie, convenient for creating cookies 
+ad hoc.  Arguments come in via stdin and the cookie is put out on stdout. 
+Args are space delimited, and in order: user appsrvid appid type creds 
+serial crypt_file cert_key_file.  Anything too big is just truncated, 
+no support for defaults or anything like that.  See src for details.
+
+pbc_verify - decrypts/verifies/displays pubcookie cookies, convenient for
+'unbundling' a cookie and seeing what's inside.  The arguments come in on
+the command line, the cookie comes in on stdid, and the contents are 
+dumped to stdout.  The required argument is cookie_type and the optional 
+arguments are encryption_key and cert_file.
+
+As an example you can use these two programs to do things like:
+
+# echo "willey appsrvid appid 1 2 23 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.key" | ./pbc_create | ./pbc_verify 1 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.cert
+
+and get something like
+
+user: willey
+version: a5
+type: 1
+creds: 2
+serial: 23
+appsrvid: appsrvid
+appid: appid
+create_ts: 1006986719
+last_ts: 1006986719
+
+
+M. Testing Crypt Keys
+
+N. Choosing the location of your login page
+
+Depending on your instalation environment you may choose to install the 
+login server in a number of configurations.  Two general models are presented
+here with any necessary Apache configuration directives. 
+
+N.1. 
+
+For a clean looking login URLThe apache config directive 'DirectoryIndex'
+tells it how to handle requests for directories.
+
+(see http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex for more
+info) tells it how to handle requests for directories.
+
+It looks like apache is interpreting '/' as 'index.html'.  
+
+Your DirectoryIndex line should look something like:
+DirectoryIndex index.html index.cgi
+
+Apache will choose the first file it finds.  So, you don't want an
+index.html file in the same directory as index.cgi unless you change the
+order.
+
+There are other ways to deal with this but I think this is the most
+straight forward.
+
+N.2. Explicit specification of login cgi
+
+The login CGI is not name dependant and can be deployed as index.cgi, 
+login.cgi, or some other CGI file if you like.  In can also be put in 
+any subdirectory you wish.
+
+Your login server's URL could be something like:
+
+  https://www.myuniversity.edu/cgi-bin/login.cgi
+
+Some sites may do this avoid the confusion with the default index page.
+
+Depending how you want to configure things with Apache or which ever Web
+server you want to use for the login server, your login server URL could
+be something like:
+
+  https://www.myuniversity.edu/login
+
+where /login is mapped to the CGI program (index.cgi or whatever you
+rename it to).
 
 
