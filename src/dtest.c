@@ -1,3 +1,6 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>

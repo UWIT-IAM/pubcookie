@@ -1,3 +1,6 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,5 +1,8 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 /*
-    $Id: pbc_version.h,v 1.13 1999-07-23 18:27:23 willey Exp $
+    $Id: pbc_version.h,v 1.14 1999-08-11 23:01:00 willey Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION

@@ -1,5 +1,8 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 /*
-    $Id: pbc_config.h,v 1.23 1999-07-22 22:52:48 willey Exp $
+    $Id: pbc_config.h,v 1.24 1999-08-11 23:00:50 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG

@@ -1,5 +1,8 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 /*
-    $Id: mod_pubcookie.c,v 1.33 1999-08-06 18:38:56 willey Exp $
+    $Id: mod_pubcookie.c,v 1.34 1999-08-11 23:00:47 willey Exp $
  */
 
 /* apache includes */

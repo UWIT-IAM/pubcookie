@@ -1,5 +1,8 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 /*
-    $Id: pbc_create.c,v 1.8 1999-05-05 16:20:18 willey Exp $
+    $Id: pbc_create.c,v 1.9 1999-08-11 23:00:54 willey Exp $
  */
 
 /* this is not meant to be user friendly, no friendlyness for anyone          */

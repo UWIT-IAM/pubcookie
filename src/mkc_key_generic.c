@@ -1,3 +1,6 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>

@@ -1,5 +1,8 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 /*
-    $Id: libpubcookie.c,v 2.4 1999-06-25 22:15:00 willey Exp $
+    $Id: libpubcookie.c,v 2.5 1999-08-11 23:00:35 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
