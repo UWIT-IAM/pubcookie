@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.7 2002-06-13 20:52:55 jjminer Exp $
+    $Id: keyserver.c,v 2.8 2002-06-13 21:09:22 jjminer Exp $
  */
 
 #include <stdio.h>
@@ -237,7 +237,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
     }
 
     /* return the key */
-    if (libpbc_get_crypt_key(&c_stuff, peer) != PBC_OK) {
+    if (libpbc_get_crypt_key(&c_stuff, (char *) peer) != PBC_OK) {
         myprintf("NO couldn't retrieve key\r\n");
         return 1;
     }
