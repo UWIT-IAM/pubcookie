@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.18 2002-07-05 23:35:48 jjminer Exp $
+    $Id: keyserver.c,v 2.19 2002-07-17 18:31:23 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,6 +59,7 @@
 # include <openssl/pem.h>
 # include <openssl/ssl.h>
 # include <openssl/err.h>
+# include <openssl/rand.h>
 #else
 # include <pem.h>
 # include <crypto.h>
@@ -80,6 +81,8 @@
 
 #include "pbc_config.h"
 #include "libpubcookie.h"
+
+int debug = 0;
 
 #ifndef KEYSERVER_CGIC
 static SSL *ssl = NULL;
@@ -108,7 +111,9 @@ void myprintf(const char *format, ...)
     vsnprintf(buf, sizeof(buf), format, args);
     va_end(args);
 
-    syslog( LOG_LOCAL1|LOG_INFO, "Sending: \"%s\"\n", buf );
+    if (debug) {
+       syslog( LOG_LOCAL1|LOG_INFO, "Sending: \"%s\"\n", buf );
+    }
 
     if (SSL_write(ssl, buf, strlen(buf)) < 0) {
 	logerrstr("SSL_write");
@@ -127,7 +132,6 @@ void myprintf(const char *format, ...)
 #endif /* ifndef KEYSERVER_CGIC */
 
 
-int debug = 1;
 const char *keyfile = "server.pem";
 const char *certfile = "server.pem";
 const char *cadir = NULL;
@@ -201,17 +205,35 @@ int pushkey(const char *peer)
             exit(1);
         }
         if (res == 0) {
-            /* child */
-            res = execl("keyclient", "keyclient", 
-                        "-L", lservers[x],
-                        "-k", keyfile, 
-                        "-c", certfile, 
-                        (cadir != NULL) ? "-D" : "", 
-                        (cadir != NULL) ? cadir : "",
-                        (cafile != NULL) ? "-C" : "",
-                        (cafile != NULL) ? cafile : "",
-                        "-u", "-h", peer, NULL);
-            syslog(LOG_LOCAL1 | LOG_ERR, "execl(): %m");
+            char *keyclient = (PBC_PATH "bin/keyclient");
+            char *cmd[15] = {
+               keyclient,
+               "-u",
+               "-h",
+               (char *) peer,
+               "-L",
+               (char *) lservers[x],
+               "-k",
+               (char *) keyfile, 
+               "-c",
+               (char *) certfile
+            };
+            int n = 10;
+            if (cafile != NULL) {
+               cmd[n++] = "-C";
+               cmd[n++] = (char *) cafile;
+            }
+            if (cadir != NULL) {
+               cmd[n++] = "-D";
+               cmd[n++] = (char *) cadir;
+            }
+            cmd[n] = NULL;
+
+            res = execv(keyclient, cmd);
+            syslog(LOG_ERR, "execl(): %m");
+            for (n=0; cmd[n]!=NULL; n++){
+               syslog(LOG_ERR, "%d %s", n, cmd[n]);
+            }
             exit(2);
         }
 
@@ -250,7 +272,8 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 /* 'peer' has asked us to generate a new key */
                 assert(newkey == NULL);
 
-                syslog( LOG_LOCAL1|LOG_INFO, "Generating a new key..\n" );
+                syslog(LOG_LOCAL1|LOG_INFO, "generating a new key for %s",
+                       peer);
 
                 if (libpbc_generate_crypt_key(peer) < 0) {
                     myprintf("NO generate_new_key() failed\r\n");
@@ -407,7 +430,8 @@ int main(int argc, char *argv[])
     X509 *client_cert;
     int r;
 
-    libpbc_config_init(NULL, "keyclient");
+    libpbc_config_init(NULL, "keyserver");
+    debug = libpbc_config_getint("debug", 0);
     keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring("ssl_ca_file", NULL);
@@ -603,6 +627,7 @@ int cgiMain()
     /* xxx log connection */
 
     libpbc_config_init(NULL, "keyserver");
+    debug = libpbc_config_getint("debug", 0);
 
     if (!getenv("HTTPS") || strcmp( getenv("HTTPS"), "on") ) {
 	printf("\r\nNO HTTPS required\r\n");
