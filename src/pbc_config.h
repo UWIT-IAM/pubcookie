@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.29 2000-06-15 01:12:45 willey Exp $
+    $Id: pbc_config.h,v 1.30 2000-09-25 18:06:05 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -36,8 +36,7 @@
 #define APACHE
 #endif
 
-/* why is it PBC_NUWNETID_AUTHTYPE and not PBC_UWNETID_AUTHTYPE ???  */
-#define PBC_NUWNETID_AUTHTYPE "uwnetid"
+#define PBC_UWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
@@ -52,6 +51,9 @@
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
 
+#define PBC_OK   1
+#define PBC_FAIL 0
+
 /* the cookies; l, g, and s have the same format g request and pre s
    are different internally
  */
@@ -62,11 +64,40 @@
 #define PBC_G_COOKIENAME "pubcookie_g"
 #define PBC_G_REQ_COOKIENAME "pubcookie_g_req"
 #define PBC_S_COOKIENAME "pubcookie_s"
-#define PBC_PRE_S_COOKIENAME "pubcookie_p_res"
+#define PBC_PRE_S_COOKIENAME "pubcookie_pre_s"
 #define PBC_FORM_MP_COOKIENAME "pubcookie_formmultipart"
 
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
+
+/* why is this user being sent back, well the redirect reason will tell ya */
+static const char *redirect_reason[] = {
+                "Force Reauth",			/* 0 */
+		"No G or S cookie",		/* 1 */
+		"Can't unbundle S cookie",	/* 2 */
+		"S cookie hard expired",	/* 3 */
+		"S cookie inact expired",	/* 4 */
+		"speed up that loop",		/* 5 */
+		"Can't unbundle G cookie",	/* 6 */
+		"G cookie expired",		/* 7 */
+		"Wrong appid",			/* 8 */
+		"Wrong app server id",		/* 9 */
+		"Wrong version id",		/* 10 */
+		"Wrong creds" 			/* 11 */
+};
+
+#define PBC_RR_FR_CODE              0
+#define PBC_RR_NOGORS_CODE          1
+#define PBC_RR_BADS_CODE            2
+#define PBC_RR_SHARDEX_CODE         3
+#define PBC_RR_SINAEX_CODE          4
+#define PBC_RR_DUMMYLP_CODE         5
+#define PBC_RR_BADG_CODE            6
+#define PBC_RR_GEXP_CODE            7
+#define PBC_RR_WRONGAPPID_CODE      8
+#define PBC_RR_WRONGAPPSRVID_CODE   9
+#define PBC_RR_WRONGVER_CODE        10
+#define PBC_RR_WRONGCREDS_CODE      11
 
 /* this is the content of the redirect page's body if there is a POST */
 
@@ -125,6 +156,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_FILE_UPLD "file"   /* for form multipart testing    */
 #define PBC_GETVAR_FLAG "flag"        /* not currently used            */
 #define PBC_GETVAR_REFERER "referer"  /* to knit together the referer  */
+#define PBC_GETVAR_POST_STUFF "post_stuff"  /* post args               */
 
 /* 
  things that are used both places (module and the library)
@@ -232,7 +264,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_sign_init(a) 		   libpbc_sign_init_p(p, a)
 #define libpbc_verify_init(a) 	   libpbc_verify_init_p(p, a)
 #define libpbc_pubcookie_init() 	   libpbc_pubcookie_init_p(p)
-#define libpbc_pubcookie_exit() 	   libpbc_pubcookie_exit_p(p)
 #define libpbc_alloc_init(a) 		   libpbc_alloc_init_p(p, a)
 #define libpbc_gethostip() 		   libpbc_gethostip_p(p)
 #define libpbc_init_crypt(a) 		   libpbc_init_crypt_p(p, a)
@@ -256,7 +287,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_sign_init(a) 		 libpbc_sign_init_np(a)
 #define libpbc_verify_init(a) 	   	 libpbc_verify_init_np(a)
 #define libpbc_pubcookie_init	 	 libpbc_pubcookie_init_np
-#define libpbc_pubcookie_exit 		 libpbc_pubcookie_exit_np
 #define libpbc_alloc_init(a) 		 libpbc_alloc_init_np(a)
 #define libpbc_gethostip   		 libpbc_gethostip_np
 #define libpbc_init_crypt(a) 		 libpbc_init_crypt_np(a)
