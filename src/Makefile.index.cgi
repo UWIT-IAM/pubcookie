@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.12 2001-11-15 01:58:58 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.13 2001-12-09 09:13:01 willey Exp $
 #
 
 # your compiler here
@@ -35,9 +35,9 @@ SSL_OTHER_LIB_DIR=
 CGIC=/usr/local/lib/libcgic.a
 
 # extra library dirs (for authentication modules and such)
-EXTRA_LIB_DIRS=-L/opt/nfast/gcc/lib
+EXTRA_LIB_DIRS=
 # extra libraries (for authentication modules and suc)
-EXTRA_LIBS=-lkrb5 -lmgoapi -lnfstub 
+EXTRA_LIBS=-lkrb5
 
 # choose your compile flags.
 # some options are: DEBUG - voluminious debug info
@@ -47,7 +47,7 @@ EXTRA_LIBS=-lkrb5 -lmgoapi -lnfstub
 #                             hostname unless this is set
 #                   FORM_NOT_IN_TMPL - if your login form isn't in the template
 #                                      hopefully obsolete soon, only UWash need
-CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include -DFORM_NOT_IN_TMPL
+CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include -DFORM_NOT_IN_TMPL -DDEBUG
 
 
 # a blast from the past:
@@ -63,7 +63,7 @@ ALLHEAD=${GEN_HEAD}
 SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
 
 MAKEFILE=Makefile.index.cgi
-ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c securid.c index.cgi_securid.c index.cgi_krb.c 
+ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c index.cgi_krb.c 
 ALLHEAD=${GEN_HEAD}
 
 RM=rm
@@ -77,8 +77,8 @@ all:	index.cgi
 #		$(CC) ${CFLAGS} -o $@ index.cgi.o libpubcookie.o base64.o $(CGIC) $(LDFLAGS)
 
 # version used at UWash with two auth modules
-index.cgi:	index.cgi.o  securid.o libpubcookie.o base64.o index.cgi_securid.o index.cgi_krb.o 
-		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_securid.o index.cgi_krb.o libpubcookie.o base64.o securid.o $(CGIC) $(LDFLAGS)
+index.cgi:	index.cgi.o  libpubcookie.o base64.o index.cgi_krb.o 
+		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_krb.o libpubcookie.o base64.o $(CGIC) $(LDFLAGS)
 
 base64.o: base64.c ${GEN_HEAD} ${MAKEFILE}
 candv.o: candv.c ${GEN_HEAD} ${MAKEFILE}
@@ -88,9 +88,7 @@ make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
 index.cgi.o: index.cgi.c index.cgi.h libpubcookie.o ${MAKEFILE} $(CGIC) 
 index.cgi_krb.o: index.cgi_krb.c index.cgi.h libpubcookie.o ${MAKEFILE}
-index.cgi_securid.o: index.cgi_securid.c index.cgi.h libpubcookie.o ${MAKEFILE}
-securid.o: securid.c securid.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f index.cgi.o securid.o core index.cgi libpubcookie.o uwnetid_stub securid_stub base64.o  index.cgi_krb.o  index.cgi_securid.o
+	$(RM) -f index.cgi.o core index.cgi libpubcookie.o uwnetid_stub base64.o  index.cgi_krb.o
 
