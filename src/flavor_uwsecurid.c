@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.5 2004-02-13 21:51:36 dors Exp $
+    $Id: flavor_uwsecurid.c,v 2.6 2004-06-17 21:07:45 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -832,12 +832,14 @@ static login_result process_uwsecurid(pool *p, login_rec *l, login_rec *c,
                          "process_uwsecurid: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
-    } else { /* valid login cookie */
+    } else { /* securid requires reauth */
+        *errstr = "uwsecurid requires reauth"; 
         pbc_log_activity(p, PBC_LOG_AUDIT,
-                         "flavor_uwsecurid: L cookie valid user: %s", l->user);
+                         "flavor_uwsecurid: %s: %s", l->user, *errstr);
+        print_login_page(p, l, c, FLUS_REAUTH);
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_uwsecurid: L cookie valid, goodbye\n" );
-        return LOGIN_OK;
+                         "process_uwsecurid: login in progress, goodbye\n" );
+        return LOGIN_INPROGRESS;
     }
 
 }
