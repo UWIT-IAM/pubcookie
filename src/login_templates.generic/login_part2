@@ -1,3 +1,9 @@
+            <P>
+              <input type="SUBMIT" name="submit" value="Log in">
+            </P>
+
+          </form>
+
           <p>
             Login gives you 8-hour access without repeat login to protected Web resources.
           </p>
