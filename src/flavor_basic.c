@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.65 2004-10-06 21:26:39 willey Exp $
+ * $Id: flavor_basic.c,v 1.66 2004-10-06 22:43:47 willey Exp $
  */
 
 
@@ -361,6 +361,7 @@ static int print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char func[] = "print_login_page";
     int ret = PBC_FAIL;
     char *login_msg = NULL;
+    char *reason_msg = NULL;
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello reason: %d", 						func, reason);
 
@@ -391,8 +392,12 @@ static int print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 		l->appsrvid, &login_msg)) == PBC_FAIL )
             goto done;
 
-    if ( login_msg == NULL )
-        if( (ret = get_reason_html(p, reason, l, c, &login_msg)) == PBC_FAIL )
+    /* if there is no custom login message go get the reason text 
+	in the case of expired login messages we use both the 
+	the custom message (itis) and the lcookie expired message
+     */
+    if ( login_msg == NULL || reason == FLB_LCOOKIE_EXPIRED )
+        if( (ret = get_reason_html(p, reason, l, c, &reason_msg)) == PBC_FAIL )
             goto done;
 
     while (hidden_needed_len > hidden_len) {
@@ -516,6 +521,7 @@ static int print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                      libpbc_config_getstring(p, "tmpl_login", "login"),
                     "loginuri", PBC_LOGIN_URI,
                     "message", login_msg != NULL ? login_msg : "",
+                    "reason", reason_msg != NULL ? reason_msg : "",
                     "curtime", now, 
                     "hiddenuser", hidden_user != NULL ? hidden_user : "",
                     "hiddenfields", hidden_fields,
