@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.12 1998-12-18 16:03:49 willey Exp $
+    $Id: libpubcookie.c,v 1.13 1999-01-04 19:31:46 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -371,6 +371,7 @@ unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_pl
 
     sig = (unsigned char *)libpbc_alloc_init(PBC_SIG_LEN);
 
+    EVP_SignInit(ctx_plus->ctx, EVP_md5());
     EVP_SignUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
     if( EVP_SignFinal(ctx_plus->ctx, sig, &sig_len, ctx_plus->private_key) )
         return sig;
@@ -383,10 +384,11 @@ int libpbc_verify_sig(unsigned char *sig, unsigned char *cookie_string, md_conte
 {
     int	res = 0;
 
+    EVP_VerifyInit(ctx_plus->ctx, EVP_md5());
     EVP_VerifyUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
     res = EVP_VerifyFinal(ctx_plus->ctx, sig, PBC_SIG_LEN, ctx_plus->public_key);
-    return res;
 
+    return res;
 }
 
 unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, unsigned len)
@@ -599,7 +601,6 @@ md_context_plus *libpbc_verify_init_np(char *certfile)
 
     ctx_plus = libpbc_init_md_context_plus();
     libpbc_get_public_key(ctx_plus, certfile);
-    EVP_VerifyInit(ctx_plus->ctx, EVP_md5());
 
     return ctx_plus;
 }
@@ -617,7 +618,6 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 
     ctx_plus = libpbc_init_md_context_plus();
     libpbc_get_private_key(ctx_plus, keyfile);
-    EVP_SignInit(ctx_plus->ctx, EVP_md5());
     return ctx_plus;
 }
 
