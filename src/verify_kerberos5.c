@@ -8,7 +8,7 @@
  */
 
 /*
-    $Id: verify_kerberos5.c,v 1.2 2002-05-23 19:32:59 jteaton Exp $
+    $Id: verify_kerberos5.c,v 1.3 2002-06-06 21:22:30 jteaton Exp $
  */
 
 #ifdef HAVE_KRB5
@@ -27,6 +27,7 @@
 /* login cgi includes */
 #include "index.cgi.h"
 #include "verify.h"
+#include "pbc_myconfig.h"
 
 #define KRB5_DEFAULT_OPTIONS 0
 #define KRB5_DEFAULT_LIFE 60*15 /* 15 minutes */
@@ -46,6 +47,7 @@ static int k5support_verify_tgt(krb5_context context,
     krb5_error_code k5_retcode;
     char thishost[BUFSIZ];
     int result = -1;
+    char * keytab;
 
     if (errstr) {
 	*errstr = NULL;
@@ -56,7 +58,9 @@ static int k5support_verify_tgt(krb5_context context,
 	return -1;
     }
 
-    if (krb5_kt_read_service_key(context, NULL, server, 0,
+    keytab = libpbc_config_getstring("kerberos5_keytab", NULL);
+
+    if (krb5_kt_read_service_key(context, keytab, server, 0,
 				 0, &keyblock)) {
         *errstr = "unable to read service key";
 
@@ -78,6 +82,7 @@ static int k5support_verify_tgt(krb5_context context,
     thishost[BUFSIZ-1] = '\0';
 
     krb5_data_zero(&packet);
+
     k5_retcode = krb5_mk_req(context, &auth_context, 0, "host", 
 			     thishost, NULL, ccache, &packet);
 
@@ -120,6 +125,7 @@ int kerberos5_verifier(const char *userid,
     krb5_get_init_creds_opt opts;
     int result = -1;
     char tfname[40];
+    char *realm;
 
     if (errstr) { 
 	*errstr = NULL; 
@@ -133,15 +139,23 @@ int kerberos5_verifier(const char *userid,
        *errstr = "no password to verify";
        return -1;
     }
-
-    /* xxx verify that user_realm is the local realm
-       (or we have to do evil crossrealm foo) !!! */
   
     if (krb5_init_context(&context)) {
 	return -1;
     }
-    
-    if (krb5_parse_name (context, userid, &auth_user)) {
+
+    if (!user_realm) {
+       if (!krb5_get_default_realm(context, &realm)) {
+          /* don't forget to free this if you care */
+          user_realm = realm;
+       } else { 
+          *errstr = "can't determine realm";
+          return -1;
+       }
+    }
+
+    if (krb5_build_principal (context, &auth_user, strlen(user_realm),
+                              user_realm, userid, NULL)) {
 	krb5_free_context(context);
 	return -1;
     }
@@ -168,6 +182,7 @@ int kerberos5_verifier(const char *userid,
 	krb5_cc_destroy(context, ccache);
 	krb5_free_principal(context, auth_user);
 	krb5_free_context(context);
+        *errstr = "can't get tgt";
 	return -1;
     }
 
@@ -176,6 +191,7 @@ int kerberos5_verifier(const char *userid,
 	krb5_free_principal(context, auth_user);
 	krb5_cc_destroy(context, ccache);
 	krb5_free_context(context);
+        *errstr = "can't verify tgt";
 	return -1;
     }
 
@@ -203,4 +219,5 @@ int kerberos5_verifier(const char *userid,
 
 
 #endif /* HAVE_KRB5 */
+
 

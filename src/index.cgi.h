@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.23 $
+ * $Revision: 1.24 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -39,6 +39,7 @@ typedef struct {
     char	*appsrvid;
     char	*fr;
     char	*user;
+    char	*realm;
     char	*pass;
     char	*pass2;
     char	*post_stuff;

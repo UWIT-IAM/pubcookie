@@ -26,7 +26,7 @@
  */
 
 /*
- *  $Revision: 1.51 $
+ *  $Revision: 1.52 $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -199,6 +199,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_FIRST_KISS "first_kiss"
 #define PBC_GETVAR_NEXT_SECURID "next_securid"
 #define PBC_GETVAR_USER "user"
+#define PBC_GETVAR_REALM "realm"
 #define PBC_GETVAR_PASS "pass"
 #define PBC_GETVAR_PASS2 "pass2"
 #define PBC_GETVAR_GREQ_CREDS "creds_from_greq"

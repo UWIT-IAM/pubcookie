@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.51 $
+ * $Revision: 1.52 $
  */
 
 
@@ -543,6 +543,8 @@ int clear_greq_cookie() {
 
 login_rec *load_login_rec(login_rec *l) 
 {
+    char * tmp;
+
     if (debug) {
 	fprintf(stderr, "load_login_rec: hello\n");
     }
@@ -554,6 +556,16 @@ login_rec *load_login_rec(login_rec *l)
     /* make sure the username is a username */
     if((l->user = get_string_arg(PBC_GETVAR_USER, NO_NEWLINES_FUNC)))
         l->user = clean_username(l->user);
+
+    l->realm = get_string_arg(PBC_GETVAR_REALM, NO_NEWLINES_FUNC);
+    
+    /* set a default realm if not passed in */
+    if (l->realm == NULL) {
+       tmp = (char *) libpbc_config_getstring("default_realm", NULL);
+       if (tmp) {
+          l->realm = strdup(tmp);
+       }
+    }
 
     l->pass 	      = get_string_arg(PBC_GETVAR_PASS, NO_NEWLINES_FUNC);
     l->pass2 	      = get_string_arg(PBC_GETVAR_PASS2, NO_NEWLINES_FUNC);
@@ -912,6 +924,7 @@ char *decode_granting_request(char *in, char **peerp)
     if (debug) {
 	fprintf(stderr, "decode_granting_request: in: %s\n", in);
     }
+
     if (peerp) *peerp = NULL;
 
     /* xxx check to see if 'in' is _<peer>_<base64 bundled> or just <base64> */

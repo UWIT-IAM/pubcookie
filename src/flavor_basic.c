@@ -174,7 +174,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
     */
 
     if (l->reply == FORM_REPLY) {
-        if (v(l->user, l->pass, NULL, NULL, errstr) == 0) {
+        if (v(l->user, l->pass, NULL, l->realm, errstr) == 0) {
             if (debug) {
                fprintf(stderr, "authentication successful for %s\n", l->user);
             }
@@ -182,6 +182,22 @@ static login_result process_basic(login_rec *l, login_rec *c,
 	    /* authn succeeded! */
 	    
 	    /* xxx modify 'l' accordingly ? */
+
+            /* optionally stick @REALM into the username */
+            if (l->user && l->realm &&
+                libpbc_config_getswitch("append_realm", 0)) {
+               /* append @REALM onto the username */
+               char * tmp;
+               tmp = calloc(strlen(l->user)+strlen(l->realm)+1, 1);
+               if (tmp) {
+                  strncat(tmp, l->user, strlen(l->user));
+                  strncat(tmp, "@", 1);
+                  strncat(tmp, l->realm, strlen(l->realm));
+                  free (l->user);
+                  l->user = tmp;
+               }
+            }
+
 
 	    return LOGIN_OK;
 	} else {
