@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.146 2004-05-21 21:44:19 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.147 2004-07-16 15:49:27 fox Exp $
  */
 
 
@@ -1893,7 +1893,8 @@ static int pubcookie_user(request_rec *r) {
         if (!res) {
             /* save these creds in that file */
 #ifdef APACHE2
-            apr_file_open(&f, krb5ccname, APR_WRITE|APR_TRUNCATE, 0644, p);
+            apr_file_open(&f, krb5ccname,
+                 APR_CREATE|APR_WRITE|APR_TRUNCATE, 0644, p);
 #else
             f = ap_pfopen(p, krb5ccname, "w");
 #endif
