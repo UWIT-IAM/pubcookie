@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.82 2003-09-26 22:27:02 ryanc Exp $
+    $Id: pbc_config.h,v 1.83 2003-11-26 22:19:23 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -34,6 +34,9 @@
 #endif /* HAVE_DMALLOC_H */
 
 /* names of the login servers */
+#ifndef WIN32
+        #define PBC_LOGIN_HOST (libpbc_config_getstring(p,"login_host", "weblogin.washington.edu"))
+#endif
 #define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
 #define PBC_KEYMGT_URI (libpbc_config_getstring(p,"keymgt_uri", "https://weblogin.washington.edu/cgi-bin/keyserver"))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
