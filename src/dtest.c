@@ -14,7 +14,7 @@
 
 void usage(const char *progname) {
     printf("%s [-k key_file] [-h]\n\n", progname);
-    printf("\t key_file:\tdefault is %s/%s\n\n", PBC_CRYPT_KEY_PREFIX, get_my_hostname());
+    printf("\t key_file:\tdefault is %s/%s\n\n", PBC_PATH, get_my_hostname());
     exit (1);
 }
 

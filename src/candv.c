@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.16 2002-06-13 17:18:38 jteaton Exp $
+    $Id: candv.c,v 1.17 2002-06-27 22:27:53 jteaton Exp $
  */
 
 /*                                                                            */
@@ -20,7 +20,7 @@
 
 void usage(const char *progname) {
     printf("%s [-k key_file] [-c cert_file] [-s key_for_cert_file][-h]\n\n", progname);
-    printf("\t key_file:\tencyption key, \n\t\t\tdefault is %s/HOSTNAME\n", PBC_CRYPT_KEY_PREFIX);
+    printf("\t key_file:\tencyption key, \n\t\t\tdefault is %s/HOSTNAME\n", PBC_PATH);
     printf("\t cert_file:\tcetificate file, \n\t\t\tdefault is %s\n", PBC_G_CERTFILE);
     printf("\t key_for_cert_file:\tkey for cetificate file, \n\t\t\tdefault is %s\n\n", PBC_G_KEYFILE);
     exit (1);

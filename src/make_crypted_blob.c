@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: make_crypted_blob.c,v 1.4 2002-06-03 20:50:01 jjminer Exp $
+    $Id: make_crypted_blob.c,v 1.5 2002-06-27 22:27:53 jteaton Exp $
  */
 
 
@@ -52,7 +52,7 @@ extern FILE *debugFile = NULL;
 void usage(const char *progname) {
     printf("%s [-o out_file] [-k c_key_file] [-h]\n\n", progname);
     printf("\t out_file:\twhere the output goes\n");
-    printf("\t c_key_file:\tdefault is %s\n\n", PBC_CRYPT_KEYFILE);
+    printf("\t c_key_file:\tdefault is %s/%d\n\n", PBC_PATH, get_my_hostname());
     exit (1);
 }
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 	GetEnvironmentVariable ("windir",SystemRoot,256);
         sprintf(key_file,"%s%s", SystemRoot,PBC_CRYPT_KEYFILE);
 #else
-        sprintf(key_file,"%s",PBC_CRYPT_KEYFILE);
+        sprintf(key_file,"%s/%s",PBC_PATH, get_my_hostname());
 #endif
 	fprintf(stderr,"Using c_key file: %s\n\n",key_file);
         c1_stuff = libpbc_init_crypt(key_file);

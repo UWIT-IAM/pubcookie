@@ -49,7 +49,7 @@ extern FILE *debugFile = NULL;
 void usage(const char *progname) {
     printf("%s -c crypted_file [-k c_key_file] [-h]\n\n", progname);
     printf("\t crypted_file:\tcrypted stuff to be decrypted.\n");
-    printf("\t c_key_file:\tdefault is %s/%s\n\n", PBC_CRYPT_KEY_PREFIX, get_my_hostname());
+    printf("\t c_key_file:\tdefault is %s/%s\n\n", PBC_PATH, get_my_hostname());
     exit (1);
 }
 
@@ -120,9 +120,9 @@ int main(int argc, char **argv) {
 	key_file = malloc(256);
 #if defined(WIN32)  
 	GetEnvironmentVariable ("windir",SystemRoot,256);
-        sprintf(key_file,"%s%s/%s", SystemRoot,PBC_CRYPT_KEY_PREFIX, get_my_hostname());
+        sprintf(key_file,"%s%s/%s", SystemRoot,PBC_PATH, get_my_hostname());
 #else
-        sprintf(key_file,"%s/%s",PBC_CRYPT_KEY_PREFIX, get_my_hostname());
+        sprintf(key_file,"%s/%s",PBC_PATH, get_my_hostname());
 #endif
 	printf("Using c_key file: %s\n\n",key_file);
         c1_stuff = libpbc_init_crypt(key_file);
