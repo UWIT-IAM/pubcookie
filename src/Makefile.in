@@ -6,9 +6,13 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 2.5 2002-07-09 01:17:02 jjminer Exp $
+# $Id: Makefile.in,v 2.6 2002-07-19 19:34:35 jjminer Exp $
 
 @SET_MAKE@
+
+
+MAKE_LOGIN=@MAKE_LOGIN@$(MAKE)
+MAKE_APACHE=@MAKE_APACHE@$(MAKE)
 
 include Makefile.settings
 
@@ -21,14 +25,14 @@ GEN_MAKEFILES=Makefile Makefile.login Makefile.settings Makefile.apxs
 all: index.cgi mod_pubcookie.so
 
 index.cgi:
-	$(MAKE) -f Makefile.login
+	$(MAKE_LOGIN) -f Makefile.login
 
 mod_pubcookie.so:
-	$(MAKE) -f Makefile.apxs
+	$(MAKE_APACHE) -f Makefile.apxs
 
 clean: libclean
-	$(MAKE) -f Makefile.login clean
-	$(MAKE) -f Makefile.apxs clean
+	$(MAKE_LOGIN) -f Makefile.login clean
+	$(MAKE_APACHE) -f Makefile.apxs clean
 
 libclean:
 	$(MAKE) -f Makefile.libpubcookie libclean
@@ -40,20 +44,20 @@ distclean:
 	$(FORCE_RM) $(CONFIGURE_FILES)
 
 install: libclean
-	$(MAKE) -f Makefile.login install
-	$(MAKE) -f Makefile.apxs install
+	$(MAKE_LOGIN) -f Makefile.login install
+	$(MAKE_APACHE) -f Makefile.apxs install
 
 dist:
-	$(MAKE) -f Makefile.login dist
-	$(MAKE) -f Makefile.apxs dist
+	$(MAKE_LOGIN) -f Makefile.login dist
+	$(MAKE_APACHE) -f Makefile.apxs dist
 
 tests:
-	$(MAKE) -f Makefile.login tests
+	$(MAKE_LOGIN) -f Makefile.login tests
 
 utils:
-	$(MAKE) -f Makefile.login utils
+	$(MAKE_LOGIN) -f Makefile.login utils
 
 test:
-	$(MAKE) -f Makefile.login test
+	$(MAKE_LOGIN) -f Makefile.login test
 
 # vim: set noet:

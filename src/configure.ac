@@ -1,18 +1,62 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.5 $)
+AC_REVISION($Revision: 2.6 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
+
+# Set default prefix to /usr/local/pubcookie
+AC_PREFIX_DEFAULT(/usr/local/pubcookie)
+
+if test "x$enable_apache" = "x"; then
+    enable_apache=yes
+fi
+
+# Before any tests, check to see if we are doing anything..
+
+AC_MSG_CHECKING([If I should build the apache module..])
+AC_ARG_ENABLE(apache,
+              AC_HELP_STRING([--enable-apache],
+                             [Enable building the apache module (default: on)]),
+              [ case "${enableval}" in
+                yes)
+                   AC_MSG_RESULT(yes)
+                   ;;
+                *)
+                   AC_MSG_RESULT(no)
+                   enable_apache=no
+                   AC_SUBST(MAKE_APACHE, "@echo Skipping ")
+                   ;;
+               esac ])
+
+if test "x$enable_login" = "x"; then
+    enable_login=no
+fi
+
+AC_MSG_CHECKING([If I should build the login cgi..])
+AC_ARG_ENABLE(login,
+              AC_HELP_STRING([--enable-login],
+                             [Enable building the login cgi (default: off)]),
+              [ case "${enableval}" in
+                yes)
+                   AC_MSG_RESULT(yes)
+                   enable_login=yes
+                   ;;
+                *)
+                   AC_MSG_RESULT(no)
+                   AC_SUBST(MAKE_LOGIN, "@echo Skipping ")
+                   ;;
+               esac ])
+
+if test "$enable_login" = "no" && test "$enable_apache" = "no"; then
+    AC_MSG_ERROR([the login server or apache module must be enabled], 1)
+fi
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
-
-# Set default prefix to /usr/local/pubcookie
-AC_PREFIX_DEFAULT(/usr/local/pubcookie)
 
 # Utilities
 AC_PATH_PROG(RM, rm, rm)
@@ -22,6 +66,9 @@ AC_PATH_PROG(TAR, tar, tar)
 AC_PATH_PROG(GZIP, gzip, gzip)
 AC_PATH_PROG(MKDIR, mkdir, mkdir)
 AC_PATH_PROG(MV, mv, mv)
+
+
+if test "$enable_apache" = "yes"; then
 
 if test "x$with_apxs" = "x"; then
     with_apxs=no
@@ -43,6 +90,8 @@ AC_ARG_WITH(apxs,
       PATH=$OLDPATH
       ;;
   esac ])
+
+fi # If they disabled apache, don't look for apxs.
 
 # Checks for libraries.
 AC_CHECK_LIB(socket,socket)
@@ -149,13 +198,14 @@ else
 fi
 
 # Login Server specific stuff.
-# This needs to be set up to not change the LIBS variable, it needs to be
-# AC_SUBST'd somewhere login server specific.
 
 OLDLIBS=$LIBS
 OLDLDFLAGS=$LDFLAGS
 OLDCPPFLAGS=$CPPFLAGS
 OLDCFLAGS=$CFLAGS
+
+
+if test "$enable_login" = yes; then
 
 AC_ARG_WITH(cgic-dir,
     AC_HELP_STRING([--with-cgic-dir=PATH], [CGIC lib/include directory]),
@@ -170,7 +220,7 @@ AC_ARG_WITH(cgic-dir,
 
 AC_CHECK_HEADERS([cgic.h])
 
-if test "$ac_cv_header_cgic_h"; then
+if test "$ac_cv_header_cgic_h" = "yes"; then
     LIBS="$LIBS -lcgic"
 fi
 
@@ -216,6 +266,8 @@ AC_ARG_ENABLE(shadow,
 if test "$enable_shadow" = "yes"; then
     AC_CHECK_HEADERS([shadow.h crypt.h])
 fi
+
+fi # End of stuff we skip if we're not enabling the login server.
 
 LOGINLIBS=$LIBS
 LOGINLDFLAGS=$LDFLAGS
