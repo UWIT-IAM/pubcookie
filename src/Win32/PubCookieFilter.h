@@ -4,10 +4,10 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.20 2003-05-06 23:51:19 willey Exp $
+//  $Id: PubCookieFilter.h,v 1.21 2003-06-04 02:08:51 jjminer Exp $
 //
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 pre-rc2"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0"
 
 typedef struct {
 	char				*g_certfile;
