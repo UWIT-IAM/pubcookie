@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.30 2004-04-13 23:58:27 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.31 2004-04-14 21:06:36 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -485,7 +485,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	
 	/* make the granting request */
 	sprintf(g_req_contents, 
-		"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%d", 
+		"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c", 
 		PBC_GETVAR_APPSRVID,
 		  p->server_hostname,   // Need full domain name 
 		PBC_GETVAR_APPID,
@@ -505,7 +505,9 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		PBC_GETVAR_SESSION_REAUTH,
 		  p->session_reauth,
 		PBC_GETVAR_PRE_SESS_TOK,
-		  pre_sess_tok);
+		  pre_sess_tok,
+          PBC_GETVAR_FLAG,
+		  p->no_prompt ? 'Q' : '0');
 
 	filterlog(p, LOG_DEBUG,"Granting Request:\n%s",g_req_contents); 
 
@@ -721,6 +723,10 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 		dwRead = sizeof (p->session_reauth);
 		RegQueryValueEx (hKey, "Session_Reauth",
 			NULL, NULL, (LPBYTE) &p->session_reauth, &dwRead);
+
+		dwRead = sizeof (p->no_prompt);
+		RegQueryValueEx (hKey, "No_Prompt",
+			NULL, NULL, (LPBYTE) &p->no_prompt, &dwRead);
 		
 		dwRead = sizeof (p->logout_action);
 			RegQueryValueEx (hKey, "Logout_Action",
@@ -806,6 +812,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	strcpy(p->pszPassword,"");
 	strcpy(p->force_reauth,PBC_NO_FORCE_REAUTH);
 	p->session_reauth = 0;
+	p->no_prompt = 0;
 	p->AuthType = AUTH_NONE;
 	p->logout_action = LOGOUT_NONE;
 	strcpy(p->Enterprise_Domain,(PBC_ENTRPRS_DOMAIN));
@@ -896,6 +903,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			"    Hard_Exp         : %d\n" 
 			"    Force_Reauth     : %s\n" 
 			"    Session_Reauth   : %1d\n" 
+			"    No_Prompt        :	%1d\n" 
 			"    Logout_Action    : %1d\n" 
 			"    AuthType         : %c\n" 
 			"    Default_Url      : %s\n" 
@@ -912,6 +920,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			p->hard_exp,
 			p->force_reauth,
 			p->session_reauth,
+			p->no_prompt,
 			p->logout_action,
 			p->AuthType,
 			p->default_url,

@@ -1,4 +1,4 @@
-#define NUM_DIRECTIVES 11
+#define NUM_DIRECTIVES 12
 #ifdef DIRECTIVE_INIT
 	wchar_t dbuffer[BUFFSIZE];
 
@@ -33,9 +33,9 @@
 	directive[4].name         = L"Logout_Action";
 	directive[4].type         = D_BOUND_INT;
 	directive[4].value        = L"0";
-        directive[4].description  = L"Logout action on this node:\n  0 : No logout action\n  1 : Clear session cookie and serve page; implicitly sets AuthType to ";
-        directive[4].description  += PBC_AUTHTYPE0;
-        directive[4].description  += L"\n  2 : Clear session cookie and redirect to login server\n  3 : Clear session cookie and redirect to login server to clear login cookie";
+    directive[4].description  = L"Logout action on this node:\n  0 : No logout action\n  1 : Clear session cookie and serve page; implicitly sets AuthType to ";
+    directive[4].description  += PBC_AUTHTYPE0;
+    directive[4].description  += L"\n  2 : Clear session cookie and redirect to login server\n  3 : Clear session cookie and redirect to login server to clear login cookie";
 	directive[4].bound_val[0] = L"0";
 	directive[4].bound_val[1] = L"1";
 	directive[4].bound_val[2] = L"2";
@@ -80,6 +80,14 @@
 	directive[10].description  += PBC_DEFAULT_APP_NAME;
 	directive[10].description  += L" if in root directory.";
 	directive[10].defined_in   = L"(Root Directory Value)";
+
+	directive[11].name         = L"No_Prompt";
+	directive[11].type         = D_BOUND_INT;
+	directive[11].value        = L"0";
+	directive[11].description  = L"Set to 1 to enable empty string for pubcookie user ID in the case of no login cookie.";
+	directive[11].bound_val[0] = L"0";
+	directive[11].bound_val[1] = L"1";
+	directive[11].defined_in   = L"(Program Default)";
 
 
 

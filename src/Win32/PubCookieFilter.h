@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.29 2004-03-24 22:08:52 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.30 2004-04-14 21:06:36 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
@@ -51,6 +51,7 @@ typedef struct {
 	char			instance_id[MAX_INSTANCE_ID+1];
 	TCHAR			strbuff[MAX_REG_BUFF];  //temporary buffer for libpbc_config_getstring calls
 	security_context      *sectext;
+	DWORD			no_prompt;
 
 } pubcookie_dir_rec;
 
