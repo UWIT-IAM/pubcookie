@@ -8,7 +8,10 @@ RSA_BASE=rsaref
 
 CFLAGS=-DAPACHE1_3 -DUSE_SECURID
 INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
-LIBS=-L$(SSL_BASE) -lssl -lcrypto -lRSAglue -L$(RSA_BASE) -lrsaref
+# remember RSAref?
+#LIBS=-L$(SSL_BASE) -lssl -lcrypto -lRSAglue -L$(RSA_BASE) -lrsaref
+LIBS=-L$(SSL_BASE) -lssl -lcrypto 
+
 all: mod_pubcookie.so
 
 mod_pubcookie.so: mod_pubcookie.c libpubcookie.c base64.c
