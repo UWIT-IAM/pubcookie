@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.60 2002-08-02 18:10:46 willey Exp $
+    $Id: pbc_config.h,v 1.61 2002-08-03 00:48:05 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -129,6 +129,7 @@ extern char PBC_G_KEYFILE[1024];
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_END_SESSION_REDIR_HANDLER "pubcookie-end-session-redir-handler"
+#define PBC_STOP_THE_SHOW_HANDLER "pubcookie-stop-the-show-handler"
 
 #define PBC_G_REQ_EXP (10 * 60)    /* shrug?  ten minutes? */
 #define PBC_PRE_S_EXP (10 * 60)    /* shrug?  ten minutes? */

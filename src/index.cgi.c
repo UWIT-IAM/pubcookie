@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.79 $
+ * $Revision: 1.80 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2230,7 +2230,7 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     new->version = (char *) (*cookie_data).broken.version;
     new->type = (*cookie_data).broken.type;
     new->creds = (*cookie_data).broken.creds;
-    new->serial = (*cookie_data).broken.serial;
+    new->pre_sess_token = (*cookie_data).broken.pre_sess_token;
     new->appsrvid = (char *) (*cookie_data).broken.appsrvid;
     new->appid = (char *) (*cookie_data).broken.appid;
     new->create_ts = (*cookie_data).broken.create_ts;

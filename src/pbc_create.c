@@ -2,13 +2,14 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_create.c,v 1.14 2002-07-05 23:35:48 jjminer Exp $
+    $Id: pbc_create.c,v 1.15 2002-08-03 00:48:05 willey Exp $
  */
 
 /*                                                                            */
 /* arguments come in via standard in and the cookie is put out on stdout      */
 /*                                                                            */
-/* args are: user appsrvid appid type creds serial crypt_file cert_key_file   */
+/* args are: user appsrvid appid type creds pre_sess_token                    */
+/*             crypt_file cert_key_file                                       */
 /*    anything too big is just truncated, no support for defaults or anything */
 /*                                                                            */
 
@@ -51,7 +52,7 @@ int main(int argc, char **argv) {
     unsigned char 	appid[PBC_APP_ID_LEN];
     unsigned char 	type;
     unsigned char 	creds;
-    int 		serial;
+    int 		pre_sess_token;
 
     unsigned char	crypt_keyfile[PBC_1K];
     unsigned char	cert_keyfile[PBC_1K];
@@ -68,7 +69,7 @@ int main(int argc, char **argv) {
 		       appid_buf,
 		       &type,
 		       &creds,
-		       &serial,
+		       &pre_sess_token,
 		       crypt_keyfile,
 		       cert_keyfile) != 8 ) {
 	exit(1);
@@ -90,7 +91,7 @@ int main(int argc, char **argv) {
     ctx_plus = libpbc_sign_init( (char *) cert_keyfile);
 
     /* go get the cookie */
-    cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie(user, type, creds, pre_sess_token, appsrvid, appid, ctx_plus, c_stuff);
 
     printf("%s", cookie);
     

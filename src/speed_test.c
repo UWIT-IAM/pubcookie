@@ -1,5 +1,5 @@
 /*
-    $Id: speed_test.c,v 1.4 2002-07-05 23:35:48 jjminer Exp $
+    $Id: speed_test.c,v 1.5 2002-08-03 00:48:05 willey Exp $
  */
 
 /* Copyright 1999, University of Washington.  All rights reserved. */
@@ -125,7 +125,7 @@ void usage(const char *progname) {
 int main(int argc, char **argv) {
     unsigned char type;
     unsigned char creds;
-    int serial=2147483647;
+    int pre_sess_token=21483647;
     char user[PBC_USER_LEN];
     unsigned char appsrvid[PBC_APPSRV_ID_LEN];
     unsigned char appid[PBC_APP_ID_LEN];
@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
     start_time();
 
     for( i = 1; i <= iterations; i++ ) {
-        cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
+        cookie = libpbc_get_cookie(user, type, creds, pre_sess_token, appsrvid, appid, s_ctx_plus, c_stuff);
 
         if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
             printf("test failed: cookie couldn't be unbundled\n");

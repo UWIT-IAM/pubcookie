@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.32 $
+ * $Revision: 1.33 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -63,7 +63,7 @@ typedef struct {
     char	type;
     time_t	create_ts;
     time_t	expire_ts;
-    int		serial;
+    int		pre_sess_token;
     int		next_securid;
     int		session_reauth;
     int		duration;
@@ -118,7 +118,6 @@ login_rec *get_query();
 char *check_login(login_rec *, login_rec *);
 char *check_l_cookie(login_rec *, login_rec *);
 void print_redirect_page(login_rec *, login_rec *);
-int get_next_serial();
 char *url_encode();
 char *get_cookie_created(char *);
 char *decode_granting_request(char *, char **peerp);

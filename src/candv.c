@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.18 2002-07-05 23:35:48 jjminer Exp $
+    $Id: candv.c,v 1.19 2002-08-03 00:48:05 willey Exp $
  */
 
 /*                                                                            */
@@ -53,7 +53,7 @@ void usage(const char *progname) {
 int main(int argc, char **argv) {
     unsigned char type;
     unsigned char creds;
-    int serial=2147483647;
+    int pre_sess_token=2147483647;
     char user[PBC_USER_LEN];
     unsigned char appsrvid[PBC_APPSRV_ID_LEN];
     unsigned char appid[PBC_APP_ID_LEN];
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
         v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
 
     printf("cook up a cookie\n");
-    cookie = libpbc_get_cookie( (unsigned char *) user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie( (unsigned char *) user, type, creds, pre_sess_token, appsrvid, appid, s_ctx_plus, c_stuff);
 
     if ( ! (cookie_data=libpbc_unbundle_cookie( (char *) cookie, v_ctx_plus, c_stuff)) ) {
         printf("test failed: cookie couldn't be unbundled\n");
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 	printf("version is:\t>%s<\n", (*cookie_data2).broken.version);
 	printf("type is:\t>%c<\n", (*cookie_data2).broken.type);
 	printf("cred is:\t>%c<\n", (*cookie_data2).broken.creds);
-	printf("serial is:\t>%d<\n", (*cookie_data2).broken.serial);
+	printf("pre_sess_token is:\t>%d<\n", (*cookie_data2).broken.pre_sess_token);
 	printf("appsrvid is:\t>%s<\n", (*cookie_data2).broken.appsrvid);
 	printf("appid is:\t>%s<\n", (*cookie_data2).broken.appid);
 	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.create_ts));
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
     } 
 
     printf("cook up another cookie\n");
-    cookie = libpbc_get_cookie( (unsigned char *) user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie( (unsigned char *) user, type, creds, pre_sess_token, appsrvid, appid, s_ctx_plus, c_stuff);
 
     printf("verify and show me the cookie\n");
     if ( ! (cookie_data=libpbc_unbundle_cookie( (char *) cookie, v_ctx_plus, c_stuff)) ) {
@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 	printf("version is:\t>%s<\n", (*cookie_data).broken.version);
 	printf("type is:\t>%c<\n", (*cookie_data).broken.type);
 	printf("cred is:\t>%c<\n", (*cookie_data).broken.creds);
-	printf("serial is:\t>%d<\n", (*cookie_data).broken.serial);
+	printf("pre_sess_token is:\t>%d<\n", (*cookie_data).broken.pre_sess_token);
 	printf("appsrvid is:\t>%s<\n", (*cookie_data).broken.appsrvid);
 	printf("appid is:\t>%s<\n", (*cookie_data).broken.appid);
 	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data).broken.create_ts));

@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.34 2002-08-02 00:52:44 willey Exp $
+    $Id: libpubcookie.c,v 2.35 2002-08-03 00:48:05 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -923,7 +923,7 @@ unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data)
     *ptr = (*cookie_data).broken.creds;
     ptr++;
 
-    temp = htonl((*cookie_data).broken.serial);
+    temp = htonl((*cookie_data).broken.pre_sess_token);
     memcpy(ptr, &temp, sizeof(int));
     ptr += sizeof(int);
 
@@ -1084,7 +1084,7 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 	                  unsigned char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
-			  int serial,
+			  int pre_sess_token,
                           time_t expire,
 			  unsigned char *appsrvid,
 			  unsigned char *appid) 
@@ -1096,7 +1096,7 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
     strncpy((char *)(*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
-    (*cookie_data).broken.serial = serial;
+    (*cookie_data).broken.pre_sess_token = pre_sess_token;
     (*cookie_data).broken.create_ts = time(NULL);
     (*cookie_data).broken.last_ts = expire;
     strncpy((char *)(*cookie_data).broken.appsrvid, (const char *)appsrvid, PBC_APPSRV_ID_LEN-1);
@@ -1203,7 +1203,7 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 unsigned char *libpbc_get_cookie_p(pool *p, unsigned char *user, 
 				   unsigned char type, 
 				   unsigned char creds,
-				   int serial,
+				   int pre_sess_token,
 				   unsigned char *appsrvid,
 				   unsigned char *appid,
 				   const char *peer)
@@ -1211,7 +1211,7 @@ unsigned char *libpbc_get_cookie_p(pool *p, unsigned char *user,
 unsigned char *libpbc_get_cookie_np(unsigned char *user, 
 				    unsigned char type, 
 				    unsigned char creds,
-				    int serial,
+				    int pre_sess_token,
 				    unsigned char *appsrvid,
 				    unsigned char *appid,
 				    const char *peer)
@@ -1221,7 +1221,7 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
     return(libpbc_get_cookie_with_expire(user,
 					 type,
 					 creds,
-				    	 serial,
+				    	 pre_sess_token,
 					 time(NULL),
 					 appsrvid,
 					 appid,
@@ -1240,7 +1240,7 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
 unsigned char *libpbc_get_cookie_with_expire_p(pool *p, unsigned char *user, 
 					       unsigned char type, 
 					       unsigned char creds,
-					       int serial,
+					       int pre_sess_token,
 					       time_t expire,
 					       unsigned char *appsrvid,
 					       unsigned char *appid,
@@ -1249,7 +1249,7 @@ unsigned char *libpbc_get_cookie_with_expire_p(pool *p, unsigned char *user,
 unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user, 
 						unsigned char type, 
 						unsigned char creds,
-						int serial,
+						int pre_sess_token,
 						time_t expire,
 						unsigned char *appsrvid,
 						unsigned char *appid,
@@ -1264,7 +1264,7 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
-    libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, expire, appsrvid, appid);
+    libpbc_populate_cookie_data(cookie_data, user, type, creds, pre_sess_token, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     pbc_free(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, peer);
@@ -1330,7 +1330,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in,
 
     (*cookie_data).broken.last_ts = ntohl((*cookie_data).broken.last_ts);
     (*cookie_data).broken.create_ts = ntohl((*cookie_data).broken.create_ts);
-    (*cookie_data).broken.serial = ntohl((*cookie_data).broken.serial);
+    (*cookie_data).broken.pre_sess_token = ntohl((*cookie_data).broken.pre_sess_token);
 
     return cookie_data;
 }
@@ -1401,16 +1401,19 @@ int libpbc_check_exp(time_t fromc, int exp)
  */
 int libpbc_random_int()
 {
-    int i;
-    unsigned long err;
+    unsigned char 	buf[16];
+    int 		i;
+    unsigned long 	err;
 
-    if( RAND_bytes((char *)i, sizeof(int)) == 0 ) {
+
+    if( RAND_bytes(buf, sizeof(int)) == 0 ) {
         while( (err=ERR_get_error()) )
             pbc_log_activity(PBC_LOG_ERROR, 
             		"OpenSSL error getting random bytes: %lu", err);
         return(-1);
     }
 
+    bcopy(&buf, &i, sizeof(int));
     return(i);
 
 }

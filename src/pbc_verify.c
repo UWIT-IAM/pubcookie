@@ -2,7 +2,7 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_verify.c,v 1.13 2002-07-05 23:35:48 jjminer Exp $
+    $Id: pbc_verify.c,v 1.14 2002-08-03 00:48:05 willey Exp $
  */
 
 /*                                                                            */
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     printf("version: %s\n", (*cookie_data).broken.version);
     printf("type: %c\n", (*cookie_data).broken.type);
     printf("creds: %c\n", (*cookie_data).broken.creds);
-    printf("serial: %d\n", (*cookie_data).broken.serial);
+    printf("pre_sess_token: %d\n", (*cookie_data).broken.pre_sess_token);
     printf("appsrvid: %s\n", (*cookie_data).broken.appsrvid);
     printf("appid: %s\n", (*cookie_data).broken.appid);
     printf("create_ts: %d\n", (int)(*cookie_data).broken.create_ts);

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.91 2002-08-02 00:52:44 willey Exp $
+    $Id: mod_pubcookie.c,v 1.92 2002-08-03 00:48:05 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -90,9 +90,6 @@ typedef struct {
   md_context_plus       *session_verf_ctx_plus;
   md_context_plus       *granting_verf_ctx_plus;
   crypt_stuff           *c_stuff;
-  int                   serial_g_seen;
-  int                   serial_s_seen;
-  int                   serial_s_sent;
   int                   dirdepth;
   int                   noblank;
   char			*login;
@@ -111,6 +108,7 @@ typedef struct {
   char          *end_session;
   int           super_debug;
   int           redir_reason_no;
+  char          *stop_message;
   int           session_reauth;
   unsigned char *addl_requests;
 
@@ -129,9 +127,6 @@ void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
 		session_verf_ctx_plus: %s\n\
 		granting_verf_ctx_plus: %s\n\
 		c_stuff: %s\n\
-		serial_g_seen: %d\n\
-		serial_s_seen: %d\n\
-		serial_s_sent: %d\n\
 		dirdepth: %d\n\
 		noblank: %d\n\
 		login: %s\n\
@@ -144,9 +139,6 @@ void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
   		(scfg->session_verf_ctx_plus == NULL ? "unset" : "set"),
   		(scfg->granting_verf_ctx_plus == NULL ? "unset" : "set"),
   		(scfg->c_stuff == NULL ? "unset" : "set"),
-		scfg->serial_g_seen, 
-		scfg->serial_s_seen, 
-		scfg->serial_s_sent, 
 		scfg->dirdepth, 
 		scfg->noblank, 
   		(scfg->login == NULL ? "" : scfg->login),
@@ -168,6 +160,7 @@ void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
 		super_debug: %d\n\
                 end_session: %s\n\
                 redir_reason_no: %d\n\
+                stop_message: %s\n\
                 session_reauth: %d",
   		cfg->inact_exp,
   		cfg->hard_exp,
@@ -179,11 +172,16 @@ void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
 		cfg->super_debug, 
   		(cfg->end_session == NULL ? "" : (char *)cfg->end_session),
   		cfg->redir_reason_no,
+  		(cfg->stop_message == NULL ? "" : (char *)cfg->stop_message),
   		cfg->session_reauth);
 
 }
 
-/*                                                                            */
+/**
+ * read the post stuff and spit it back out
+ * @param r reuquest_rec
+ * @return int 
+ */
 int put_out_post(request_rec *r) {
    char argsbuffer[HUGE_STRING_LEN];
    int retval;
@@ -202,7 +200,7 @@ int put_out_post(request_rec *r) {
             ap_reset_timeout(r);
             if (ap_rwrite(argsbuffer, len_read, r) < len_read) {
                 /* something went wrong writing, chew up the rest */
-                while (ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
+                while(ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
                     /* dump it */
                 }
                 break;
@@ -218,15 +216,18 @@ int put_out_post(request_rec *r) {
 /**
  * get a random int used to bind the granting cookie and pre-session
  * @returns random int or -1 for error
+ * but, what do we do about that error?
  */
 int get_pre_s_token(request_rec *r) {
     int i;
     
-    if( (i = libpbc_random_int()) < 0 ) {
+    if( (i = libpbc_random_int()) == -1 ) {
         ap_log_rerror(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, r, 
 		"get_pre_s_token: OpenSSL error");
     }
 
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r, 
+		"get_pre_s_token: token is %d", i);
     return(i);
 
 }
@@ -265,8 +266,8 @@ int check_end_session(request_rec *r) {
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
-    end_session = cfg->end_session;
 
+    end_session = cfg->end_session;
 
     /* check list of end session args */
     while( end_session != NULL && *end_session != '\0' &&
@@ -399,7 +400,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
                                  (unsigned char *)r->connection->user, 
                                  PBC_COOKIE_TYPE_S, 
 				 cfg->creds, 
-				 scfg->serial_s_sent++, 
+				 23, 
 				 (unsigned char *)appsrvid(r), 
 				 appid(r), 
 				 NULL);
@@ -594,6 +595,50 @@ static int do_end_session_redirect_handler(request_rec *r) {
     return(OK);
 }
 
+/**
+ * give an error message and stop the transaction, i.e. don't loop
+ * @param r reuquest_rec
+ * @return OK
+ * this is kinda bogus since it looks like a successful request but isn't
+ * but it's far less bogus than looping between the WLS and AS forever ...
+ */
+static int stop_the_show_handler(request_rec *r)
+{
+    pubcookie_dir_rec    *cfg;
+    pubcookie_server_rec *scfg;
+    char                 *refresh;
+
+    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
+                                         &pubcookie_module);
+    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, 					 &pubcookie_module);
+
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+        "stop_the_show_handler: hello");
+      
+    r->content_type = "text/html";
+    clear_granting_cookie(r);
+    clear_pre_session_cookie(r);
+    clear_session_cookie(r);
+    set_no_cache_headers(r);
+
+    ap_send_http_header(r);
+
+    ap_rprintf(r, "<HTML>\n");
+    ap_rprintf(r, " <HEAD>\n");
+    ap_rprintf(r, "  <TITLE>A problem has occurred</TITLE>\n");
+    ap_rprintf(r, " </HEAD>\n");
+    ap_rprintf(r, " <BODY BGCOLOR=\"#FFFFFF\">\n");
+    ap_rprintf(r, "  <H1>A problem has occurred</H1>\n");
+    ap_rprintf(r, "  <P>%s</P>\n", cfg->stop_message);
+    ap_rprintf(r, "  <P>Hitting Refresh will attempt to ");
+    ap_rprintf(r, "  resubmit your request</P>\n");
+    ap_rprintf(r, " </BODY>\n");
+    ap_rprintf(r, "</HTML>\n");
+
+    return(OK);
+
+}
+
 request_rec *top_rrec (request_rec *r) {
     request_rec *mr = r;
 
@@ -670,14 +715,15 @@ int blank_cookie(request_rec *r, char *name) {
 
 /* Herein we deal with the redirect of the request to the login server        */
 /*    if it was only that simple ...                                          */
-static int auth_failed(request_rec *r) {
-    char                 *tmp = ap_palloc(r->pool, PBC_1K);
-    char                 *refresh = ap_palloc(r->pool, PBC_1K);
-    char                 *pre_s = ap_palloc(r->pool, PBC_1K);
-    char                 *pre_s_cookie = ap_palloc(r->pool, PBC_1K);
-    char                 *g_req_cookie = ap_palloc(r->pool, PBC_4K);
-    char                 *g_req_contents = ap_palloc(r->pool, PBC_4K);
-    char                 *e_g_req_contents = ap_palloc(r->pool, PBC_4K);
+static int auth_failed_handler(request_rec *r) {
+    pool                 *p = r->pool;
+    char                 *tmp = ap_palloc(p, PBC_1K);
+    char                 *refresh = ap_palloc(p, PBC_1K);
+    char                 *pre_s = ap_palloc(p, PBC_1K);
+    char                 *pre_s_cookie = ap_palloc(p, PBC_1K);
+    char                 *g_req_cookie = ap_palloc(p, PBC_4K);
+    char                 *g_req_contents = ap_palloc(p, PBC_4K);
+    char                 *e_g_req_contents = ap_palloc(p, PBC_4K);
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
     const char *ctype = ap_table_get(r->headers_in, "Content-type");
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
@@ -703,15 +749,16 @@ static int auth_failed(request_rec *r) {
                                          &pubcookie_module);
 
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
-        "auth_failed: hello");
+        "auth_failed_handler: hello");
 
     /* reset these dippy flags */
     cfg->failed = 0;
 
     /* deal with GET args */
     if ( r->args ) {
-        args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
-        libpbc_base64_encode( (unsigned char *) r->args, (unsigned char *) args, strlen(r->args));
+        args = ap_pcalloc (p, (strlen (r->args) + 3) / 3 * 4 + 1);
+        libpbc_base64_encode( (unsigned char *) r->args, 
+			      (unsigned char *) args, strlen(r->args));
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
             "GET args before encoding length %d, string: %s", 
             strlen(r->args), r->args);
@@ -720,7 +767,7 @@ static int auth_failed(request_rec *r) {
             strlen(args), args);
     }
     else
-        args = ap_pstrdup(r->pool, "");
+        args = ap_pstrdup(p, "");
 
     r->content_type = "text/html";
 
@@ -729,17 +776,22 @@ static int auth_failed(request_rec *r) {
     if ( r->server->port != 80 )
         if ( r->server->port != 443 )
             /* because of multiple passes through don't use r->hostname() */
-            host = ap_psprintf(r->pool, 
+            host = ap_psprintf(p, 
 			"%s:%d", ap_get_server_name(r), r->server->port);
 
     if ( ! host ) 
         /* because of multiple passes through on www don't use r->hostname() */
-        host = ap_pstrdup(r->pool, ap_get_server_name(r));
+        host = ap_pstrdup(p, ap_get_server_name(r));
 
     /* To knit the referer history together */
     referer = ap_table_get(r->headers_in, "Referer");
 
-    pre_sess_tok = get_pre_s_token(r);
+    if( (pre_sess_tok=get_pre_s_token(r)) == -1 ) {
+        /* this is weird since we're already in a handler */
+        cfg->stop_message = ap_pstrdup(p, "Couldn't get pre session token");
+        stop_the_show_handler(r);
+        return(OK);
+    }
 
     /* make the granting request */
     /* the granting request is a cookie that we set  */
@@ -764,7 +816,7 @@ static int auth_failed(request_rec *r) {
           PBC_GETVAR_ARGS, 
           args,
           PBC_GETVAR_REAL_HOST,
-          ap_get_local_host(r->pool),
+          ap_get_local_host(p),
           PBC_GETVAR_APPSRV_ERR,
           cfg->redir_reason_no,
           PBC_GETVAR_FILE_UPLD,
@@ -780,9 +832,9 @@ static int auth_failed(request_rec *r) {
 
     if (cfg->addl_requests) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
-	    "auth_failed(): adding %s", cfg->addl_requests);
+	    "auth_failed_handler: adding %s", cfg->addl_requests);
 
-	g_req_contents = ap_pstrcat(r->pool, g_req_contents, 
+	g_req_contents = ap_pstrcat(p, g_req_contents, 
 				    cfg->addl_requests, NULL);
     }
 
@@ -807,7 +859,7 @@ static int auth_failed(request_rec *r) {
     /*   turned off.  the POST info is in a FORM in  */
     /*   the body of the redirect                    */
 
-    e_g_req_contents = ap_palloc(r->pool, (strlen(g_req_contents) + 3) / 3 * 4);
+    e_g_req_contents = ap_palloc(p, (strlen(g_req_contents) + 3) / 3 * 4);
 #ifdef PHASEII
     libpbc_encrypt_cookie(g_req_contents, tmp, scfg->c_stuff, strlen(g_req_contents));
     libpbc_base64_encode(tmp, e_g_req_contents, strlen(g_req_contents));
@@ -827,7 +879,7 @@ static int auth_failed(request_rec *r) {
         "g_req length %d cookie: %s", strlen(g_req_cookie), g_req_cookie);
 
     /* make the pre-session cookie */
-    pre_s = (char *) libpbc_get_cookie_p(r->pool, 
+    pre_s = (char *) libpbc_get_cookie_p(p, 
                                    (unsigned char *) "presesuser",
                                    PBC_COOKIE_TYPE_PRE_S, 
                                    PBC_CREDS_NONE, 
@@ -836,14 +888,7 @@ static int auth_failed(request_rec *r) {
                                    appid(r), 
 				   NULL);
 		
-{
-pbc_cookie_data     *cookie_data = NULL;
-pool *p = r->pool;
-cookie_data = libpbc_unbundle_cookie(pre_s, NULL);
-fprintf(stderr, "BARNEY: serial: %d\n", (*cookie_data).broken.serial);
-}
-
-    pre_s_cookie = ap_psprintf(r->pool, 
+    pre_s_cookie = ap_psprintf(p, 
               			"%s=%s; path=%s;%s", 
               			PBC_PRE_S_COOKIENAME,
               			pre_s, 
@@ -869,10 +914,10 @@ fprintf(stderr, "BARNEY: serial: %d\n", (*cookie_data).broken.serial);
                     secure);
         ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
-            "auth_failed: setting Form/Multipart cookie");
+            "auth_failed_handler: setting Form/Multipart cookie");
     }
 
-    refresh_e = ap_os_escape_path(r->pool, refresh, 0);
+    refresh_e = ap_os_escape_path(p, refresh, 0);
 #ifdef REDIRECT_IN_HEADER
 /* warning, this will break some browsers */
     if ( !(tenc || lenp) )
@@ -905,16 +950,18 @@ fprintf(stderr, "BARNEY: serial: %d\n", (*cookie_data).broken.serial);
 #endif
     }
 
-    return OK;
+    return(OK);
 
 }
 
 /*                                                                            */
-static int bad_user(request_rec *r) {
+static int bad_user_handler(request_rec *r) {
+
   r->content_type = "text/html";
   ap_send_http_header(r);
   ap_rprintf(r, "Unauthorized user.");
-  return OK;
+  return(OK);
+
 }
 
 /*                                                                            */
@@ -925,6 +972,7 @@ static int is_pubcookie_auth(pubcookie_dir_rec *cfg) {
   else {
     return FALSE;
   }
+
 }
 
 /* figure out the session cookie name                                         */
@@ -1184,7 +1232,7 @@ int get_pre_s_from_cookie(request_rec *r)
 	return -1;
     }
  
-    return((*cookie_data).broken.serial);
+    return((*cookie_data).broken.pre_sess_token);
 
 }
 
@@ -1332,12 +1380,12 @@ static int pubcookie_user(request_rec *r) {
 
     /* check pre_session cookie */
     pre_sess_from_cookie = get_pre_s_from_cookie(r);
-    if( (*cookie_data).broken.serial != pre_sess_from_cookie ) {
+    if( (*cookie_data).broken.pre_sess_token != pre_sess_from_cookie ) {
       ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
       	"pubcookie_user, pre session tokens mismatched, uri: %s", r->uri);
       ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
       	"pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s", 
-	  (*cookie_data).broken.serial, pre_sess_from_cookie, r->uri);
+	  (*cookie_data).broken.pre_sess_token, pre_sess_from_cookie, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
       return OK;
@@ -2003,9 +2051,10 @@ command_rec pubcookie_commands[] = {
 
 /*                                                                            */
 handler_rec pubcookie_handlers[] = {
-    { PBC_AUTH_FAILED_HANDLER, auth_failed},
+    { PBC_STOP_THE_SHOW_HANDLER, stop_the_show_handler},
+    { PBC_AUTH_FAILED_HANDLER, auth_failed_handler},
     { PBC_END_SESSION_REDIR_HANDLER, do_end_session_redirect_handler},
-    { PBC_BAD_USER_HANDLER, bad_user},
+    { PBC_BAD_USER_HANDLER, bad_user_handler},
     { NULL }
 };
 

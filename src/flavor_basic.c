@@ -135,6 +135,8 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 		PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
 		PBC_GETVAR_SESSION_REAUTH, l->session_reauth);
+    print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
+		PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
 		"first_kiss", (l->first_kiss ? l->first_kiss : "") );
     {
