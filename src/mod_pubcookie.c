@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.164 2004-12-22 22:14:54 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.165 2004-12-28 23:27:26 fox Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -1465,8 +1465,12 @@ static int pubcookie_user_hook (request_rec * r)
     if (!ap_auth_type (r))
         return DECLINED;
 
-    /* bail if the request is for favicon.ico */
+    /* pass if the request is for favicon.ico */
     if (!strncasecmp (r->unparsed_uri, "/favicon.ico", 12))
+        return OK;
+
+    /* pass if the request is for our post-reply */
+    if (!strcasecmp (r->unparsed_uri, scfg->post_reply_url))
         return OK;
 
     /* if it's basic auth then it's not pubcookie */
@@ -2050,6 +2054,10 @@ static int pubcookie_authz_hook (request_rec * r)
 
     /* pass if the request is for favicon.ico */
     if (!strncasecmp (r->unparsed_uri, "/favicon.ico", 12))
+        return OK;
+
+    /* pass if the request is our post-reply */
+    if (!strcasecmp (r->unparsed_uri, scfg->post_reply_url))
         return OK;
 
     /* a failed noprompt login is all we check for */
