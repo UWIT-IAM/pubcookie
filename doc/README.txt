@@ -1,20 +1,20 @@
 
-Pubcookie documentation lives at:
+
+Pubcookie / Weblogin Authentication Service documentation lives at:
 
 http://www.washington.edu/computing/pubcookie/
 
-Installation specific docs live at:
+Apache module (mod_pubcookie) Installation specific docs live at:
 
 http://www.washington.edu/computing/pubcookie/apache/install.html
 
-The Pubcookie distribution contains the following files: 
-	README - most recent notes
-       	CHANGES - version history
-       	pubcookie.txt - a pointer to this document
-       	Makefile - makefile for test applications
+
+The Apache module (mod_pubcookie) distribution contains the following files: 
+	README - this file
+       	CHANGES.mod_pubcookie - version history
+       	LICENSE - you hav the right ...
        	Makefile.tmpl - makefile template for mod_pubcookie
        	Makefile.axps - makefile to make mod_pubcookie as a DSO object
-       	pubcookie_granting.cert - the current granting certificate
        	base64.c
        	candv.c
        	dtest.c
@@ -24,7 +24,27 @@ The Pubcookie distribution contains the following files:
        	pbc_config.h
        	pbc_version.h
        	pubcookie.h
-       	test_local_c_key.c
 
+The WAS login server distribution contains the following files:
+	CHANGES.login - version history
+	INSTALL.login - installation docs
+	Makefile.index.cgi
+	README - this file
+       	LICENSE - you hav the right ...
+	base64.c
+	index.cgi.c
+	index.cgi.h
+	index.cgi_krb.c
+	index.cgi_securid.c
+	libpubcookie.c
+	libpubcookie.h
+	make_crypted_bit.c
+	mkc_key_generic.c
+	mkc_key_local.c
+	pbc_config.h
+	pbc_version.h
+	pubcookie.h
+	securid.c
+	securid.h
 
-20Mar2000 steve
+24Mar2001 steve
