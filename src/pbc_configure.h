@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: pbc_configure.h,v 2.3 2003-05-06 23:51:19 willey Exp $
+  $Id: pbc_configure.h,v 2.4 2003-07-02 23:27:05 willey Exp $
  */
 
 #ifndef INCLUDED_PBC_CONFIGURE_H
@@ -21,22 +21,22 @@
 #include "pbc_myconfig.h"
 
 /* callbacks for the configure subsystem */
-typedef int config_initialize(pool *p, void *alt_config, 
+typedef int config_initialize(apr_pool_t *p, void *alt_config, 
                                       const char *ident);
-typedef int config_getint(pool *p, const char *key, int def);
-typedef char** config_getlist(pool *p, const char *key);
-typedef const char* config_getstring(pool *p, const char *key, const char *def);
-typedef int config_getswitch(pool *p, const char *key, int def);
+typedef int config_getint(apr_pool_t *p, const char *key, int def);
+typedef char** config_getlist(apr_pool_t *p, const char *key);
+typedef const char* config_getstring(apr_pool_t *p, const char *key, const char *def);
+typedef int config_getswitch(apr_pool_t *p, const char *key, int def);
 
 /**
  *   backward compatibility interface
  *   please update code to use pbc_configure_init instead
  */
-void libpbc_config_init(pool *p, const char *alt_config, const char *ident);
+void libpbc_config_init(apr_pool_t *p, const char *alt_config, const char *ident);
 
 /**
  * Initializes the configuration system.
- * @param pool Apache memory pool
+ * @param apr_pool_t Apache memory pool
  * @param ident the identification of this process
  * @param initialize function to call to set up the config subsystem
  * @param initarg generic argument to pass to the initializer
@@ -45,7 +45,7 @@ void libpbc_config_init(pool *p, const char *alt_config, const char *ident);
  * @param s function to get a string
  * @param w function to get a switch
  */
-void pbc_configure_init(pool *p, const char *ident,
+void pbc_configure_init(apr_pool_t *p, const char *ident,
                         config_initialize *initialize,
                         void *initarg,
                         config_getint *i,
@@ -53,9 +53,9 @@ void pbc_configure_init(pool *p, const char *ident,
                         config_getstring *s,
                         config_getswitch *w);
 
-int libpbc_config_getint(pool *p, const char *key, int def);
-char** libpbc_config_getlist(pool *p, const char *key);
-const char* libpbc_config_getstring(pool *p, const char *key, const char *def);
-int libpbc_config_getswitch(pool *p, const char *key, int def);
+int libpbc_config_getint(apr_pool_t *p, const char *key, int def);
+char** libpbc_config_getlist(apr_pool_t *p, const char *key);
+const char* libpbc_config_getstring(apr_pool_t *p, const char *key, const char *def);
+int libpbc_config_getswitch(apr_pool_t *p, const char *key, int def);
 
 #endif /* INCLUDED_PBC_CONFIGURE_H */

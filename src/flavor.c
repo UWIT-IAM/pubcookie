@@ -6,7 +6,7 @@
 /** @file flavor.c
  * Flavor generic code
  *
- * $Id: flavor.c,v 1.9 2003-07-02 22:04:04 willey Exp $
+ * $Id: flavor.c,v 1.10 2003-07-02 23:27:04 willey Exp $
  */
 
 
@@ -15,7 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+typedef void apr_pool_t;
 
 #include "flavor.h"
 
@@ -38,7 +38,7 @@ static struct login_flavor *flavors[] = {
     NULL
 }; /*! list of available flavors */
 
-struct login_flavor *get_flavor(pool *p, const char id)
+struct login_flavor *get_flavor(apr_pool_t *p, const char id)
 {
     struct login_flavor **f = flavors;
 

@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.30 2003-07-02 23:22:40 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.31 2003-07-02 23:27:05 willey Exp $
  */
 
 
@@ -15,17 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
-#else
-typedef void pool;
-#endif
+#include "apache.h"
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -86,8 +76,8 @@ struct configlist {
 static struct configlist *configlist;
 static int nconfiglist;
 
-static void myconfig_read(pool *p, const char *alt_config);
-static void fatal(pool *p, const char *s, int ex);
+static void myconfig_read(apr_pool_t*p, const char *alt_config);
+static void fatal(apr_pool_t*p, const char *s, int ex);
 
 #ifdef WIN32
 # include "Win32/debug.h"
@@ -100,7 +90,7 @@ static void fatal(pool *p, const char *s, int ex);
  * @param p memory pool
  * @param alt_config different config file to read
  */
-int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
+int libpbc_myconfig_init(apr_pool_t*p, const char *alt_config, const char *ident)
 {
     const char *val;
     int umaskval = 0;
@@ -133,7 +123,7 @@ int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
     return 0;
 }
 
-const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
+const char *libpbc_myconfig_getstring(apr_pool_t*p, const char *key, const char *def)
 {
     int opt;
 
@@ -153,7 +143,7 @@ const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
 
 #else /*WIN32*/
 
-const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
+const char *libpbc_myconfig_getstring(apr_pool_t*p, const char *key, const char *def)
 {
     int opt;
     
@@ -167,7 +157,7 @@ const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
 #endif
 
 /* output must be free'd.  (no subpointers should be free'd.) */
-char **libpbc_myconfig_getlist(pool *p, const char *key)
+char **libpbc_myconfig_getlist(apr_pool_t*p, const char *key)
 {
     const char *tval = libpbc_myconfig_getstring(p, key, NULL);
     char *val;
@@ -208,7 +198,7 @@ char **libpbc_myconfig_getlist(pool *p, const char *key)
     return ret;
 }
 
-int libpbc_myconfig_getint(pool *p, const char *key, int def)
+int libpbc_myconfig_getint(apr_pool_t*p, const char *key, int def)
 {
     const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
     
@@ -218,7 +208,7 @@ int libpbc_myconfig_getint(pool *p, const char *key, int def)
     return atoi(val);
 }
 
-int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
+int libpbc_myconfig_getswitch(apr_pool_t*p, const char *key, int def)
 {
     const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
 
@@ -239,7 +229,7 @@ int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
 #ifndef WIN32
 
 #define CONFIGLISTGROWSIZE 30 /* 100 */
-static void myconfig_read(pool *p, const char *alt_config)
+static void myconfig_read(apr_pool_t*p, const char *alt_config)
 {
     FILE *infile;
     int lineno = 0;
@@ -317,7 +307,7 @@ static void myconfig_read(pool *p, const char *alt_config)
     pbc_fclose(p, infile);
 }
 
-static void fatal(pool *p, const char *s, int ex)
+static void fatal(apr_pool_t*p, const char *s, int ex)
 {
     fprintf(stderr, "fatal error: %s\n", s);
     exit(ex);
@@ -325,7 +315,7 @@ static void fatal(pool *p, const char *s, int ex)
 
 #else  /*WIN32*/
 
-static void fatal(pool *p, const char *s, int ex)
+static void fatal(apr_pool_t*p, const char *s, int ex)
 {
     fprintf(stderr, "fatal error: %s\n", s);
 	syslog(LOG_ERR, "fatal error: %s\n", s);
@@ -386,7 +376,7 @@ int main(int argc, char *argv[])
 #define CONFIGLISTGROWSIZE 50
 
 
-int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
+int libpbc_myconfig_init(apr_pool_t*p, const char *alt_config, const char *ident)
 {
 	int rslt;
 	HKEY hKey;

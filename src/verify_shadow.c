@@ -12,7 +12,7 @@
  *  
  *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  *  
- * $Id: verify_shadow.c,v 1.12 2003-07-02 22:04:04 willey Exp $
+ * $Id: verify_shadow.c,v 1.13 2003-07-02 23:27:05 willey Exp $
  */
  
 
@@ -26,7 +26,7 @@
 #endif /* HAVE_STDLIB_H */
 
 /* Pretending we're Apache */
-typedef void pool;
+typedef void apr_pool_t;
 
 #include "verify.h"
 
@@ -50,7 +50,7 @@ typedef void pool;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-static int shadow_v(pool * p, const char *userid,
+static int shadow_v(apr_pool_t * p, const char *userid,
 		    const char *passwd,
 		    const char *service,
 		    const char *user_realm,
@@ -100,7 +100,7 @@ static int shadow_v(pool * p, const char *userid,
 
 #else /* ENABLE_SHADOW */
 
-static int shadow_v(pool * p, const char *userid,
+static int shadow_v(apr_pool_t * p, const char *userid,
 		    const char *passwd,
 		    const char *service,
 		    const char *user_realm,

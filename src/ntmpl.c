@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.7 2003-07-02 22:04:04 willey Exp $
+ * $Id: ntmpl.c,v 1.8 2003-07-02 23:27:05 willey Exp $
  */
 
 
@@ -15,7 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+typedef void apr_pool_t;
 
 #ifdef HAVE_TIME_H
 # include <time.h>
@@ -70,7 +70,7 @@ static long file_size(FILE *afile)
 /*
  * return a template html file
  */
-static char *get_file_template(pool *p, const char * fpath, const char *fname)
+static char *get_file_template(apr_pool_t *p, const char * fpath, const char *fname)
 {
     char *templatefile;
     char *template;
@@ -139,7 +139,7 @@ static char *get_file_template(pool *p, const char * fpath, const char *fname)
  * with "%<attr>%"; the entire string is then replaced with the next
  * parameter.  the caller must pass a NULL after all attributes
  */
-void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
+void ntmpl_print_html(apr_pool_t *p, const char *fpath, const char *fname, ...)
 {
     const char *attr;
     const char *subst;

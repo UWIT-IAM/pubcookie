@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.32 2003-07-02 22:04:04 willey Exp $
+ * $Id: keyclient.c,v 2.33 2003-07-02 23:27:05 willey Exp $
  */
 
 
@@ -15,7 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+typedef void apr_pool_t;
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     char *keyhost = NULL;
     int keyport = 443;
     int r;
-    pool *p = NULL;
+    apr_pool_t *p = NULL;
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));

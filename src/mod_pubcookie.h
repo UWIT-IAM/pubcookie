@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.2 2003-05-06 23:51:19 willey Exp $
+    $Id: mod_pubcookie.h,v 2.3 2003-07-02 23:27:05 willey Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -69,12 +69,12 @@
 #endif /* HAVE_SYS_STAT_H */
 
 /* misc prototype */
-char *make_session_cookie_name(pool *, char *, unsigned char *);
+char *make_session_cookie_name(apr_pool_t *, char *, unsigned char *);
 
 module pubcookie_module;
 
 typedef struct {
-  table * configlist;
+  apr_table_t * configlist;
   int                   dirdepth;
   int                   noblank;
   char			*login;

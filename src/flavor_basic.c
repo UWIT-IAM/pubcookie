@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.40 2003-07-02 22:04:04 willey Exp $
+ * $Id: flavor_basic.c,v 1.41 2003-07-02 23:27:04 willey Exp $
  */
 
 
@@ -22,17 +22,7 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
-#else
-typedef void pool;
-#endif
+# include "apache.h"
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -113,7 +103,7 @@ static int init_basic()
  * return the length of the passed file in bytes or 0 if we cant tell
  * resets the file postion to the start
  */
-static long file_size(pool *p, FILE *afile)
+static long file_size(apr_pool_t *p, FILE *afile)
 {
   long len;
   if (fseek(afile, 0, SEEK_END) != 0)
@@ -126,7 +116,7 @@ static long file_size(pool *p, FILE *afile)
 
 /* get the reason for our existing.  Returns NULL for an empty file. */
 
-char * get_reason(pool *p, const char * reasonpage ) {
+char * get_reason(apr_pool_t *p, const char * reasonpage ) {
     char * reasonfile;
     const char * reasonpath = TMPL_FNAME;
     int reasonfilelen;
@@ -185,7 +175,7 @@ char * get_reason(pool *p, const char * reasonpage ) {
 
 /* get the html for user field, static or dynamic */
 /* this really needs to be replaced by something from the template system */
-char * get_user_field(pool *p, const char * user_field_page, const char * user ){
+char * get_user_field(apr_pool_t *p, const char * user_field_page, const char * user ){
     char *userfieldfile;
     const char *user_field_path = TMPL_FNAME;
     int userfilelen;
@@ -262,7 +252,7 @@ char * get_user_field(pool *p, const char * user_field_page, const char * user )
 
 }
 
-static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
+static void print_login_page(apr_pool_t *p, login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
        we always clear the greq cookie */
@@ -481,7 +471,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
    if authentication has succeeded, no output is generated and it returns
    LOGIN_OK.
  */
-static login_result process_basic(pool *p, login_rec *l, login_rec *c,
+static login_result process_basic(apr_pool_t *p, login_rec *l, login_rec *c,
 				  const char **errstr)
 {
     struct credentials *creds = NULL;

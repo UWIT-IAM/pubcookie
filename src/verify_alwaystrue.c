@@ -6,7 +6,7 @@
 /** @file verify_alwaystrue.c
  * Alwaystrue verifier
  *
- * $Id: verify_alwaystrue.c,v 1.10 2003-07-02 22:04:04 willey Exp $
+ * $Id: verify_alwaystrue.c,v 1.11 2003-07-02 23:27:05 willey Exp $
  */
 
 
@@ -24,7 +24,7 @@
 #endif /* HAVE_STDIO_H */
 
 /* Pretending we're Apache */
-typedef void pool;
+typedef void apr_pool_t;
 
 #include "verify.h"
 
@@ -36,7 +36,7 @@ typedef void pool;
 
 extern int debug;
 
-int alwaystrue_v(pool * p, const char *userid,
+int alwaystrue_v(apr_pool_t * p, const char *userid,
 		 const char *passwd,
 		 const char *service,
 		 const char *user_realm,

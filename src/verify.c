@@ -6,7 +6,7 @@
 /** @file verify.c
  * Verifier base stuff
  *
- * $Id: verify.c,v 1.17 2003-07-02 22:04:04 willey Exp $
+ * $Id: verify.c,v 1.18 2003-07-02 23:27:05 willey Exp $
  */
 
 
@@ -28,7 +28,7 @@
 #endif /* HAVE_STRING_H */
 
 /* Pretending we're Apache */
-typedef void pool;
+typedef void apr_pool_t;
 
 #include "verify.h"
 

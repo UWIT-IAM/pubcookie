@@ -8,7 +8,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.21 2003-05-15 00:06:03 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.22 2003-07-02 23:27:05 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -21,8 +21,8 @@
 #endif /* HAVE_STDLIB_H */
 
 
-/* a pointer for an Apache memory pool is passed everywhwere */
-typedef void pool;
+/* a pointer for an Apache memory apr_pool_t is passed everywhwere */
+typedef void apr_pool_t;
 
 #include "verify.h"
 
@@ -97,14 +97,14 @@ static char * gen_key( const char * prefix, char * suffix )
 
 /**
  * Actually does an LDAP Bind
- * @param p pool *
+ * @param p apr_pool_t *
  * @param ld LDAP *
  * @param user char *
  * @param password char *
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
-static int do_bind( pool * p, LDAP *ld, char * user,
+static int do_bind( apr_pool_t * p, LDAP *ld, char * user,
                     const char * password, const char ** errstr )
 {
     int rc;
@@ -241,7 +241,7 @@ char ** parse_url_exts( char * ldap_url ) {
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
-static int ldap_connect( pool * p, LDAP ** ld, 
+static int ldap_connect( apr_pool_t * p, LDAP ** ld, 
 			 char * ldap_uri, 
 			 const char ** errstr ) 
 {
@@ -400,7 +400,7 @@ static int ldap_connect( pool * p, LDAP ** ld,
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
-static int get_dn( pool * p, LDAP * ld, 
+static int get_dn( apr_pool_t * p, LDAP * ld, 
                    char * ldapuri,
                    char ** dn,
                    const char ** errstr )
@@ -491,7 +491,7 @@ static int get_dn( pool * p, LDAP * ld,
  * @retval 0 on success, nonzero on failure
  */
 
-static int ldap_v( pool * p, const char *userid,
+static int ldap_v( apr_pool_t * p, const char *userid,
 			  const char *passwd,
 			  const char *service,
 			  const char *user_realm,
@@ -648,7 +648,7 @@ static int ldap_v( pool * p, const char *userid,
 
 #else /* ENABLE_LDAP */
 
-static int ldap_v(pool * p, const char *userid,
+static int ldap_v(apr_pool_t * p, const char *userid,
 		  const char *passwd,
 		  const char *service,
 		  const char *user_realm,

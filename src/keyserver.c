@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.34 2003-07-02 22:04:04 willey Exp $
+ * $Id: keyserver.c,v 2.35 2003-07-02 23:27:05 willey Exp $
  */
 
 
@@ -15,7 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+typedef void apr_pool_t;
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -96,7 +96,7 @@ static SSL *ssl = NULL;
 static void logerrstr(const char *func)
 {
     unsigned long r;
-    pool *p = NULL;
+    apr_pool_t *p = NULL;
 
     while ((r = ERR_get_error())) {
 	pbc_log_activity(p, PBC_LOG_ERROR, "%s: %s", 
@@ -108,7 +108,7 @@ void myprintf(const char *format, ...)
 {
     va_list args;
     char buf[4 * PBC_DES_KEY_BUF];
-    pool *p = NULL;
+    apr_pool_t *p = NULL;
 
     assert(ssl != NULL);
 
@@ -158,7 +158,7 @@ enum optype {
  */
 int pushkey(const char *peer)
 {
-    pool *p = NULL;
+    apr_pool_t *p = NULL;
     char **lservers = libpbc_config_getlist(p, "login_servers");
     const char *hostname;
     char *lservername, *ptr;
@@ -269,7 +269,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
 {
     char buf[4 * PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
-    pool *p = NULL;
+    apr_pool_t *p = NULL;
 
     /* no HTML headers for me */
     myprintf("\r\n");
@@ -402,7 +402,7 @@ static int verify_callback(int ok, X509_STORE_CTX * ctx)
 {
     X509   *err_cert;
     int     err;
-    pool   *p = NULL;
+    apr_pool_t   *p = NULL;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
                      "verifying peer certificate... ok=%d", ok);
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
     SSL_CTX *ctx;
     X509 *client_cert;
     int r;
-    pool *p = NULL;
+    apr_pool_t *p = NULL;
 
     libpbc_config_init(p, NULL, "keyserver");
     libpbc_pubcookie_init(p);
