@@ -11,8 +11,8 @@ Global
 	GlobalSection(ProjectConfiguration) = postSolution
 		{7BDE0A8D-40F7-4D82-BDAF-3463FA0C5C85}.Debug.ActiveCfg = Debug|Win32
 		{7BDE0A8D-40F7-4D82-BDAF-3463FA0C5C85}.Debug.Build.0 = Debug|Win32
-		{7BDE0A8D-40F7-4D82-BDAF-3463FA0C5C85}.Release.ActiveCfg = Release|Win32
-		{7BDE0A8D-40F7-4D82-BDAF-3463FA0C5C85}.Release.Build.0 = Release|Win32
+		{7BDE0A8D-40F7-4D82-BDAF-3463FA0C5C85}.Release.ActiveCfg = Debug|Win32
+		{7BDE0A8D-40F7-4D82-BDAF-3463FA0C5C85}.Release.Build.0 = Debug|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

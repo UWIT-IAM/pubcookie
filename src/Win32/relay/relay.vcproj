@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../include/openssl,../include,../webtpl,../.."
+				AdditionalIncludeDirectories="../include/openssl,../include,../webtpl,../..,.."
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_STRING_H,HAVE_STDIO_H,HAVE_STDARG_H;HAVE_SNPRINTF"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"

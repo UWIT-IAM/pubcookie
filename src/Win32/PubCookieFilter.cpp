@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.32 2004-05-13 22:45:36 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.33 2004-06-03 19:24:09 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -737,16 +737,16 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 			NULL, NULL, (LPBYTE) authname, &dwRead);
 		if ( strlen(authname) > 0 ) {
 			if ( stricmp(authname,(PBC_AUTHTYPE1)) == 0 ) 
-				p->AuthType = 1;
+				p->AuthType = '1';
 			else
 				if ( stricmp(authname,(PBC_AUTHTYPE2))== 0 ) 
-					p->AuthType = 2;
+					p->AuthType = '2';
 				else
 					if ( stricmp(authname,(PBC_AUTHTYPE3))== 0 ) 
-						p->AuthType = 3;
+						p->AuthType = '3';
 					else
 						if ( stricmp(authname,(PBC_AUTHTYPE0)) == 0 )
-							p->AuthType = 0;
+							p->AuthType = '0';
 		}
 
 		dwRead = sizeof (p->default_url);
@@ -973,6 +973,9 @@ bool MakeSecContext(pubcookie_dir_rec *p)
     char *cryptkeyfile = NULL;
 	size_t cb_read;
     FILE *fp;
+
+	//GetUserName(username,&usize);
+	//filterlog(p, LOG_DEBUG,"Creating security context for user: %s ",username);
 
 	p->sectext = (security_context *)pbc_malloc(p, sizeof(security_context));
 

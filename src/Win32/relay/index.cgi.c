@@ -1,4 +1,4 @@
-/* Pubcookie login relay: for myuw.net */
+/* Pubcookie login relay */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,22 +6,22 @@
 #include <string.h>
 /* #include <stdarg.h> */
 
+typedef void pool;
+
 #ifdef WIN32
 # include <Windows.h>
 # include <httpfilt.h>
 # include "pbc_config.h"
 # include "pubcookie.h"
 # include "PubCookieFilter.h"
-  typedef pubcookie_dir_rec pool;
+pubcookie_dir_rec *p = NULL;
 #else
 #include "pbc_config.h"
-typedef void pool;
 #ifndef MAX_PATH
 #define MAX_PATH PATH_MAX
 #endif
-#endif
-
 pool *p = NULL;
+#endif
 
 #include "pbc_configure.h"
 
@@ -108,7 +108,6 @@ void relay_granting_reply(WebTemplate W, char *grpl)
    if ((post=WebTemplate_get_arg(W, PBC_GETVAR_POST_STUFF)) && *post) {
       char *a, *v;
       char *p;
-      int na;
       do {
          if (a=strchr(post, '&')) *a++ = '\0';
          if (*post) {
@@ -172,8 +171,8 @@ main()
   char *req;
 
 # ifdef WIN32
-  p = (pool *)malloc(sizeof(pool));
-  memset(p,0,sizeof(pool));
+  p = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec));
+  memset(p,0,sizeof(pubcookie_dir_rec));
   strncpy(p->instance_id,PBC_RELAY_WEB_KEY,MAX_INSTANCE_ID);
 # endif
 

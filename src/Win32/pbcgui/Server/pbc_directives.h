@@ -119,6 +119,17 @@
 	directive[16].defined_in   = L"(Program Default)";
 	directive[16].description  = L"Base directory for Pubcookie debug and config files. Leave blank to use the Windows system directory.";
 
+/*	directive[17].name         = L"Relay_URI";
+	directive[17].type         = D_FREE_STRING;
+	directive[17].value        = PBC_RELAY_URI;
+	directive[17].defined_in   = defined_in;
+	directive[17].description  = L"Location of an optional Pubcookie relay CGI.";
+
+	directive[18].name         = L"Relay_Template_Path";
+	directive[18].type         = D_FREE_STRING;
+	directive[18].value        = PBC_TEMPLATES_PATH;
+	directive[18].defined_in   = defined_in;
+	directive[18].description  = L"Path to templates used by optional Pubcookie relay CGI"; */
 
 #endif
 
