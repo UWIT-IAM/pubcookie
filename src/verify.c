@@ -51,6 +51,8 @@ verifier *get_verifier(const char *name)
 # include <ctype.h>
 #endif /* HAVE_CTYPE_H */
 
+#include "pbc_myconfig.h"
+
 int debug = 1; /* in case one of the verifiers wants it */
 
 int main(int argc, char *argv[])
@@ -74,10 +76,11 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    if (r = v->v(argv[2], argv[3], 
-                 argc > 4 ? argv[5] : NULL, 
-                 argc > 3 ? argv[4] : NULL,
-                 &creds, &errstr)) {
+    r = v->v(argv[2], argv[3], 
+             argc > 4 ? argv[5] : NULL, 
+             argc > 3 ? argv[4] : NULL,
+             &creds, &errstr);
+    if (r) {
         printf("verifier failed: %d %s\n", r, errstr);
         return r;
     }
