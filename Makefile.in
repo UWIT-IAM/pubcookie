@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.16 2002-11-01 22:22:41 jjminer Exp $
+# $Id: Makefile.in,v 1.17 2002-11-07 22:39:29 jjminer Exp $
 
 @SET_MAKE@
 
@@ -282,15 +282,17 @@ keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 
 # Installation Targets
 
-install: $(KEY_DIR) @install_login@ @install_apache@
+install: $(KEY_DIR) install-keymgt @install_login@ @install_apache@
 
-install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(LOGIN_TEMPLATES) login_server
-	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
+install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) login_server
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
-	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
+	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
 
 install-apache: apache_module
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
+
+install-keymgt: $(PUBCOOKIE_DIR)
+	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
 
 $(PUBCOOKIE_DIR):
 	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
@@ -303,6 +305,9 @@ $(LOGIN_DIR): $(PUBCOOKIE_DIR)
 
 $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR)
+
+$(TEMPLATE_DIR).default: $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(TEMPLATE_DIR).default
 
 $(LIB_OBJ): $(LIB_HEAD)
 
