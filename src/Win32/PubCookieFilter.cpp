@@ -5,16 +5,6 @@
 //  PubcookieFilter.cpp
 
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 2.7"
-
-// Define COOKIE_PATH to include a path of /<application name> in the session
-// cookie. This implies that the first node of all URLs are case sensative since
-// browsers will only return cookies if the URL matches the path exactly.
-// This path feature is desireable so the browser doesn't return all session
-// cookies for all applications visited for every URL. 
-// Setting this option requires that the Default and Timeout URLs defined in the
-// registry are case sensative also.
-
 #define COOKIE_PATH
 
 #include <windows.h>
@@ -32,140 +22,19 @@ extern "C"
 #include "../libpubcookie.h"
 #include "../pbc_config.h"
 #include "../pbc_version.h"
+#include "../pbc_myconfig.h"
+#include "PubCookieFilter.h"
 }
 
-// Pubcookie Version a5 got rid of these, I still like em!
 
-#define PBC_BAD_GRANTING_CERT 4
-#define PBC_BAD_SESSION_CERT 5
-#define PBC_BAD_VERSION 6
-#define PBC_BAD_APPID 7
-#define PBC_BAD_SERVERID 8
-// used to redirect from http->https
-#define PBC_BAD_PORT 9
 
-extern "C" int Debug_Trace = 0;
-extern "C" FILE *debugFile = NULL;
+int	Debug_Trace=0;
+FILE *debugFile=NULL;
 
-char Instance[3];
-char SystemRoot[256];
-char Trace_Date[64];
-char Debug_Dir[256];
-// Default Debug Trace directory in %SystemRoot%
-#define DEBUG_DIR	"\\system32\\LogFiles\\PubcookieFilter"
-
-int  Ignore_Poll;     // Set to "1" to ignore Network Dispatcher "/" polls
-char Web_Login[256];  // default is https://weblogin.washington.edu/
-char Enterprise_Domain[256];  // default is ".washington.edu"
-char Error_Page[256]; // Redirect user to this page on fatal errors
-
-#define DEST buff
-#define MAX_DEBUG_SIZE 4096
-
-//  DebugMsg() is used for debugging 
-//  use sprintf instead of wsprintf so we can use things line "%.*s"
-
-#define DebugMsg(x)						\
-	if (Debug_Trace) {					\
-		char buff[4096];				\
-		sprintf x;						\
-		OutputDebugMsg(buff);			\
-	}
-
-#define DebugFlush						\
-	{									\
-	if ( debugFile )					\
-		fflush(debugFile);				\
-	}
-
-typedef struct {
-	char				*g_certfile;
-	char				*s_keyfile;
-	char				*s_certfile;
-	char				*crypt_keyfile;
-	md_context_plus		*session_sign_ctx_plus;
-	md_context_plus		*session_verf_ctx_plus;
-	md_context_plus		*granting_verf_ctx_plus;
-	crypt_stuff			*c_stuff;
-	int					serial_s_sent;
-	char				server_hostname[256];
-	char				NTUserId[SF_MAX_USERNAME];
-	char				Password[SF_MAX_PASSWORD];
-	int					inact_exp;
-	int					hard_exp;
-	char				force_reauth[4];
-	char				AuthType;
-	DWORD				session_reauth;
-	DWORD				logout;
-} pubcookie_server_rec;
-
-typedef struct {
-	char		remote_host[256];
-	int			inact_exp;
-	int			hard_exp;
-	int			failed;
-	int			has_granting;
-	char		pszUser[SF_MAX_USERNAME];
-	char		pszPassword[SF_MAX_PASSWORD];
-	char		appid[PBC_APP_ID_LEN];
-//	char		path_id[PBC_app_id_LEN];
-	char		s_cookiename[64];
-	char		creds;
-	char		force_reauth[4];
-	char		AuthType;
-	char		default_url[1024];
-	char		timeout_url[1024];
-	char		user[PBC_USER_LEN];
-	char		appsrvid[PBC_APPSRV_ID_LEN];
-	char		appsrv_port[6];
-	char		uri[2048];		              // *** size ??
-	char		args[4096];                   // ***
-	char		method[8];		              // ***
-	char		handler;
-	DWORD		session_reauth;
-	DWORD		logout;
-
-} pubcookie_dir_rec;
-
-DWORD Notify_Flags;
-
-pubcookie_server_rec scfg;
-
-// One lock to protect all three global ctx_plus structures
-// session_sign_ctx_plus  session_verf_ctx_plus  granting_verf_ctx_plus
-// libpbc cookie routines scribble on .._ctx_plus->ctx 
-
-CRITICAL_SECTION Ctx_Plus_CS;
-
-// Statistic variables
-
-unsigned int Total_Requests;
-unsigned int Max_Url_Length;
-unsigned int Max_Query_String;
-unsigned int Max_Content_Length;
-unsigned int Max_Cookie_Size;
-unsigned int Max_Bytes_Sent;
-unsigned int Max_Bytes_Recvd;
-
-#define START_COOKIE_SIZE  1024
-#define MAX_COOKIE_SIZE	   10500	// allow enough room for 20 session cookies
-									// browser limits 20 cookies per server
-
-// From /usr/local/src/apache_1.2.0/src/httpd.h
-
-#define DECLINED -1             /* Module declines to handle */
-#define OK		  0             /* Module has handled this stage. */
-
-#define PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter\\"
-#define WINKEY "System\\CurrentControlSet\\Control\\Windows"
-#define PBC_Header_Appid  "Pubcookie-Appid:"
-#define PBC_Header_User   "Pubcookie-User:"
-#define PBC_Header_Creds  "Pubcookie-Creds:"
-#define PBC_Header_Server "Pubcookie-Server:"
 
 BOOL Open_Debug_Trace ();
 
-VOID OutputDebugMsg (char *buff)
+extern VOID OutputDebugMsg (char *buff)
 {			
 	time_t ltime;
 	struct tm *today;
@@ -219,6 +88,7 @@ VOID Close_Debug_Trace ()
 {
 	time_t ltime;
 
+	DebugMsg((DEST,"Close_Debug_Trace\n"));  //debug
 	if ( debugFile ) {
 
 		time(&ltime);
@@ -251,6 +121,9 @@ BOOL Open_Debug_Trace ()
     char szName[256], szBuff[1024];
 	time_t ltime;
 	struct tm *today;
+
+	DebugMsg((DEST,"Open_Debug_Trace\n"));  //debug
+
 
 	time(&ltime);
 	today = localtime(&ltime);
@@ -289,6 +162,9 @@ VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_doma
 
 	char new_cookie[START_COOKIE_SIZE];
 
+	DebugMsg((DEST,"Clear_Cookie\n"));  //debug
+
+
 	sprintf(new_cookie, "Set-Cookie: %s=clear; domain=%s; path=%s; expires=%s; secure\r\n", 
 			cookie_name, 
 			cookie_domain, 
@@ -310,6 +186,8 @@ VOID Read_Default_Reg_Settings()
 	char key [1024];
 	DWORD dwRead;
 
+	DebugMsg((DEST,"Read_Default_Reg_Settings\n"));  //debug
+
 	// Read Registry keys for app defaults
 
 	Debug_Trace = 0;
@@ -320,10 +198,12 @@ VOID Read_Default_Reg_Settings()
 	scfg.hard_exp  = PBC_DEFAULT_HARD_EXPIRE;
 	strcpy(scfg.force_reauth,PBC_NO_FORCE_REAUTH);
 	scfg.session_reauth = 0;
-	scfg.logout = 0;
+	strcpy(scfg.logout_dir,LOGOUT);
+	strcpy(scfg.logout_redir_dir,LOGOUT_REDIR);
 	scfg.AuthType  = PBC_CREDS_NONE;
 	Ignore_Poll = 0;
-	strcpy(Web_Login,PBC_LOGIN_PAGE);
+	sprintf(Web_Login,"https://%s/%s",PBC_LOGIN_HOST,PBC_LOGIN_URI);
+
 	strcpy(Enterprise_Domain,PBC_ENTRPRS_DOMAIN);
 	strcpy(Error_Page,"");
 
@@ -375,9 +255,19 @@ VOID Read_Default_Reg_Settings()
 		{     
 		}
 
-		dwRead = sizeof (scfg.logout);
+/*		dwRead = sizeof (scfg.logout);
 		if (RegQueryValueEx (hKey, "Logout",
 							 NULL, NULL, (LPBYTE) &scfg.logout, &dwRead) != ERROR_SUCCESS)
+		{     
+		}*/
+		dwRead = sizeof (scfg.logout_dir);
+		if (RegQueryValueEx (hKey, "Logout_Dir",
+							 NULL, NULL, (LPBYTE) &scfg.logout_dir, &dwRead) != ERROR_SUCCESS)
+		{     
+		}
+		dwRead = sizeof (scfg.logout_redir_dir);
+		if (RegQueryValueEx (hKey, "Logout_Redir_Dir",
+							 NULL, NULL, (LPBYTE) &scfg.logout_redir_dir, &dwRead) != ERROR_SUCCESS)
 		{     
 		}
 
@@ -386,10 +276,10 @@ VOID Read_Default_Reg_Settings()
 							 NULL, NULL, (LPBYTE) key, &dwRead) != ERROR_SUCCESS)
 		{     
 		} else {
-			if ( stricmp(key,"UWNETID") == 0 ) 
+			if ( stricmp(key,NETID) == 0 ) 
 				scfg.AuthType = PBC_CREDS_CRED1;
 			else
-			if ( stricmp(key,"SECURID") == 0 ) 
+			if ( stricmp(key,SECURID) == 0 ) 
 				scfg.AuthType = PBC_CREDS_CRED3;
 			else
 				scfg.AuthType = PBC_CREDS_NONE;
@@ -431,44 +321,21 @@ VOID Read_Default_Reg_Settings()
 
 	DebugMsg((DEST,"  %s\n",Pubcookie_Version));
 
-	DebugMsg((DEST,"  Defaults are: Debug_Trace    : %d\n" ,Debug_Trace));
-	DebugMsg((DEST,"                Debug_Dir      : %s\n" ,Debug_Dir));
-	DebugMsg((DEST,"                NtUserId       : %s\n" ,scfg.NTUserId));
-	DebugMsg((DEST,"                PW Length      : %d\n" ,strlen(scfg.Password)));
-	DebugMsg((DEST,"                Inact_Exp      : %d\n" ,scfg.inact_exp));
-	DebugMsg((DEST,"                Hard_Exp       : %d\n" ,scfg.hard_exp));
-	DebugMsg((DEST,"                Force_Reauth   : %s\n" ,scfg.force_reauth));
-	DebugMsg((DEST,"                Session_Reauth : %1d\n" ,scfg.session_reauth));
-	DebugMsg((DEST,"                Logout         : %1d\n" ,scfg.logout));
-	DebugMsg((DEST,"                AuthType       : %c\n" ,scfg.AuthType));
-	DebugMsg((DEST,"                Ignore_Poll    : %d\n" ,Ignore_Poll));
-	DebugMsg((DEST,"                Web_Login      : %s\n" ,Web_Login));
+	DebugMsg((DEST,"  Defaults are: Debug_Trace      : %d\n" ,Debug_Trace));
+	DebugMsg((DEST,"                Debug_Dir        : %s\n" ,Debug_Dir));
+	DebugMsg((DEST,"                NtUserId         : %s\n" ,scfg.NTUserId));
+	DebugMsg((DEST,"                PW Length        : %d\n" ,strlen(scfg.Password)));
+	DebugMsg((DEST,"                Inact_Exp        : %d\n" ,scfg.inact_exp));
+	DebugMsg((DEST,"                Hard_Exp         : %d\n" ,scfg.hard_exp));
+	DebugMsg((DEST,"                Force_Reauth     : %s\n" ,scfg.force_reauth));
+	DebugMsg((DEST,"                Session_Reauth   : %1d\n" ,scfg.session_reauth));
+//	DebugMsg((DEST,"                Logout           : %1d\n" ,scfg.logout));
+	DebugMsg((DEST,"                Logout_Dir       : %s\n" ,scfg.logout_dir));
+	DebugMsg((DEST,"                Logout_Redir_dir : %s\n" ,scfg.logout_redir_dir));
+	DebugMsg((DEST,"                AuthType         : %c\n" ,scfg.AuthType));
+	DebugMsg((DEST,"                Ignore_Poll      : %d\n" ,Ignore_Poll));
+	DebugMsg((DEST,"                Web_Login        : %s\n" ,Web_Login));
 	DebugMsg((DEST,"                Enterprise_Domain: %s\n" ,Enterprise_Domain));
-
-	// Get the System Directory from reg, returns "%SystemRoot%\system32"
-
-/*
-	strcpy (key,WINKEY);
-
-	if (rslt = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-	                        key,0,KEY_READ,&hKey) == ERROR_SUCCESS)
-	{
-		dwRead = sizeof (System_Path);
-		if (RegQueryValueEx (hKey, "SystemDirectory",
-							 NULL, NULL, (LPBYTE) System_Path, &dwRead) != ERROR_SUCCESS)
-		{
-			DebugMsg((DEST,"*** Lookup of SystemDirectory failed, using default\n"));
-			strcpy(System_Path,"C:\\Winnt\\System32");
-		} 
-	} else {
-		DebugMsg((DEST,"*** Lookup of SystemDirectory failed, using default\n"));
-		strcpy(System_Path,"C:\\Winnt\\System32");
-	}
-
-	RegCloseKey (hKey);
-
-	DebugMsg((DEST,"             SystemDirectory: %s\n" ,System_Path));
-*/
 
 }
 
@@ -485,6 +352,9 @@ BOOL Pubcookie_Init ()
 	WSADATA wsaData;
 
 //	DebugMsg(( DEST, " Pubcookie_init\n"));
+
+	DebugMsg((DEST,"Pubcookie_Init\n"));  //debug
+
 
 	memset(&scfg,0,sizeof(pubcookie_server_rec));
 
@@ -505,6 +375,13 @@ BOOL Pubcookie_Init ()
 //	DebugMsg((DEST,"  SystemRoot    = %s, rslt = %d\n",SystemRoot,rslt));
 
 	Read_Default_Reg_Settings();
+
+	if (!libpbc_config_init("","")) {
+		ReportPFEvent("[PubcookieFilter]","[Pubcookie_Config_Init] Out of memory.",
+		"","",EVENTLOG_ERROR_TYPE,3);
+
+ 		return FALSE; 
+	} 
 
 	if ( rslt = WSAStartup((WORD)0x0101, &wsaData ) ) 
 		{
@@ -704,7 +581,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 				   "","",EVENTLOG_ERROR_TYPE,3);
 			strcpy(args, "");
 		} else
-			base64_encode((unsigned char *)dcfg->args, (unsigned char *)args,
+			libpbc_base64_encode((unsigned char *)dcfg->args, (unsigned char *)args,
 						strlen(dcfg->args));
 		}
 	else
@@ -742,7 +619,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 
 	DebugMsg((DEST,"  granting request= %s\n",g_req_contents));
 
-	base64_encode((unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
+	libpbc_base64_encode((unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents));
 
 	sprintf(new_cookie, "%s=%s; domain=%s; path=/; secure",
@@ -973,6 +850,9 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	pubcookie_dir_rec* dcfg;
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
+	DebugMsg((DEST,"Get_Effective_Values\n"));  //debug
+
+
 		// Find NT UserID and Password to use for this session based on appid
 		// If Key not found for appid use "Default" entries if they exist
 
@@ -985,7 +865,9 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		strcpy (dcfg->force_reauth,	   scfg.force_reauth);
 				dcfg->session_reauth=  scfg.session_reauth;
 				dcfg->AuthType=	       scfg.AuthType;
-				dcfg->logout=          scfg.logout;
+//				dcfg->logout=          scfg.logout;
+		strcpy (dcfg->logout_dir,	   scfg.logout_dir);
+		strcpy (dcfg->logout_redir_dir,	   scfg.logout_redir_dir);
 		
 
 		if (rslt = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -1015,18 +897,26 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			RegQueryValueEx (hKey, "Session_Reauth",
 							 NULL, NULL, (LPBYTE) &dcfg->session_reauth, &dwRead);
 
-			dwRead = sizeof (dcfg->logout);
+/*			dwRead = sizeof (dcfg->logout);
 			RegQueryValueEx (hKey, "Logout",
-							 NULL, NULL, (LPBYTE) &dcfg->logout, &dwRead);
+							 NULL, NULL, (LPBYTE) &dcfg->logout, &dwRead);*/
+
+			dwRead = sizeof (dcfg->logout_dir);
+			RegQueryValueEx (hKey, "Logout_Dir",
+							 NULL, NULL, (LPBYTE) &dcfg->logout_dir, &dwRead);
+
+			dwRead = sizeof (dcfg->logout_redir_dir);
+			RegQueryValueEx (hKey, "Logout_Redir_Dir",
+							 NULL, NULL, (LPBYTE) &dcfg->logout_redir_dir, &dwRead);
 
 			dwRead = sizeof (key); key[0] = NULL;
 			RegQueryValueEx (hKey, "AuthType",
 							 NULL, NULL, (LPBYTE) key, &dwRead);
 			if ( strlen(key) > 0 ) {
-			if ( stricmp(key,"UWNETID") == 0 ) 
+			if ( stricmp(key,NETID) == 0 ) 
 				dcfg->AuthType = PBC_CREDS_CRED1;
 			else
-			if ( stricmp(key,"SECURID") == 0 ) 
+			if ( stricmp(key,SECURID) == 0 ) 
 				dcfg->AuthType = PBC_CREDS_CRED3;
 			else
 				dcfg->AuthType = PBC_CREDS_NONE;
@@ -1048,16 +938,19 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 
 		sprintf(dcfg->s_cookiename,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
 
-		DebugMsg((DEST,"  NtUserId       : %s\n" ,dcfg->pszUser));
-		DebugMsg((DEST,"  Inact_Exp      : %d\n" ,dcfg->inact_exp));
-		DebugMsg((DEST,"  Hard_Exp       : %d\n" ,dcfg->hard_exp));
-		DebugMsg((DEST,"  Force_Reauth   : %s\n" ,dcfg->force_reauth));
-		DebugMsg((DEST,"  Session_Reauth : %1d\n" ,dcfg->session_reauth));
-		DebugMsg((DEST,"  Logout         : %1d\n" ,dcfg->logout));
-		DebugMsg((DEST,"  AuthType       : %c\n" ,dcfg->AuthType));
-		DebugMsg((DEST,"  Default_Url    : %s\n" ,dcfg->default_url));
-		DebugMsg((DEST,"  Timeout_Url    : %s\n" ,dcfg->timeout_url));
-		DebugMsg((DEST,"  s_cookiename   : %s\n" ,dcfg->s_cookiename));
+		DebugMsg((DEST,"  NtUserId        : %s\n" ,dcfg->pszUser));
+		DebugMsg((DEST,"  Inact_Exp       : %d\n" ,dcfg->inact_exp));
+		DebugMsg((DEST,"  Hard_Exp        : %d\n" ,dcfg->hard_exp));
+		DebugMsg((DEST,"  Force_Reauth    : %s\n" ,dcfg->force_reauth));
+		DebugMsg((DEST,"  Session_Reauth  : %1d\n" ,dcfg->session_reauth));
+//		DebugMsg((DEST,"  Logout          : %1d\n" ,dcfg->logout));
+		DebugMsg((DEST,"  AuthType        : %c\n" ,dcfg->AuthType));
+		DebugMsg((DEST,"  Default_Url     : %s\n" ,dcfg->default_url));
+		DebugMsg((DEST,"  Timeout_Url     : %s\n" ,dcfg->timeout_url));
+		DebugMsg((DEST,"  s_cookiename    : %s\n" ,dcfg->s_cookiename));
+		DebugMsg((DEST,"  Logout_Dir      : %s\n" ,dcfg->logout_dir));
+		DebugMsg((DEST,"  Logout_Redir_Dir: %s\n" ,dcfg->logout_redir_dir));
+
 
 
 
@@ -1069,6 +962,9 @@ void Add_Header_Values(HTTP_FILTER_CONTEXT* pFC,
 {
 	char temp[16];
 	pubcookie_dir_rec* dcfg;
+
+	DebugMsg((DEST,"Add_Header_Values"));  //debug
+
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	// Set Pubcookie Appid, User and Creds level
@@ -1103,6 +999,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	char *pachUrl;
 	char *ptr;
 	pubcookie_dir_rec* dcfg;
+
+	DebugMsg((DEST,"User"));  //debug
+
 
     dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
@@ -1185,6 +1084,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	// Check for Credential Level Wanted which overrides url names
 
 	if ( dcfg->AuthType != PBC_CREDS_NONE ) {
+		DebugMsg((DEST,"  AuthType       : %s\n",szBuff));
+
 		dcfg->creds = dcfg->AuthType;
 		// change appid back to default if no app specific settings
 		if ( dcfg->AuthType == scfg.AuthType )
@@ -1202,24 +1103,30 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	}
 	strncpy(szBuff, pachUrl, ptr-pachUrl); szBuff[ptr-pachUrl] = NULL;
 
-	DebugMsg((DEST,"  dir type      : %s\n",szBuff));
+	DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 
-	if ( stricmp((const char *)szBuff, "PUBLIC") == 0 ) {
+	if ( stricmp((const char *)szBuff, PUBLIC) == 0 ) {
 		// Set effective userid only, no pubcookie stuff
 //		Get_Effective_Values(pFC,pHeaderInfo);
 		Add_Header_Values   (pFC,pHeaderInfo);
 		return DECLINED;
 	}
 	else	
-	if ( stricmp((const char *)szBuff, "UWNETID") == 0 )
+	if ( stricmp((const char *)szBuff, NETID) == 0 )
 		dcfg->creds = PBC_CREDS_CRED1;
 	else
-	if ( stricmp((const char *)szBuff, "SECURID") == 0 )
+	if ( stricmp((const char *)szBuff, SECURID) == 0 )
 		dcfg->creds = PBC_CREDS_CRED3;
 	else
-	if ( stricmp((const char *)szBuff, "LOGOUT") == 0 ){
+	if ( stricmp((const char *)szBuff, dcfg->logout_dir) == 0 ){
 		dcfg->creds = PBC_CREDS_CRED1;
 		dcfg->logout = 1;
+	}
+	else
+	if ( stricmp((const char *)szBuff, dcfg->logout_redir_dir) == 0 ){
+		dcfg->creds = PBC_CREDS_CRED1;
+		dcfg->logout = 1;
+		dcfg->logout_redir = 1;
 	}
     else {
 		// Don't care about these or should we reject now???
@@ -1470,7 +1377,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 int Pubcookie_Auth (HTTP_FILTER_CONTEXT* pFC)
 {
 	pubcookie_dir_rec* dcfg;
-    dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
+ 	DebugMsg((DEST,"Auth"));  //debug
+
+	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	DebugMsg((DEST," Pubcookie_Auth\n"));
 
@@ -1494,8 +1403,10 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 	pubcookie_dir_rec* dcfg;
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 	char szBuff[1025];
+	DWORD dwBuffSize;
 
 	DebugMsg((DEST," Pubcookie_Typer\n"));
+
 
 	if( !Is_Pubcookie_Auth(dcfg) ) 
 		return DECLINED;
@@ -1531,7 +1442,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			
 			LeaveCriticalSection(&Ctx_Plus_CS);
 			
-			//  If we're logging out, just clear the cookie and continue serving the logout page
+			//  If we're logging out, clear the cookie.
 			
 			if (dcfg->logout) {
 #ifdef COOKIE_PATH
@@ -1546,8 +1457,38 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 				
 				pbc_free(cookie);
 				Clear_Cookie(pFC,dcfg->s_cookiename,dcfg->appsrvid,szBuff); 
+				DebugMsg((DEST,"   Cleared Session Cookie....\n"));
 				
-				return DECLINED;
+				if (dcfg->logout_redir) {
+					sprintf(szBuff, "Content-Type: text/html\r\n"
+                        "Refresh: 0; URL=http://google.com\r\n"
+		 			    "Cache-Control: no-cache\r\n"
+                        "Pragma: no-cache\r\n"
+					    "Expires: Fri, 01-Jan-1970 00:00:01 GMT\r\n"
+						"\r\n");
+					
+					DebugMsg((DEST,"  AddResponseHeaders= \n%s",szBuff));
+					
+					pFC->AddResponseHeaders(pFC,szBuff,0);
+					
+					DebugMsg((DEST,"  REQ_SEND_RESPONSE_HEADER \n"));
+					
+					pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
+						"200 OK",NULL,NULL);
+					
+					strcpy(szBuff,"<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
+					dwBuffSize=strlen(szBuff);
+					
+					pFC->WriteClient (pFC, szBuff, &dwBuffSize, 0);
+					
+					dcfg->failed = PBC_BAD_PORT;
+					dcfg->handler = PBC_BAD_PORT;
+					return OK;
+					
+				}
+				else {
+					return DECLINED;  // continue serving the logout page if we're not redirecting
+				}
 				//strncpy((char *)cookie,"",strlen((char *)cookie));
 			}
 			
@@ -2220,6 +2161,7 @@ DllMain(
 --*/
 {
     BOOL fReturn = TRUE;
+
 
 //	DebugMsg(( DEST, "PBC_DllMain: fdwReason= %d\n",fdwReason));
 

@@ -104,6 +104,10 @@ SOURCE=..\libpubcookie.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\pbc_w32_myconfig.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\PubCookieFilter.cpp
 # End Source File
 # Begin Source File
@@ -128,7 +132,15 @@ SOURCE=..\pbc_version.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\pbc_w32_config.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\pubcookie.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\PubCookieFilter.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
