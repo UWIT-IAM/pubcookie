@@ -1,3 +1,4 @@
+
 Introduction
 ------------
 This package attempts to provide a system for transferring authentication
@@ -83,8 +84,8 @@ and an SSL enabled Basic Auth system have been tested.
 The login server needs to send cookies to clients using the following
 format:
 
-  Set-Cookie:  pubcookie={base64 cookie string}; domain=washington.edu; path=/
+  Set-Cookie:  pubcookie={base64 cookie string}; domain=.washington.edu; path=/
 
-$Id: pubcookie.doc,v 1.1 1998-02-14 08:24:47 willey Exp $
+$Id: pubcookie.doc,v 1.2 1998-03-20 01:32:28 willey Exp $
 
 
