@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.4 2003-09-26 22:27:02 ryanc Exp $
+  $Id: winkeyclient.c,v 1.5 2003-11-12 04:46:29 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,7 +79,7 @@ extern char * optarg;
 
 /* globals */
 int noop = 0;
-char *SystemRoot;
+extern pool *p; //initialized in debug
 
 int Messagef(const char * format, ...){
     char msg[2048];
@@ -100,23 +100,23 @@ int Messagef(const char * format, ...){
 /* destructively returns the value of the CN */
 static char *extract_cn(char *s)
 {
-    char *p = strstr(s, "CN=");
+    char *pp = strstr(s, "CN=");
     char *q;
 
-    if (p) {
-        p += 3;
-        q = strstr(p, "/Email=");
+    if (pp) {
+        pp += 3;
+        q = strstr(pp, "/Email=");
         if (q) {
             *q = '\0';
         }
         /* fix for subjects that go leaf -> root */
-        q = strchr(p, '/');
+        q = strchr(pp, '/');
         if (q) {
             *q = '\0';
         }
     }
 
-    return p;
+    return pp;
 }
 
 /**
@@ -216,12 +216,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	CredHandle hClientCreds;
 	char *Reply = NULL;
 	char sztmp[1024];
-	char *fp[1];
 	char SystemRootBuff[MAX_PATH+1];
+	char strbuff[MAX_REG_BUFF];
 
-
-	strcpy(Instance,"KeyClient");  
-		
 	if( WSAStartup((WORD)0x0101, &wsaData ) ) 
 	{  
 		Messagef("Unable to initialize WINSOCK: %d\n", WSAGetLastError() );
@@ -234,15 +231,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
 
     libpbc_config_init(p, NULL, "keyclient");
-
-	SystemRoot = malloc(MAX_PATH*sizeof(char));
-	if (strlen((fp[0] = PBC_SYSTEM_ROOT)) > 0) {
-		strcpy(SystemRoot,fp[0]);
-	}
-	else {
-		GetSystemDirectory(SystemRoot,MAX_PATH);
-	}
-	free(fp[0]);
 
 	gethostname(sztmp, sizeof(sztmp)-1);
 	h = gethostbyname(sztmp);
@@ -267,10 +255,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 
     /* figure out the key management server */
-	if (!keymgturi) {
-		keymgturi = (fp[0] = PBC_KEYMGT_URI);
-		free(fp[0]);
-	}
+	keymgturi = strdup(PBC_KEYMGT_URI);
     keyhost = strdup(keymgturi);
 
     if (!strncmp(keyhost, "https://", 8)) keyhost += 8;

@@ -53,6 +53,27 @@ HMODULE g_hSecurity = NULL;
 
 SecurityFunctionTable g_SecurityFunc;
 
+void vmessage( const char * format, va_list args )
+{
+	char msgbuf[4096];
+	_vsnprintf(msgbuf,4096,format,args);
+#ifdef _DEBUG
+	MessageBox(NULL,msgbuf,"Keyclient Debug Message",MB_OK);
+#endif
+}
+
+void message(const char *format, ...) {
+
+    va_list   args;
+
+    va_start(args, format);
+
+    vmessage( format, args );
+
+    va_end(args);
+
+}
+
 
 /*****************************************************************************/
 BOOL
@@ -96,7 +117,7 @@ LoadSecurityLibrary(SecurityFunctionTable ** lpSecurityFunc)
     g_hSecurity = LoadLibrary(lpszDLL);
     if(g_hSecurity == NULL)
     {
-        printf("Error 0x%x loading %s.\n", GetLastError(), lpszDLL);
+        message("Error 0x%x loading %s.\n", GetLastError(), lpszDLL);
         return FALSE;
     }
 
@@ -106,7 +127,7 @@ LoadSecurityLibrary(SecurityFunctionTable ** lpSecurityFunc)
     
     if(pInitSecurityInterface == NULL)
     {
-        printf("Error 0x%x reading InitSecurityInterface entry point.\n", 
+        message("Error 0x%x reading InitSecurityInterface entry point.\n", 
                GetLastError());
         return FALSE;
     }
@@ -115,7 +136,7 @@ LoadSecurityLibrary(SecurityFunctionTable ** lpSecurityFunc)
 
     if(pSecurityFunc == NULL)
     {
-        printf("Error 0x%x reading security interface.\n",
+        message("Error 0x%x reading security interface.\n",
                GetLastError());
         return FALSE;
     }
@@ -178,7 +199,7 @@ CreateCredentials(
 									//  including Trust, CA, or Root
 			if(!hMyCertStore)
 			{
-				printf("**** Error 0x%x returned by CertOpenSystemStore\n", 
+				message("**** Error 0x%x returned by CertOpenSystemStore\n", 
 					GetLastError());
 				return SEC_E_NO_CREDENTIALS;
 			}
@@ -199,7 +220,7 @@ CreateCredentials(
                                                   NULL);
         if(pCertContext == NULL)
         {
-            printf("**** Error 0x%x returned by CertFindCertificateInStore\n",
+            message("**** Error 0x%x returned by CertFindCertificateInStore\n",
                 GetLastError());
             return SEC_E_NO_CREDENTIALS;
         }
@@ -258,7 +279,7 @@ CreateCredentials(
                         &tsExpiry);             // (out) Lifetime (optional)
     if(Status != SEC_E_OK)
     {
-        printf("**** Error 0x%x returned by AcquireCredentialsHandle\n", Status);
+        message("**** Error 0x%x returned by AcquireCredentialsHandle\n", Status);
         return Status;
     }
 
@@ -290,7 +311,7 @@ ConnectToServer(
     Socket = socket(PF_INET, SOCK_STREAM, 0);
     if(Socket == INVALID_SOCKET)
     {
-        printf("**** Error %d creating socket\n", WSAGetLastError());
+        message("**** Error %d creating socket\n", WSAGetLastError());
         return WSAGetLastError();
     }
 
@@ -301,7 +322,7 @@ ConnectToServer(
 
         if((hp = gethostbyname(pszProxyServer)) == NULL)
         {
-            printf("**** Error %d returned by gethostbyname\n", WSAGetLastError());
+            message("**** Error %d returned by gethostbyname\n", WSAGetLastError());
             return WSAGetLastError();
         }
         else
@@ -316,7 +337,7 @@ ConnectToServer(
 
         if((hp = gethostbyname(pszServerName)) == NULL)
         {
-            printf("**** Error %d returned by gethostbyname\n", WSAGetLastError());
+            message("**** Error %d returned by gethostbyname\n", WSAGetLastError());
             return WSAGetLastError();
         }
         else
@@ -329,7 +350,7 @@ ConnectToServer(
     {
 		int wsaerrornum;
 		wsaerrornum = WSAGetLastError();
-        printf("**** Error %d connecting to \"%s\" (%s)\n", 
+        message("**** Error %d connecting to \"%s\" (%s)\n", 
             wsaerrornum,
             pszServerName, 
             inet_ntoa(sin.sin_addr));
@@ -353,7 +374,7 @@ ConnectToServer(
         // Send message to proxy server
         if(send(Socket, pbMessage, cbMessage, 0) == SOCKET_ERROR)
         {
-            printf("**** Error %d sending message to proxy!\n", WSAGetLastError());
+            message("**** Error %d sending message to proxy!\n", WSAGetLastError());
             return WSAGetLastError();
         }
 
@@ -361,7 +382,7 @@ ConnectToServer(
         cbMessage = recv(Socket, pbMessage, 200, 0);
         if(cbMessage == SOCKET_ERROR)
         {
-            printf("**** Error %d receiving message from proxy\n", WSAGetLastError());
+            message("**** Error %d receiving message from proxy\n", WSAGetLastError());
             return WSAGetLastError();
         }
 
@@ -411,7 +432,7 @@ DisconnectFromServer(
 
     if(FAILED(Status)) 
     {
-        printf("**** Error 0x%x returned by ApplyControlToken\n", Status);
+        message("**** Error 0x%x returned by ApplyControlToken\n", Status);
         goto cleanup;
     }
 
@@ -450,7 +471,7 @@ DisconnectFromServer(
 
     if(FAILED(Status)) 
     {
-        printf("**** Error 0x%x returned by InitializeSecurityContext\n", Status);
+        message("**** Error 0x%x returned by InitializeSecurityContext\n", Status);
         goto cleanup;
     }
 
@@ -468,17 +489,16 @@ DisconnectFromServer(
         if(cbData == SOCKET_ERROR || cbData == 0)
         {
             Status = WSAGetLastError();
-            printf("**** Error %d sending close notify\n", Status);
+            message("**** Error %d sending close notify\n", Status);
             goto cleanup;
         }
 
-        printf("Sending Close Notify\n");
-        printf("%d bytes of handshake data sent\n", cbData);
+        message("Sending Close Notify\n");
+        message("%d bytes of handshake data sent\n", cbData);
 
         if(fVerbose)
         {
             PrintHexDump(cbData, pbMessage);
-            printf("\n");
         }
 
         // Free output buffer.
@@ -549,7 +569,7 @@ PerformClientHandshake(
 
     if(scRet != SEC_I_CONTINUE_NEEDED)
     {
-        printf("**** Error %d returned by InitializeSecurityContext (1)\n", scRet);
+        message("**** Error %d returned by InitializeSecurityContext (1)\n", scRet);
         return scRet;
     }
 
@@ -562,18 +582,17 @@ PerformClientHandshake(
                       0);
         if(cbData == SOCKET_ERROR || cbData == 0)
         {
-            printf("**** Error %d sending data to server (1)\n", WSAGetLastError());
+            message("**** Error %d sending data to server (1)\n", WSAGetLastError());
             g_SecurityFunc.FreeContextBuffer(OutBuffers[0].pvBuffer);
             g_SecurityFunc.DeleteSecurityContext(phContext);
             return SEC_E_INTERNAL_ERROR;
         }
 
-        printf("%d bytes of handshake data sent\n", cbData);
+        message("%d bytes of handshake data sent\n", cbData);
 
         if(fVerbose)
         {
             PrintHexDump(cbData, OutBuffers[0].pvBuffer);
-            printf("\n");
         }
 
         // Free output buffer.
@@ -624,7 +643,7 @@ ClientHandshakeLoop(
     IoBuffer = LocalAlloc(LMEM_FIXED, IO_BUFFER_SIZE);
     if(IoBuffer == NULL)
     {
-        printf("**** Out of memory (1)\n");
+        message("**** Out of memory (1)\n");
         return SEC_E_INTERNAL_ERROR;
     }
     cbIoBuffer = 0;
@@ -657,23 +676,22 @@ ClientHandshakeLoop(
                               0);
                 if(cbData == SOCKET_ERROR)
                 {
-                    printf("**** Error %d reading data from server\n", WSAGetLastError());
+                    message("**** Error %d reading data from server\n", WSAGetLastError());
                     scRet = SEC_E_INTERNAL_ERROR;
                     break;
                 }
                 else if(cbData == 0)
                 {
-                    printf("**** Server unexpectedly disconnected\n");
+                    message("**** Server unexpectedly disconnected\n");
                     scRet = SEC_E_INTERNAL_ERROR;
                     break;
                 }
 
-                printf("%d bytes of handshake data received\n", cbData);
+                message("%d bytes of handshake data received\n", cbData);
 
                 if(fVerbose)
                 {
                     PrintHexDump(cbData, IoBuffer + cbIoBuffer);
-                    printf("\n");
                 }
 
                 cbIoBuffer += cbData;
@@ -753,19 +771,18 @@ ClientHandshakeLoop(
                               0);
                 if(cbData == SOCKET_ERROR || cbData == 0)
                 {
-                    printf("**** Error %d sending data to server (2)\n", 
+                    message("**** Error %d sending data to server (2)\n", 
                         WSAGetLastError());
                     g_SecurityFunc.FreeContextBuffer(OutBuffers[0].pvBuffer);
                     g_SecurityFunc.DeleteSecurityContext(phContext);
                     return SEC_E_INTERNAL_ERROR;
                 }
 
-                printf("%d bytes of handshake data sent\n", cbData);
+                message("%d bytes of handshake data sent\n", cbData);
 
                 if(fVerbose)
                 {
                     PrintHexDump(cbData, OutBuffers[0].pvBuffer);
-                    printf("\n");
                 }
 
                 // Free output buffer.
@@ -799,7 +816,7 @@ ClientHandshakeLoop(
             // will later decrypt it with DecryptMessage.
             //
 
-            printf("Handshake was successful\n");
+            message("Handshake was successful\n");
 
             if(InBuffers[1].BufferType == SECBUFFER_EXTRA)
             {
@@ -807,7 +824,7 @@ ClientHandshakeLoop(
                                                   InBuffers[1].cbBuffer);
                 if(pExtraData->pvBuffer == NULL)
                 {
-                    printf("**** Out of memory (2)\n");
+                    message("**** Out of memory (2)\n");
                     return SEC_E_INTERNAL_ERROR;
                 }
 
@@ -818,7 +835,7 @@ ClientHandshakeLoop(
                 pExtraData->cbBuffer   = InBuffers[1].cbBuffer;
                 pExtraData->BufferType = SECBUFFER_TOKEN;
 
-                printf("%d bytes of app data was bundled with handshake data\n",
+                message("%d bytes of app data was bundled with handshake data\n",
                     pExtraData->cbBuffer);
             }
             else
@@ -842,7 +859,7 @@ ClientHandshakeLoop(
 
         if(FAILED(scRet))
         {
-            printf("**** Error 0x%x returned by InitializeSecurityContext (2)\n", scRet);
+            message("**** Error 0x%x returned by InitializeSecurityContext (2)\n", scRet);
             break;
         }
 
@@ -947,11 +964,11 @@ HttpsGetFile(
                                    &Sizes);
     if(scRet != SEC_E_OK)
     {
-        printf("**** Error 0x%x reading SECPKG_ATTR_STREAM_SIZES\n", scRet);
+        message("**** Error 0x%x reading SECPKG_ATTR_STREAM_SIZES\n", scRet);
         return scRet;
     }
 
-    printf("\nHeader: %d, Trailer: %d, MaxMessage: %d\n",
+    message("\nHeader: %d, Trailer: %d, MaxMessage: %d\n",
         Sizes.cbHeader,
         Sizes.cbTrailer,
         Sizes.cbMaximumMessage);
@@ -969,7 +986,7 @@ HttpsGetFile(
     pbIoBuffer = LocalAlloc(LMEM_FIXED, cbIoBufferLength);
     if(pbIoBuffer == NULL)
     {
-        printf("**** Out of memory (2)\n");
+        message("**** Out of memory (2)\n");
         return SEC_E_INTERNAL_ERROR;
     }
 
@@ -996,16 +1013,15 @@ HttpsGetFile(
     sprintf(pbMessage, 
             "GET /%s HTTP/1.0\r\nUser-Agent: Keyclient\r\nAccept:*/*\r\n\r\n", 
             pszFileName);
-    printf("\nHTTP request: %s\n", pbMessage);
+    message("\nHTTP request: %s\n", pbMessage);
 
     cbMessage = (DWORD)strlen(pbMessage);
 
-    printf("Sending plaintext: %d bytes\n", cbMessage);
+    message("Sending plaintext: %d bytes\n", cbMessage);
 
     if(fVerbose)
     {
         PrintHexDump(cbMessage, pbMessage);
-        printf("\n");
     }
 
     //
@@ -1034,7 +1050,7 @@ HttpsGetFile(
 
     if(FAILED(scRet))
     {
-        printf("**** Error 0x%x returned by EncryptMessage\n", scRet);
+        message("**** Error 0x%x returned by EncryptMessage\n", scRet);
         return scRet;
     }
 
@@ -1049,18 +1065,17 @@ HttpsGetFile(
                   0);
     if(cbData == SOCKET_ERROR || cbData == 0)
     {
-        printf("**** Error %d sending data to server (3)\n", 
+        message("**** Error %d sending data to server (3)\n", 
             WSAGetLastError());
         g_SecurityFunc.DeleteSecurityContext(phContext);
         return SEC_E_INTERNAL_ERROR;
     }
 
-    printf("%d bytes of application data sent\n", cbData);
+    message("%d bytes of application data sent\n", cbData);
 
     if(fVerbose)
     {
         PrintHexDump(cbData, pbIoBuffer);
-        printf("\n");
     }
 
     //
@@ -1083,7 +1098,7 @@ HttpsGetFile(
                           0);
             if(cbData == SOCKET_ERROR)
             {
-                printf("**** Error %d reading data from server\n", WSAGetLastError());
+                message("**** Error %d reading data from server\n", WSAGetLastError());
                 scRet = SEC_E_INTERNAL_ERROR;
                 break;
             }
@@ -1092,7 +1107,7 @@ HttpsGetFile(
                 // Server disconnected.
                 if(cbIoBuffer)
                 {
-                    printf("**** Server unexpectedly disconnected\n");
+                    message("**** Server unexpectedly disconnected\n");
                     scRet = SEC_E_INTERNAL_ERROR;
                     return scRet;
                 }
@@ -1103,12 +1118,11 @@ HttpsGetFile(
             }
             else
             {
-                printf("%d bytes of (encrypted) application data received\n", cbData);
+                message("%d bytes of (encrypted) application data received\n", cbData);
 
                 if(fVerbose)
                 {
                     PrintHexDump(cbData, pbIoBuffer + cbIoBuffer);
-                    printf("\n");
                 }
 
                 cbIoBuffer += cbData;
@@ -1149,7 +1163,7 @@ HttpsGetFile(
             scRet != SEC_I_RENEGOTIATE && 
             scRet != SEC_I_CONTEXT_EXPIRED)
         {
-            printf("**** Error 0x%x returned by DecryptMessage\n", scRet);
+            message("**** Error 0x%x returned by DecryptMessage\n", scRet);
             return scRet;
         }
 
@@ -1162,7 +1176,7 @@ HttpsGetFile(
             if(pDataBuffer == NULL && Buffers[i].BufferType == SECBUFFER_DATA)
             {
                 pDataBuffer = &Buffers[i];
-                printf("Buffers[%d].BufferType = SECBUFFER_DATA\n",i);
+                message("Buffers[%d].BufferType = SECBUFFER_DATA\n",i);
             }
             if(pExtraBuffer == NULL && Buffers[i].BufferType == SECBUFFER_EXTRA)
             {
@@ -1173,7 +1187,7 @@ HttpsGetFile(
         // Display or otherwise process the decrypted data.
         if(pDataBuffer)
         {
-            printf("Decrypted data: %d bytes\n", pDataBuffer->cbBuffer);
+            message("Decrypted data: %d bytes\n", pDataBuffer->cbBuffer);
 			
 			if (cbReply+pDataBuffer->cbBuffer+1 > sizeof_Reply) {  // +1 for null terminator
 				sizeof_Reply = cbReply + pDataBuffer->cbBuffer + 1024;
@@ -1186,7 +1200,6 @@ HttpsGetFile(
             if(fVerbose)
             {
                 PrintHexDump(pDataBuffer->cbBuffer, pDataBuffer->pvBuffer);
-                printf("\n");
             }
         }
 
@@ -1206,7 +1219,7 @@ HttpsGetFile(
             // The server wants to perform another handshake
             // sequence.
 
-            printf("Server requested renegotiate!\n");
+            message("Server requested renegotiate!\n");
 
             scRet = ClientHandshakeLoop(Socket, 
                                         phCreds, 
@@ -1241,38 +1254,36 @@ DisplayCertChain(
     PCCERT_CONTEXT pIssuerCert;
     DWORD dwVerificationFlags;
 
-    printf("\n");
-
     // display leaf name
     if(!CertNameToStr(pServerCert->dwCertEncodingType,
                       &pServerCert->pCertInfo->Subject,
                       CERT_X500_NAME_STR | CERT_NAME_STR_NO_PLUS_FLAG,
                       szName, sizeof(szName)))
     {
-        printf("**** Error 0x%x building subject name\n", GetLastError());
+        message("**** Error 0x%x building subject name\n", GetLastError());
     }
     if(fLocal)
     {
-        printf("Client subject: %s\n", szName);
+        message("Client subject: %s\n", szName);
     }
     else
     {
-        printf("Server subject: %s\n", szName);
+        message("Server subject: %s\n", szName);
     }
     if(!CertNameToStr(pServerCert->dwCertEncodingType,
                       &pServerCert->pCertInfo->Issuer,
                       CERT_X500_NAME_STR | CERT_NAME_STR_NO_PLUS_FLAG,
                       szName, sizeof(szName)))
     {
-        printf("**** Error 0x%x building issuer name\n", GetLastError());
+        message("**** Error 0x%x building issuer name\n", GetLastError());
     }
     if(fLocal)
     {
-        printf("Client issuer: %s\n", szName);
+        message("Client issuer: %s\n", szName);
     }
     else
     {
-        printf("Server issuer: %s\n\n", szName);
+        message("Server issuer: %s\n\n", szName);
     }
 
 
@@ -1299,17 +1310,17 @@ DisplayCertChain(
                           CERT_X500_NAME_STR | CERT_NAME_STR_NO_PLUS_FLAG,
                           szName, sizeof(szName)))
         {
-            printf("**** Error 0x%x building subject name\n", GetLastError());
+            message("**** Error 0x%x building subject name\n", GetLastError());
         }
-        printf("CA subject: %s\n", szName);
+        message("CA subject: %s\n", szName);
         if(!CertNameToStr(pIssuerCert->dwCertEncodingType,
                           &pIssuerCert->pCertInfo->Issuer,
                           CERT_X500_NAME_STR | CERT_NAME_STR_NO_PLUS_FLAG,
                           szName, sizeof(szName)))
         {
-            printf("**** Error 0x%x building issuer name\n", GetLastError());
+            message("**** Error 0x%x building issuer name\n", GetLastError());
         }
-        printf("CA issuer: %s\n\n", szName);
+        message("CA issuer: %s\n\n", szName);
 
         if(pCurrentCert != pServerCert)
         {
@@ -1349,7 +1360,7 @@ DisplayWinVerifyTrustError(DWORD Status)
     default:                            pszName = "(unknown)";                      break;
     }
 
-    printf("Error 0x%x (%s) returned by CertVerifyCertificateChainPolicy!\n", 
+    message("Error 0x%x (%s) returned by CertVerifyCertificateChainPolicy!\n", 
         Status, pszName);
 }
 
@@ -1416,7 +1427,7 @@ VerifyServerCertificate(
                             &pChainContext))
     {
         Status = GetLastError();
-        printf("Error 0x%x returned by CertGetCertificateChain!\n", Status);
+        message("Error 0x%x returned by CertGetCertificateChain!\n", Status);
         goto cleanup;
     }
 
@@ -1445,7 +1456,7 @@ VerifyServerCertificate(
                             &PolicyStatus))
     {
         Status = GetLastError();
-        printf("Error 0x%x returned by CertVerifyCertificateChainPolicy!\n", Status);
+        message("Error 0x%x returned by CertVerifyCertificateChainPolicy!\n", Status);
         goto cleanup;
     }
 
@@ -1482,13 +1493,13 @@ WriteDataToFile(
     file = fopen(pszFilename, "wb");
     if(file == NULL)
     {
-        printf("**** Error opening file '%s'\n", pszFilename);
+        message("**** Error opening file '%s'\n", pszFilename);
         return;
     }
 
     if(fwrite(pbData, 1, cbData, file) != cbData)
     {
-        printf("**** Error writing to file\n");
+        message("**** Error writing to file\n");
         return;
     }
 
@@ -1510,99 +1521,97 @@ DisplayConnectionInfo(
                                     (PVOID)&ConnectionInfo);
     if(Status != SEC_E_OK)
     {
-        printf("Error 0x%x querying connection info\n", Status);
+        message("Error 0x%x querying connection info\n", Status);
         return;
     }
-
-    printf("\n");
 
     switch(ConnectionInfo.dwProtocol)
     {
         case SP_PROT_TLS1_CLIENT:
-            printf("Protocol: TLS1\n");
+            message("Protocol: TLS1\n");
             break;
 
         case SP_PROT_SSL3_CLIENT:
-            printf("Protocol: SSL3\n");
+            message("Protocol: SSL3\n");
             break;
 
         case SP_PROT_PCT1_CLIENT:
-            printf("Protocol: PCT\n");
+            message("Protocol: PCT\n");
             break;
 
         case SP_PROT_SSL2_CLIENT:
-            printf("Protocol: SSL2\n");
+            message("Protocol: SSL2\n");
             break;
 
         default:
-            printf("Protocol: 0x%x\n", ConnectionInfo.dwProtocol);
+            message("Protocol: 0x%x\n", ConnectionInfo.dwProtocol);
     }
 
     switch(ConnectionInfo.aiCipher)
     {
         case CALG_RC4: 
-            printf("Cipher: RC4\n");
+            message("Cipher: RC4\n");
             break;
 
         case CALG_3DES: 
-            printf("Cipher: Triple DES\n");
+            message("Cipher: Triple DES\n");
             break;
 
         case CALG_RC2: 
-            printf("Cipher: RC2\n");
+            message("Cipher: RC2\n");
             break;
 
         case CALG_DES: 
         case CALG_CYLINK_MEK:
-            printf("Cipher: DES\n");
+            message("Cipher: DES\n");
             break;
 
         case CALG_SKIPJACK: 
-            printf("Cipher: Skipjack\n");
+            message("Cipher: Skipjack\n");
             break;
 
         default: 
-            printf("Cipher: 0x%x\n", ConnectionInfo.aiCipher);
+            message("Cipher: 0x%x\n", ConnectionInfo.aiCipher);
     }
 
-    printf("Cipher strength: %d\n", ConnectionInfo.dwCipherStrength);
+    message("Cipher strength: %d\n", ConnectionInfo.dwCipherStrength);
 
     switch(ConnectionInfo.aiHash)
     {
         case CALG_MD5: 
-            printf("Hash: MD5\n");
+            message("Hash: MD5\n");
             break;
 
         case CALG_SHA: 
-            printf("Hash: SHA\n");
+            message("Hash: SHA\n");
             break;
 
         default: 
-            printf("Hash: 0x%x\n", ConnectionInfo.aiHash);
+            message("Hash: 0x%x\n", ConnectionInfo.aiHash);
     }
 
-    printf("Hash strength: %d\n", ConnectionInfo.dwHashStrength);
+    message("Hash strength: %d\n", ConnectionInfo.dwHashStrength);
 
     switch(ConnectionInfo.aiExch)
     {
         case CALG_RSA_KEYX: 
         case CALG_RSA_SIGN: 
-            printf("Key exchange: RSA\n");
+            message("Key exchange: RSA\n");
             break;
 
         case CALG_KEA_KEYX: 
-            printf("Key exchange: KEA\n");
+            message("Key exchange: KEA\n");
             break;
 
         case CALG_DH_EPHEM:
-            printf("Key exchange: DH Ephemeral\n");
+            message("Key exchange: DH Ephemeral\n");
             break;
 
         default: 
-            printf("Key exchange: 0x%x\n", ConnectionInfo.aiExch);
+            message("Key exchange: 0x%x\n", ConnectionInfo.aiExch);
     }
 
-    printf("Key exchange strength: %d\n", ConnectionInfo.dwExchStrength);
+    message("Key exchange strength: %d\n", ConnectionInfo.dwExchStrength);
 }
 
 
@@ -1630,7 +1639,7 @@ GetNewClientCredentials(
                                     (PVOID)&IssuerListInfo);
     if(Status != SEC_E_OK)
     {
-        printf("Error 0x%x querying issuer list info\n", Status);
+        message("Error 0x%x querying issuer list info\n", Status);
         return;
     }
 
@@ -1659,10 +1668,10 @@ GetNewClientCredentials(
                                              pChainContext);
         if(pChainContext == NULL)
         {
-            printf("Error 0x%x finding cert chain\n", GetLastError());
+            message("Error 0x%x finding cert chain\n", GetLastError());
             break;
         }
-        printf("\ncertificate chain found\n");
+        message("\ncertificate chain found\n");
 
         // Get pointer to leaf certificate context.
         pCertContext = pChainContext->rgpChain[0]->rgpElement[0]->pCertContext;
@@ -1683,10 +1692,10 @@ GetNewClientCredentials(
                             &tsExpiry);             // (out) Lifetime (optional)
         if(Status != SEC_E_OK)
         {
-            printf("**** Error 0x%x returned by AcquireCredentialsHandle\n", Status);
+            message("**** Error 0x%x returned by AcquireCredentialsHandle\n", Status);
             continue;
         }
-        printf("\nnew schannel credential created\n");
+        message("\nnew schannel credential created\n");
 
         // Destroy the old credentials.
         g_SecurityFunc.FreeCredentialsHandle(phCreds);
@@ -1749,7 +1758,7 @@ PrintHexDump(DWORD length, PBYTE buffer)
         }
 
         rgbLine[cbLine++] = 0;
-        printf("%s\n", rgbLine);
+        message("%s\n", rgbLine);
     }
 }
 

@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.10 2003-09-26 22:27:02 ryanc Exp $
+//  $Id: debug.c,v 1.11 2003-11-12 04:46:29 ryanc Exp $
 //
 
 #include <windows.h>
@@ -28,7 +28,7 @@ typedef void pool;
 #include "../pbc_configure.h"
 #include "debug.h"
 
-pool *p=NULL;
+extern pool *p=NULL;
 
 #define BUFFSIZE 4096
 
