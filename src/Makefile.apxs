@@ -1,8 +1,11 @@
+# -*- make -*-
+#
+#  $Id: Makefile.apxs,v 1.12 2002-05-23 19:32:59 jteaton Exp $
+
+include Makefile.settings
 
 # if the apache binaries aren't in your path
 APXS=/usr/local/apache/bin/apxs
-# set your path to ssl libraries
-SSL_BASE=/usr/local/ssl
 
 # some mod_pubcookie compile flags
 #  -DAPACHE1_2 - for old apaches
@@ -11,23 +14,48 @@ SSL_BASE=/usr/local/ssl
 #  -DPORT80_TEST - for non-ssl testing 
 #  -DNO_JIMB_SESSION_NAMES - makes session cookies all be named the same
 #  -DUSE_SECURID - UWash securid only
-CFLAGS=-DAPACHE1_3 -Wall
+DEFINES += -DAPACHE1_3
 
-INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
-LIBS=$(EXTRA_LDFLAGS) -L$(SSL_BASE)/lib -lssl -lcrypto 
+.PHONY: all ver
 
-all: mod_pubcookie.so
+all: ver mod_pubcookie.so
+
+VERSION :=`awk '/PBC_PUBID/{print $$3}' pbc_version.h | sed 's/"//g'`
+BASENAME := mod_pubcookie-$(VERSION)
+
+ver:
+	@echo Making $(BASENAME)
+
+include Makefile.libpubcookie
+
+MAKEFILES += Makefile.apxs
+
+MOD_SRC=mod_pubcookie.c
+
+ALL_SRC=$(MOD_SRC) $(LIB_SRC)
+
+ALL_HEAD=$(LIB_HEAD)
 
 MAKEFILE=Makefile.apxs
 GENERALHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h
+DOCS=$(GENERAL_DOCS) \
+	 ../doc/CHANGES.mod_pubcookie.txt
 
-mod_pubcookie.so: mod_pubcookie.c libpubcookie.c pbc_myconfig.c ${GENERALHEAD} ${MAKEFILE}
-	$(APXS) -c $(CFLAGS) $(INCS) mod_pubcookie.c libpubcookie.c pbc_myconfig.c base64.c $(LIBS)
+mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) ${MAKEFILES}
+	$(APXS) -c $(CFLAGS) $(MOD_SRC) $(LIB_SRC) $(LIBS)
 
-install: all
+install:: all
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
 
-clean:
-	-rm -f mod_pubcookie.o libpubcookie.o base64.o pbc_myconfig.o mod_pubcookie.so so_locations
+clean::
+	-$(FORCE_RM) mod_pubcookie.o mod_pubcookie.so so_locations
 
+dist: ver
+	$(MKDIR) $(BASENAME)
+	$(CP) $(ALL_SRC) $(ALL_HEAD) $(MAKEFILES) $(DOCS) \
+		  $(BASENAME)/
+	$(TAR) cf $(BASENAME).tar $(BASENAME)/
+	$(GZIP) $(BASENAME).tar
+	$(RECURSIVE_FORCE_RM) ./$(BASENAME)/
 
+# vim: set noet:

@@ -18,11 +18,13 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.20 2002-05-15 20:25:25 willey Exp $
+ * $Revision: 1.21 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
 #define PUBCOOKIE_LOGIN_CGI
+
+#include <time.h>
 
 typedef struct {
     char	*args;
@@ -57,6 +59,7 @@ typedef struct {
     int		reply;
     int		alterable_username;
     int		pinit;
+    char        *check_error;
 } login_rec;
 
 struct browser {
@@ -154,7 +157,9 @@ int check_user_agent();
 void log_message(const char *, ...);
 void log_error(int, const char *, int, const char *, ...);
 void clear_error(const char *, const char *);
+#if 0
 void print_login_page(login_rec *, login_rec *, char *, char *, int, int);
+#endif
 void print_login_page_lhs1(char *, char *, char *);
 void print_login_page_lhs2(login_rec *);
 void print_login_page_centre();
@@ -181,6 +186,17 @@ int init_crypt();
 int set_pinit_cookie();
 int clear_pinit_cookie();
 
+const char *get_domain_hostname();
+
+/* print part of the HTML */
+void print_html(const char *format, ...);
+/* print it from the template "fname" */
+void tmpl_print_html(const char *fname,...);
+
+/* print part of the HTTP headers */
+void print_header(const char *format, ...);
+
+
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"
 #define THIS_CGI "cindex.cgi"
@@ -189,7 +205,7 @@ int clear_pinit_cookie();
 #define APP_LOGOUT_STR "app_logout_string"
 #define APP_LOGOUT_STR_SEP '-'
 
-#define TMPL_FNAME "/usr/local/pubcookie/login_templates/"
+#define TMPL_FNAME PBC_PATH "login_templates/"
 
 /* why print login page ? */
 #define LOGIN_REASON_AUTH_FAIL   "bad auth"
@@ -261,9 +277,10 @@ int clear_pinit_cookie();
 #define FIRST_SERIAL 23
 
 /* file to get the list of ok browsers from */
-#define OK_BROWSERS_FILE "/usr/local/pubcookie/ok_browsers"
+#define OK_BROWSERS_FILE PBC_PATH "ok_browsers"
+
 /* file to get browser information from */
-#define BROWSERS_FILE "/usr/local/pubcookie/browsers"
+#define BROWSERS_FILE PBC_PATH "browsers"
 
 #define PBC_BRWSER_OK 0
 #define PBC_BRWSER_DENY 1

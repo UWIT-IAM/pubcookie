@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.49 2002-05-18 00:58:51 willey Exp $
+ *  $Revision: 1.50 $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -42,14 +42,13 @@
 #  if defined (WIN32)
 #    define PBC_PATH "\\System32\\inetsrv\\pubcookie\\"
 #  else 
-#    define PBC_PATH "/usr/local/pubcookie/"
+#    define PBC_PATH "/usr/www/pubcookie/"
 #  endif
 #endif
 
 /* where the runtime configuration file lives */
 #define PBC_CONFIG (PBC_PATH "config")
 
-/****** non University of Washington customers must change these ****/
 /* names of the login servers */
 #define PBC_CONFIGED
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
@@ -80,9 +79,9 @@
 /*   filenames will be used                                         */
 #define PBC_KEY_DIR PBC_PATH
 #define PBC_CRYPT_KEY_PREFIX "c_key"
-#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
-#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
-#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
+#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login.cert"
+#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login.key"
+#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting.key"
 
 #define PBC_DEFAULT_AUTHTYPE "webiso-vanilla"
 

@@ -1,11 +1,6 @@
-Pragma: No-Cache
-Cache-Control: no-store, no-cache, must-revalidate
-Expires: Sat, 1 Jan 2000 01:01:01 GMT
-Content-Type: text/html
-
 <!-- 
      think of this as a big format string for a printf statement
-     there are substitution tokens thru-out, mostly %s
+     there are substitution tokens thru-out
      comments hav been added to explain what will be substitued
   -->
 

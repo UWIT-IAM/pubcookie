@@ -1,3 +1,6 @@
+# -*- make -*-
+#
+#  $Id: Makefile.tmpl,v 1.7 2002-05-23 19:32:59 jteaton Exp $
 
 OBJS=mod_pubcookie.o libpubcookie.o base64.o myconfig.o
 
@@ -14,3 +17,4 @@ $(OBJS): Makefile
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 libpubcookie.o: libpubcookie.c libpubcookie.h pbc_myconfig.c pbc_myconfig.h pubcookie.h pbc_config.h pbc_version.h
 
+# vim: set noet:

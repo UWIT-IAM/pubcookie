@@ -1,17 +1,6 @@
 *** some files contain HTTP server headers 
 *** editing them with visual tools looses or garbles them
 
-Most files here begin with QUOTE
-Pragma: No-Cache                                
-Cache-Control: no-store, no-cache, must-revalidate 
-Expires: Sat, 1 Jan 2000 01:01:01 GMT                        
-Content-Type: text/html                                       
-                                                                  
-ENDQUOTE
-
-Note the extra blank line after the headers.  These are HTTP headers.
-
-
 *** some files are snipits of html the login program stiches together
 *** editing them with a tool will added <html> and <body> tags that
 *** will conflict

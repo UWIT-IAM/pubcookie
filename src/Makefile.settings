@@ -1,0 +1,58 @@
+# -*- make -*-
+# 
+# Makefile.settings, All of those exciting settings
+# 
+# Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
+# 
+# $Id: Makefile.settings,v 1.2 2002-05-23 19:32:59 jteaton Exp $
+
+CC=cc
+
+SSL_BASE=/usr/local/
+SSL_OTHER_INC_DIR=
+SSL_OTHER_LIB_DIR=
+
+EXTRA_CFLAGS=
+EXTRA_LDFLAGS=
+EXTRA_LIBS=
+
+PUBCOOKIE_DIR=/usr/local/pubcookie
+LOGIN_DIR=$(PUBCOOKIE_DIR)/login
+TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
+
+INSTALL=install -p -b
+INSTALL_BIN=$(INSTALL) -m 755 -o root -g other
+INSTALL_OTHER=$(INSTALL) -m 644 -o root -g other
+INSTALL_DIR=$(INSTALL) -d
+
+RM=rm
+FORCE_RM=$(RM) -f
+RECURSIVE_FORCE_RM=$(RM) -rf
+CP=cp
+RECURSIVE_CP=cp -r
+MKDIR=mkdir
+MV=mv
+AWK=awk
+SED=sed
+TAR=tar
+GZIP=gzip
+
+MAKEFILES += Makefile.settings
+
+GENERAL_DOCS=../doc/README.txt \
+			 ../doc/CREDITS.txt \
+			 ../doc/LICENSE.txt \
+			 ../doc/config.sample
+
+# Hopefully these two needn't be changed very often
+
+LIBS=-lssl -lcrypto
+
+CFLAGS=-I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl \
+	   $(SSL_OTHER_INC_DIR) $(EXTRA_CFLAGS) \
+	   $(DEFINES)
+
+LDFLAGS=-L$(SSL_BASE)/lib $(SSL_OTHER_LIB_DIR) \
+		$(EXTRA_LDFLAGS) $(LIBS) $(EXTRA_LIBS)
+
+# vim: set noet:

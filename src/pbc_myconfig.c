@@ -42,7 +42,7 @@
  */
 
 /*
- * $Id: pbc_myconfig.c,v 1.3 2002-05-14 03:09:48 willey Exp $
+ * $Revision: 1.4 $
  */
 
 /* xxx this should almost certainly use the registry on windows */
@@ -51,7 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-/* #include <com_err.h> */
+#include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sysexits.h>
@@ -161,7 +161,7 @@ int libpbc_config_getint(const char *key, int def)
 int libpbc_config_getswitch(const char *key, int def)
 {
     const char *val = libpbc_config_getstring(key, (char *)0);
-    
+
     if (!val) return def;
     
     if (*val == '0' || *val == 'n' ||
@@ -172,6 +172,7 @@ int libpbc_config_getswitch(const char *key, int def)
              (*val == 'o' && val[1] == 'n') || *val == 't') {
         return 1;
     }
+
     return def;
 }
 

@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.44 2002-05-18 01:22:30 willey Exp $
+ * $Revision: 1.45 $
  */
 
 
@@ -42,30 +42,25 @@
 #include <fcntl.h>
 /* openssl */
 #include <pem.h>
-/* kerberos  */
-#include <com_err.h>
-#include <krb5.h>
-#ifdef KRB5
-#include <krb5-types.h>
-#include "k5auth.h"
-#endif
-#ifdef KRB4
-#include "k4auth.h"
-#endif
-/* securid */
-#include "securid.h"
+
 /* pubcookie things */
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
 #include "index.cgi.h"
+
+#include "flavor.h"
+
 /* cgic */
 #include <cgic.h>
 
 /* the mirror file is a mirror of what gets written out of the cgi */
 /* of course it is overwritten each time this runs                 */
-FILE	*mirror;
+FILE *mirror;
+
+FILE *htmlout;
+FILE *headerout;
 
 /* do we want debugging? */
 int debug;
@@ -145,14 +140,44 @@ static void buf_template_vprintf(const char *fname, char *dst, size_t n,
 }
 
 
-void print_out(char *format,...)
+/**
+ * print_html saves HTML to be printed at exit, after HTTP headers
+ * @param format a printf style formatting
+ * @param ... printf style
+ * @return always succeeds
+ */
+void print_html(const char *format, ...)
 {
     va_list args;
 
     va_start(args, format);
-    vprintf(format, args);
+    vfprintf(htmlout, format, args);
 
-    if (debug) {
+    if (debug > 1) {
+	vfprintf(stderr, format, args);
+    }
+
+    if (mirror) {
+	vfprintf(mirror, format, args);
+    }
+
+    va_end(args);
+}
+
+/**
+ * print_header saves HTTP headers to be printed at exit
+ * @param format a printf style formatting
+ * @param ... printf style
+ * @return always succeeds
+ */
+void print_header(const char *format, ...)
+{
+    va_list args;
+
+    va_start(args, format);
+    vfprintf(headerout, format, args);
+
+    if (debug > 1) {
 	vfprintf(stderr, format, args);
     }
 
@@ -166,7 +191,7 @@ void print_out(char *format,...)
 /*
  * print out using a template
  */
-static void tmpl_print_out(const char *fname,...)
+void tmpl_print_html(const char *fname,...)
 {
   char buf[MAX_EXPANDED_TEMPLATE_SIZE];
   va_list args;
@@ -179,9 +204,9 @@ static void tmpl_print_out(const char *fname,...)
   buf_template_vprintf(fname, buf, sizeof(buf), args);
   va_end(args);
 
-  printf("%s", buf);
+  fprintf(htmlout, "%s", buf);
 
-  if (debug) {
+  if (debug > 1) {
       fprintf(stderr,"%s",buf);
   }
 
@@ -190,13 +215,61 @@ static void tmpl_print_out(const char *fname,...)
   }
 }
 
+/**
+ * output the cached headers and html files.
+ * should be called before exiting if we want to show anything to the client.
+ */
+void do_output(void)
+{
+    /* set the cookies on the client */
+    rewind(headerout);
+    while (!feof(headerout)) {
+	char buf[8192];
+	size_t x;
+
+	x = fread(buf, sizeof(char), sizeof(buf), headerout);
+	if (x) {
+	    fwrite(buf, x, 1, stdout);
+	}
+    }
+
+    printf("\r\n");
+    
+    /* send the HTML to the client */
+    rewind(htmlout);
+    while (!feof(htmlout)) {
+	char buf[8192];
+	size_t x;
+
+	x = fread(buf, sizeof(char), sizeof(buf), htmlout);
+	if (x) {
+	    fwrite(buf, x, 1, stdout);
+	}
+    }
+    
+    fflush(stdout);
+}
 
 /**
- * checks a login_rec contents for expiration 
+ * all of our output always uses the following headers.
+ * this should probably be runtime configurable.
+ * @return always succeeds
+ */
+void print_http_header(void)
+{
+        print_header("Pragma: No-Cache\n");
+        print_header("Cache-Control: no-store, no-cache, must-revalidate\n");
+        print_header("Expires: Sat, 1 Jan 2000 01:01:01 GMT\n");
+        print_header("Content-Type: text/html\n");
+
+}
+
+/**
+ * checks a login_rec contents for expiration
  * @param *c from login cookie
  * @param t now
- * @returns PBC_FAIL for expired 
- * @returns PBC_OK   for not expired 
+ * @returns PBC_FAIL for expired
+ * @returns PBC_OK   for not expired
  */
 int check_l_cookie_expire (login_rec *c, time_t t) 
 {
@@ -306,8 +379,9 @@ char *get_string_arg(char *name, cgiFormResultType (*f)())
 int get_int_arg(char *name, int def) {
     int		i;
 
-    if( cgiFormInteger(name, &i, 0) == cgiFormSuccess )
+    if( cgiFormInteger(name, &i, 0) == cgiFormSuccess ) {
         return(i);
+}
     else
         return(def);
 
@@ -401,8 +475,7 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
       		PBC_EM2_START,
 		PROBLEMS_PERSIST,
          	PBC_EM2_END);
-          print_login_page(l, c, message, "cookie create failed",
-			   NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
+          // XXX print_login_page(l, c, "cookie create failed");
           log_error(1, "system-problem", 0,
 		    "Not able to create cookie for user %s at %s-%s",
 		    l->user, l->appsrvid, l->appid);
@@ -411,9 +484,9 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
     }
 
 #ifdef PORT80_TEST
-    print_out("Set-Cookie: %s=%s; domain=%s; path=%s\n", 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=%s\n", 
 #else
-    print_out("Set-Cookie: %s=%s; domain=%s; path=%s; secure\n", 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; secure\n", 
 #endif
 		PBC_L_COOKIENAME,
                 l_cookie,
@@ -434,9 +507,9 @@ int clear_login_cookie() {
         log_message("clear_login_cookie: hello");
 
 #ifdef PORT80_TEST
-    print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s\n",
+    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s\n",
 #else
-    print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
 #endif
             PBC_L_COOKIENAME, 
             PBC_CLEAR_COOKIE,
@@ -455,9 +528,9 @@ int clear_login_cookie() {
 int clear_greq_cookie() {
 
 #ifdef PORT80_TEST
-    print_out("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n",
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n",
 #else
-    print_out("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\n",
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\n",
 #endif
             PBC_G_REQ_COOKIENAME, 
             PBC_CLEAR_COOKIE,
@@ -690,6 +763,7 @@ void abend(char *message)
 
     log_error(1, "abend", 0, message);
     notok(notok_generic);
+    do_output();
     exit(0);
 
 }
@@ -788,19 +862,27 @@ char *granting_private_keyfile()
 /* reads the crypt key */
 int init_crypt() 
 {
-    unsigned char	crypt_keyfile[PBC_4K];
+    unsigned char crypt_keyfile[PBC_4K];
 
-    if (c_stuff != NULL )
+    if (c_stuff != NULL ) {
         return(PBC_OK);
+    }
 
-    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
-	     PBC_KEY_DIR, PBC_CRYPT_KEY_PREFIX, get_my_hostname()); 
-
-    if ((c_stuff = libpbc_init_crypt(crypt_keyfile)) == NULL )
+#ifdef LARRY_SUCKS
+    if ((c_stuff = libpbc_init_crypt(get_my_hostname())) == NULL ) {
 	return(PBC_FAIL);
-    else 
+    } else {
 	return(PBC_OK);
-
+    }
+#else
+    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s",
+	     PBC_KEY_DIR, PBC_CRYPT_KEY_PREFIX, get_my_hostname());
+    if ((c_stuff = libpbc_init_crypt(crypt_keyfile)) == NULL) {
+	return PBC_FAIL;
+    } else {
+	return PBC_OK;
+    }
+#endif
 }
 
 int has_login_cookie()
@@ -889,72 +971,50 @@ char *decode_granting_request(char *in)
     /*                                                                   */
     /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
+/* xxx temporary hack before i do dynamic selection */
+#define GETFLAVOR_(fl) (login_flavor_ ## fl)
+#define GETFLAVOR(fl) (GETFLAVOR_(fl))
+
+extern struct login_flavor GETFLAVOR( FLAVOR );
+
 int vector_request(login_rec *l, login_rec *c)
 {
-    char	*res;
-    char	message[PBC_4K];
+    login_result res;
+    const char *errstr = NULL;
+    struct login_flavor *fl = & GETFLAVOR( FLAVOR );
 
     if (debug) {
 	fprintf(stderr, "vector_request: hello\n");
-	fprintf(stderr, "vector_request: l->creds: %c\n", l->creds);
     }
 
-    if ( l->reply == FORM_REPLY ) {      /* a reply from the login page */
-        res = check_login(l, c);
-        if (strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
-            log_message("%s Authentication failed: %s type: %c %s",
-			l->first_kiss, l->user, l->creds, res);
-            l->alterable_username = PBC_TRUE; /* username might be wrong */
-            if (!strcmp(res, CHECK_LOGIN_RET_FAIL) ) {
-                snprintf(message, sizeof(message)-1, "%s%s%s<P>%s",
-                    PBC_EM1_START,
-                    AUTH_FAILED_MESSAGE1,
-                    PBC_EM1_END, 
-                    AUTH_FAILED_MESSAGE2);
-            }
-            else {
-                snprintf(message, sizeof(message)-1, "%s%s%s<P>",
-                    PBC_EM1_START,
-                    AUTH_TROUBLE,
-                    PBC_EM1_END);
-            }
-            print_login_page(l, c, message, LOGIN_REASON_AUTH_FAIL, 
-			     NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-            return(PBC_FAIL);
-        }
-        log_message("%s Authentication success: %s type: %c", l->first_kiss,
-		    l->user, l->creds);
-        /* reset the expire times so new expire will be set */
-        l->expire_ts = PBC_FALSE;
-        if( c != NULL )
-            c->expire_ts = PBC_FALSE;
-    }
-    else if (l->creds == PBC_CREDS_CRED3 ) {             /* securid */
-        print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_SECURID,
-			 NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-        return(PBC_FAIL);
-    }
-    else if ( !has_login_cookie() ) {          /* no l cookie, must login */
-        print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_NO_L,
-			 NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-        return(PBC_FAIL);
-    }
-    /* session timeout requires reauth */
-    else if (l->session_reauth == PBC_SESSION_REAUTH ) { 
-      print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_SESS_REAUTH,
-			 NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-        return(PBC_FAIL);
-    }
-    else if ( (res=check_l_cookie(l, c)) ) {      /* problem w/ the l cookie*/
-        log_message("%s Login cookie bad: %s", l->first_kiss, res);
-        print_login_page(l, c, PRINT_LOGIN_PLEASE, res, 
-			 NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-        return(PBC_FAIL);
-    }
+    /* xxx find flavor of authn requested --- currently hardcoded */
 
-    return(PBC_OK);
+    /* decode login cookie */
+    l->check_error = check_l_cookie(l, c);
 
+    /* init_flavor should probably be called earlier on, but it
+       works here for now */
+    fl->init_flavor();
 
+    /* call authn flavor to determine correct result */
+    res = fl->process_request(l, c, &errstr);
+
+    switch (res) {
+    case LOGIN_OK:
+        return PBC_OK;
+        break;
+
+    case LOGIN_ERR:
+        return PBC_FAIL;
+        break;
+
+    case LOGIN_INPROGRESS:
+        return PBC_FAIL;
+        break;
+
+    default:
+        abort();
+    }
 }
 
 
@@ -965,7 +1025,6 @@ int vector_request(login_rec *l, login_rec *c)
 char *user_agent() 
 {
     return(cgiUserAgent);
-
 }
 
 /**
@@ -985,15 +1044,16 @@ int get_kiosk_duration(login_rec *l)
     keys = libpbc_config_getlist("kiosk_keys");
     values = libpbc_config_getlist("kiosk_values");
 
-    for(i=0; keys[i] != NULL && values[i] != NULL; i++) {
-        if( strstr(user_agent(), keys[i]) != NULL ) {
-            if(debug)
-                log_message("is kiosk: %s duration: %s\n", 
-				user_agent(), values[i]);
-            return(atoi(values[i]));
-        }
+    if(keys != NULL) {
+       for(i=0; keys[i] != NULL && values[i] != NULL; i++) {
+           if( strstr(user_agent(), keys[i]) != NULL ) {
+               if(debug)
+                   log_message("is kiosk: %s duration: %s\n", 
+	   			user_agent(), values[i]);
+               return(atoi(values[i]));
+           }
+       }
     }
-
     /* not a kiosk */
     return(PBC_FALSE);
 
@@ -1068,6 +1128,8 @@ const char *time_remaining_text(login_rec *c)
                 secs_left % 3600 % 60);
 
     free(h), free(m);
+
+fprintf(stderr, "returning: %s\n", remaining);
     return(remaining);
 
 }
@@ -1096,12 +1158,12 @@ int app_logged_out(login_rec *c, const char *appid, const char *appsrvid)
     *new = '\0';
 
     if( (s=libpbc_config_getstring(app_string, NULL)) == NULL ) {
-        tmpl_print_out(TMPL_FNAME "logout_app");
+        tmpl_print_html(TMPL_FNAME "logout_app");
     }
     else {
-        tmpl_print_out(TMPL_FNAME "logout_app_custom_prefix");
-        print_out("%s\n", s);
-        tmpl_print_out(TMPL_FNAME "logout_app_custom_suffix");
+        tmpl_print_html(TMPL_FNAME "logout_app_custom_prefix");
+        print_html("%s\n", s);
+        tmpl_print_html(TMPL_FNAME "logout_app_custom_suffix");
     }
  
     free(app_string);
@@ -1124,45 +1186,44 @@ int logout(login_rec *l, login_rec *c, int logout_action)
     clear_greq_cookie();     /* just in case there in one lingering */
 
     if( logout_action == LOGOUT_ACTION_NOTHING ) {
-        tmpl_print_out(TMPL_FNAME "logout_part1");
+        tmpl_print_html(TMPL_FNAME "logout_part1");
         app_logged_out(c, appid, appsrvid);
         if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL) {
-            tmpl_print_out(TMPL_FNAME "logout_already_weblogin");
-            tmpl_print_out(TMPL_FNAME "logout_postscript_still_others");
+            tmpl_print_html(TMPL_FNAME "logout_already_weblogin");
+            tmpl_print_html(TMPL_FNAME "logout_postscript_still_others");
         }
         else {
-            tmpl_print_out(TMPL_FNAME "logout_still_weblogin",
+            tmpl_print_html(TMPL_FNAME "logout_still_weblogin",
                         (c == NULL || c->user == NULL ? "unknown" : c->user));
-            tmpl_print_out(TMPL_FNAME "logout_time_remaining", 
+            tmpl_print_html(TMPL_FNAME "logout_time_remaining", 
 			time_remaining_text(c));
-            tmpl_print_out(TMPL_FNAME "logout_postscript_still_weblogin");
+            tmpl_print_html(TMPL_FNAME "logout_postscript_still_weblogin");
         }
-        tmpl_print_out(TMPL_FNAME "logout_part2");
+        tmpl_print_html(TMPL_FNAME "logout_part2");
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L ) {
         expire_login_cookie(l, c);
-        tmpl_print_out(TMPL_FNAME "logout_part1");
+        tmpl_print_html(TMPL_FNAME "logout_part1");
         app_logged_out(c, appid, appsrvid);
         if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL)
-            tmpl_print_out(TMPL_FNAME "logout_already_weblogin");
+            tmpl_print_html(TMPL_FNAME "logout_already_weblogin");
         else 
-            tmpl_print_out(TMPL_FNAME "logout_weblogin");
-        tmpl_print_out(TMPL_FNAME "logout_postscript_still_others");
-        tmpl_print_out(TMPL_FNAME "logout_part2");
+            tmpl_print_html(TMPL_FNAME "logout_weblogin");
+        tmpl_print_html(TMPL_FNAME "logout_postscript_still_others");
+        tmpl_print_html(TMPL_FNAME "logout_part2");
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L_NO_APP ) {
         expire_login_cookie(l, c);
-        tmpl_print_out(TMPL_FNAME "logout_part1");
+        tmpl_print_html(TMPL_FNAME "logout_part1");
         if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL )
-            tmpl_print_out(TMPL_FNAME "logout_already_weblogin");
+            tmpl_print_html(TMPL_FNAME "logout_already_weblogin");
         else 
-            tmpl_print_out(TMPL_FNAME "logout_weblogin");
-        tmpl_print_out(TMPL_FNAME "logout_postscript_still_others");
-        tmpl_print_out(TMPL_FNAME "logout_part2");
+            tmpl_print_html(TMPL_FNAME "logout_weblogin");
+        tmpl_print_html(TMPL_FNAME "logout_postscript_still_others");
+        tmpl_print_html(TMPL_FNAME "logout_part2");
     }
 
     return(PBC_OK);
-
 }
 
 int check_logout(login_rec *l, login_rec *c) 
@@ -1181,6 +1242,7 @@ int check_logout(login_rec *l, login_rec *c)
     if ( logout_action != LOGOUT_ACTION_UNSET ) {
         fprintf(stderr, "check_logout: logout_action : %s\n", cgiScriptName);
         logout(l, c, logout_action);
+        do_output();
         exit(0);
     }
  
@@ -1201,6 +1263,7 @@ int check_logout(login_rec *l, login_rec *c)
          uri != NULL &&
 	 strcasecmp(logout_prog, uri) == 0 ) {
         logout(l, c, LOGOUT_ACTION_CLEAR_L_NO_APP);
+        do_output();
         exit(0);
     }
 
@@ -1218,9 +1281,9 @@ void status_part1()
     int		min_delay = libpbc_config_getint("min_countdown", 9999);
 
     if( delay != 0 && delay >= min_delay )
-        tmpl_print_out(TMPL_FNAME "status_part1_with_countdown", delay, delay);
+        tmpl_print_html(TMPL_FNAME "status_part1_with_countdown", delay, delay);
     else
-        tmpl_print_out(TMPL_FNAME "status_part1");
+        tmpl_print_html(TMPL_FNAME "status_part1");
         
 }
 
@@ -1231,12 +1294,12 @@ void status_part1()
 void login_status_page(login_rec *c)
 {
     status_part1();
-    tmpl_print_out(TMPL_FNAME "logout_still_weblogin",
+    tmpl_print_html(TMPL_FNAME "logout_still_weblogin",
            (c == NULL || c->user == NULL ? "unknown" : c->user));
-    tmpl_print_out(TMPL_FNAME "logout_time_remaining", time_remaining_text(c));
-    tmpl_print_out(TMPL_FNAME "logout_postscript_still_weblogin");
-    tmpl_print_out(TMPL_FNAME "status_part2");
-
+    tmpl_print_html(TMPL_FNAME "logout_time_remaining", time_remaining_text(c));
+    tmpl_print_html(TMPL_FNAME "logout_postscript_still_weblogin");
+    tmpl_print_html(TMPL_FNAME "status_part2");
+    do_output();
 }
 
 /**
@@ -1259,8 +1322,9 @@ int pinit(login_rec *l, login_rec *c)
 	l->uri = strdup("/");
         if(debug)
             log_message("pinit: ready to print login page");
-        print_login_page(l, c, PRINT_LOGIN_PINIT, "pinit", NO_CLEAR_LOGIN, 
-		NO_CLEAR_GREQ);
+         print_login_page(l, c, &l->appid);
+         do_output();
+         exit(0);
     }
     else {
         login_status_page(c);
@@ -1279,10 +1343,16 @@ int cgiMain()
     login_rec	*c=NULL;   /* only from login cookie */
     const char  *mirrorfile;
 
+    htmlout = tmpfile();
+    headerout = tmpfile();
+
     libpbc_config_init(NULL, "logincgi");
-    debug = libpbc_config_getswitch("debug", 0);
+    debug = libpbc_config_getint("debug", 0);
     mirrorfile = libpbc_config_getstring("mirrorfile", NULL);
     
+    /* always print out the standard headers */
+    print_http_header();
+
     if (debug) {
 	fprintf(stderr, "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
     }
@@ -1295,7 +1365,7 @@ int cgiMain()
     /* bail if not ssl */
     if (!getenv("HTTPS") || strcmp( getenv("HTTPS"), "on" ) ) { 
         notok(notok_need_ssl);
-        exit(0);
+	goto done;
     }
 #endif
 
@@ -1327,7 +1397,7 @@ int cgiMain()
 		    l->user, 
 		    cgiRemoteAddr);
         notok(notok_bad_agent);
-        exit(0);
+	goto done;
     }
     
     /* look for various logout conditions */
@@ -1351,299 +1421,29 @@ int cgiMain()
     /* check early if we get to ride free */
     l->ride_free_creds = ride_free_zone(l, c);
     
-    if (vector_request(l, c) == PBC_FAIL ) {
-        exit(0);
-    }
-    
-    /* the reward for a hard days work                                      */
-    log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
+    if (vector_request(l, c) == PBC_OK ) {
+	/* the reward for a hard days work */
+	log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
 		l->first_kiss, 
 		l->user, 
 		cgiRemoteAddr, 
 		l->host, 
 		l->appid);
     
-    /* generate the cookies and print the redirect page                      */
-    print_redirect_page(l, c);
-    
+	/* generate the cookies and print the redirect page */
+	print_redirect_page(l, c);
+	
+    }
+
+ done:
     if (mirrorfile) {
 	close_mirror_file();
     }
 
+    do_output();
     return(0);  
 }
 
-/* in:                                                                       */
-/*   field	string for prompt                                            */
-/*   var	variable name (pass1, pass2, etc.)                           */
-/*   echo       echo the typed chars or stars                                */
-/*   field_type see FIELD_TYPE_... defines for types                         */
-/*   value      if the field is pre-filled                                   */
-void print_form_field(char *field, char *var, int echo, int field_type,
-		      char *value) {
-
-    print_out("<P>\n");
-    print_out("%s\n", field);
-    
-    if (debug) {
-	log_message("print_form_field: field: %s, field_type %d, value %s", 
-		    field, field_type, value);
-    }
-
-    if (field_type == FIELD_TYPE_EMPTY_ALTERABLE || 
-        field_type == FIELD_TYPE_PREFILLED_ALTERABLE ) {
-	print_out("<INPUT TYPE=\"%s\"", 
-		  echo==FIELD_ECHO_YES ? "text" : "password");
-	if (field_type==FIELD_TYPE_PREFILLED_ALTERABLE ) {
-	    print_out(" NAME=\"%s\" SIZE=\"20\" VALUE=\"%s\">\n", var, value);
-	} else {
-	    print_out(" NAME=\"%s\" SIZE=\"20\">\n", var);
-	}
-    } else if (field_type == FIELD_TYPE_FREE_RIDE ) {
-	print_out("%s\n", FREE_RIDE_MESSAGE);
-	print_out("<INPUT TYPE=\"hidden\"");
-	print_out(" NAME=\"%s\" VALUE=\"%s\">\n", var, value);
-    } else if (field_type == FIELD_TYPE_PREFILLED_UNALTERABLE ) {
-	print_out("<span style=\"background: #eeeeee; color:black\">");
-	print_out("<tt>%s</tt></span>\n", value);
-	print_out("<INPUT TYPE=\"hidden\"");
-	print_out(" NAME=\"%s\" VALUE=\"%s\">\n", var, value);
-    }
-}
-
-void print_login_page(login_rec *l, login_rec *c, char *message, 
-		      char *reason, int need_clear_login, int need_clear_greq)
-{
-    char	*log_in_with = NULL;
-    char	*field1_prompt = NULL;
-    char	*field2_prompt = NULL;
-    char	*field3_prompt = NULL;
-    char	*focus_field = NULL;
-    char	focus[PBC_1K];
-    char	message_out[PBC_1K];
-    char	*prefilled_user = NULL;
-    int		field1_type = FIELD_TYPE_EMPTY_ALTERABLE;
-    int		field2_type = FIELD_TYPE_EMPTY_ALTERABLE;
-    int		field3_type = FIELD_TYPE_EMPTY_ALTERABLE;
-
-    log_message("%s Printing login page, reason: %s", l->first_kiss, reason);
-
-#ifdef FORM_NOT_IN_TMPL
-    switch (l->creds) {
-    case PBC_CREDS_CRED1:
-        field1_prompt = strdup(PROMPT_UWNETID);
-        field2_prompt = strdup(PROMPT_PASSWD);
-        if ((c!=NULL && c->user!=NULL) || (l!=NULL && l->user!=NULL) ) {
-            log_in_with = strdup("UW NetID password");
-            focus_field = strdup("pass");
-        }
-        else {
-            log_in_with = strdup("UW NetID and password");
-            focus_field = strdup("user");
-        }
-        break;
-    case PBC_CREDS_CRED3:
-        field1_prompt = strdup(PROMPT_UWNETID);
-        field2_prompt = strdup(PROMPT_PASSWD);
-        field3_prompt = strdup(PROMPT_SECURID);
-        if (l->ride_free_creds == PBC_CREDS_CRED1 ) {
-            log_in_with = strdup("SecurID");
-            focus_field = strdup("pass2");
-        } 
-        else {
-            if ((c!=NULL && c->user!=NULL) || (l!=NULL && l->user!=NULL) ) {
-                log_in_with = strdup("password, and SecurID");
-                focus_field = strdup("pass");
-            }
-            else {
-                log_in_with = strdup("UW NetID, password, and SecurID");
-                focus_field = strdup("user");
-            }
-        }
-        break;
-    default:
-        field1_prompt = NULL;
-        break;
-    }
-    
-    /* wads of weird logic to determine what the form fields look like */
-    if(field1_prompt != NULL) {
-        if (c != NULL && c->user != NULL ) {
-            field1_type = FIELD_TYPE_PREFILLED_UNALTERABLE;
-            prefilled_user = strdup(c->user);
-        }
-        if (l != NULL && l->user != NULL ) {
-            field1_type = FIELD_TYPE_PREFILLED_UNALTERABLE;
-            prefilled_user = strdup(l->user);
-        }
-        if (l->ride_free_creds == PBC_CREDS_CRED1 && 
-	    l->creds == PBC_CREDS_CRED3) {
-            field1_type=FIELD_TYPE_FREE_RIDE;
-        }
-        if ((field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && 
-	     c != NULL && c->alterable_username == PBC_TRUE) ||
-            (field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && 
-	     l->alterable_username == PBC_TRUE) ) {
-            field1_type=FIELD_TYPE_PREFILLED_ALTERABLE;
-            free(focus_field);
-            focus_field = strdup("user");
-        }
-    }
-    if(field2_prompt != NULL) {
-        if (l->ride_free_creds == PBC_CREDS_CRED1 && 
-	    l->creds == PBC_CREDS_CRED3) {
-            field2_type=FIELD_TYPE_FREE_RIDE;
-        }
-    }
-
-    /* tell the stoopid browser where to put the cursor */
-    sprintf(focus, "onLoad=\"document.query.%s.focus()\"", focus_field);
-#endif
-
-    /* text before the form fields */
-    if (message == NULL || strcmp(message, PRINT_LOGIN_PLEASE) == 0 ) {
-        sprintf(message_out, "<P>The resource you requested requires you to log in with your %s.</P>\n", log_in_with);
-    }
-    else {
-        strcpy(message_out, message);
-    }
-
-    if (need_clear_login )   /* depreceated, we now expire L cookie */
-        ;  /* used to be clear_login_cookie(); */
-    if (need_clear_greq )    /* depreceated, we clear the g req later */
-        ;  /* noop */
-
-    tmpl_print_out(TMPL_FNAME "login_part1", focus, reason, message_out);
-
-#ifdef FORM_NOT_IN_TMPL
-
-    if(field1_prompt != NULL)
-        print_form_field(field1_prompt, 
-                         "user", 
-                         FIELD_ECHO_YES, 
-                         field1_type, 
-                         prefilled_user);
-    if(field2_prompt != NULL)
-        print_form_field(field2_prompt, 
-                         "pass", 
-                         FIELD_ECHO_STARS, 
-                         field2_type, 
-                         "");
-    if(field3_prompt != NULL) 
-        print_form_field(field3_prompt, 
-                         "pass2", 
-                         FIELD_ECHO_YES, 
-                         field3_type, 
-                         "");
-#endif
-
-
-    print_login_page_hidden_stuff(l);
-    tmpl_print_out(TMPL_FNAME "login_part2", message, reason);
-
-}
-
-char *check_login_uwnetid(login_rec *l)
-{
-
-    if (debug) {
-	fprintf(stderr, "check_login_uwnetid: hello\n");
-    }
-
-    if (l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3) {
-	if (debug) {
-	    fprintf(stderr, "check_login_uwnetid: free ride for this cred\n");
-	}
-        return(CHECK_LOGIN_RET_SUCCESS);
-    }
-
-    if (l->user == NULL || l->pass == NULL ) {
-	if (debug) {
-	    fprintf(stderr, "check_login_uwnetid: user or pass absent\n");
-	}
-        return(CHECK_LOGIN_RET_FAIL);
-    }
-
-    if (auth_kdc(l->user, l->pass) == NULL ) {
-	if (debug) {
-	    fprintf(stderr, "check_login_uwnetid: auth_kdc say ok\n");
-	}
-        clear_error("uwnetid-fail", "uwnetid auth ok");
-        return(CHECK_LOGIN_RET_SUCCESS);
-    }
-    else {
-	if (debug) {
-	    fprintf(stderr, "check_login_uwnetid: auth_kdc say fail\n");
-	}
-        return(CHECK_LOGIN_RET_FAIL);
-    }
-
-}
-
-char *check_login_securid(char *user, char *sid, int next, login_rec *l)
-{
-
-    if (debug) {
-	fprintf(stderr, "check_login_securid: hello\n");
-    }
-
-    if (user == NULL || sid == NULL ) {
-	if (debug) {
-	    fprintf(stderr, "check_login_securid: user or sid absent\n");
-	}
-        return(CHECK_LOGIN_RET_FAIL);
-    }
-
-    if (auth_securid(user, sid, next, l) == NULL ) {
-	if (debug) {
-	    fprintf(stderr, "check_login_securid: auth_securid say ok\n");
-	}
-        clear_error("securid-fail", "securid auth ok");
-        return(CHECK_LOGIN_RET_SUCCESS);
-    }
-    else {
-	if (debug) {
-	    fprintf(stderr, "check_login_securid: auth_securid say NOPE!\n");
-	}
-        log_error(2, "securid-err", 1, "problem doing securid auth");
-        return(CHECK_LOGIN_RET_FAIL);
-    }
-
-}
-
-/* successful auth returns CHECK_LOGIN_RET_SUCCESS                           */
-char *check_login(login_rec *l, login_rec *c)
-{
-    char	*ret;
-
-    if (debug) {
-	fprintf(stderr, "check_login: hello\n");
-    }
-
-    if (!(ret = malloc(PBC_1K)) ) {
-        abend("out of memory");
-    }
-
-    strcpy(ret, CHECK_LOGIN_RET_BAD_CREDS);
-
-    if (l->creds == PBC_CREDS_CRED1 ) {
-        strcpy(ret, check_login_uwnetid(l));
-    }
-    else if (l->creds == PBC_CREDS_CRED3 ) {
-        strcpy(ret, check_login_securid(l->user, l->pass2, 
-					l->next_securid, l));
-        if (!strcmp(ret, CHECK_LOGIN_RET_SUCCESS) ) {
-            /* now check the uwnetid part */
-            strcpy(ret, check_login_uwnetid(l));
-        }
-        else {
-            return ret;
-        }
-    }
-
-    return(ret);
-
-}
 
 /* for some n seconds after authenticating we don't ask the user to */
 /* retype their credentials                                         */
@@ -1807,57 +1607,54 @@ char *check_l_cookie(login_rec *l, login_rec *c)
 
 void print_j_test() 
 {
-
-    print_out("%s", J_TEST_TEXT1);
-    print_out("%s", J_TEST_TEXT2);
-    print_out("%s", J_TEST_TEXT3);
-    print_out("%s", J_TEST_TEXT4);
-    print_out("%s", J_TEST_TEXT5);
-
+    print_html("%s", J_TEST_TEXT1);
+    print_html("%s", J_TEST_TEXT2);
+    print_html("%s", J_TEST_TEXT3);
+    print_html("%s", J_TEST_TEXT4);
+    print_html("%s", J_TEST_TEXT5);
 }
 
 void notok_no_g_or_l() 
 {
     print_j_test();
 
-    print_out("<NOSCRIPT>\n");
+    print_html("<NOSCRIPT>\n");
 
-    print_out("%s\n", NOTOK_NO_G_OR_L_TEXT1);
+    print_html("%s\n", NOTOK_NO_G_OR_L_TEXT1);
 
-    print_out("</NOSCRIPT>\n");
+    print_html("</NOSCRIPT>\n");
 
 }
 
 void notok_no_g() 
 {
-    print_out("%s", NOTOK_NO_G_TEXT1);
+    print_html("%s", NOTOK_NO_G_TEXT1);
 
 }
 
 void notok_formmultipart() 
 {
-    print_out("%s", NOTOK_FORMMULTIPART_TEXT1);
+    print_html("%s", NOTOK_FORMMULTIPART_TEXT1);
 
 }
 
 void notok_need_ssl() 
 {
-    print_out("%s", NOTOK_NEEDSSL_TEXT1);
+    print_html("%s", NOTOK_NEEDSSL_TEXT1);
     log_message("host %s came in on a non-ssl port, why?", cgiRemoteAddr);
 }
 
 void notok_bad_agent() 
 {
-    print_out("%s", NOTOK_BAD_AGENT_TEXT1);
-    print_out("The browser you are using identifies itself as:<P><TT></TT>",
-                 user_agent());
-    print_out("%s", NOTOK_BAD_AGENT_TEXT2);
-
+    print_html("%s", NOTOK_BAD_AGENT_TEXT1);
+    print_html("The browser you are using identifies itself as:<P><TT></TT>",
+                 cgiUserAgent);
+    print_html("%s", NOTOK_BAD_AGENT_TEXT2);
 }
 
 void notok_generic() 
 {
-    print_out("%s", NOTOK_GENERIC_TEXT1);
+    print_html("%s", NOTOK_GENERIC_TEXT1);
 
 }
 
@@ -1866,25 +1663,26 @@ void notok ( void (*notok_f)() )
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), 
 					 PBC_FORM_MP_COOKIENAME) ) {
-        print_out("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n", 
-            PBC_FORM_MP_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            enterprise_domain(), 
-            EARLIEST_EVER);
+        print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n", 
+		     PBC_FORM_MP_COOKIENAME, 
+		     PBC_CLEAR_COOKIE,
+		     PBC_ENTRPRS_DOMAIN, 
+                     enterprise_domain(), 
+		     EARLIEST_EVER);
     }
 
-    tmpl_print_out(TMPL_FNAME "notok_part1");
+    tmpl_print_html(TMPL_FNAME "notok_part1");
     notok_f();
-    tmpl_print_out(TMPL_FNAME "notok_part2");
+    tmpl_print_html(TMPL_FNAME "notok_part2");
 
 }
 
 int set_pinit_cookie() {
 
 #ifdef PORT80_TEST
-    print_out("Set-Cookie: %s=%s; domain=%s; path=/\n", 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/\n", 
 #else
-    print_out("Set-Cookie: %s=%s; domain=%s; path=/; secure\n", 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; secure\n", 
 #endif
 		PBC_PINIT_COOKIENAME,
                 PBC_SET,
@@ -1896,9 +1694,9 @@ int set_pinit_cookie() {
 int clear_pinit_cookie() {
 
 #ifdef PORT80_TEST
-    print_out("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n",
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n",
 #else
-    print_out("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\n",
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\n",
 #endif
             PBC_PINIT_COOKIENAME, 
             PBC_CLEAR_COOKIE,
@@ -1918,12 +1716,12 @@ int pinit_responce(login_rec *l, login_rec *c)
 
     clear_pinit_cookie();
 
-    tmpl_print_out(TMPL_FNAME "pinit_responce1");
-    tmpl_print_out(TMPL_FNAME "welcome_back",
+    tmpl_print_html(TMPL_FNAME "pinit_responce1");
+    tmpl_print_html(TMPL_FNAME "welcome_back",
                (c == NULL || c->user == NULL ? "unknown" : c->user));
-    tmpl_print_out(TMPL_FNAME "logout_time_remaining",
+    tmpl_print_html(TMPL_FNAME "logout_time_remaining",
                time_remaining_text(c));
-    tmpl_print_out(TMPL_FNAME "pinit_responce2");
+    tmpl_print_html(TMPL_FNAME "pinit_responce2");
     return(PBC_OK);
 
 }
@@ -1990,89 +1788,24 @@ int cookie_test(login_rec *l, login_rec *c)
 /*	################################### The beginning of the table       */
 void print_table_start()
 {
-    print_out("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"580\">\n");
+    print_html("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"580\">\n");
 
 }
 
 /*	################################### da copyright, it's ours!         */
 void print_copyright()
 {
-    print_out("<small>Copyright &#169; 2001 University of Washington</small>\n");
+    print_html("<small>Copyright &#169; 2001 University of Washington</small>\n");
 
 }
 
 /*	################################### UWNetID Logo                     */
 void print_uwnetid_logo()
 {
-    print_out("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\" oncontextmenu=\"return false\">\n");
+    print_html("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\" oncontextmenu=\"return false\">\n");
 
 }
 
-
-/*	################################### header stuff                     */
-void print_http_header()
-{
-        print_out("Pragma: No-Cache\n");
-        print_out("Cache-Control: no-store, no-cache, must-revalidate\n");
-        print_out("Expires: Sat, 1 Jan 2000 01:01:01 GMT\n");
-        print_out("Content-Type: text/html\n\n");
-
-}
-
-/*	################################### hidden stuff                     */
-void print_login_page_hidden_stuff(login_rec *l)
-{
-
-    print_out("\n");
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", 
-		PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_APPID, (l->appid ? l->appid : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
-                "creds_from_greq", l->creds_from_greq);
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
-                PBC_GETVAR_CREDS, l->creds);
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_VERSION, (l->version ? l->version : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_METHOD, (l->method ? l->method : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_HOST, (l->host ? l->host : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_URI, (l->uri ? l->uri : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_ARGS, (l->args ? l->args : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FR, (l->fr ? l->fr : "") );
-
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:"") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_APPSRV_ERR, (l->appsrv_err ? l->appsrv_err : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FILE_UPLD, (l->file ? l->file : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FLAG, (l->flag ? l->flag : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_REFERER, (l->referer ? l->referer : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_SESSION_REAUTH, l->session_reauth);
-
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FIRST_KISS, (l->first_kiss ? l->first_kiss : "") );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_NEXT_SECURID, 
-                (l->next_securid ? l->next_securid : 0) );
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_PINIT, l->pinit);
-
-    /* this tags the incoming request as a form reply */
-    print_out("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_REPLY, FORM_REPLY);
-
-}
 
 char *to_lower(char *in)
 {
@@ -2177,8 +1910,12 @@ void print_redirect_page(login_rec *l, login_rec *c)
       		PBC_EM2_START,
 		PROBLEMS_PERSIST,
          	PBC_EM2_END);
+	/* xxx it's kinda hard to jump to print_login_page, because
+	   what flavor should we be printing here? */
+#if 0
         print_login_page(l, c, message, "cookie create failed", 
 			 NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
+#endif
         log_error(1, "system-problem", 0,
 		  "Not able to create cookie for user %s at %s-%s", 
 		  l->user, l->appsrvid, l->appid);
@@ -2217,8 +1954,13 @@ void print_redirect_page(login_rec *l, login_rec *c)
       		PBC_EM2_START,
 		PROBLEMS_PERSIST,
          	PBC_EM2_END);
+	/* xxx it's kinda hard to jump to print_login_page, because
+	   what flavor should we be printing here? */
+#if 0
           print_login_page(l, c, message, "cookie create failed",
 			   NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
+#endif
+
           log_error(1, "system-problem", 0,
 		    "Not able to create cookie for user %s at %s-%s",
 		    l->user, l->appsrvid, l->appid);
@@ -2282,10 +2024,10 @@ void print_redirect_page(login_rec *l, login_rec *c)
 
     /* now blat out the redirect page */
     if( l->pinit == PBC_FALSE )   /* don't need a G cookie for a pinit */
-        print_out("%s\n", g_set_cookie);
+        print_header("%s\n", g_set_cookie);
     else
         set_pinit_cookie();
-    print_out("%s\n", l_set_cookie);
+    print_header("%s\n", l_set_cookie);
     clear_greq_cookie();
 
     /* incase we have a post */
@@ -2297,16 +2039,15 @@ void print_redirect_page(login_rec *l, login_rec *c)
             log_error(5, "misc", 0,
 		      "couldn't parse the decoded granting request cookie");
             notok(notok_generic);
+	    do_output();
             exit(0);
         }
 
-        print_http_header();
-
-	print_out("<HTML>");
+	print_html("<HTML>");
 	/* when the page loads click on the last element */
         /* (which will always be the submit) in the array */
         /* of elements in the first, and only, form. */
-	print_out("<BODY BGCOLOR=\"white\" onLoad=\"");
+	print_html("<BODY BGCOLOR=\"white\" onLoad=\"");
 
         /* depending on whether-or-not there is a SUBMIT field in the form */
         /* use the correct javascript to autosubmit the POST */
@@ -2316,19 +2057,19 @@ void print_redirect_page(login_rec *l, login_rec *c)
         for(p=post_stuff_lower; *p != '\0'; p++)
             *p = tolower(*p);
         if (strstr(post_stuff_lower, "submit") != NULL )
-            print_out("document.query.submit.click()");
+            print_html("document.query.submit.click()");
         else
-            print_out("document.query.submit");
+            print_html("document.query.submit");
 
-        print_out("\">\n");
+        print_html("\">\n");
 
-	print_out("<center>");
+	print_html("<center>");
         print_table_start();
-	print_out("<tr><td align=\"LEFT\">\n");
+	print_html("<tr><td align=\"LEFT\">\n");
 
-	print_out("<form method=\"POST\" action=\"%s\" ", redirect_final);
-        print_out("enctype=\"application/x-www-form-urlencoded\" ");
-        print_out("name=\"query\">\n");
+	print_html("<form method=\"POST\" action=\"%s\" ", redirect_final);
+        print_html("enctype=\"application/x-www-form-urlencoded\" ");
+        print_html("name=\"query\">\n");
 
         cur = cgiFormEntryFirst;
         while (cur) {
@@ -2342,13 +2083,13 @@ void print_redirect_page(login_rec *l, login_rec *c)
 		strstr(cur->value, "\r") || 
 		strstr(cur->value, "\n") ) {
                 if (! limitations_mentioned ) {
-                    print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
+                    print_html("Certain limitations require that this be shown, please ignore it<BR>\n");
                     limitations_mentioned++;
                 }
-                print_out("<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n", 
+                print_html("<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n", 
 			  cur->attr);
-                print_out("%s</textarea>", string_encode (cur->value));
-                print_out("<P>\n");
+                print_html("%s</textarea>", string_encode (cur->value));
+                print_html("<P>\n");
             }
             else {
                 /* we don't want to cover other people's submits */
@@ -2356,8 +2097,8 @@ void print_redirect_page(login_rec *l, login_rec *c)
                     submit_value = string_encode (cur->value);
                 }
                 else {
-                    print_out("<input type=\"hidden\" ");
-		    print_out("name=\"%s\" value=\"%s\">\n",
+                    print_html("<input type=\"hidden\" ");
+		    print_html("name=\"%s\" value=\"%s\">\n",
 			      cur->attr, cur->value);
                 }
     	    }
@@ -2368,31 +2109,30 @@ void print_redirect_page(login_rec *l, login_rec *c)
         } /* while cur */
 
 
-        print_out("</td></tr>\n");
+        print_html("</td></tr>\n");
         print_uwnetid_logo();
-        print_out("<P>");
-        print_out("%s\n", PBC_POST_NO_JS_TEXT);
-        print_out("</td></tr></table>\n");
+        print_html("<P>");
+        print_html("%s\n", PBC_POST_NO_JS_TEXT);
+        print_html("</td></tr></table>\n");
 
         /* put submit at the bottom so it looks better and */
         if (submit_value )
-            print_out("<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
+            print_html("<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
         else
-            print_out("<input type=\"submit\" value=\"%s\">\n",
+            print_html("<input type=\"submit\" value=\"%s\">\n",
 		      PBC_POST_NO_JS_BUTTON);
 
-        print_out("</form>\n");
+        print_html("</form>\n");
         print_copyright();
-        print_out("</center>");
-        print_out("</BODY></HTML>\n");
+        print_html("</center>");
+        print_html("</BODY></HTML>\n");
     }
     else {
         /* non-post redirect area                 non-post redirect area */
 
         /* the refresh header should go into the template as soon as it's*/
         /* been tested                                                   */
-      /*        print_out("Location: %s\n", redirect_final); */
-        tmpl_print_out(TMPL_FNAME "nonpost_redirect", redirect_final,
+        tmpl_print_html(TMPL_FNAME "nonpost_redirect", redirect_final,
 		       REFRESH, redirect_final, redirect_final);
     } /* end if post_stuff */
 
@@ -2429,7 +2169,6 @@ login_rec *get_query()
 
     /* cgiParseFormInput will extract the arguments from the granting        */
     /* cookie string and make them available to subsequent cgic calls        */
-
     /* if the reply field isn't set then this is not be a submit from a login*/
     if (l->reply != FORM_REPLY ) {
         /* get greq cookie */

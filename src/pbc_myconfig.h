@@ -41,7 +41,7 @@
  */
 
 /*
- * $Id: pbc_myconfig.h,v 1.2 2002-05-14 03:10:12 willey Exp $
+ * $Revision: 1.3 $
  */
 #ifndef INCLUDED_PBC_MYCONF_H
 #define INCLUDED_PBC_MYCONF_H

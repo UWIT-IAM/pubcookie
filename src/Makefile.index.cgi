@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.16 2002-04-02 00:30:31 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.17 2002-05-23 19:32:59 jteaton Exp $
 #
 
 # your compiler here
@@ -60,10 +60,10 @@ LDFLAGS=-L$(SSL_BASE)/lib/ -lssl -lcrypto $(EXTRA_LIB_DIRS) $(EXTRA_LIBS) -ldl
 
 GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 ALLHEAD=${GEN_HEAD}
-SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
+SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c flavor_basic.c
 
 MAKEFILE=Makefile.index.cgi
-ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c pbc_myconfig.c index.cgi_krb.c 
+ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c pbc_myconfig.c index.cgi_krb.c  flavor_basic.c
 ALLHEAD=${GEN_HEAD}
 
 RM=rm

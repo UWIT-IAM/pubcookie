@@ -1,0 +1,20 @@
+# -*- make -*-
+# 
+# Makefile.libpubcookie, Commands to build libpubcookie.o
+# 
+# Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
+#
+# $Id: Makefile.libpubcookie,v 1.2 2002-05-23 19:32:59 jteaton Exp $
+
+LIB_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h
+
+LIB_SRC=libpubcookie.c base64.c pbc_myconfig.c
+
+LIB_OBJ=libpubcookie.o base64.o pbc_myconfig.o
+
+MAKEFILES += Makefile.libpubcookie
+
+clean::
+	$(RM) -f $(LIB_OBJ)
+
+# vim: set noet:
