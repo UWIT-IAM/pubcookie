@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.50 2004-04-28 21:23:04 fox Exp $
+ * $Id: keyserver.c,v 2.51 2004-05-03 21:32:45 willey Exp $
  */
 
 
@@ -805,8 +805,8 @@ int cgiMain()
 
     /* xxx log connection */
 
-    libpbc_config_init(NULL, "keyserver");
-    debug = libpbc_config_getint("logging_level", 0);
+    libpbc_config_init(p, NULL, "keyserver");
+    debug = libpbc_config_getint(p, "logging_level", 0);
 
     if (!getenv("HTTPS") || strcmp( getenv("HTTPS"), "on") ) {
 	printf("\r\nNO HTTPS required\r\n");
