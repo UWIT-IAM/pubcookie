@@ -1,4 +1,4 @@
-/* src/config.h.in.  Generated from ./configure.ac by autoheader.  */
+/* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 to enable dmalloc debugging */
 #undef ENABLE_DMALLOC
@@ -144,7 +144,8 @@
 /* Define to 1 if you have the `ssldap50' library (-lssldap50). */
 #undef HAVE_LIBSSLDAP50
 
-/* Define to 1 if your system has a working `malloc' function. */
+/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+   to 0 otherwise. */
 #undef HAVE_MALLOC
 
 /* Define to 1 if you have the <memory.h> header file. */
@@ -318,6 +319,9 @@
 /* Define to 1 if the Compiler is IBM xlc */
 #undef IBM_XLC
 
+/* set to 1 if using Heimdal Kerberos */
+#undef KRB5_HEIMDAL
+
 /* Define to 1 if the LDAP library is OpenLDAP */
 #undef LDAP_OPENLDAP
 
@@ -384,6 +388,9 @@
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
+
+/* Define to rpl_malloc if the replacement function should be used. */
+#undef malloc
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
