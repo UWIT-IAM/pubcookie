@@ -18,18 +18,18 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.2 2000-03-03 01:52:24 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.3 2001-04-27 22:02:45 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-#   for convenience i make symlinks to the openssl and rsaref directorys
-#   the two openssl include directories compensate for a openssl
-#     file location shuffling.
-CFLAGS=-O3 -Wall -I. -Iopenssl/include/openssl -Iopenssl/include -I/usr/local/include
+# some options are DEBUG
+CFLAGS=-O3 -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include -I/usr/local/include
+
 # order is important here
-LDFLAGS=-L./openssl -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref -lkrb5
+#LDFLAGS=-L/usr/local/ssl/lib/ -L./rsaref -lssl -lcrypto -lkrb5 -lmgoapi -L/opt/nfast/gcc/lib -lnfstub
+LDFLAGS=-L/usr/local/ssl/lib/ -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref -lkrb5 -lmgoapi -L/opt/nfast/gcc/lib -lnfstub
 
 # hopefully you don't have to change anything below here
 ################################################################################
@@ -45,8 +45,8 @@ VERSION=a5release5
 DIR_NAME=$(BASENAME)-$(VERSION)
 TARFILE=$(BASENAME)-$(VERSION).tar
 
-MAKEFILE=Makefile
-ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c  securid_ping.c  securid_securid.c securid_server.c
+MAKEFILE=Makefile.index.cgi
+ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c securid.c index.cgi_securid.c index.cgi_krb.c 
 ALLHEAD=${GEN_HEAD}
 
 TAR=tar
@@ -57,14 +57,14 @@ default:	index.cgi
 
 all:	index.cgi
 
-index.cgi:	index.cgi.o  securid_ping.o securid_securid.o securid_server.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ index.cgi.o libpubcookie.o base64.o securid_ping.o securid_securid.o securid_server.o /usr/local/lib/libcgic.a $(LDFLAGS)
+index.cgi:	index.cgi.o  securid.o libpubcookie.o base64.o index.cgi_securid.o index.cgi_krb.o 
+		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_securid.o index.cgi_krb.o libpubcookie.o base64.o securid.o /usr/local/lib/libcgic.a /usr/local/mauth/authsrv-x86.o $(LDFLAGS)
 
 uwnetid_stub:	uwnetid_stub.o  uwnetid_stub.o libpubcookie.o base64.o
 		$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o $(LDFLAGS)
 
-securid_stub:	securid_stub.o  securid_ping.o securid_securid.o securid_server.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ securid_stub.o libpubcookie.o base64.o securid_ping.o securid_securid.o securid_server.o $(LDFLAGS)
+securid_stub:	securid_stub.o  securid.o libpubcookie.o base64.o
+		$(CC) ${CFLAGS} -o $@ securid_stub.o libpubcookie.o base64.o securid.o $(LDFLAGS)
 
 h2ph:
 	co -l *.ph; \
@@ -80,12 +80,12 @@ mkc_key_generic.o: mkc_key_generic.c ${GEN_HEAD} ${MAKEFILE}
 mkc_key_local.o: mkc_key_local.c ${GEN_HEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
 index.cgi.o: index.cgi.c index.cgi.h libpubcookie.o ${MAKEFILE} /usr/local/lib/libcgic.a 
-securid_ping.o: securid_ping.c securid_securid.h ${GEN_HEAD} ${MAKEFILE}
-securid_securid.o: securid_securid.c securid_securid.h ${GEN_HEAD} ${MAKEFILE}
-securid_server.o: securid_server.c securid_securid.h ${GEN_HEAD} ${MAKEFILE}
+index.cgi_krb.o: index.cgi_krb.c index.cgi.h libpubcookie.o ${MAKEFILE}
+index.cgi_securid.o: index.cgi_securid.c index.cgi.h libpubcookie.o ${MAKEFILE}
+securid.o: securid.c securid.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f index.cgi.o securid_*.o core index.cgi libpubcookie.o uwnetid_stub securid_stub
+	$(RM) -f index.cgi.o securid.o core index.cgi libpubcookie.o uwnetid_stub securid_stub base64.o  index.cgi_krb.o  index.cgi_securid.o
 
 # to purify candv (then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
