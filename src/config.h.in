@@ -84,8 +84,14 @@
 /* Define to 1 if you have the <lber.h> header file. */
 #undef HAVE_LBER_H
 
+/* Define to 1 if you have the <ldappr.h> header file. */
+#undef HAVE_LDAPPR_H
+
 /* Define to 1 if you have the <ldap.h> header file. */
 #undef HAVE_LDAP_H
+
+/* Define to 1 if you have the <ldap_ssl.h> header file. */
+#undef HAVE_LDAP_SSL_H
 
 /* Define to 1 if you have the `crypt' library (-lcrypt). */
 #undef HAVE_LIBCRYPT
@@ -108,14 +114,29 @@
 /* Define to 1 if you have the `ldap' library (-lldap). */
 #undef HAVE_LIBLDAP
 
+/* Define to 1 if you have the `ldap50' library (-lldap50). */
+#undef HAVE_LIBLDAP50
+
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `nss3' library (-lnss3). */
+#undef HAVE_LIBNSS3
+
+/* Define to 1 if you have the `prldap50' library (-lprldap50). */
+#undef HAVE_LIBPRLDAP50
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
 /* Define to 1 if you have the `ssl' library (-lssl). */
 #undef HAVE_LIBSSL
+
+/* Define to 1 if you have the `ssl3' library (-lssl3). */
+#undef HAVE_LIBSSL3
+
+/* Define to 1 if you have the `ssldap50' library (-lssldap50). */
+#undef HAVE_LIBSSLDAP50
 
 /* Define to 1 if your system has a working `malloc' function. */
 #undef HAVE_MALLOC
@@ -287,6 +308,12 @@
 
 /* Define to 1 if you have the <x509.h> header file. */
 #undef HAVE_X509_H
+
+/* Define to 1 if the LDAP library is OpenLDAP */
+#undef LDAP_OPENLDAP
+
+/* Define to 1 if the LDAP library is Sun/Netscape/iPlanet */
+#undef LDAP_SUN
 
 /* Define to LOG_AUTH if your system doesn't define LOG_AUTHPRIV */
 #undef NEED_LOG_AUTHPRIV
