@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.31 $)
+AC_REVISION($Revision: 1.32 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -137,6 +137,10 @@ AC_ARG_WITH(apxs,
       PATH=$OLDPATH
       ;;
   esac ])
+
+  if test "x$APXS" = "x"; then
+      AC_MSG_ERROR( "apxs is required for building mod_pubcookie!" )
+  fi
 
 fi # If they disabled apache, don't look for apxs.
 
