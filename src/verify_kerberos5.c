@@ -13,7 +13,7 @@
  */
 
 /*
-  $Id: verify_kerberos5.c,v 1.24 2003-06-10 23:02:10 willey Exp $
+  $Id: verify_kerberos5.c,v 1.25 2003-07-02 01:27:02 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -414,6 +414,7 @@ static int kerberos5_v(pool *p, const char *userid,
     krb5_principal auth_user;
     krb5_creds creds;
     krb5_get_init_creds_opt opts;
+    krb5_error_code k5_retcode;
     int result = -1;
     char tfname[40];
     char *realm = NULL;
@@ -487,7 +488,7 @@ static int kerberos5_v(pool *p, const char *userid,
 
     krb5_get_init_creds_opt_init(&opts);
     krb5_get_init_creds_opt_set_tkt_life(&opts, KRB5_DEFAULT_LIFE);
-    if (krb5_get_init_creds_password(context, &creds, 
+    if (k5_retcode = krb5_get_init_creds_password(context, &creds, 
 				     auth_user, localpwd, NULL, NULL, 
                      0, NULL, &opts)) {
         krb5_cc_destroy(context, ccache);
@@ -496,6 +497,9 @@ static int kerberos5_v(pool *p, const char *userid,
         free(realm);
         free(localpwd);
         *errstr = "can't get tgt";
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+                        "kerberos5_v: can't get tgt: %s", 
+			error_message(k5_retcode));
         return -1;
     }
     free(localpwd);
