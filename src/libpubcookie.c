@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.20 2001-10-18 21:48:04 willey Exp $
+    $Id: libpubcookie.c,v 2.21 2002-02-23 00:25:51 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -336,13 +336,8 @@ int libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
     libpbc_debug("libpbc_get_private_key: reading private key '%s'\n", keyfile);
 #endif
 
-#ifdef PRE_OPENSSL_094
-    if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
-		  PEM_STRING_EVP_PKEY, key_fp, NULL, NULL)) ) {
-#else
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
 		  PEM_STRING_EVP_PKEY, key_fp, NULL, NULL, NULL)) ) {
-#endif
         libpbc_debug("libpbc_get_private_key: Could not read keyfile: %s\n", keyfile);
         return PBC_FAIL;
     }
@@ -381,13 +376,8 @@ int libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
     libpbc_debug("libpbc_get_public_key: reading public cert '%s'\n", certfile);
 #endif
 
-#ifdef PRE_OPENSSL_094
-    if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
-		           PEM_STRING_X509, fp, NULL, NULL)) ) {
-#else
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
 		           PEM_STRING_X509, fp, NULL, NULL, NULL)) ) {
-#endif
         libpbc_debug("libpbc_get_public_key: Could not read cert file: %s\n", certfile);
         return PBC_FAIL;
     }
@@ -755,7 +745,6 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     des_cblock			ivec;
     static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
     des_key_schedule    	ks;
-    int				save_des_check_key;
 
     /* ... later, Steve reflects that keeping the ivec secret is not needed  */
     /* so why don't we just pass the ivec instead of this index into a small */
@@ -770,27 +759,12 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
 /*  libpbc_debug("libpbc_encrypt_cookie: before setting des_check_key= %d\n",des_check_key); */
 
-    /* save stoopid global and reset it at the end */
-    save_des_check_key = des_check_key;
-    des_check_key = 1;
-
     memset(key, 0, sizeof(key));
-#ifdef OPENSSL_0_9_2B
-    while ( des_key_sched(key, ks) != 0 && --tries ) {
-#else
-    while ( des_key_sched(&key, ks) != 0 && --tries ) {
-#endif
+    while ( des_set_key_checked(&key, ks) < 0 && --tries ) {
         index1=libpbc_get_crypt_index();
 	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-#ifdef OPENSSL_0_9_2B
-        des_set_odd_parity(key);
-#else
         des_set_odd_parity(&key);
-#endif
     }
-
-    /* restore the value */
-    des_check_key = save_des_check_key;
 
     if ( ! tries ) {
        libpbc_debug("libpbc_encrypt_cookie: Couldn't find a good key\n");
@@ -807,11 +781,7 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     fprintf(stderr,"\n");
 #endif
 
-#ifdef OPENSSL_0_9_2B
-    des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_ENCRYPT);
-#else
     des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
-#endif
     libpbc_augment_rand_state(ivec, sizeof(ivec));
 
     /* stick the indices on the end of the train */
@@ -853,13 +823,8 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     /* use the supplied index into the char key array and make a key shedule */
     memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
 
-#ifdef OPENSSL_0_9_2B
-    des_set_odd_parity(key);
-    if ( des_key_sched(key, ks) ) {
-#else
     des_set_odd_parity(&key);
-    if ( des_key_sched(&key, ks) ) {
-#endif
+    if ( des_set_key_checked(&key, ks) ) {
        libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
        return 0;
     }
@@ -874,11 +839,7 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     fprintf(stderr,"\n");
 #endif
 
-#ifdef OPENSSL_0_9_2B
-    des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_DECRYPT);
-#else
     des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
-#endif
 
 #ifdef DEBUG_ENCRYPT_COOKIE
     fprintf(stderr,"out=");
