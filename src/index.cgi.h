@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.28 $
+ * $Revision: 1.29 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -119,8 +119,6 @@ int init_crypt(char * peername);
 int set_pinit_cookie();
 int clear_pinit_cookie();
 char *get_string_arg(char *name, cgiFormResultType (*f)());
-
-const char *get_domain_hostname();
 
 /* print part of the HTML */
 void print_html(const char *format, ...);
