@@ -14,8 +14,12 @@
           <form name="query" method="POST" action="%loginuri%"
     enctype="application/x-www-form-urlencoded" autocomplete="off">
 
-<!-- The reason we were sent here. -->
+<!-- Custom login message, if there is such -->
 %message%
+<!-- The end of reasons. -->
+
+<!-- The reason we were sent here. -->
+%reason%
 <!-- The end of reasons. -->
 
 <P>
