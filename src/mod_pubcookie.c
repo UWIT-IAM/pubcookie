@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.36 1999-09-01 17:20:41 willey Exp $
+    $Id: mod_pubcookie.c,v 1.37 1999-09-01 19:08:52 willey Exp $
  */
 
 /* apache includes */
@@ -408,10 +408,10 @@ static int auth_failed(request_rec *r) {
 
 #ifdef APACHE1_2
     e_g_req_contents = palloc (r->pool, (strlen (g_req_contents) + 2) / 3 * 4);
-    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 #else
-    e_g_req_contents = ap_uuencode(r->pool, g_req_contents);
+    e_g_req_contents = ap_palloc (r->pool, (strlen (g_req_contents) + 2) / 3 * 4);
 #endif
+    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 
     ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
 	  PBC_G_REQ_COOKIENAME, 
