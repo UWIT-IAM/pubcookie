@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.92 2002-08-03 00:48:05 willey Exp $
+    $Id: mod_pubcookie.c,v 1.93 2002-08-06 15:59:49 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1482,7 +1482,7 @@ static int pubcookie_user(request_rec *r) {
       }
   
       /* decrypt cookie. if credtrans is set, then it's from login server
-       to me. otherwise its from me to me. */
+       to me. otherwise it's from me to me. */
       if (!res && libpbc_rd_priv(cred_from_trans ? 
                                     ap_get_server_name(r) : NULL, 
                                  blob, bloblen, 
