@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.43 2001-12-13 19:47:07 willey Exp $
+    $Id: pbc_config.h,v 1.44 2001-12-13 21:44:39 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -51,6 +51,7 @@
 /* keys */
 #if defined (WIN32)
 #define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
+#define PBC_MASTER_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\m_key"
 /* lives only on login servers */
 #define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
 /* lives only on login server */
@@ -76,6 +77,7 @@
 
 /* the module has directives for the key files, these are the defaults */
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
+#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
 /* lives only on login servers */
 #define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
 /* lives only on login server */
