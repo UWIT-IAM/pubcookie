@@ -8,8 +8,13 @@
  */
 
 /*
-    $Id: verify_kerberos5.c,v 1.6 2002-06-13 17:55:52 jteaton Exp $
+ * $Revision: 1.7 $
  */
+
+/* login cgi includes */
+#include "index.cgi.h"
+#include "verify.h"
+#include "pbc_myconfig.h"
 
 #ifdef HAVE_KRB5
 
@@ -26,11 +31,6 @@
 /* krb5  */
 #include <com_err.h>
 #include <krb5.h>
-
-/* login cgi includes */
-#include "index.cgi.h"
-#include "verify.h"
-#include "pbc_myconfig.h"
 
 #define KRB5_DEFAULT_OPTIONS 0
 #define KRB5_DEFAULT_LIFE 60*15 /* xxx 15 minutes */
@@ -526,6 +526,21 @@ static int kerberos5_v(const char *userid,
 }
 
 #else /* HAVE_KRB5 */
+
+static void creds_free(struct credentials *creds)
+{
+    /* No-op 'cuz we aren't doing krb5! */
+}
+static int creds_derive(struct credentials *creds,
+			const char *app,
+			const char *target,
+			struct credentials **outcredsp)
+{
+    /* No-op 'cuz we aren't doing krb5! */
+    /* Return success 'cuz nothing happened. */
+     
+    return 0;
+}
 
 static int kerberos5_v(const char *userid,
 		       const char *passwd,

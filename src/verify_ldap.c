@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.5 2002-06-11 20:19:29 greenfld Exp $
+ * $Id: verify_ldap.c,v 1.6 2002-06-13 20:46:54 jjminer Exp $
  */
 #include <stdlib.h>
 
@@ -266,7 +266,7 @@ static int get_dn( LDAP * ld,
  * @retval 0 on success, nonzero on failure
  */
 
-static int ldap_verifier( const char *userid,
+static int ldap_v( const char *userid,
 			  const char *passwd,
 			  const char *service,
 			  const char *user_realm,
