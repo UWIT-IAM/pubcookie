@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.40 2001-11-14 00:10:00 willey Exp $
+#   $Id: Makefile,v 1.41 2001-11-14 01:09:08 willey Exp $
 #
 
 # your compiler here
@@ -43,7 +43,6 @@ ALLHEAD=${GENERALHEAD} ${LOGINHEAD} ${MODULEHEAD} ${TESTHEAD}
 GENERALSRC=libpubcookie.c \
            base64.c
 MODULESRC=mod_pubcookie.c
-
 LOGINSRC=index.cgi.c \
 	 index.cgi_krb.c \
 	 index.cgi_securid.c \
@@ -57,10 +56,8 @@ LOGINSRC=index.cgi.c \
 	 pbc_key_generic.c \
 	 pbc_key_local.txt \
 	 pbc_key_local.c
-
 TESTSRC=dtest.c \
         pbc_create.c \
-        test_localc_key.c \
         what_is_my_ip.c \
         pbc_verify.c \
         candv.c
@@ -78,7 +75,7 @@ LOGINMISC=CHANGES.login \
           contrib\* \
 	  INSTALL.login
 TESTMISC=Makefile
-ALLSRC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
+ALLMISC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
 
 MAKEFILE=Makefile
 TAR=tar
@@ -87,11 +84,9 @@ GZIP=gzip
 
 default:	tar
 
-admin:	pbc_create pbc_verify base64.o
+test_apps:	candv dtest speed_test pbc_create pbc_verify
 
-test_apps:	candv dtest test_local_c_key speed_test
-
-all:	pbc_create pbc_verify candv dtest pbc_key_generic pbc_key_local make_crypted_bit test_local_c_key candv dtest test_local_c_key
+all:	candv dtest pbc_key_generic pbc_key_local make_crypted_bit candv dtest pbc_create pbc_verify
 
 
 speed_test:	speed_test.o libpubcookie.o base64.o
@@ -160,7 +155,7 @@ logintar:
 	TARFILE=$$BASENAME-$${LVERSION}.tar; \
 	rm -rf $$DIR_NAME $$TARFILE; \
 	ln -s . $$DIR_NAME; \
-	for i in ${GENERALSRC} ${LOGINSRC} ${GENERALHEAD} ${LOGINHEAD} ${LOGINMISC} ${GENERALMISC} ;\
+	for i in ${GENERALSRC} ${LOGINSRC} ${TESTSRC} ${GENERALHEAD} ${LOGINHEAD} ${TESTHEAD} ${LOGINMISC} ${GENERALMISC} ${TESTMISC} ;\
 	do \
 	        $(TAR) rvf $$TARFILE $$DIR_NAME/$$i; \
 	done; \
