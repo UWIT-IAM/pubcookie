@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.17 1999-07-08 22:54:06 willey Exp $
+# $Id: Makefile,v 1.18 1999-07-22 22:49:18 willey Exp $
 #
 
 CC=gcc
@@ -9,12 +9,18 @@ LDFLAGS=-L./ssleay -lssl -lRSAglue -lcrypto ./rsaref/build/rsaref.a
 
 GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
-MISC=README CHANGES Makefile Makefile.tmpl Makefile.apxs pubcookie_granting.cert
+MISC=README \
+     CHANGES \
+     Makefile \
+     Makefile.tmpl \
+     Makefile.apxs \
+     pubcookie_granting.cert \
+     cookie_blanking_patch.apache1.3.6
 
 BASENAME=pubcookie
 #sed -e '/^#define PBC_VERSION/!d' -e '/^#define PBC_VERSION/s/^#define PBC_VERSION "\(a2\)".*$/\1/' pbc_version.h` \
 
-VERSION=a5release1
+VERSION=a5release2
 DIR_NAME=$(BASENAME)-$(VERSION)
 TARFILE=$(BASENAME)-$(VERSION).tar
 

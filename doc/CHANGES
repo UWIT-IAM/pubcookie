@@ -6,6 +6,16 @@ Legend:
 M - module changes
 L - library changes
 H - only .h files changed
+O - other :)
+
+a5 release2: 21Jul1999 rcs reference: m1.31l2.4
+M  - changes session cookies to be directory scoped to '/'.  This fixes 
+     a problem when multiple apps used the same 'appid' but lived in
+     different directory trees.
+O  - added util-scripts.c patch to filter out pubcookies from cgi environ.
+M  - added support for non-standard port #s.
+M  - spiffed up some log messages.
+H  - spiffed up some comments and slightly reorganized pbc_config.h
 
 a5 release1: 8Jul1999 rcs reference: m1.30l2.4
 M  - ammended the logic for identifing POST content or a POST request.
