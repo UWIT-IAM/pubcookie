@@ -17,9 +17,9 @@
 #include "pbc_version.h"
 
 void usage(const char *progname) {
-    printf("%s -c crypted_file [-k key_file] [-h]\n\n", progname);
-    printf("\t crypted_file:       crypted stuff to be decrypted, should not be necessary since the binary will already have it.\n");
-    printf("\t key_file:  default is %s\n\n", PBC_CRYPT_KEYFILE);
+    printf("%s -c crypted_file [-k c_key_file] [-h]\n\n", progname);
+    printf("\t crypted_file:\tcrypted stuff to be decrypted.\n");
+    printf("\t c_key_file:\tdefault is %s\n\n", PBC_CRYPT_KEYFILE);
     exit (1);
 }
 
