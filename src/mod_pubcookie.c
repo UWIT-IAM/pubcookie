@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.84 2002-06-26 20:56:36 willey Exp $
+    $Id: mod_pubcookie.c,v 1.85 2002-06-26 22:02:22 jjminer Exp $
  */
 
 /* apache includes */
@@ -1482,7 +1482,7 @@ const char *pubcookie_set_appid(cmd_parms *cmd, void *mconfig, unsigned char *v)
     pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
     unsigned char *c;
 
-    cfg->appid = ap_palloc (cmd->pool, strlen (v) * 3 + 1);
+    cfg->appid = ap_palloc (cmd->pool, strlen ( (const char *) v) * 3 + 1);
     for (c = cfg->appid; *v; ++v) {
         switch (*v) {
             case ' ': *c++ = '+'; break;
@@ -1515,7 +1515,7 @@ const char *pubcookie_set_appsrvid(cmd_parms *cmd, void *mconfig, unsigned char 
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
 
-    scfg->appsrvid = ap_palloc (cmd->pool, strlen (v) * 3 + 1);
+    scfg->appsrvid = ap_palloc (cmd->pool, strlen ( (const char *) v) * 3 + 1);
     for (c = scfg->appsrvid; *v; ++v) {
         switch (*v) {
               case ' ': *c++ = '+'; break;

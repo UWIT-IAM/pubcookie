@@ -336,7 +336,7 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
     assert(buf != NULL && len > 0);
 
     peer2 = peer ? peer : get_my_hostname();
-    if (get_crypt_key(peer2, keybuf) < 0) {
+    if (get_crypt_key(peer2, (char *) keybuf) < 0) {
 	return -1;
     }
 
@@ -375,12 +375,13 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
     r = libpbc_mk_safe(peer, buf, len, &mysig, &siglen);
     if (!r) {
 	assert(siglen == PBC_SIG_LEN);
-	des_cfb64_encrypt(mysig, *outbuf, PBC_SIG_LEN, ks, &ivec, &i,
-			  DES_ENCRYPT);
+	des_cfb64_encrypt( (unsigned char *) mysig, (unsigned char *) *outbuf, 
+                       PBC_SIG_LEN, ks, &ivec, &i, DES_ENCRYPT);
 	free(mysig);
 
-	des_cfb64_encrypt(buf, (*outbuf) + PBC_SIG_LEN, len, ks, &ivec, &i, 
-			  DES_ENCRYPT);
+	des_cfb64_encrypt( (unsigned char *) buf, 
+                       (unsigned char *) (*outbuf) + PBC_SIG_LEN, len, 
+                       ks, &ivec, &i, DES_ENCRYPT);
 	(*outbuf)[PBC_SIG_LEN + len] = (unsigned char) index1;
 	(*outbuf)[PBC_SIG_LEN + len + 1] = (unsigned char) index2;
     }
@@ -425,7 +426,7 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     }
 
     peer2 = peer ? peer : get_my_hostname();
-    if (get_crypt_key(peer2, keybuf) < 0) {
+    if (get_crypt_key(peer2, (char *) keybuf) < 0) {
 	return -1;
     }
 
@@ -451,11 +452,12 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     *outbuf = (char *) malloc(*outlen);
 
     /* decrypt */
-    des_cfb64_encrypt(buf, mysig, PBC_SIG_LEN, 
-		      ks, &ivec, &i, DES_DECRYPT);
+    des_cfb64_encrypt( (unsigned char *) buf,  (unsigned char *) mysig,
+                       PBC_SIG_LEN, ks, &ivec, &i, DES_DECRYPT);
 
-    des_cfb64_encrypt(buf + PBC_SIG_LEN, *outbuf, *outlen,
-		      ks, &ivec, &i, DES_DECRYPT);
+    des_cfb64_encrypt( (unsigned char *) buf + PBC_SIG_LEN,  
+                       (unsigned char *) *outbuf, *outlen, ks, &ivec, &i,
+                       DES_DECRYPT);
 
     /* verify signature */
     r = libpbc_rd_safe(peer, *outbuf, *outlen, mysig, PBC_SIG_LEN);

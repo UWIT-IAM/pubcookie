@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.11 2002-06-26 19:29:36 greenfld Exp $
+    $Id: keyserver.c,v 2.12 2002-06-26 22:02:22 jjminer Exp $
  */
 
 #include <stdio.h>
@@ -254,7 +254,8 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 /* base64 decode thekey64 */
 		thekey = (char *) malloc(strlen(thekey64));
 		if (!thekey || 
-		    !libpbc_base64_decode(thekey64, thekey, &ksize) || 
+		    !libpbc_base64_decode( (unsigned char *) thekey64,
+                                   (unsigned char *) thekey, &ksize) || 
 		    ksize != PBC_DES_KEY_BUF) {
 		    myprintf("NO couldn't decode key\r\n");
 		    /* xxx log */
