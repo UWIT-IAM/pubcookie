@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.28 2004-04-07 15:27:17 jteaton Exp $
+ * $Id: flavor_getcred.c,v 1.29 2004-04-07 15:29:01 jteaton Exp $
  */
 
 
@@ -191,6 +191,7 @@ static login_result process_getcred(pool *p, const security_context *context,
     int i,j;
     char ** target_array;
     int num_creds;
+    char cookiestr[4096];
 
     assert(v != NULL);
 
@@ -257,7 +258,6 @@ static login_result process_getcred(pool *p, const security_context *context,
     } else {
 	/* these better be available in cookie form */
 	char cookie[4096];
-        char cookiestr[4096];
 	char *plain;
 	int plainlen;
 
