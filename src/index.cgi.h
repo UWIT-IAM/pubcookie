@@ -18,8 +18,11 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.17 2002-03-04 20:07:48 jteaton Exp $
+    $Id: index.cgi.h,v 1.18 2002-03-07 22:22:26 willey Exp $
  */
+
+#ifndef PUBCOOKIE_LOGIN_CGI
+#define PUBCOOKIE_LOGIN_CGI
 
 typedef struct {
     char	*args;
@@ -54,6 +57,18 @@ typedef struct {
     char	reply;
     int		alterable_username;
 } login_rec;
+
+struct browser {
+    char		agent[1024];
+    int			timeout;
+    int			allow;
+    int			deny;
+    struct browser	*next;
+    struct browser 	*prev;
+};
+
+typedef struct browser browser_rec;
+
 
 /*
 
@@ -153,7 +168,7 @@ char *url_encode();
 char *get_cookie_created(char *);
 char *decode_granting_request(char *);
 char ride_free_zone(login_rec *, login_rec *);
-char *get_domain_hostname();
+const char *get_domain_hostname();
 
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"
@@ -226,40 +241,18 @@ char *get_domain_hostname();
 
 /* file to get the list of ok browsers from */
 #define OK_BROWSERS_FILE "/usr/local/pubcookie/ok_browsers"
+/* file to get browser information from */
+#define BROWSERS_FILE "/usr/local/pubcookie/browsers"
+
+#define PBC_BRWSER_OK 0
+#define PBC_BRWSER_DENY 1
+#define PBC_BRWSER_TO 2
 
 /* utility to send messages to pilot */
 #define SEND_PILOT_CMD "/usr/local/adm/send_pilot_stat.pl"
 
 
 /* text */
-
-/* Right hand side text */
-#define LOGIN_PAGE_RHS_TEXT "<td width=\"250\" valign=\"MIDDLE\">\n\
-<p>\n\
-<a href=\"https://uwnetid.washington.edu/newid/\">Need a UW NetID?</a>\n\
-</p>\n\
-<p>\n\
-<a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html\">Forget your password?</a>\n\
-</p>\n\
-<dl>\n\
-<dt>Have a question?</dt>\n\
-<dd>\n\
-  <a href=\"http://www.washington.edu/computing/uwnetid/\">Read About UW NetIDs</a><BR>\n\
-  <a href=\"http://www.washington.edu/computing/help/\">Contact C&amp;C</a>\n\
-</dd>\n\
-</dl>\n\
-</td>"
-
-/* login page bottom text about expires and such */
-#define LOGIN_PAGE_BOTTOM_TEXT "</tr>\n\
-\n\
-<tr>\n\
-<td colspan=\"5\" align=\"center\">\n\
-<p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>\n\
-<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>\n\
-<a href=\"http://www.washington.edu/computing/web/logout.html\">Completely exit your Web browser when you are finished.</a></p>\n\
-</td>\n\
-</tr>"
 
 #define NOTOK_NO_G_OR_L_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">\
 A problem has been detected!</font></B></P> \
@@ -362,5 +355,7 @@ Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu<
 <P>I'm sorry this page is only accessible via a ssl protected connection.<BR>\n\
 "
 
-/* how big can a filled-in template be? */
+/* how big can a filled-in template be? */
 #define MAX_EXPANDED_TEMPLATE_SIZE (110*1024)
+
+#endif   /* PUBCOOKIE_LOGIN_CGI */
