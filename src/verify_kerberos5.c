@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.9 $
+ * $Revision: 1.10 $
  */
 
 /* login cgi includes */
@@ -307,8 +307,12 @@ static int k5support_verify_tgt(krb5_context context,
 	free(keyblock);
     }
 
+#ifdef KRB5_HEIMDAL
     krb5_data_zero(&packet);
-
+#else
+    /* hopefully this will correctly zero out the packet */
+    memset(&packet, 0, sizeof(packet));
+#endif
     k5_retcode = krb5_mk_req(context, auth_context, 0, "host", 
 			     thishost, NULL, ccache, &packet);
     if (*auth_context) {
