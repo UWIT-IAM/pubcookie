@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.53 2004-05-04 18:55:36 dors Exp $
+# $Id: Makefile.in,v 1.54 2004-05-11 17:39:26 dors Exp $
 
 @SET_MAKE@
 
@@ -236,6 +236,7 @@ LOGIN_IMAGES=$(srcdir)/src/login_templates.generic/images/check.gif \
 DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/CREDITS.txt \
 	 $(srcdir)/doc/LICENSE.txt \
+	 $(srcdir)/doc/starter.key \
 	 $(srcdir)/doc/config.sample \
 	 $(srcdir)/doc/config.login.sample \
 	 $(srcdir)/doc/install-mod_pubcookie.html \
@@ -396,6 +397,7 @@ install-login: @no_login@ $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $
 			$(INSTALL_OTHER) $$file $(CERT_DB_DIR); \
 		true; \
 	done
+	$(INSTALL_OTHER) doc/starter.key $(PUBCOOKIE_DIR)
 	$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)
 	@$(TEST) ! -f $(PUBCOOKIE_DIR)/config && \
 		echo $(INSTALL_OTHER) doc/config.login.sample \
