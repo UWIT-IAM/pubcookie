@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.9 2001-09-14 02:35:28 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.10 2001-10-24 22:21:50 willey Exp $
 #
 
 # your compiler here
@@ -79,8 +79,6 @@ candv.o: candv.c ${GEN_HEAD} ${MAKEFILE}
 dtest.o: dtest.c ${GEN_HEAD} ${MAKEFILE}
 libpubcookie.o: libpubcookie.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
-mkc_key_generic.o: mkc_key_generic.c ${GEN_HEAD} ${MAKEFILE}
-mkc_key_local.o: mkc_key_local.c ${GEN_HEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
 index.cgi.o: index.cgi.c index.cgi.h libpubcookie.o ${MAKEFILE} $(CGIC) 
 index.cgi_krb.o: index.cgi_krb.c index.cgi.h libpubcookie.o ${MAKEFILE}
