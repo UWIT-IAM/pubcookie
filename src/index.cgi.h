@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.15 2001-11-14 00:06:50 willey Exp $
+    $Id: index.cgi.h,v 1.16 2001-11-15 01:57:45 willey Exp $
  */
 
 typedef struct {
@@ -143,7 +143,7 @@ void print_uwnetid_logo();
 void print_login_page_hidden_stuff(login_rec *);
 void print_login_page_expire_info();
 login_rec *verify_unload_login_cookie (login_rec *);
-int create_cookie(char *, char *, char *, char, char, int, char *, int);
+int create_cookie(char *, char *, char *, char, char, int, char *, char *, int);
 login_rec *get_query();
 char *check_login(login_rec *, login_rec *);
 char *check_l_cookie(login_rec *, login_rec *);
@@ -153,6 +153,7 @@ char *url_encode();
 char *get_cookie_created(char *);
 char *decode_granting_request(char *);
 char ride_free_zone(login_rec *, login_rec *);
+char *get_domain_hostname();
 
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"
@@ -194,10 +195,6 @@ char ride_free_zone(login_rec *, login_rec *);
 /* replacement string for g req cookies once they hav gone thru the cgi */
 #define G_REQ_RECIEVED "g req received"
 
-/* these are creds strings for meta-auth */
-#define NDCUSERNAME "username"
-#define NDCPASSWORD "ndcpasswd"
-
 /* how we accentuate warning messages */
 #define PBC_EM1_START "<P><B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">" 
 #define PBC_EM1_END "</FONT></B><BR></P>"
@@ -219,18 +216,9 @@ char ride_free_zone(login_rec *, login_rec *);
 #define YES_CLEAR_GREQ 1
 #define NO_CLEAR_GREQ 0
 
-/* a date before pubcookie that is guaranteed to be expired */
-#define EXPIRED_EXPIRES "Fri, 11-Jan-1990 00:00:01 GMT"
-
 /* flags to send to print_login_page_part1 */
 #define YES_FOCUS 1
 #define NO_FOCUS 0
-
-/* keys and certs */
-#define KEY_DIR "/usr/local/pubcookie/"
-#define CRYPT_KEY_FILE "c_key"
-#define CERT_FILE "pubcookie.cert"
-#define CERT_KEY_FILE "pubcookie.key"
 
 /* some misc settings */
 #define SERIAL_FILE "/tmp/s"
