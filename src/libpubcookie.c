@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.18 2001-08-29 18:14:58 willey Exp $
+    $Id: libpubcookie.c,v 2.19 2001-09-25 22:35:01 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -1121,6 +1121,37 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
 }
 
 /*                                                                            */
+/* check version string in cookie                                             */
+/*                                                                            */
+int libpbc_check_version(pbc_cookie_data *cookie_data)
+{
+    unsigned char *a = (*cookie_data).broken.version;
+    unsigned char *b = PBC_VERSION;
+
+    if( a[0] == b[0] && a[1] == b[1] )
+        return(PBC_OK);
+    if( a[0] == b[0] && a[1] != b[1] ) {
+        libpbc_debug("Minor version mismatch cookie: %s version: %s\n", a, b);
+        return(PBC_OK);
+    }
+
+    return(PBC_FAIL);
+
+}
+
+/*                                                                            */
+/* check to see if whatever has timed out                                     */
+/*                                                                            */
+int libpbc_check_exp(time_t fromc, int exp)
+{
+    if( (fromc + exp) > time(NULL) )
+        return PBC_OK;
+    else 
+        return PBC_FAIL;
+
+}
+
+/*                                                                            */
 /* something that should never be executed, but shuts-up the compiler warning */
 /*                                                                            */
 void libpbc_dummy()
@@ -1130,4 +1161,5 @@ void libpbc_dummy()
     c=*(redirect_reason[0]);
 
 }
+
 

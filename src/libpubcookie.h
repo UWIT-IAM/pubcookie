@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.13 2001-05-29 20:51:58 willey Exp $
+    $Id: libpubcookie.h,v 1.14 2001-09-25 22:34:21 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -135,7 +135,10 @@ int libpbc_decrypt_cookie(unsigned char *,
 	                  unsigned char *, 
                           crypt_stuff *,
 	     	          long);
-int base64_encode(unsigned char *in, unsigned char *out, int size);
-int base64_decode(unsigned char *in, unsigned char *out);
+int base64_encode(unsigned char *, unsigned char *, int );
+int base64_decode(unsigned char *, unsigned char *);
+int libpbc_check_version(pbc_cookie_data *);
+int libpbc_check_exp(time_t, int);
+
 
 #endif /* !PUBCOOKIE_LIB */
