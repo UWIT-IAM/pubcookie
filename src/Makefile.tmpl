@@ -1,5 +1,5 @@
 
-OBJS=mod_pubcookie.o libpubcookie.o base64.o
+OBJS=mod_pubcookie.o libpubcookie.o base64.o myconfig.o
 
 mod_pubcookie.a:	$(OBJS)
 
@@ -12,5 +12,5 @@ $(OBJS): Makefile
 
 # DO NOT REMOVE
 # DO NOT DELETE THIS LINE -- make depend depends on it.
-libpubcookie.o: libpubcookie.c libpubcookie.h pubcookie.h pbc_config.h pbc_version.h
+libpubcookie.o: libpubcookie.c libpubcookie.h pbc_myconfig.c pbc_myconfig.h pubcookie.h pbc_config.h pbc_version.h
 
