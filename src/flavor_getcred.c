@@ -11,20 +11,130 @@
 # include <assert.h>
 #endif /* HAVE_ASSERT_H */
 
-#ifdef HAVE_SYSLOG_H
-# include <syslog.h>
-#endif /* HAVE_SYSLOG_H */
+#include <fnmatch.h>
+#include <string.h>
 
 #include "pbc_config.h"
 #include "index.cgi.h"
 #include "flavor.h"
 #include "security.h"
 #include "verify.h"
+#include "pbc_logging.h"
 
 /* we inherit from login_flavor_basic */
 extern struct login_flavor login_flavor_basic;
 
 static verifier *v = NULL;
+
+/**
+ * check to see if a server has authorization to request the 
+ * credentials it is requested.
+ * @param server the name of the server
+ * @param target the name of the target credentials
+ * @returns 0 on success; negative numbers indicate
+ * unauthorized. positive numbers are reserved for future "ask" features.
+ */
+static int check_authz(const char *server, const char *target)
+{
+    int r = -1;
+    FILE *f;
+    const char *fname;
+    int lineno;
+    char buf[1024];
+
+    fname = libpbc_config_getstring("getcred_authz_file", 
+                                    PBC_PATH "getcred_authz");
+    f = fopen(fname, "r");
+    if (!f) {
+        pbc_log_activity(PBC_LOG_ERROR,
+                         "can't open getcred authz file: %s, failing", 
+                         fname);
+        return -1;
+    }
+
+    lineno = 0;
+    while (++lineno && fgets(buf, sizeof(buf), f)) {
+        char *p, *q;
+        int c;
+
+        p = strchr(buf, '\n');
+        if (!p) {
+            pbc_log_activity(PBC_LOG_ERROR,
+                             "ridiculous line in %s, line %d, skipping", 
+                             fname, lineno);
+
+            /* eat the rest of the line */
+            c = getc(f);
+            while (c != '\n' && c != EOF) {
+                c = getc(f);
+            }
+            continue;
+        }
+        *p = '\0'; /* get rid of \n */
+
+        /* 'buf' should now look like <server> <cred> {OK,NO,ASK} */
+        p = buf;
+        while (*p && !isspace(*p)) p++;
+        if (!*p) {
+            pbc_log_activity(PBC_LOG_ERROR,
+                             "malformed line in %s, line %d, skipping", 
+                             fname, lineno);
+            continue;
+        }
+        *p++ = '\0';
+        while (*p && isspace(*p)) p++;
+        
+        /* p points at <cred> */
+        q = p;
+        while (*q && !isspace(*q)) q++;
+        if (!*q) {
+            pbc_log_activity(PBC_LOG_ERROR,
+                             "malformed line in %s, line %d, skipping", 
+                             fname, lineno);
+            continue;
+        }
+        *q++ = '\0';
+        while (*q && isspace(*q)) q++;
+        
+        /* q points at OK/NO/ASK */
+        /* xxx trailing whitespace in q */
+        
+        /* see if 'buf' matches server */
+        if (fnmatch(buf, server, 0) != 0) {
+            /* doesn't match */
+            continue;
+        }
+
+        /* see if p matches target */
+        if (fnmatch(p, target, 0) != 0) {
+            continue;
+        }
+
+        /* check q */
+        if (!strcasecmp(q, "OK")) {
+            r = 0;
+        } else if (!strcasecmp(q, "NO")) {
+            r = -1;
+        } else if (!strcasecmp(q, "ASK")) {
+            r = 1;
+        } else {
+            pbc_log_activity(PBC_LOG_ERROR,
+                             "unknown constraint '%s' in %s, line %d, skipping", 
+                             q, fname, lineno);
+            continue;
+        }
+    }
+
+    if (r > 0) {
+        pbc_log_activity(PBC_LOG_ERROR,
+                         "flavor_getcred: constraint ASK unimplemented");
+        r = -1;
+    }
+
+    fclose(f);
+
+    return r;
+}
 
 static login_result process_getcred(login_rec *l, login_rec *c,
 				    const char **errstr)
@@ -49,7 +159,7 @@ static login_result process_getcred(login_rec *l, login_rec *c,
     target = get_string_arg(PBC_GETVAR_CRED_TARGET, NO_NEWLINES_FUNC);
     if (!target) {
 	/* hmm, the application didn't request any derived credentials */
-	syslog(LOG_ERR, "flavor_getcred: %s not in greq", 
+        pbc_log_activity(PBC_LOG_ERROR, "flavor_getcred: %s not in greq", 
 	       PBC_GETVAR_CRED_TARGET);
 	*errstr = "no derived credentials were requested";
 	return LOGIN_ERR;
@@ -58,14 +168,14 @@ static login_result process_getcred(login_rec *l, login_rec *c,
     /* check that l->host is authorized to have credentials for 'target'
        on behalf of l->user.
        
-       we use 'l->host' as the name of the target since it's the only thing
-       that we can rely on. the newcreds will be encrypted so only
-       l->host can read them.
+       we use 'l->host' as the name of the requesting server since
+       it's the only thing that we can rely on since 'newcreds' will
+       be encrypted so only l->host can read them.
     */
-    /* xxx code */
-    if (0) { /* xxx test */
-	syslog(LOG_ERR, "flavor_getcred: %s requested %s; request denied",
-	       l->host, target);
+    if (check_authz(l->host, target)) { 
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "flavor_getcred: %s requested %s; request denied",
+                         l->host, target);
 	*errstr = "application not allowed to request these credentials";
 	return LOGIN_ERR;
     }
@@ -85,13 +195,14 @@ static login_result process_getcred(login_rec *l, login_rec *c,
 
 	master = (struct credentials *) malloc(sizeof(struct credentials));
 	if (!master) {
-	    syslog(LOG_ERR, "flavor_getcred: malloc failed");
+	    pbc_log_activity(PBC_LOG_ERROR, "flavor_getcred: malloc failed");
 	    exit(1);
 	}
 
 	if (get_cookie(PBC_CRED_COOKIENAME, cookie, sizeof(cookie)-1) != PBC_OK) {
-	    syslog(LOG_ERR, "flavor_getcred: couldn't retrieve cookie %s",
-		   PBC_CRED_COOKIENAME);
+	    pbc_log_activity(PBC_LOG_ERROR, 
+                             "flavor_getcred: couldn't retrieve cookie %s",
+                             PBC_CRED_COOKIENAME);
 	    *errstr = "no cached master credentials";
 	    free(master);
 	    return LOGIN_ERR;
@@ -100,8 +211,9 @@ static login_result process_getcred(login_rec *l, login_rec *c,
 	/* decode base 64 */
 	plain = (char *) malloc(strlen(cookie));
 	if (!libpbc_base64_decode(cookie, plain, &plainlen)) {
-	    syslog(LOG_ERR, "flavor_getcred: malformed base64 %s",
-		   PBC_CRED_COOKIENAME);
+	    pbc_log_activity(PBC_LOG_ERROR, 
+                             "flavor_getcred: malformed base64 %s",
+                             PBC_CRED_COOKIENAME);
 	    *errstr = "no cached master credentials (base64 error)";
 	    free(master);
 	    free(plain);
@@ -111,8 +223,9 @@ static login_result process_getcred(login_rec *l, login_rec *c,
 	/* decrypt */
 	if (libpbc_rd_priv(NULL, plain, plainlen, 
 			   &(master->str), &(master->sz))) {
-	    syslog(LOG_ERR, "flavor_getcred: couldn't libpbc_rd_priv %s",
-		   PBC_CRED_COOKIENAME);
+	    pbc_log_activity(PBC_LOG_ERROR,
+                             "flavor_getcred: couldn't libpbc_rd_priv %s",
+                             PBC_CRED_COOKIENAME);
 	    *errstr = "no cached master credentials (libpbc_rd_priv)";
 	    free(master);
 	    free(plain);
@@ -125,7 +238,7 @@ static login_result process_getcred(login_rec *l, login_rec *c,
     /* we pass 'l->host' in to cred_derive because that's what we're going
        to use as the peer when we encrypt newcreds */
     if (v->cred_derive(master, l->host, target, &newcreds)) {
-	syslog(LOG_ERR, "flavor_getcred: cred_derive failed");
+	pbc_log_activity(PBC_LOG_ERROR, "flavor_getcred: cred_derive failed");
 	*errstr = "cred_derive failed";
 	free(master->str);
 	free(master);
@@ -137,7 +250,8 @@ static login_result process_getcred(login_rec *l, login_rec *c,
     /* encrypt */
     if (libpbc_mk_priv(l->host, newcreds->str, newcreds->sz,
 		       &outbuf, &outlen)) {
-	syslog(LOG_ERR, "flavor_getcred: libpbc_mk_priv failed");
+	pbc_log_activity(PBC_LOG_ERROR,
+                         "flavor_getcred: libpbc_mk_priv failed");
 	*errstr = "libpbc_mk_priv failed";
 	free(master->str);
 	free(master);
@@ -172,8 +286,8 @@ static login_result process_getcred(login_rec *l, login_rec *c,
     l->creds = login_flavor_basic.id;
 
     /* log success */
-    syslog(LOG_INFO, "passing credentials for %s %s to %s",
-	   l->user, target, l->host);
+    pbc_log_activity(PBC_LOG_AUDIT, "passing credentials for %s %s to %s",
+                     l->user, target, l->host);
 
     return LOGIN_OK;
 }
