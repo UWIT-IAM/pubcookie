@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.12 1999-01-09 00:10:35 willey Exp $
+    $Id: pbc_config.h,v 1.13 1999-01-27 03:34:01 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -15,6 +15,8 @@
 #define PBC_L_COOKIENAME "pubcookie_l"
 #define PBC_G_COOKIENAME "pubcookie_g"
 #define PBC_S_COOKIENAME "pubcookie_s"
+#define PBC_TEST_COOKIENAME "pubcookie_test_cookie"
+#define PBC_TEST_COOKIECONTENTS "yes"
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_LOGIN_PAGE "https://pcookiel1.cac.washington.edu/login/"
