@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.37 2003-07-10 19:06:40 willey Exp $
+ * $Id: keyserver.c,v 2.38 2003-07-12 00:38:45 willey Exp $
  */
 
 
@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
     pool *p = NULL;
 
     libpbc_config_init(p, NULL, "keyserver");
-    pbc_log_init(p, "keyclient", NULL, NULL, NULL);
+    pbc_log_init(p, "keyserver", NULL, NULL, NULL);
     libpbc_pubcookie_init(p);
 
     debug = libpbc_config_getint(p, "debug", 0);
