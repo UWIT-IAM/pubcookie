@@ -1,6 +1,5 @@
 
-this is were version changes are recorded
-(i'll hunt down change info for earlier changes later)
+this is were version changes are recorded for mod_pubcookie
 
 Legend:
 M - module changes
@@ -9,7 +8,7 @@ H - only .h files changed
 O - other (Makefile, Makefile.apxs, etc.)
 
 a5 1.54 23Apr2001 rcs references: m1.54
-   - new exciting version number!
+O  - new exciting version number!
 M  - fixed the g cookie credential checking, broken in the Jan2001 release
 M  - misc cleanup
 
