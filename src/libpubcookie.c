@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.19 2001-09-25 22:35:01 willey Exp $
+    $Id: libpubcookie.c,v 2.20 2001-10-18 21:48:04 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -332,7 +332,9 @@ int libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
         return PBC_FAIL;
     }
 
+#ifdef DEBUG_ENCRYPT_COOKIE
     libpbc_debug("libpbc_get_private_key: reading private key '%s'\n", keyfile);
+#endif
 
 #ifdef PRE_OPENSSL_094
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
@@ -375,7 +377,9 @@ int libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
         return PBC_FAIL;
     }
 
+#ifdef DEBUG_ENCRYPT_COOKIE
     libpbc_debug("libpbc_get_public_key: reading public cert '%s'\n", certfile);
+#endif
 
 #ifdef PRE_OPENSSL_094
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
@@ -567,7 +571,9 @@ int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 	return PBC_FAIL;
     }
     
+#ifdef DEBUG_ENCRYPT_COOKIE
     libpbc_debug("libpbc_get_crypt_key: reading crypt key '%s'\n", keyfile);
+#endif
 
     pbc_fclose(fp);
 
@@ -744,7 +750,7 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     int				c = 0, i = 0;
     int				tries = 5;
     int				index1 = 0; 
-    int				index2;
+    int				index2 = 0;
     des_cblock			key;
     des_cblock			ivec;
     static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
@@ -826,11 +832,14 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
 {
     int				c = 0, i = 0;
-    int				index1, index2;
+    int				index1 = 0;
+    int				index2 = 0;
     des_cblock			key;
     des_cblock			ivec;
     static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
     des_key_schedule    	ks;
+
+    /* libpbc_debug("libpbc_decrypt_cookie: hello\n"); */
 
     /* grab those two extra btyes off the tail */
     index1 = (int)in[len];
@@ -843,6 +852,7 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     /* use the supplied index into the char key array and make a key shedule */
     memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
+
 #ifdef OPENSSL_0_9_2B
     des_set_odd_parity(key);
     if ( des_key_sched(key, ks) ) {
@@ -1052,7 +1062,10 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     unsigned char	buf[PBC_4K];
     unsigned char	buf2[PBC_4K];
 
-/*  libpbc_debug("libpbc_unbundle_cookie\n"); */
+    /* libpbc_debug("libpbc_unbundle_cookie: hello\n"); */
+
+    if( c_stuff == NULL ) 
+        return((pbc_cookie_data *)NULL);
 
     memset(buf, 0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
