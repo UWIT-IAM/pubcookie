@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.142 2004-10-08 20:02:52 willey Exp $
+ * $Id: index.cgi.c,v 1.143 2004-10-19 17:50:37 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1969,6 +1969,36 @@ int cgiMain()
         l->user = strdup(c->user);
     }
 
+    /* Check that the relay is from the same host */
+    if (l->relay_uri) {
+       char *hp = NULL;
+#ifdef PORT80_TEST
+       if (!strncmp(l->relay_uri,"http://",7)) hp = l->relay_uri+7;
+#else
+       if (!strncmp(l->relay_uri,"https://",8)) hp = l->relay_uri+8;
+#endif
+       if (hp) {
+          if (strncmp(hp, l->host, strlen(l->host))) {
+#ifdef ALLOW_RELAY
+             pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+                "Is a relay: %s for %s\n", l->relay_uri, l->host); 
+#else
+             pbc_log_activity(p, PBC_LOG_ERROR,
+                "Relay not allowed: %s for %s\n", l->relay_uri, l->host); 
+             notok(p, NOTOK_GENERIC, NULL);
+             goto done;
+#endif
+          }
+       } else {
+          pbc_log_activity(p, PBC_LOG_ERROR,
+                     "Invalid relay_uri: %s\n", l->relay_uri); 
+          notok(p, NOTOK_GENERIC, NULL);
+          goto done;
+       }
+       pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+                     "Post method: %s\n", l->relay_uri); 
+    }
+          
     /* check the user agent */
     if (!check_user_agent(p)) {
         pbc_log_activity(p, PBC_LOG_AUDIT,
@@ -2026,6 +2056,8 @@ done:
     fclose(htmlout);
     fclose(headerout);
 
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+        "Done.. c=%d, max=%d\n", cgi_count, max_cgi_count);
     if (max_cgi_count && (cgi_count>=max_cgi_count)) exit (0);
 
     return(0);  
@@ -2435,9 +2467,6 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "created cookies l_res g_res\n");
     if (l->pinit==PBC_FALSE) add_app_cookie(PBC_G_COOKIENAME, g_cookie, NULL);
-    if (l->relay_uri) pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
-             "This is a relay request from %s\n", l->relay_uri);
-
 
     /* create the login cookie header*/
     
@@ -2494,17 +2523,17 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
         int i;
         print_html(p, "<HTML>");
         print_html(p, "<body onLoad=\"document.relay.submit()\">\n");
-        print_html(p, "<form method=post action=\"%s\" name=relay>",
+        print_html(p, "<form method=post action=\"%s\" name=relay>\n",
                             l->relay_uri);
-        print_html(p, "<input type=hidden name=post_stuff value=\"%s\">",
+        print_html(p, "<input type=hidden name=post_stuff value=\"%s\">\n",
              l->post_stuff?l->post_stuff:"");
-        print_html(p, "<input type=hidden name=get_args value=\"%s\">",
+        print_html(p, "<input type=hidden name=get_args value=\"%s\">\n",
              l->args?args_enc:"");
-        print_html(p, "<input type=hidden name=redirect_url value=\"%s\">",
+        print_html(p, "<input type=hidden name=redirect_url value=\"%s\">\n",
              redirect_dest);
         /* Add the 'cookies' */
         for (i=0;i<n_cookie_list;i++) {
-           print_html(p, "<input type=hidden name=\"%s\" value=\"%s\">",
+           print_html(p, "<input type=hidden name=\"%s\" value=\"%s\">\n",
              cookie_list[i].name, cookie_list[i].value);
         }
         clear_app_cookies(p);
