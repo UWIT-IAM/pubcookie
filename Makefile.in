@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.39 2003-05-16 18:42:25 willey Exp $
+# $Id: Makefile.in,v 1.40 2003-05-29 21:40:30 jjminer Exp $
 
 @SET_MAKE@
 
@@ -67,6 +67,9 @@ CONFIGURE_FILES=$(srcdir)/configure \
 				$(srcdir)/configure.ac \
 				$(srcdir)/Makefile.in \
 				$(srcdir)/install-sh \
+				$(srcdir)/config.sub \
+				$(srcdir)/config.guess \
+				$(srcdir)/aclocal.m4 \
 				$(srcdir)/stamp-h.in
 
 SRC_CONFIGURE_FILES=$(srcdir)/src/config.h.in \
@@ -228,24 +231,24 @@ CGIC_FILES=$(srcdir)/cgic/Makefile.in \
 		   $(srcdir)/cgic/testform.html \
 		   $(srcdir)/cgic/CHANGES
 
-VERSION := `echo @PACKAGE_VERSION@ | $(SED) "s/ /-/g" `
+VERSION = `echo @PACKAGE_VERSION@ | $(SED) "s/ /-/g" `
 
-BASENAME := @PACKAGE_TARNAME@
-DISTNAME := $(BASENAME)-$(VERSION)
+BASENAME = @PACKAGE_TARNAME@
+DISTNAME = $(BASENAME)-$(VERSION)
 
 .PHONY: all clean install dist login_server apache_module ver
 
 all: $(builddir)/Makefile @login_server@ @apache_module@
 
-$(srcdir)/configure: $(srcdir)/configure.ac
+$(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(srcdir)/aclocal.m4
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
 	$(FORCE_RM) $(srcdir)/configure
 	cd $(srcdir) && autoconf $(srcdir)/configure.ac > $(srcdir)/configure
 	$(CHMOD) +x $(srcdir)/configure
 
 # autoheader might not change config.h.in, so touch a stamp file.
-$(srcdir)/src/config.h.in: $(srcdir)/stamp-h.in
-$(srcdir)/stamp-h.in: $(srcdir)/configure.ac
+$(srcdir)/src/config.h.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/stamp-h.in
+$(srcdir)/stamp-h.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac
 	cd $(srcdir) && autoheader $(srcdir)/configure.ac
 	date > $(srcdir)/stamp-h.in
 
@@ -301,7 +304,7 @@ make_crypted_blob: $(builddir)/src/make_crypted_blob.o $(LIB_OBJ)
 what_is_my_ip: $(builddir)/src/what_is_my_ip.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ $(builddir)/src/what_is_my_ip.o $(LIB_OBJ) $(LDFLAGS)
 
-index.cgi: $(builddir)/cgic/libcgic.a $(LIB_OBJ) $(INDEX_OBJ)
+$(builddir)/index.cgi: $(builddir)/cgic/libcgic.a $(LIB_OBJ) $(INDEX_OBJ)
 	$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
 
 $(builddir)/cgic/libcgic.a:
@@ -438,6 +441,7 @@ a_ver:
 
 mod_pubcookie.so: $(MOD_SRC) $(MOD_HEAD) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) \
+			@APXS_LDFLAGS@ \
 			$(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 
 # Win32 ... Nothing here except the Dist files.
@@ -549,6 +553,7 @@ dist: a_ver l_ver
 	$(CP) $(CGIC_FILES) $(DISTNAME)/cgic
 	$(CP) $(srcdir)/src/Makefile.tmpl $(DISTNAME)/src
 	$(CP) $(srcdir)/src/snprintf.c $(DISTNAME)/src
+	$(CP) $(srcdir)/mod_pubcookie.exp $(DISTNAME)
 	$(MKDIR) $(DISTNAME)/src/Win32
 	$(MKDIR) $(DISTNAME)/src/Win32/include
 	$(MKDIR) $(DISTNAME)/src/Win32/include/openssl

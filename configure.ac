@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.36 $)
+AC_REVISION($Revision: 1.37 $)
 AC_INIT(Pubcookie, [3.0.0 pre-rc2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -61,14 +61,41 @@ fi
 # Checks for programs.
 AC_PROG_CC
 
-# Fix problems where we're using gcc without gnu ld
-# (Code by Bradford L. Barrett at University of Florida)
-if test "$GCC" = "yes"; then
-    GCC_LIB=`gcc -print-libgcc-file-name`
-    LIBS="$LIBS -lgcc";
-    LDFLAGS="$LDFLAGS -L`dirname $GCC_LIB`"
-fi
+AC_AIX
 
+# For whatever reason AIX needs a list of exported symbols.
+AC_CANONICAL_HOST
+APXS_LDFLAGS=
+
+if test "$GCC" != "yes"; then
+
+case $host in
+    *aix*)
+# Check for IBM xlc compiler.
+
+AC_MSG_CHECKING([for IBM xlc Compiler])
+AC_TRY_RUN( [ 
+    #include <stdlib.h>
+
+    #ifndef __xlC__
+    # define __xlC__ 0
+    #endif
+
+    int main() {
+        exit( __xlC__ == 0 );
+    }
+    ],
+    [ AC_MSG_RESULT([yes])
+    APXS_LDFLAGS="-Wl,-bE:mod_pubcookie.exp"
+    AC_DEFINE( IBM_XLC, 1,
+    [Define to 1 if the Compiler is IBM xlc] )
+    IBM_XLC=1
+    ],
+    [ AC_MSG_RESULT([no])
+    ]
+)
+    ;;
+    *sun*)
 # Check to see if this is the Sun Workshop compiler.
 
 AC_MSG_CHECKING([for Sun Workshop Compiler])
@@ -91,6 +118,20 @@ AC_TRY_RUN( [
     [ AC_MSG_RESULT([no])
     ]
 )
+    ;;
+esac
+
+fi
+
+AC_SUBST(APXS_LDFLAGS, "$APXS_LDFLAGS")
+
+# Fix problems where we're using gcc without gnu ld
+# (Code by Bradford L. Barrett at University of Florida)
+if test "$GCC" = "yes"; then
+    GCC_LIB=`gcc -print-libgcc-file-name`
+    LIBS="$LIBS -lgcc";
+    LDFLAGS="$LDFLAGS -L`dirname $GCC_LIB`"
+fi
 
 AC_PROG_CC_STDC
 AC_PROG_INSTALL
