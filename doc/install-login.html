@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>Pubcookie Login Server - Install Guide</title>
+<title>Pubcookie Login Server - Install Guide</title> 
 <link rel="stylesheet" href="pubcookie.css" type="text/css" title="pubcookie">
 </head>
 
@@ -9,217 +9,173 @@
 
 <h1>Pubcookie Login Server - Install Guide</h1>
 
-<p>
-Note: Documentation can contain bugs too. The  
+<p>Note: Documentation can contain bugs too. The  
 <a href="http://www.pubcookie.org/docs/install-login.html">online            
 version of this document</a> is always the most up-to-date version.
 </p>
 
-
 <p><i>Included on this page:</i></p>
 
-<ul>
-<li><a href="#intro">Introduction</a></li>
-<li><a href="#implementation">Implementation</a></li>
-<li><a href="#authsvcs">Authentication Services</a></li>
-<li><a href="#apacheconfig">Apache Configuration</a></li>
-<li><a href="#build">Build &amp; Install the Login Server Components</a></li>
-<li><a href="#keypairs">Setup Login Server Key Pairs</a></li>
-<li><a href="#config">Setup Pubcookie Run-Time Config File</a></li>
-<li><a href="#keymgmt">Key Management Methodology</a></li>
-<li><a href="#keyserver">Keyserver Setup</a></li>
-<li><a href="#keyclient">Run Keyclient For Login Server</a></li>
-<li><a href="#install">Install &amp; Test Login CGI (index.cgi)</a></li>
-<li><a href="#debug">Logging &amp; Debugging</a></li>
-<li><a href="#templates">Login Page Templates</a></li>
-<li><a href="#ok_browsers">Browser Acceptance Configuration</a></li>
-<li><a href="#logout">Logout Configuration</a></li>
-<li><a href="#kiosk">Kiosk Configuration</a></li>
-<li><a href="#policy">Site Policy Configuration</a></li>
-<li><a href="#krb5">Kerberos 5 Verifier Configuration</a></li>
-<li><a href="#upgrading">Upgrading</a></li>  
-<li><a href="#clusters">Redundant Login Server Configuration</a></li>
-<li><a href="#role">Site Administrator Role</a></li>
-<li><a href="#security">Security Considerations</a></li>
-</ul>
+<table cellspacing="0" cellpadding="5" width="100%">
+<tr> 
+  <th class="bggray" align="left">Installation Instructions</b></th>
+  <th class="bggray" align="left">Supplemental Topics</b></th>
+</tr>
+<tr>
+  <td class="bggray" valign="top">
 
-<h4><a name="intro">Introduction</a></h4>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#components">Components</a></li>
+  <li><a href="#flavors">Basic Login Flavor</a></li>
+  <li><a href="#authtype">Authentication Types</a></li>
+  <li><a href="#integration">Verifiers &amp; Authentication Services</a></li>
+  <li><a href="#abstractions">More About Abstractions</a></li>
+  <li><a href="#build">Building Components</a></li>
+  <li><a href="#keypairs">SSL & Granting Key Pairs</a></li>
+  <li><a href="#config">Run-Time Config File Setup</a></li>
+  <li><a href="#keyserver">Keyserver Setup</a></li>
+  <li><a href="#keymgmt">Key Management Methodology</a></li>
+  <li><a href="#keyclient">Run Keyclient For Login Server</a></li>
+  <li><a href="#deploy">Deploying Login CGI</a></li>
+  <li><a href="#pinit">Testing Login CGI</a></li>
+  
+  </td>
+  <td class="bggray" valign="top">
 
-<p>
-The Pubcookie login server has two primary functions: to authenticate
-users and to issue authentication tokens ("granting" cookies) consumed by
-Pubcookie-enabled target application servers.  Authentication occurs
-either by verifying user-provided credentials via a backend authentication
-service (Kerberos, LDAP, etc.) or by checking a token ("login" cookie) that was created
-on a previous visit to the login server.  
-</p>
+  <li><a href="#debug">Logging &amp; Debugging</a></li>
+  <li><a href="#templates">Login CGI Templates</a></li>
+  <li><a href="#ok_browsers">Browser Acceptance Configuration</a></li>
+  <li><a href="#logout">Logout Configuration</a></li>
+  <li><a href="#kiosk">Kiosk Configuration</a></li>
+  <li><a href="#policy">Site Policy Configuration</a></li>
+  <li><a href="#krb5">Kerberos 5 Verifier Configuration</a></li>
+  <li><a href="#ldap">LDAP Verifier Configuration</a></li>
+  <li><a href="#clusters">Redundant Login Server Configuration</a></li>
+  <li><a href="#upgrading">Upgrading</a></li>  
+  <li><a href="#apps">Supporting Application Servers</a></li>
+  <li><a href="#apacheconfig">Appendix A: Apache Configuration</a></li>
+  <li><a href="#security">Appendix B: Permissions &amp; Security</a></li>
+  <li><a href="#openssl">Appendix C: OpenSSL Commands</a></li>
 
-<h4><a name="implementation">Implementation</a></h4>
+  </td>
+</table>
 
-<p>
-The Pubcookie login server consists of two primary components: a CGI 
-program and a keyserver.
-</p>
+<h4><a name="overview">Overview</a></h4>
 
-<p>
-The Pubcookie login server uses the CGI program to handle all HTTP
-requests.  This CGI program, hereafter referred to as "the login cgi"
-or <tt>index.cgi</tt>, is compiled from C and is the central Pubcookie
-component.  The login cgi displays the web page where users are asked
-to enter authentication credentials as well as other web pages that
-display error messages.
-</p>
+<p>This guide helps site administrators run a Pubcookie
+login server. Everything from setup and configuration to integration
+and customization is covered below.</p>
 
-<p>
-The Pubcookie login server uses the keyserver to generate, distribute,
-and manage symmetric encryption keys for participating login and 
-application servers.
-</p>
+<p>Application server administrators should refer to the 
+<a href="install-mod_pubcookie.html">Pubcookie Apache module guide</a>
+or <a href="">ISAPI filter guide</a> for instructions on deploying 
+a Pubcookie application server which authenticates using your
+local login server.</p>
 
-<p>
-Due to the important nature of the Pubcookie login server, the only other
-services that should be run on the same system are those which receive an
-equally high level of scrutiny for security.
-</p>
-
-<h4><a name="authsvcs">Authentication Services &amp; Login Flavors</a></h4>
-
-<p>The login cgi is designed to support different authentication feature sets by
-abstracting them into individual login "flavors". One login flavor is currently
-provided in the distrubtion. It's called the "basic" login flavor.</p>
-
-<p>The basic login flavor supports single sign-on user authentication by
-username-and-password credential verification through a simple pluggable
-interface to backend authentication services called "verifiers." Pubcookie
-currently ships with several verifiers that can be used by the basic login
-flavor:</p>
-
-<ul>
-<li> "kerberos_v5": verifies credentials using a Kerberos 5 KDC.</li>
-<li> "ldap": verifies credentials using an LDAP server.</li>
-<li> "shadow": verifies credentials using <tt>/etc/shadow</tt>.</li>
-<li> "alwaystrue": verifies all credentials as successful.</li>
-<li> "fork": [fixme: do we want to document this?]</li>
-</ul>
-
-<p>You can choose to compile more than one verifier, but the basic login flavor
-can only use one at a time, as defined by the <tt>basic_verifier</tt> run-time
-configuration variable (see <a href="#config">run-time configuration</a>). Some
-verifiers allow or require further configuration; see the section referring to
-each verifier for details.</p>
-
-<p>Note: the authentication type (i.e.  AuthType) requested by an application
-corresponds directly to a specific login flavor, not a verifier. This
-indirection is a feature, helping applications be independent of the method or
-methods used by the login server to authenticate or verify user credentials.  
-For example, a site might start by verifying users via LDAP, then migrate to
-Kerberos, perhaps having users split between the two for a while. It's
-attractive to hide this transition from applications. In this case apps would
-just ask for the "basic" authtype, corresponding with the basic login flavor,
-and the login server would implement the transition transparently through
-changes from one verifier to another.</p>
-
-<p>In some cases you may want apps to be able to choose from different backend 
-authentication services. For example, the University of Washington uses
-the basic login flavor (which happens to use the Kerberos verifier now,
-but used to use different ones) and a more-secure flavor that uses SecurID
-in addition to username and password. Applications choose which type they want 
-by configuring the appropriate AuthType. [fixme: that stuff isn't really a note]
-</p>
-
-<h4><a name="apacheconfig">Apache Configuration</a></h4>
-
-<p>The Pubcookie login server is typically powered by 
-Apache HTTP Server software. Other web server software that supports CGI
-and SSL should also work, but this supposition has not been tested.
-</p>
-
-<h5>Choosing the location of your login page</h5>
+<h4><a name="components">Components</a></h4>
 
 <p>
-Depending on your deployment environment, you may choose to install the
-login server in a number of configurations.  Two general models are
-presented here, along with the necessary Apache configuration directives
-for each.
+The Pubcookie login server really consists of two separate components
+with separate purposes:
 </p>
 
-<h5>Specifying the login server URL as a directory index file</h5>
+<dl>
 
-<p>
-For a clean looking URL for your login server, you can install the login cgi
-as the default file in a directory. For example, the University of Washington 
-uses the server's root directory, resulting in <i>https://weblogin.washington.edu/</i> 
-as the login server URL. This address is easy for users to identify in a browser's 
-address field.
-</p>
+<dt>login server cgi</dt>
+<dd>
+The Pubcookie login server uses a CGI program to handle browser
+requests. This CGI program, hereafter referred to as <i>the login cgi</i>
+or <tt>index.cgi</tt>, is compiled from C and is a site's central Pubcookie
+component. End-users rely on it to authenticate; application servers rely on 
+it for authentication assertions. The login cgi is typically powered by 
+Apache HTTP Server software. 
+</dd>
 
-<p>
-The default binary filename for the login cgi, <tt>index.cgi</tt>, is a common 
-name for a cgi program that will be executed when a directory's URL is requested.
-The <a href="http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex">DirectoryIndex</a> 
-directive tells Apache how to handle requests to directories. Refer to the <a
-href="http://httpd.apache.org/docs/mod/mod_dir.html">mod_dir documentation</a> 
-for more information on its use.  When a request is
-made for a directory, Apache will choose the first file it finds in the
-DirectoryIndex list. This can be your login cgi.</p>
+<dt>keyserver</dt>
+<dd>
+The Pubcookie login server uses the keyserver component to generate
+and distribute symmetric encryption keys for participating servers, 
+including your Pubcookie login server and all application servers. 
+The keyserver runs as a service under inetd or xinetd.
+</dd>
 
-<p>
-For example, you might use the follow <tt>DirectoryIndex</tt> directive:
-</p>
+</dl>
 
-<pre>
-DirectoryIndex index.html index.cgi
-</pre>
+<h4><a name="flavors">Basic Login Flavor</a></h4>
 
-<p>
-If this is the configuration you choose, make sure there isn't an
-index.html file in the same directory as the index.cgi binary.
-</p>
+<p>The login cgi supports an abstraction called a <i>login flavor</i>. A login
+flavor encapsulates a specific set of functionality and features that influence
+how and when end-user authentication takes place.</p>
 
-<h5>Specifying the login server URL explicitly</h5>
+<p>The distribution comes with one login flavor called the <i>basic login 
+flavor</i>. This login flavor has a rich feature set, including 
+single sign-on (SSO) user authentication, a pluggable backend authentication 
+service interface, kiosk mode, and much more.</p>
 
-<p>
-The login cgi does not depend on its own filename. Therefore, it can be 
-deployed as index.cgi, login.cgi, or any other filename handled as a
-cgi script. It can also be put in any subdirectory you wish. Thus,
-the location really depends on what you want users to see and how you want 
-to configure things in Apache.
-</p>
+<p>This guide might, in fact, be described as a guide to the basic login 
+flavor, it is so tailored to its installation and use.</p>
 
-<p>
-To avoid conflict or confusion with the server's main page, you might
-deploy a login server at <i>https://www.example.edu/cgi-bin/login.cgi</i>
-or maybe <i>https://www.example.edu/login</i> where <i>/login</i> is 
-mapped to the login cgi (index.cgi or whatever you rename it to).
-</p>
+<h4><a name="authtype">Authentication Types</a></h4>
 
-<p>
-Note: in order to configure applications servers, other system administrators 
-will need to know the URL of your login server.
-</p>
+<p>What the login cgi calls a <i>login flavor</i>, the application
+server components call an <i>authentication type</i>. The naming is 
+rooted in Apache's <tt>AuthType</tt> directive and it's somewhat
+regrettable since they aren't quite the same thing.</p>
 
-<h5>Apache configuration directive you might have to tweak</h5>
+<p>For now it's probably enough to say that, unless you build another
+login flavor, most application servers will be configured with a single 
+choice of Pubcookie authentication types, one corresponding directly with 
+the basic login flavor.</p>
 
-<p>
-Apache needs to know how to identify the login cgi as a cgi script.  
-Some distributions of Apache have the cgi handler disabled. You will
-want to make sure the following line is in your httpd.conf and not 
-commented out.
-</p>
+<p>How primary authentication takes place (that is, how usernames
+and passwords are actually authenticated) depends on how
+the basic login flavor verifies credentials with your backend 
+authentication service.</p>
 
-<pre>
-AddHandler cgi-script .cgi
-</pre>
+<h4><a name="integration">Verifiers &amp; Authentication Services</a></h4>
 
-<p>Apache must allow cgi execution wherever you place the login cgi. 
-If it's outside of a ScriptAlias directory, you can control this
-with the <a href="http://httpd.apache.org/docs/mod/core.html#options">Options</a> directive.
+<p>The basic login flavor performs username-and-password credential 
+verification through a simple pluggable interface to backend 
+authentication services. These plug-ins are called <i>verifiers</i>
+and the distribution comes with several:</p>
 
-<pre>
-Options Indexes FollowSymLinks ExecCGI
-</pre>
+<dl>
+<dt>kerberos_v5</dt>
+<dd>verifies credentials using a Kerberos 5 KDC</dd>
+<dt>ldap</dt>
+<dd>verifies credentials using an LDAP server</dd>
+<dt>shadow</dt>
+<dd>verifies credentials using <tt>/etc/shadow</tt></dd>
+<dt>alwaystrue</dt>
+<dd>verifies all credentials as successful. good for testing.</dd>
+<dt>fork</dt>
+<dd>[fixme: do we want to document this?]</dd>
+</dl>
 
-<h4><a name="build">Build &amp; Install the Login Server Components</a></h4>
+<p>Compile-time decisions and run-time configuration determines
+which verifier is used by basic login flavor.</p>
+
+<h4><a name="abstractions">More About Abstractions</a></h4>
+
+<p>These login cgi abstractions help applications to remain independent 
+of the method, or methods, used by the login server to authenticate user 
+credentials.</p>
+
+<p>For example, a site might migrate from LDAP-based to Kerberos 
+authentication. It's attractive to hide the transition from applications. 
+Here applications would continue to use their institutional "netid" 
+authentication type, corresponding with their site's basic login flavor, 
+while the login server administrators transition, transparently, from 
+one verifier to another.</p>
+
+<p>Other sites may want to be able to choose from different backend 
+authentication services. For example, the University of Washington uses 
+the basic login flavor along side and a more secure flavor that uses 
+SecurID in addition to username and password for primary authentication. 
+Applications choose which flavor they want by configuring the 
+appropriate authentication type.</p>
+
+<h4><a name="build">Building Components</a></h4>
 
 <p>
 The <tt>configure</tt> script included in the distribution helps you build
@@ -254,9 +210,10 @@ total 240
 -rwxr-xr-x  root  root  92229 keyclient*                # keyclient
 drwxr-xr-x  root  root   4096 keys/                     # keystore
 -rwxr-xr-x  root  root  92929 keyserver*                # keyserver
-drwxr-xr-x  root  root   4096 login/                    # login dir
+drwxr-xr-x  root  root   4096 login/                    # login cgi dir
 drwxr-xr-x  root  root   4096 login_templates/          # templates
 drwxr-xr-x  root  root   4096 login_templates.default/  # originals
+-rw-r--r--  root  root   2048 starter.key               # starter key
 
 $ ls login
 total 204
@@ -264,254 +221,142 @@ drwxr-xr-x  root  root   4096 images/                   # images
 -rwxr-xr-x  root  root  99299 index.cgi*                # login cgi
 </pre>
 
-<p>
-Continue through the setup and configration instructions using
-the "alwaystrue" verifier. After you've gained some familiarity
-with a working system, you can come back and rebuild the login cgi 
-to use a different verifier (e.g. "kerberos_v5", "ldap", 
-or "shadow"), one that verifies credentials against your local
-authentication service. Review the configure help for the
-options.
-</p>
+<p>Note: initial file permissions assigned by the installation
+process may not be acceptable for production use. Please
+refer to <a href="#security">Appendix B: Permissions &amp; Security</a> 
+section for a discussion of this subject.</p>
+
+<p>Continue through the setup and configration instructions using
+the alwaystrue verifier. After you've gained some familiarity
+with a working system, you can rebuild the login cgi to use a 
+different verifier that goes against your local authentication 
+service. Review the configure help for the build options.</p>
 
 <pre>$ ./configure --help</pre>
 
 <p>Then rerun the configure script accordingly. [fixme: might
 link to krb and ldap sections here.]</p>
 
-<h4><a name="keypairs">Setup Login Server Key Pairs</a></h4>
+<h4><a name="keypairs">SSL &amp; Granting Key Pairs</a></h4>
 
-<p>The login cgi signs and verifies two types of cookies:
-"login" cookies which are scoped to the login server and
-"granting" cookies which are signed by the login cgi but
-verified by application servers. Therefore, typically you'll
-need two key pairs on hand. These key pairs are in addition to 
-the symmetric encryption keys it shares with application servers.</p>
+<p>SSL key pairs have several functions in the operation of  
+a Pubcookie login server. One key pair may suffice for all of
+them, but two key pairs often works better in practice.</p>
 
-<p>[fixme: can probably snip this para.] The <tt>PREFIX/keys</tt> 
-directory is the default location for all these keys; you'll sometimes
-see it referred to as your login server's keystore.</p>
+<p><b>SSL key pair</b>:<br />
+The SSL private key and certificate used to SSL-enable Apache can 
+be reused for the first keypair. This key pair is particularly suited 
+for use with the keyclient and keyserver because the SSL public key 
+certificate most likely has been signed and issued by a trusted 
+Certificate Authority. The login cgi also uses this key pair, but only 
+for signing and verifying "login" cookies.</p>
 
-<h5>Reuse SSL key pairs for the "login" cookie and keyserver</h5>
+<p>Note: the login cgi and keyserver cannot read encrypted RSA private
+keys because they can't prompt for the passphrase. To reuse an 
+encrypted SSL key, you'll first have to remove the passphrase. Refer to <a
+href="appendixc">Appendix C: OpenSSL Commands</a> for help.</p>
 
-<p>The first key pair is used to sign and verify the "login" cookie
-that maintains a user's single sign-on session with the login server.  
-The key and certificate files are kept exclusively on the login server 
-and are also used by the keyserver. You can reuse your web server's existing 
-SSL private key and certificate, rather than generating a new key pair. 
-As long as this works for your keyserver, it is probably the optimal solution.  
-Configuration is via the <tt>ssl_cert_file</tt> and <tt>ssl_key_file</tt>
-config file variables.</p>
+<p>The <tt>ssl_key_file</tt> and <tt>ssl_cert_file</tt> config file 
+variables will point to these keys.</p>
 
-<h5>Generate "granting" key pair for authentication assertions</h5>
+<p><b>Granting key pair</b>:<br />
+A second key pair is used to sign and verify "granting" cookies, 
+the authentication assertions generated and signed by the login cgi 
+and verified by application servers. Here the certificate issuer 
+isn't important, but the SSL public key certificate must be 
+distributed to other servers. Therefore, a separate "granting" key
+pair is often used. Refer to <a href="appendixc">Appendix C: OpenSSL
+Commands</a> if you need help generating this key pair.</p>
 
-<p>The second key pair is used to sign "granting" cookies, the authentication
-assertions generated and signed by the login cgi and verified by
-application servers. Here the private key is kept exclusively on the login server,
-and the public key certificate is distributed to each application server.
-You can generate a new key pair for this purpose, although you can reuse
-your SSL key pair too. In this case, the certificate issuer doesn't matter.</p>
+<p>The <tt>granting_cert_file</tt> and <tt>granting_key_file</tt> 
+config file variables will point to these keys.</p>
 
-<p>Change to the <tt>PREFIX/keys</tt> directory to generate this keypair.</p>
+<p>Note: the key pairs described in this section (used for SSL and
+message signing primarily) are in addition to the symmetric encryption 
+keys Pubcookie uses for data encryption.</p>
 
-<pre>$ cd /usr/local/pubcookie/keys
-$ openssl req -new -x509 -nodes \
-    -out pubcookie_granting.crt \
-    -newkey rsa:1024 -keyout pubcookie_granting.key
+<h4><a name="config">Run-Time Config File Setup</a></h4>
+
+<p>The login cgi and keyserver share a run-time configuration file
+located at <tt>PREFIX/config</tt>. The file format is one 
+attribute-value-pair per line, except where a trailing backslash 
+<tt>\</tt> character continues a value to the next line.</p>
+
+<p>A sample config file appropriate for a login server is provided (see
+<tt>PREFIX/config</tt> or <tt>PREFIX/config.login.sample</tt> if you're
+upgrading) as a starting point. It will look something like this:</p>
+
+<pre># 1 is a good starting point
+<a href="config.html#logging_level">logging_level</a>: 1
+
+# the credential verifier used by the basic flavor
+<a href="config.html#basic_verifier">basic_verifier</a>: alwaystrue
+
+# SSL session keypair
+<a href="config.html#ssl_key_file">ssl_key_file</a>: /etc/httpd/conf/ssl.key/server.key
+<a href="config.html#ssl_cert_file">ssl_cert_file</a>: /etc/httpd/conf/ssl.crt/server.crt
+
+# granting keypair
+<a href="config.html#granting_key_file">granting_key_file</a>: /usr/local/pubcookie/keys/pubcookie_granting.key
+<a href="config.html#granting_cert_file">granting_cert_file</a>: /usr/local/pubcookie/keys/pubcookie_granting.cert 
+
+# login server config
+<a href="config.html#login_uri">login_uri</a>: https://login.example.edu/
+<a href="config.html#login_host">login_host</a>: login.example.edu
+<a href="config.html#enterprise_domain">enterprise_domain</a>: .example.edu
+<a href="config.html#logout_prog">logout_prog</a>: /logout/index.cgi
+
+# keyserver config
+<a href="config.html#keymgt_uri">keymgt_uri</a>: https://login.example.edu:2222
+<a href="config.html#keyserver_client_list">keyserver_client_list</a>: login.example.edu trusted.example.edu
+<a href="config.html#ssl_ca_file">ssl_ca_file</a>: /etc/httpd/conf/ssl.crt/ca-bundle.crt
+
+# site-specific policies
+<a href="config.html#default_l_expire">default_l_expire</a>: 8h
 </pre>
 
-<p>The resulting files correspond with the <tt>granting_cert_file</tt> and
-<tt>granting_key_file</tt> variables during configuration.</p>
+<p>Begin editing your config file, using the <a href="config.html">config
+file variable reference</a> as needed for examples and descriptions.</p>
 
-<h4><a name="config">Setup Pubcookie Run-Time Config File</a></h4>
+<p>Notes:</p>
 
-<p>
-The login cgi and keyserver share a run-time configuration file:
-the Pubcookie <tt>config</tt> file, located at <tt>PREFIX/config</tt>. 
-The file format is one attribute-value-pair per line, except where 
-a trailing backslash "\" is used to continue a value to the next line.
-</p>
+<ul>
 
-<p>
-A <a href="config.login.sample">sample config file</a> appropriate for
-a login server is provided as a starting point. You might consider 
-copying it to <tt>PREFIX/config</tt> and edit it there, e.g.:
-[fixme: except it's already done for you.]</p>
+<li>
+<p>See how several variables in the example above are derived from the 
+login server name, <i>login.example.edu</i>. This will be true for your 
+config file too.</p>
 
-<pre>
-$ cp doc/config.login.sample /usr/local/pubcookie/config
-</pre>
+<li>
+<p>The example login server appears to be reusing its SSL key pair 
+located in <tt>server.key</tt> and <tt>server.crt</tt>.</p>
 
-<p>
-Refer to the <a href="config.html">config file
-reference </a> for variable definitions. Some of the more notable 
-variables are:
-</p>
+<li>
+<p>The example login server has a separate "granting" key pair.  Refer to
+<a href="appendixc">Appendix C: OpenSSL Commands</a> if you need help
+generating this key pair.</p>
 
-<dl compact="compact">
-<dt> logging_level </dt> 
-<dd> Defines the amount of logging.</dd>
+<li>
+<p>The example keyserver appears to be using a file bundle of trusted 
+Certificate Authorities (i.e., <tt>ca-bundle.crt</tt>). This file 
+must contain all the trusted CA root certificates the site is using to 
+verify keyclient certificates.</p>
 
-<dt> login_host </dt>
-<dd> The hostname of login server (e.g. weblogin.example.edu)</dd>
-
-<dt> login_uri </dt>
-<dd> The complete URI of the login cgi (e.g. https://weblogin.example.edu)</dd>
-
-<dt> enterprise_domain </dt>
-<dd> The domain under which all hosts will live.  Must be at least a
- second level domain (e.g. <tt>example.edu</tt>).</dd>
-
-<dt> basic_verifier </dt>
-<dd> The verifier to use for the "basic" login flavor.</dd>
-
-<dt> keymgt_uri </dt>
-<dd> The location of the keyserver.</dd>
-
-<dt> keyserver_client_list </dt>
-<dd> The hosts that are authorized to "permit" new servers.</dd>
-
-</dl>
-
-<p>
-The following configuration variables are crucial, as they determine
-the key pair used to sign and verify "login" cookies and more importantly
-to authenticate your keyserver's identity. In most cases, they should 
-refer to the same files that your web server uses for SSL.</p>
-
-<dl compact="compact">
-<dt> ssl_key_file </dt>
-<dd> The location of the SSL key.</dd>
-
-<dt> ssl_cert_file </dt>
-<dd> The location of the SSL certificate.</dd>
-</dl>
-
-<p>
-The following configuration variables define which Certificate
-Authority (CA) is trusted by your keyserver.
-If your institution uses a single CA without any intermediate
-certificates, set <tt>ssl_ca_file</tt> to the full path to the CA's
-root certificate. If your institution uses multiple CAs or intermediate
-certificates, you'll need a directory (<tt>ssl_ca_path</tt>) containing
-those certificates named via their OpenSSL hashes. At least one of
-<tt>ssl_ca_file</tt> and <tt>ssl_ca_path</tt> must be specified.</p>
-
-<dl compact="compact">
-<dt> ssl_ca_file</dt>
-<dd> The location of a file of root CA info.</dd>
-
-<dt> ssl_ca_path</dt>
-<dd> A directory containing CA files named after their OpenSSL hash.</dd>
-</dl>
-
-<p>Again, see <a href="config.html">config.html</a> for a full list of 
-configuration variables and their descriptions.</p>
-
-<h4><a name="keymgmt">Key Management Methodology</a></h4>
-
-<p>Each server participating in your Pubcookie authentication
-infrastructure, including all login servers and application servers, 
-requires its own symmetric encryption key for encrypting and
-decrypting the contents of cookies. Each key is a 2,048-byte 
-DES encryption key. They are assigned to each participaring
-server, based on the Common Name field of the server's SSL
-certificate.</p>
-
-<p>This section describes in general terms how these keys are created,
-stored, and distributed within Pubcokie. The next section explains how to
-set up your keyserver.</p>
-
-<p>Keys are generated and distrubted by the keyserver component, and a
-master copy of each key is stored on the login server in its keystore,
-<tt>PREFIX/keys</tt>, where each key is kept in a separate file
-named after the corresponding server.</p>
-
-<p>For example, a site with a login server and three application servers 
-might have a keystore like this:</p>
-
-<pre>
-$ ls -1 /usr/local/pubcookie/keys
-pubcookie_granting.key
-pubcookie_granting.crt
-weblogin.example.edu
-my.example.edu
-mail.example.edu
-appserver.example.edu
-</pre>
-
-<p>New host keys are generated and issued by the keyserver upon request.  
-That is, they are created when a peer server asks for one. This happens
-via a SSL/TLS connection initiated by running the Pubcookie keyclient
-utility on the server that needs a key. As long as there is sufficient
-trust between the keyclient and the keyserver, the keyserver can issue a
-key ... but only if the requesting server is authorized to receive
-one.</p>
-
-<p>New servers are authorized to request keys by their pressence in the
-keystore. That is, the login server's keystore implicitly defines which
-servers can be issued host keys (and therefore which servers can
-participate in a site's Pubcookie infrastructure). The keyserver makes
-authorization decisions based on the presence or absense of host files in
-the keystore. If the keyserver finds a host file in the keystore, then
-that host can request a key. This seems like a catch-22: to create a new
-host key in the keystore, the key must already exist in the keystore.  
-However, there is a solution.</p>
-
-<p>Login server administrators can use the keyclient's "permit" option to
-authorize new servers to request keys. For example, to authorize
-<i>newapp.example.edu</i> an administrator would run this command:</p>
-
-<pre>
-$ keyclient -1 newapp.example.edu
-</pre>
-
-<p>Administrators can authorize new servers manually or automate the
-process via some kind of secure web-based registration service. To control
-which hosts can use the permit option, the keyserver reads the
-<tt>keyserver_client_list</tt> config variable, which lists the hosts the
-administrators use to permit new hosts.  This feature allows
-administrators to authorize new hosts without necessarily having to log in
-to the login server.</p>
-
-<p>Finally, it's worth clarifying that the trust relationship between the
-keyserver and its keyclients requires the lightweight use of Public-Key
-Infrastructure. Namely, to ensure mutual authentication and a secure
-communication channel for transferring shared DES keys, Pubcookie relies
-on SSL certificates and the Certificate Authorities that issue them. The
-keyclient and keyserver both use the <tt>ssl_ca_file</tt> and
-<tt>ssl_ca_path</tt> variables to find your trusted CA root certificates,
-to which you can add your own institutional CA if you have one. This is
-necessary for verifying the certificates presented in the connection. The
-keyclient needs to verify that it's communicating with your keyserver. And
-the keyserver needs to verify a keyclient's certificate, because it's
-going to use the Common Name to create a host key in the keystore.</p>
+</ul>
 
 <h4><a name="keyserver">Keyserver Setup</a></h4>
 
-<p>To set up your keyserver, make sure you've configured
-<tt>ssl_key_file</tt>, <tt>ssl_cert_file</tt>, and either <tt>ssl_ca_file</tt> 
-or <tt>ssl_ca_path</tt> depending on how you handle trusted root CA
-certificates. Keyserver also uses <tt>granting_cert_file</tt> for 
-distributing your "granting" certificate. And if you want some
-control over which host can request keys, use <tt>keyserver_client_list</tt>
-to define the hosts that administrators will use to "permit" new hosts
-to retrieve keys.</p>
+<p>Keyserver is designed to run as a service under inetd or xinetd.</p>
 
-<p>You can run your keyserver from inetd or xinetd, but not as a cgi
-program along side the login cgi due to subtle constraits in key usage.</p>
-
-<p>If you use inetd, add a line like the following to the login server's
+<p>If you use inetd, add a line like the following to
 <tt>/etc/inetd.conf</tt>:</p>
 
 <pre>
-2222    stream  tcp     nowait  root    /usr/local/pubcookie/keyserver keyserver
+2222  stream  tcp  nowait  root  /usr/local/pubcookie/keyserver keyserver
 </pre>
 
-<p>Adjust the path to the keyserver binary as needed.</p>
-
-<p>Or if you are using xinetd, create a file named <tt>keyserver</tt> in
-<tt>/etc/xinetd.d</tt> with the following contents:</p>
+<p>If you use xinetd, create <tt>/etc/xinetd.d/keyserver</tt> with the
+following contents:</p>
 
 <pre>
 # description: pubcookie keyserver
@@ -532,178 +377,181 @@ service keyserver
 <p>After adding the line to inetd.conf, or the file to xinetd, restart
 your inetd or xinetd service.</p>
 
-<h4><a name="keyclient">Run Keyclient for the Login Server</a></h4>
+<p>Note: keyserver requires <tt>ssl_key_file</tt> and
+<tt>ssl_cert_file</tt>, and either <tt>ssl_ca_file</tt> or
+<tt>ssl_ca_path</tt> depending on how you handle trusted root CA
+certificates. Keyserver also uses <tt>granting_cert_file</tt> for
+distributing your "granting" certificate. And if you want control over
+which hosts can request keys, you can do so by defining a
+<tt>keyserver_client_list</tt> for authorizing new hosts.</p>
 
-<p>To generate a host key for your login server, you need to request one
-using the keyclient utility. First, authorize the login server to request
-a key by using the keyclient's "permit" option. For example:</p>
+<h4><a name="keymgmt">Key Management Methodology</a></h4>
 
-<pre>
-$ /usr/local/pubcookie/keyclient -1 login.example.edu
+<p>This section describes how symmetric encryption keys are 
+managed by the keyserver, which issues keys to participating servers,
+including all login servers and application servers, upon
+request by the keyclient.</p>
+
+<p><b>The keystore:</b><br />
+A master copy of each 2048-byte DES key is stored on 
+the login server in its keystore, <tt>PREFIX/keys</tt>, in a filename
+based on the server's SSL certificate's Common Name. For example, a site 
+with a login server and three application servers might have a keystore 
+like this:</p>
+
+<pre>$ ls /usr/local/pubcookie/keys
+total 204
+-rw-r--r--  root  root   2048 weblogin.example.edu
+-rw-r--r--  root  root   2048 appserver.example.edu
+-rw-r--r--  root  root   2048 mail.example.edu
+-rw-r--r--  root  root   2048 my.example.edu
+-rw-r--r--  root  root    887 pubcookie_granting.key
+-rw-r--r--  root  root   1224 pubcookie_granting.cert
 </pre>
 
-<p>Note: if your keyserver uses <tt>keyserver_client_list</tt> to 
-control which hosts can permit other hosts, then the host where you 
-run this "permit" command must be privileged to do so; that is, by 
-being included in the <tt>keyserver_client_list</tt>. This is true 
-even though the command is coming from your login server.</p>
+<p><b>New key generation:</b><br />
+New keys are generated and issued by the keyserver upon request. Running 
+keyclient on a host initiates the request. If they keyclient host is 
+authorized, and the keyclient and keyserver trust each other, the 
+request is fulfilled.</p>
 
-<p>Once the keystore has been primed using the "permit" option, run
-the keyclient to generate a new DES key for the login server:</p>
+<p><b>Keyclient host authorization:</b><br />
+The keyserver performs authorization on keyclient requests when
+<tt>keyserver_client_list</tt> is set. Otherwise, it will issue keys
+to any keyclient with a verifiable SSL certificate.</p>
 
-<pre>
-$ /usr/local/pubcookie/keyclient
-</pre>
+<p>When keyclient authorization is enabled, authorization is based on the
+presence a host in the keystore. If keyserver finds a host in the
+keystore, then that host can request a key. This seems like a catch-22:
+<i>to create a new host key in the keystore, the key must already exist
+in the keystore</i>. But it's not, becuase site administrators can use
+the keyclient's "permit" option to authorize new servers to request keys.
+For example:</p>
 
-<p>Keyclient will use your config file to connect to your keyserver and
-negotiate a new host key. If successful, your keystore will now have a
-host key for your login server.</p>
+<pre>$ keyclient -P newserver.example.edu</pre>
 
-<p>Hint: look in syslog and refer to the <a href="#debug">debugging</a>
-section if you run into problems generating keys with keyserver.</p>
+<p>This can be done manually or by some kind of automated web-based
+registration service. The <tt>keyserver_client_list</tt> defines which
+hosts are authorized to use the permit option, allowing you to authorize
+new hosts without necessarily having to log in to the login server to do
+so.</p>
 
-<h5>Generating DES keys for the application servers with keyclient</h5>
+<p><b>SSL/TLS mutual authentication</b><br />
+Pubcookie uses elements of public-key infrastructure (PKI) for mutual 
+server authentication and data privacy in the SSL/TLS connection between
+keyclient and keyserver. This is where the trusted Certificat Authority 
+certificates come in.</p>
 
-<p>When the time comes, generating host keys for application servers is
-very similar. First, someone with rights to use the "permit" option must
-use it to authorize the server to request a key. Then the server can
-request a key, provided that the certicate presented by the keyclient
-(probably the server's SSL certificate) is signed by a CA trusted by your
-keyserver.</p>
+<p>The keyclient must verify your keyserver SSL certificate. And the
+keyserver must verify each keyclient's SSL certificate. To do so, they
+both use <tt>ssl_ca_file</tt> or <tt>ssl_ca_path</tt> to find trusted CA
+root certificates (to which you can add your own institutional CA if you
+have one) to verify the peer certificates.</p>
 
-<h4><a name="install">Install &amp; Test Login CGI (index.cgi)</a></h4>
+<h4><a name="keyclient">Run Keyclient For Login Server</a></h4>
 
-<p>Once your run-time config file is set up and you've succeeded in using
-keyclient to generate a DES key for your login server, you can deploy the
-login cgi by copying it into your production directory from which Apache
-will serve requests. (See <a href="#apacheconfig">Apache Configuration</a> 
-above for some discussion of this topic.) For example:</p>
+<p>To generate a symmetric encryption key for your login server, copy
+the starter key found in the distribution into your keystore. Use your
+<tt>login_host</tt> name for the filename. For example:</p>
 
-<pre>
-% cp index.cgi /var/www/html
-</pre>
+<pre>$ cd /usr/local/pubcookie
+$ cp starter.key keys/login.example.edu</pre>
 
-<p>You don't need to set up an application server to test the login cgi; 
-simply open your login URL in a browser and it should ask you to log in
-using whichever verifier you've configured. This direct approach to
-your login cgi is known as a "pinit" or "Pubcookie init" since it 
-establishes a single sign-on session without authenticating you to 
-a specific application.</p>
+<p>The starter key allows keyserver to initialize when the keystore
+would otherwise be empty. Now you should be able to run keyclient to
+request a new DES key for the login server based on your current 
+config file settings:</p>
 
-<p>Hint: look in syslog and refer to the <a href="#debug">debugging</a> 
-section if you run into problems with the login cgi.</p>
+<pre>$ ./keyclient
+Set crypt key for login.example.edu</pre>
+
+<p>Note: if keyclient is unable to set a new key, look in syslog for
+keyserver error messages.</p>
+
+<h4><a name="deploy">Deploying Login CGI</a></h4>
+
+<p>The login cgi doesn't depend on its own filename or location, so your
+primary concern in deploying it should be to create a simple URL that's
+easy for users to recognize and trust with their password.</p>
+
+<p>The most common approach is to copy it from
+<tt>PREFIX/login/index.cgi</tt> to the server's root directory, resulting
+in a URL such as <i>https://weblogin.example.edu/</i>. 
+
+<p>Refer to <a href="#apacheconfig">Appendix A: Apache Configuration</a>
+if you're unfamiliar with the directives that control how Apache detects
+and handles cgi scripts, particularly as a directory index.</p>
+
+<h4><a name="pinit">Testing Login CGI</a></h4>
+
+<p>The login cgi can be opened directly in a browser. This is sometimes
+called a <i>pinit</i> (for Pubcookie init, like kinit) since
+authentication is requested without being tied to an application. It's a
+good way to test your current config file and verifier. <i>Go ahead and
+try it now.</i> The login page you see comes from
+<tt>PREFIX/login_templates/login_pinit</tt>.</p>
+
+<p>If authentication succeeds, congratulations, you now can deploy an
+application server using the <a href="">Pubcookie Apache module</a> or <a
+href="">Pubcookie ISAPI Filter</a> to test the components together. Then
+you can go on to build and configure another verifier that goes against 
+your authentication service and customize the <a href="#templates">login
+cgi templates</a> for your site.</p>
+
+<p>If authentication fails, don't panic, look in your syslog for error
+messages from the login cgi and refer to the <a href="#debug">Logging &
+Debugging</a> section for further advice.</p>
 
 <h4><a name="debug">Logging &amp; Debugging</a></h4>
 
-<p>The login server components send messages to syslog and
-can be configured to do so in greater volumes using the 
-<tt>logging_level</tt> config variable, which takes the
-following values:</p>
+<p>The login cgi uses syslog to log all messages. Logging can be
+configured using the <a href="config.html#logging_level"><tt>logging_level</tt></a>
+variable. A value of <tt>1</tt> gets you basic audit activity 
+such as logins and redirects which is most likely sufficient for 
+normal operation. When additional debugging information is needed 
+increase the value to <tt>3</tt>.</p>
 
-<dl compact="compact">
-<dt> 0 </dt>
-<dd> errors only </dd>
-<dt> 1 </dt>
-<dd> audit activity (auths, redirects, etc.)</dd>
-<dt> 2 </dt>
-<dd> some debugging messages </dd>
-<dt> 3 </dt>
-<dd> verbose debugging messages  </dd>
-<dt> 5 </dt>
-<dd> also logs HTML output </dd>
-</dl>
+<p>The keyserver also uses syslog and tends to log all critical 
+error messages. Keyclient uses standard output for its messages.</p>
 
-<p>To troubleshoot problems with the keyserver and/or the login cgi,
-increase the logging level in your config file to level 3, exercise
-the component again, and then look in syslog for new messages.</p>
+<h4><a name="templates">Login CGI Templates</a></h4>
 
-<p>Note: the basic auditing provided by logging level 1 is most 
-likely sufficient for normal operation of the login server.</p>
+<p>The login cgi creates login, logout, error, and redirect pages using
+HTML templates it reads from the <tt>PREFIX/login_templates</tt>
+directory. An alternative location can be defined using the <a
+href="config.html#template_root"><tt>template_root</tt></a> config file
+variable.</p>
 
-<h4><a name="templates">Login Page Templates</a></h4>
+<p>Edit these templates to suit the naming and web design needs of your
+login server. A set of generic templates is copied into place during
+installation. A backup set is also copied to
+<tt>PREFIX/login_templates.default</tt>.</p>
 
-<p>The login cgi uses HTML templates, individually or pieced together, to
-create your login pages, error and logout response pages, and redirect
-pages.</p>
+<p>Refer to the <a href="templates.html">login cgi template
+reference</a> for descriptions of each template.</p>
 
-<p>By default, the login cgi reads these templates from the
-<tt>PREFIX/login_templates</tt> directory. The
-<tt>template_root</tt> config file variable can be used to specify an an
-alternative location.</p>
-
-<p>A set of generic templates is installed by default in
-<tt>PREFIX/login_templates.default</tt>. Copy these starter
-templates to <tt>PREFIX/login_templates</tt> and edit them 
-according to local designs and conventions.</p>
-
-<p>The name of each template file can be set in your config file, if you
-desire alternative filenames. The name for each config variable is
-<tt>tmpl_{default_file_name}</tt>. Therefore, as an example,
-<tt>tmpl_login</tt> is the variable that controls the name of the
-<tt>login</tt> template.</p>
-
-<h5>Template Files (incomplete)</h5>
-
-<p>Note: We are in the process of reworking the template files to make
-them more user-friendly.  The list below will be updated as work
-progresses.</p>
-
-<dl compact="compact">
- <dt>login</dt>
- <dd>The main login page, with automatic variable substitutions for: the
-   login server URL, the reason for the redirect (pulled from various
-   <tt>login_*</tt> templates), the user input field (also pulled from
-   other templates), hidden fields maintaining state information, and
-   GetCred hidden fields</dd>
- <dt>nonpost_redirect</dt>
- <dd>The redirect page back to the target. The use of script-no-script 
-  tags with <tt>window.location.replace</tt> (requires JavaScript 
-  1.1) doesn't work well with all older browsers (e.g. Netscape 4.x); for 
-  best compatibility just use meta-refresh by itself, without the 
-  script-no-script tags.</dd>
- <dt>login_bad_auth</dt>
- <dd>The error displayed when the authentication failed.</dd>
- <dt>login_cache_creds_wrong</dt>
- <dd>The error displayed when the single-signon credential is not the type
-  that the application is requesting.  (Rarely seen.)</dd>
- <dt>login_nolcookie</dt>
- <dd>The error displayed when the user doesn't have or has an invalid login
-  cookie</dd>
- <dt>login_reauth</dt>
- <dd>The error displayed when the application has requested that the user
-  reauthenticate.</dd>
- <dt>status</dt>
- <dd>The status page displaying SSO time remaining, with automatic 
-   variable substitutions for: refresh headers, the user name, and 
-   time remaining.</dd>
- </dd>
-</dl>
-
-<p>Note: For comparison purposes, login templates (of some vintage) from
-Carnegie Mellon University and the Univerisity of Washington are provided
-in the source distribution. See <tt>src/login_templates.cmu</tt> and
-<tt>src/login_templates.uw</tt>, respectively. Be warned, however, that
-the syntax for variable substitution within the templates changed during
-the development of version 3.0.0, and therefore the CMU and UWash
-templates may be in the older format.</p>
+<p>Note: For comparison purposes, templates (of some vintage) from
+Carnegie Mellon University and the Univerisity of Washington are
+provided in the distribution. See <tt>src/login_templates.cmu</tt> and
+<tt>src/login_templates.uw</tt>. Be warned, however, that the syntax
+for variable substitution within the templates has changed over time,
+and therefore the CMU and UWash templates may be slightly
+out-of-date.</p>
 
 <h4><a name="ok_browsers">Browser Acceptance Configuration </a></h4>
 
-<p>
-The optional <tt>PREFIX/ok_browsers</tt> file contains a list of browsers
-accepted by the login cgi. The ok_browsers file provides the ability to 
-block browsers that either have a known security flaw (i.e. don't forget 
-cookies when they should) or don't work with Pubcookie. The ok_browsers 
-file is optional.
-</p>
+<p>The optional <tt>PREFIX/ok_browsers</tt> file contains a list of
+browsers accepted by the login cgi. This file provides a way to block
+browsers that either have a known security flaw (i.e., don't forget
+cookies when they should) or don't work with Pubcookie. The ok_browsers
+file is optional.</p>
 
-<p>
-Note: At the University of Washington, we've so far been too chicken to 
-use the 'ok_browsers' functionality to block browsers that we suspect
-don't work.  Our ok_browsers file has a single line: "Mozilla". This 
-pattern matches most of the browsers we support and/or encounter; mainly 
-Internet Explorer, Netscape, Mozilla, and Safari. 
-</p>
+<p>Note: At the University of Washington, we've so far been too chicken
+to use the 'ok_browsers' functionality to block browsers that we
+suspect don't work. Our ok_browsers file has a single line: 
+<tt>Mozilla</tt>. This pattern matches most of the browsers we support
+or encounter; which is mainly Internet Explorer, Netscape, Mozilla, and
+Safari.</p>
 
 <h4><a name="logout">Logout Configuration</a></h4>
 
@@ -713,19 +561,21 @@ functionality. Handling these logout requests is built in; no
 configuration is necessary to the login cgi itself.</p>
 
 <p>However, through additional configuration you can create a 
-separate, direct logout URL for your login server (e.g. <i>https://weblogin.example.edu</i>)
-and also tailor the logout response messages for your favorite applications.</p>
+separate, direct logout URL for your login server (e.g. 
+<i>https://weblogin.example.edu/logout</i>). You can also tailor the 
+logout response messages for your favorite applications. Those
+are the two subjects of this section.</p>
 
 <p>Note: Pubcookie does not support "global" logout, that is, logout of all
 sessions, all cookies, all at once. Rather, it supports per-application-session
 logout with optional ability also to logout of the login server. Therefore, 
 users still must be educated not to leave their browsers open 
-and unattended without proper precautions. Exiting the browser remains
+and unattended without proper precautions such as locking their computer
+and using password-protected screensavers. Exiting the browser remains
 the best way for users to get logged out of everything at once.</p>
 
-<h5>Configuring a Direct Logout URI</h5>
-
-<p>If you want to provide a URL where users can go directly to clear their 
+<p><b>Configuring a Direct Logout URI:</b><br />
+If you want to provide a URL where users can go directly to clear their 
 single sign-on session (by way of clearning their "login" cookie), it can 
 be created with the <tt>logout_prog</tt> config variable and a Unix symbolic 
 link. Here's an example.</p>
@@ -733,49 +583,42 @@ link. Here's an example.</p>
 <p>Suppose the login cgi has been installed in the DocumentRoot
 directory (e.g. in <tt>/var/www/html</tt>) with a URL of <i>https://weblogin.example.edu</i>.
 To create a logout URI of <tt>/logout/</tt> just below that, 
-i.e. <i>https://weblogin.example.edu/logout/</i>, you'd do 
+i.e., <i>https://weblogin.example.edu/logout/</i>, you'd do 
 this:</p>
 
-<ol>
+<p>Change to the appropriate directory, create the subdirectory, and make 
+the symbolic link to your login cgi:</p>
 
-<li><p>Change to the appropriate directory, create the subdirectory, and make the symbolic link to your login cgi:</p>
-
-<pre>
-$ cd /var/www/html
+<pre>$ cd /var/www/html
 $ mkdir logout
 $ cd logout
-$ ln -s ../index.cgi index.cgi
-</pre>
+$ ln -s ../index.cgi index.cgi</pre>
 
 <p>Adjust the directory according to the location of your login cgi. Now any request to <tt>/logout/</tt>
 on the server will map to your login cgi. [fixme: is there a better way to do this in httpd.conf?]</p>
 
-<li><p>Now add the appropriate <tt>logout_prog</tt> variable to your Pubcookie config file:</p>
+<p>Now add the appropriate <tt>logout_prog</tt> variable to your config file:</p>
 
-<pre>
-logout_prog: /logout/index.cgi
-</pre>
+<pre><a href="config.html#logout_prog">logout_prog</a>: /logout/index.cgi</pre>
 
-</ol>
-
-<h5>Customizing Logout Responses For Special Apps </h5>
-
-<p>The login cgi builds logout response pages from several templates. One template, 
+<p><b>Customizing Logout Responses For Special Apps:</b><br />
+The login cgi builds logout response pages from several templates. One template, 
 <tt>logout_app</tt>, which is the most specific to each application, can be overridden 
 on a per-application basis, as configured and identified by the originating server 
 name and application id. It requires one <tt>app_logout_string</tt> config file variable
 for each application, where the server name and id are tacked on using dashes. For example:
 
 <pre># custom logout msgs
-app_logout_string-appserver.example.edu-testapp: \
-                 &lt;font size="+1"&gt;Testapp logout worked just fine.&lt;/font&gt;
-app_logout_string-webmail.example.edu-webmail: \
-                 &lt;font size="+1"&gt;Webmail Logout Successful!&lt;/font&gt;</pre>
+<a href="config.html#app_logout_string">app_logout_string-</a>appserver.example.edu-testapp: \
+          &lt;font size="+1"&gt;Testapp logout worked just fine.&lt;/font&gt;
+<a href="config.html#app_logout_string">app_logout_string-</a>webmail.example.edu-webmail: \
+          &lt;font size="+1"&gt;Webmail Logout Successful!&lt;/font&gt;</pre>
 
 <p>[fixme: better retest the backslash syntax]</p>
 
-<p>Note: Since the login cgi reads the config file and its HTML templates on each request, 
-there's no need to recompile the login cgi in order to modify response text.</p>
+<p>Note: Since the login cgi reads the config file and its HTML
+templates on each request, there's no need to recompile the login cgi
+in order to modify response messages.</p>
 
 <h4><a name="kiosk">Kiosk Configuration</a></h4>
 
@@ -784,7 +627,7 @@ single sign-on duration for identified kiosks. The login cgi supports
 matching by user-agent string, remote IP address, or IP address ranges.
 For example:</p>
 
-<pre>kiosk:   20m Safari/85.6 \
+<pre><a href="config.html#kiosk">kiosk</a>:   20m Safari/85.6 \
          15m Safari \
          10m ExampleKiosk 140.142.14.39 140.142.21.* \
          1h  140.142.15.10-200</pre>
@@ -800,9 +643,7 @@ SSO duration for IP addresses in the range 140.142.15.10-200.</p>
 applying reduced SSO to managed kiosks that have a locally
 customized user-agent string such as:</p>
 
-<pre>
-User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; ExampleKiosk; Windows NT 5.0)
-</pre>
+<pre>User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; ExampleKiosk; Windows NT 5.0)</pre>
 
 <p>How to customize user-agent strings is beyond the scope of this guide,
 but resources and tools, such as the <a href="http://www.microsoft.com/windows/ieak/default.asp">Internet 
@@ -817,64 +658,64 @@ login server.</p>
 
 <ul>
 
-<li><p>Use <tt>default_l_expire</tt> to define your default single sign-on
-duration.</p></li>
+<li><p>Use <a href="config.html#default_l_expire"><tt>default_l_expire</tt></a> 
+to define your default single sign-on duration. Primary authentication 
+occurs when user-provided credentials are verified directly. Subsequent 
+authentication is based on checking the "login" cookie. This setting 
+defines how long this cookie is valid.</p></li>
 
-<li><p>Use <tt>static_user_field</tt> to define the editability of the
-userid field during a single browsing session. You may want to allow
-some flexibility or force users to close the browser before switching
-between users.</p>
+<li><p>Use <a href="config.html#static_user_field"><tt>static_user_field</tt></a>
+to define the editability of the userid field during a single browsing 
+session. You may want to allow some flexibility or force users to close 
+the browser before switching between users.</p></li>
 
-<li>Use the <tt>retain_username_on_failed_authn</tt> to define whether
-the userid is retained after a failed login attempt. Users will
+<li>Use the <a href="config.html#retain_username_on_failed_authn"><tt>retain_username_on_failed_authn</tt></a>
+to define whether the userid is retained after a failed login attempt. Users will
 appreciate this if they mistyped their password, not their userid.</p></li>
 
-<li><p>Use <tt>trim_username_to_atsign</tt> to define whether users can
-enter a userid that looks like an email address. Sites that aren't 
-verifying full Kerberos principals (e.g. <i>joe@example.edu</i>) or 
+<li><p>Use <a href="config.html#trim_username_to_atsign"><tt>trim_username_to_atsign</tt></a>
+to define whether users can enter a userid that looks like an email address. 
+Sites that aren't verifying full Kerberos principals (e.g. <i>joe@example.edu</i>) or 
 userids that look like email addresses can use this feature to provide 
 some flexibility in this regard, i.e., to trim off the extra realm info 
 the user added and verify just the proper userid.</p></li>
 
 </ul>
 
-<p>Refer to the <a href="config.html">config file reference</a> to review
-these variables and the values they take.</p>
+<p>Refer to the <a href="config.html">config file variable
+reference</a> to review these variables and the values they take.</p>
 
 <h4><a name="krb5">Kerberos 5 Verifier Configuration</a></h4>
 
 <p>To build the login cgi with support for the Kerberos 5 verifier,
 run the configure script with the Kerberos option enabled:</p>
 
-<pre>
-./configure --enable-login --disable-apache --enable-krb5
-</pre>
+<pre>./configure --enable-login --disable-apache --enable-krb5</pre>
 
 <p>If needed, the configure script has other options for adjusting the
 location of the Kerberos header files and libraries.</p>
 
 <p>To configure the login cgi to use the Kerberos verifier, edit your
-pubcookie config file and set <tt>basic_verifier</tt> to
+config file and set <tt>basic_verifier</tt> to
 <tt>kerberos_v5</tt>. Additionally, two other <a href="config.html">config
 file variables</a> control the Kerberos 5 verifier:
 <tt>kerberos5_service_name</tt> and <tt>kerberos5_keytab</tt>. For 
 example:</p>
 
-<pre>
-# kerberos verifier config
-basic_verifier: kerberos_v5
-kerberos5_service_name: pubcookie
-kerberos5_keytab: /usr/local/pubcookie/keys/pubcookie.keytab
+<pre># kerberos verifier config
+<a href="config.html#basic_verifier">basic_verifier</a>: kerberos_v5
+<a href="config.html#kerberos5_service_name">kerberos5_service_name</a>: pubcookie
+<a href="config.html#kerberos5_keytab">kerberos5_keytab</a>: /usr/local/pubcookie/keys/pubcookie.keytab
 </pre>
 
-<p>Enable the <tt>append_realm</tt> variable if you want the
-Kerberos authentication realm to be appended to the user name 
-after authentication but before issuing cookies (i.e., target
+<p>Enable the <a href="config.html#append_realm"><tt>append_realm</tt></a>
+variable if you want the Kerberos authentication realm to be appended to 
+the user name after authentication but before issuing cookies (i.e., target
 servers will receive <i>user@REALM</i>.)
 
-<p>Use the <tt>default_realm</tt> variable to define a default  
-Kerberos authentication realm to pass to the verifier when 
-none is submitted via the login form.</p>
+<p>Use the <a href="config.html#default_realm"><tt>default_realm</tt></a>
+variable to define a default Kerberos authentication realm to pass to the 
+verifier when none is submitted via the login form.</p>
 
 <p>To authenticate responses from your Kerberos server, the login server and
 Kerberos server must share a service key. You can use an existing service key
@@ -895,26 +736,153 @@ verifier. Your service name can be set with the
 service key, generating a keytab file, or otherwise configuring Kerberos
 (e.g. <tt>/etc/krb5.conf</tt>) on your login server.</p>
 
-<h4><a name="upgrading">Upgrading</a></h4>
+<h4><a name="ldap">LDAP Verifier Configuration</a></h4>
 
-<p>TBD</p>
+<p>To build the login cgi with support for the LDAP verifier,
+run the configure script with the LDAP option enabled:</p>
+
+<pre>./configure --enable-login --disable-apache --enable-ldap</pre>
+
+<p>If needed, the configure script has other options for adjusting the
+location of the LDAP header files and libraries.</p>
+
+<p>To configure the login cgi to use the LDAP verifier, edit your
+config file and set <tt>basic_verifier</tt> to <tt>ldap</tt> and
+set <a href="config.html#ldap_uri"><tt>ldap_uri</tt></a> to your 
+LDAP URI.</p>
 
 <h4><a name="clusters">Redundant Login Server Configuration</a></h4>
 
 <p>TBD</p>
 
-<h4><a name="security">Security Considerations</a></h4>
+<h4><a name="upgrading">Upgrading</a></h4>
 
-<p>Don't run anything else on your login server: anyone who can add 
-content to the login server can use it to steal users "login" cookies.</p>
+<p>TBD.. new login_templates.default ... new config file</p>
+
+<h4><a name="apps">Supporting Application Servers</a></h4>
+
+<p>When the time comes, generating host keys for application servers is
+very similar. First, someone with rights to use the "permit" option must
+use it to authorize the server to request a key. Then the server can
+request a key, provided that the certicate presented by the keyclient
+(probably the server's SSL certificate) is signed by a CA trusted by your
+keyserver.</p>
+
+<p>how trust is handled by your site's Pubcookie keyserver. You'll need
+to know which Certificate Authorities the keyserver trusts to verify
+certificates. Similarly, you'll need to know which Certificate Authority
+can verify the keyserver's certificate. Ask your administrator for
+guidelines; it'll save you time and effort. 
+
+<p>Note: in order to configure applications servers, other system
+administrators will need to know the URL of your login server. </p>
+
+<h4><a name="apacheconfig">Appendix A: Apache Configuration</a></h4>
+
+<p>The default filename for the login cgi, <tt>index.cgi</tt>, is a common 
+name for a cgi program that is executed when a directory's URL is requested.
+The <a href="http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex">DirectoryIndex</a> 
+directive defines how Apache handles such requests, typically
+choosing the first file it finds in its DirectoryIndex list. With
+appropriate configuration, this can be your login cgi.</p>
+
+<p>
+For example, you might use the follow <tt>DirectoryIndex</tt> directive:
+</p>
+
+<pre>
+DirectoryIndex index.cgi index.html
+</pre>
+
+<p>
+Apache also needs to know how to identify cgi scripts by the <tt>.cgi</tt> 
+filename extension. Some distributions of Apache have the cgi handler 
+disabled. Make sure the following line is in your httpd.conf and not 
+commented out.
+</p>
+
+<pre>
+AddHandler cgi-script .cgi
+</pre>
+
+<p>Finally, Apache must allow execution of cgi scripts in the directory
+where the login cgi is located. If it's outside of a 
+<a href="http://httpd.apache.org/docs/mod/mod_alias.html#scriptalias">ScriptAlias</a>
+directory, you can control this with the 
+<a href="http://httpd.apache.org/docs/mod/core.html#options">Options</a> directive.
+
+<pre>
+Options Indexes FollowSymLinks ExecCGI
+</pre>
+
+<h4><a name="security">Appendix B: Permissions &amp; Security</a></h4>
+
+<p>Due to the important nature of the Pubcookie login server, the only 
+other services that should be run on the same system are those which 
+receive an equally high level of scrutiny for security.</p>
+
+<p>Some of the login cgi's supporting files are sensitive, particularly 
+the two private keys, <tt>ssl_key_file</tt> and <tt>granting_key_file</tt>. 
+In a production environment, non-root users shouldn't be able to read
+these files.</p>
+
+<p>However, in a typical Apache configuration the login cgi runs within 
+a restricted user context defined by the <a href="http://httpd.apache.org/docs/mod/core.html#user">User</a>
+and <a href="http://httpd.apache.org/docs/mod/core.html#group">Group</a> 
+server directives. They are usually set to some non-privileged user and 
+group (e.g. <tt>nobody.nobody</tt>).</p>
+
+<p>One approach to permissions is simply to make the sensitive files
+owned and readable by the non-privileged Apache user (<tt>nobody.nobody</tt> 
+and octal <tt>600</tt>, <tt>700</tt> for the keys directory).
+
+<pre>
+drwx------  nobody nobody   4096 keys/ 
+-rw-------  nobody nobody   4096 keys/pubcookie_granting.key
+-rw-------  nobody nobody   4096 keys/pubcookie_session.key
+</pre>
+
+<p>Another approach is to run Apache as a non-privileged user but use a
+group that no users are allowed to be in (e.g. <tt>nobody.www</tt> where
+no users are in the <tt>www</tt> group). Then sensitive files can be
+restricted to just root and to the empty group (<tt>root.www</tt> and
+octal <tt>640</tt>, <tt>750</tt> for the keys directory). Since the login
+cgi runs in the context of the group, it can read the files it needs
+to.</p>
+
+<pre>
+drwxr-x---  root   www      4096 keys/ 
+-rw-r-----  root   www      4096 keys/pubcookie_granting.key
+-rw-r-----  root   www      4096 keys/pubcookie_session.key
+</pre>
+
+<p>Note: since the keyserver is run by inetd or xinetd, it is most likely
+run as root and therefore can read and write supporting files as needed.</p>
+
+<h4><a name="openssl">Appendix C: OpenSSL Commands</a></h4>
+
+<p>To generate a new RSA private key and self-signed public key certificate,
+(for example, for the "granting" key pair), change to the <tt>PREFIX/keys</tt> 
+directory and use the following OpenSSL command as an example:</p>
+
+<pre>$ cd /usr/local/pubcookie/keys
+$ openssl req -new -x509 -out pubcookie_granting.cert \
+    -newkey rsa:1024 -nodes -keyout pubcookie_granting.key</pre>
+
+<p>To remove the pass phrase on an SSL private key:</p>
+
+<pre>$ openssl rsa -in server.key -out unencrypted.key</pre>
+
+<p>The man pages for <tt>x509</tt>, <tt>rsa</tt>, and <tt>req</tt>
+have many other useful OpenSSL command examples.</p>
 
 <hr>
 <p>
-Copyright 1999-2004, University of Washington.  All rights reserved.<br>
+Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.22 2004-05-06 18:57:54 dors Exp $
+$Id: install-login.html,v 1.23 2004-05-11 22:33:44 dors Exp $
 </pre>
 </body>
 
