@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.24 2001-08-23 17:37:12 willey Exp $
+    $Id: index.cgi.c,v 1.25 2001-08-24 01:52:27 willey Exp $
  */
 
 
@@ -60,6 +60,8 @@
 FILE	*mirror;
 #endif 
 
+crypt_stuff         *c_stuff = NULL;
+
   /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
  /*	general utility thingies                                            */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
@@ -80,7 +82,7 @@ int get_cookie(char *name, char *result, int max)
     if( !(s = getenv("HTTP_COOKIE")) ){
         log_message("looking for %s cookie, but found no cookies", name);
         notok(notok_no_g_or_l);
-        return(FAIL);
+        return(PBC_FAIL);
     }
 
     /* make us a local copy */
@@ -88,7 +90,7 @@ int get_cookie(char *name, char *result, int max)
 
     if( !(wkspc=strstr( target, name )) ) {
         log_message("looking for %s cookie, but didn't find it", name);
-        return(FAIL);
+        return(PBC_FAIL);
     }
 
     /* get rid of the <name>= part from the cookie */
@@ -103,7 +105,7 @@ int get_cookie(char *name, char *result, int max)
 
     strncpy( result, wkspc, max );
     free( target );
-    return( OK );
+    return( PBC_OK );
 
 }
 
@@ -444,6 +446,23 @@ char *get_domain_hostname()
         return (PBC_LOGIN_TEST_HOST);
     else
         return (PBC_LOGIN_HOST);
+
+}
+
+/* reads the crypt key */
+int init_crypt() 
+{
+    unsigned char	crypt_keyfile[PBC_4K];
+
+    if( c_stuff != NULL )
+        return(PBC_OK);
+
+    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
+			KEY_DIR, CRYPT_KEY_FILE, get_my_hostname()); 
+    if( (c_stuff = libpbc_init_crypt(crypt_keyfile)) == NULL )
+	return(PBC_FAIL);
+    else 
+	return(PBC_OK);
 
 }
 
@@ -857,10 +876,9 @@ char *check_l_cookie(login_rec *l)
         return 0;
     }
 
-    /* $verify_pgm takes arguments on the command line         */
-    /* the arguments are <cookie type> <crypt key> <cert file> */
-    /* and the cookie on stdin, it returns the information     */
-    /* from teh cookie on stdout                               */
+    if (init_crypt() == PBC_FAIL) {
+        return("couldn't load crypt key");
+    }
 
     lc = verify_login_cookie(cookie, l);
 
@@ -1318,6 +1336,20 @@ void print_redirect_page(login_rec *l)
     }
     serial = get_next_serial();
 
+    if (init_crypt() == PBC_FAIL) {
+        sprintf( message, "%s%s%s%s%s%s",
+		PBC_EM1_START,
+		TROUBLE_CREATING_COOKIE,
+		PBC_EM1_END,
+      		PBC_EM2_START,
+		PROBLEMS_PERSIST,
+         	PBC_EM2_END);
+        print_login_page(l, message, "cookie create failed", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
+        log_error(1, "system-problem", 0, "Not able to create cookie for user %s at %s-%s", l->user, l->appsrvid, l->appid);
+	free(message);
+        return;
+    }
+
     /* cook up them cookies */
     l_res = create_cookie(url_encode(l->user),
                           url_encode(l->appsrvid),
@@ -1636,17 +1668,15 @@ login_rec *get_query()
 login_rec *verify_login_cookie (char *cookie, login_rec *l)
 {
     md_context_plus     *ctx_plus;
-    crypt_stuff         *c_stuff;
     pbc_cookie_data     *cookie_data;
-    char		crypt_keyfile[PBC_4K];
     char		sign_keyfile[PBC_4K];
     login_rec		*new;
 
-    new = malloc(sizeof(new));
+#ifdef DEBUG
+    fprintf(stderr, "verify_login_cookie: hello\n");
+#endif
 
-    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
-			KEY_DIR, CRYPT_KEY_FILE, get_my_hostname()); 
-    c_stuff = libpbc_init_crypt(crypt_keyfile);
+    new = malloc(sizeof(new));
 
     snprintf(sign_keyfile, sizeof(sign_keyfile)-1, "%s%s", 
 			KEY_DIR, CERT_FILE); 
@@ -1680,8 +1710,6 @@ int create_cookie(char *user_buf,
 {
     /* special data structs for the crypt stuff */
     md_context_plus 	*ctx_plus;
-    crypt_stuff         *c_stuff;
-    unsigned char	crypt_keyfile[PBC_1K];
     unsigned char	cert_keyfile[PBC_1K];
 
     /* measured quantities */
@@ -1700,11 +1728,6 @@ int create_cookie(char *user_buf,
     strncpy(app_id, app_id_buf, sizeof(app_id));
     appsrv_id[sizeof(app_id)-1] = '\0';
 
-    /* load up the encryption key stuff */
-    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
-			KEY_DIR, CRYPT_KEY_FILE, get_my_hostname()); 
-    c_stuff = libpbc_init_crypt(crypt_keyfile);
-
     /* load up the certificate context */
     snprintf(cert_keyfile, sizeof(cert_keyfile)-1, "%s%s", 
 			KEY_DIR, CERT_KEY_FILE); 
@@ -1714,7 +1737,7 @@ int create_cookie(char *user_buf,
     cookie_local = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, ctx_plus, c_stuff);
 
     strncpy( cookie, cookie_local, max );
-    return(OK);
+    return(PBC_OK);
 
 }
 
