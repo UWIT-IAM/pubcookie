@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.97 2002-08-16 15:33:37 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.98 2002-08-30 21:51:03 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -107,7 +107,6 @@ typedef struct {
   unsigned char *appid;
   char          creds;
   char          *end_session;
-  int           super_debug;
   int           redir_reason_no;
   char          *stop_message;
   int           session_reauth;
@@ -158,7 +157,6 @@ void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
                 non_ssl_ok: %d\n\
 		appid: %s\n\
                 creds: %c\n\
-		super_debug: %d\n\
                 end_session: %s\n\
                 redir_reason_no: %d\n\
                 stop_message: %s\n\
@@ -170,7 +168,6 @@ void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
   		cfg->non_ssl_ok,
   		(cfg->appid == NULL ? "" : (char *)cfg->appid),
   		cfg->creds,
-		cfg->super_debug, 
   		(cfg->end_session == NULL ? "" : (char *)cfg->end_session),
   		cfg->redir_reason_no,
   		(cfg->stop_message == NULL ? "" : (char *)cfg->stop_message),
@@ -1172,8 +1169,6 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
 		ncfg->session_reauth : pcfg->session_reauth;
     cfg->end_session = ncfg->end_session ? 
 		ncfg->end_session : pcfg->end_session;
-    cfg->super_debug = ncfg->super_debug ? 
-		ncfg->super_debug : pcfg->super_debug;
 
     if (pcfg->addl_requests) {
 	if (ncfg->addl_requests) {
@@ -1412,7 +1407,8 @@ static int pubcookie_user(request_rec *r) {
     r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 
     if( libpbc_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) == PBC_FAIL ) {
-      libpbc_debug("pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s\n", time(NULL)-(*cookie_data).broken.create_ts-PBC_GRANTING_EXPIRE, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
+      ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+      		"pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s", time(NULL)-(*cookie_data).broken.create_ts-PBC_GRANTING_EXPIRE, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_GEXP_CODE;
       return OK;
@@ -1424,7 +1420,9 @@ static int pubcookie_user(request_rec *r) {
   if( strncasecmp( (const char *) appid(r), 
                    (const char *) (*cookie_data).broken.appid, 
                    sizeof((*cookie_data).broken.appid)-1) != 0 ) {
-    libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s uri: %s\n", appid(r), (*cookie_data).broken.appid, r->uri);
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+    		"pubcookie_user: wrong appid; current: %s cookie: %s uri: %s",
+		appid(r), (*cookie_data).broken.appid, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGAPPID_CODE;
     return OK;
@@ -1434,7 +1432,8 @@ static int pubcookie_user(request_rec *r) {
   if( strncasecmp( (const char *) appsrvid(r), 
                    (const char *) (*cookie_data).broken.appsrvid, 
                    sizeof((*cookie_data).broken.appsrvid)-1) != 0 ) {
-    libpbc_debug("pubcookie_user: wrong app server id; current: %s cookie: %s uri: %s\n", appsrvid(r), (*cookie_data).broken.appsrvid, r->uri);
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+    		"pubcookie_user: wrong app server id; current: %s cookie: %s uri: %s", appsrvid(r), (*cookie_data).broken.appsrvid, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGAPPSRVID_CODE;
     return OK;
@@ -1442,7 +1441,8 @@ static int pubcookie_user(request_rec *r) {
 
   /* check version id */
   if( libpbc_check_version(cookie_data) == PBC_FAIL ) {
-    libpbc_debug("pubcookie_user: wrong version id; module: %d cookie: %d uri: %s\n", PBC_VERSION, (*cookie_data).broken.version);
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+    		"pubcookie_user: wrong version id; module: %d cookie: %d uri: %s", PBC_VERSION, (*cookie_data).broken.version);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGVER_CODE;
     return OK;
@@ -1450,7 +1450,9 @@ static int pubcookie_user(request_rec *r) {
 
   /* check creds */
   if( cfg->creds != cookie_data->broken.creds ) {
-    libpbc_debug("pubcookie_user: wrong creds; required: %c cookie: %c uri: %s\n", cfg->creds, (*cookie_data).broken.creds, r->uri);
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+    		"pubcookie_user: wrong creds; required: %c cookie: %c uri: %s",
+		cfg->creds, (*cookie_data).broken.creds, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGCREDS_CODE;
     return OK;
@@ -1807,7 +1809,8 @@ const char *pubcookie_set_appid(cmd_parms *cmd, void *mconfig, unsigned char *v)
     return NULL;
 }
 
-const char *pubcookie_add_request(cmd_parms *cmd, void *mconfig, 
+const char *pubcookie_add_request(cmd_parms *cmd, 
+                                  void *mconfig, 
 				  unsigned char *v)
 {
     server_rec *s = cmd->server;
@@ -1820,14 +1823,14 @@ const char *pubcookie_add_request(cmd_parms *cmd, void *mconfig,
 
     if (!scfg) return "pubcookie_add_request(): scfg is NULL ?!";
 
-    libpbc_debug("pubcookie_add_request(): %s\n", v);
+    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, s, 
+		"pubcookie_add_request(): %s", v);
     cfg->addl_requests = (unsigned char *) ap_pstrcat(cmd->pool, 
                                     cfg->addl_requests ? cfg->addl_requests : 
                                     (unsigned char *) "",
                                     "&", v, NULL);
-    libpbc_debug("done\n");
-
     return NULL;
+
 }
 
 /*                                                                            */
@@ -1970,14 +1973,18 @@ const char *pubcookie_set_no_blank(cmd_parms *cmd, void *mconfig, char *v) {
 
 }
 
-/*                                                                            */
+/**
+ * used to give more debugging, does nothing now
+ * @param cmd - command record
+ * @param mconfig - module configuration
+ * @param f - int
+ * @returns NULL 
+ */
 const char *set_super_debug(cmd_parms *cmd, void *mconfig, int f) {
-    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+    server_rec *s = cmd->server;
 
-    if(f != 0)
-        cfg->super_debug = PBC_SUPER_DEBUG;
-    else
-        cfg->super_debug = 0;
+    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
+		"PubcookieSuperDebug depreciated, please remove.");
 
     return NULL;
 
@@ -2037,7 +2044,7 @@ command_rec pubcookie_commands[] = {
     {"PubCookieDirDepthforAppID", pubcookie_set_dirdepth, NULL, RSRC_CONF, TAKE1,
      "Specify the Directory Depth for generating default AppIDs."},
     {"PubCookieSuperDebug", set_super_debug, NULL, OR_OPTIONS, FLAG,
-     "Turn on super debugging."},
+     "Does nothing, don't use"},
     {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_OPTIONS, FLAG,
      "Force reauthentication for new sessions and session timeouts"},
     {"PubcookieEndSession", set_end_session, NULL, OR_OPTIONS, RAW_ARGS,

@@ -50,7 +50,6 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
         int pri = LOG_INFO;
         int fac = PBC_LOG_GENERAL_FACILITY;
 
-
         vsnprintf(log, sizeof(log)-1, format, args);
         
         if (logging_level == PBC_LOG_ERROR)
