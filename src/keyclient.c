@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.49 2004-05-07 21:54:24 fox Exp $
+ * $Id: keyclient.c,v 2.50 2004-05-07 23:19:53 fox Exp $
  */
 
 
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 
     newkeyp = 1;
     permit = 0;
-    while ((c = getopt(argc, argv, "01Paqpc:k:C:D:nudH:L:K:G:")) != -1) {
+    while ((c = getopt(argc, argv, "0:1:P:aqpc:k:C:D:nudH:L:K:G:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -279,6 +279,7 @@ int main(int argc, char *argv[])
                 /* deny access to a cn */
                 newkeyp = -1;
                 permit = -1;
+                hostname = strdup(optarg);
                 break;
 
             case 'P':
@@ -286,6 +287,7 @@ int main(int argc, char *argv[])
                 /* permit access to a cn */
                 newkeyp = -1;
                 permit = 1;
+                hostname = strdup(optarg);
                 break;
 
             case 'G':
