@@ -1,12 +1,3 @@
-<!-- --
-            <P>
-<select name="duration">
-<option value="28800" selected>Your Computer (8 hours)</option>
-<option value="3600">1 hour</option>
-<option value="300">Kiosk/Public Compter (5 minutes)</option>
-</select>
-            </P>
--->
             <P>
               <input type="SUBMIT" name="submit" value="Log in">
             </P>
@@ -46,13 +37,13 @@
           </p>
           <p>
             <strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>
-            <a href="http://www.washington.edu/computing/web/logout.html">Completely exit your Web browser when you are finished.</a>
+            <a href="http://www.washington.edu/computing/weblogin/logout.html">Completely exit your Web browser when you are finished.</a>
           </p>
         </td>
       </tr>
       <tr>
         <td colspan="5" align="center">
-          <small>Copyright &#169; 2001 University of Washington</small>
+          <small>Copyright &#169; 2002 University of Washington</small>
         </td>
       </tr>
     </table>
