@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.47 2004-02-16 17:05:31 jteaton Exp $
+  $Id: index.cgi.h,v 1.48 2004-04-13 02:29:52 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -86,11 +86,8 @@ int cgiMain();
 void abend(pool *, char *);
 int cookie_test(pool *, const security_context *, login_rec *, login_rec *);
 void notok(pool *, void (*)() );
-void notok_no_g_or_l(pool *);
 void print_http_header(pool *);
-void print_j_test(pool *);
 void notok_need_ssl(pool *);
-void notok_no_g(pool *);
 void notok_formmultipart(pool *);
 void notok_generic(pool *);
 void notok_bad_agent(pool *);
@@ -152,26 +149,12 @@ void print_header(pool *, const char *format, ...);
 /* some messages about people who hit posts and don't have js on */
 #define PBC_POST_NO_JS_TEXT "Thank you for logging in\n"
 
-#define PRINT_LOGIN_PLEASE "Please log in."
-#define PRINT_LOGIN_PINIT "Welcome to the UW NetID \"weblogin\" service. Please log in to identify yourself."
 #define TROUBLE_CREATING_COOKIE "Trouble creating cookie.  Please re-enter."
 #define PROBLEMS_PERSIST "If problems persist contact help@cac.washington.edu."
-#define AUTH_FAILED_MESSAGE1 "Login failed.  Please re-enter.\n"
-#define AUTH_FAILED_MESSAGE2 "<p>Please make sure your <b>Caps Lock key is OFF</b> and your <b> Number Lock key is ON</b>.</p>"
-#define AUTH_TROUBLE "There are currently problems with authentication services, please try again later"
-
-#define CHECK_LOGIN_RET_BAD_CREDS "invalid creds"
-#define CHECK_LOGIN_RET_SUCCESS "success"
-#define CHECK_LOGIN_RET_FAIL "fail"
 
 /* special strings about time remaining */
 #define REMAINING_EXPIRED "expired"
 #define REMAINING_UNKNOWN "unknown"
-
-#define PROMPT_UWNETID "<B>UW NetID:</B><BR>"
-#define PROMPT_PASSWD "<B>Password:</B><BR>"
-#define PROMPT_SECURID "<B>Securid:</B><BR>"
-#define PROMPT_INVALID "<B>BOGUS:</B><BR>"
 
 /* tags the request as a reply from the form */
 #define FORM_REPLY 1
@@ -204,91 +187,7 @@ void print_header(pool *, const char *format, ...);
 #define YES_FOCUS 1
 #define NO_FOCUS 0
 
-/* some misc settings */
-#define SERIAL_FILE "/tmp/s"
-#define FIRST_SERIAL 23
-
-#define PBC_BRWSER_OK 0
-#define PBC_BRWSER_DENY 1
-#define PBC_BRWSER_TO 2
-
-/* utility to send messages to pilot */
-#define SEND_PILOT_CMD "/usr/local/adm/send_pilot_stat.pl"
-
-
 /* text */
-
-#define NOTOK_NO_G_OR_L_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">\
-A problem has been detected!</font></B></P> \
-\
-<p><b><font size=\"+1\">Either your browser is not configured to accept \
-cookies,\
-or the URL address you opened contains a shortened domain name.</font></b></p>\
-\
-<p>Review \
-<A HREF=\"http://www.washington.edu/computing/web/login-problems.html\">Common\
-Problems With the UW NetID Login Page</A> for further advice.</p>\
-\
-<p>&nbsp;</p>"
-
-#define J_TEST_TEXT1 "<SCRIPT LANGUAGE=\"JavaScript\"><!-- \
- \
-name = \"cookie_test\"; \n \
-    s = (new Date().getSeconds()); \
-    document.cookie = name + \"=\" + s; \
-\n \
-    dc = document.cookie; \
-    prefix = name + \"=\"; \
-    begin = dc.indexOf(\"; \" + prefix); \
-\n \
-    if (begin == -1) { \
-        begin = dc.indexOf(prefix); \
-        if (begin != 0) returned = \"\"; \
-    } else \
-        begin += 2; \
-    end = document.cookie.indexOf(\";\", begin); \
-\n \
-    if (end == -1) \
-        end = dc.length; \
-    returned = unescape(dc.substring(begin + prefix.length, end)); \
-\n \
-if ( returned == s ) { \
-"
-
-#define J_TEST_TEXT2 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">A problem has been detected!</font></B></P>\"); \
-    document.write(\"<p><b><font size=\\\"+1\\\">Either you tried to use the BACK button to return to pages you\"); \
-    document.write(\" visited before the UW NetID login page, or the URL address you opened contains a shortened\"); \
-    document.write(\" domain name. </font></b></p>\"); \
-    document.write(\"<p>Review <A HREF=\\\"http://www.washington.edu/computing/web/login-problems.html\\\">Common\"); \
-    document.write(\" Problems With the UW NetID Login Page</A> for further advice.</p>\"); \
-    document.write(\"<p>&nbsp;</p>\"); \
-"
-
-#define J_TEST_TEXT3 "    document.cookie = name + \"=; expires=Thu, 01-Jan-70 00:00:01 GMT\"; \
-} \
-else { \
-"
-
-#define J_TEST_TEXT4 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">This browser doesn't accept cookies!</font></B></P>\"); \
-    document.write(\"<p><b><font size=\\\"+1\\\">Your browser must <a href=\\\"http://www.washington.edu/computing/web/cookies.html\\\">accept cookies</a> in\"); \
-    document.write(\" order to use the UW NetID login page.</font></b></p>\"); \
-    document.write(\"<p>&nbsp;</p>\"); \
-"
-
-#define J_TEST_TEXT5 "} \
- \
-// --> \
-</SCRIPT> \
-"
-
-#define NOTOK_NO_G_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P>\
-\
-<p><b><font size=\"+1\">Either you tried to use the BACK button to return to pages you visited before the UW NetID login page, or the URL address you opened contains a shortened domain name. </font></b></p>\
-\
-<p>Review <A HREF=\"http://www.washington.edu/computing/web/login-problems.html\">Common Problems With the UW NetID Login Page</A> for further advice.</p>\
-\
-<p>&nbsp;</p>\
-"
 
 #define NOTOK_FORMMULTIPART_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \
 \

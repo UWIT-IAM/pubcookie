@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.126 2004-04-09 06:20:11 willey Exp $
+ * $Id: index.cgi.c,v 1.127 2004-04-13 02:29:52 jteaton Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2031,33 +2031,6 @@ char *check_l_cookie(pool *p, const security_context *context, login_rec *l, log
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 /*	functions                                                          */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
-
-void print_j_test(pool *p) 
-{
-    print_html(p, "%s", J_TEST_TEXT1);
-    print_html(p, "%s", J_TEST_TEXT2);
-    print_html(p, "%s", J_TEST_TEXT3);
-    print_html(p, "%s", J_TEST_TEXT4);
-    print_html(p, "%s", J_TEST_TEXT5);
-}
-
-void notok_no_g_or_l(pool *p) 
-{
-    print_j_test(p);
-
-    print_html(p, "<NOSCRIPT>\n");
-
-    print_html(p, "%s\n", NOTOK_NO_G_OR_L_TEXT1);
-
-    print_html(p, "</NOSCRIPT>\n");
-
-}
-
-void notok_no_g(pool *p) 
-{
-    print_html(p, "%s", NOTOK_NO_G_TEXT1);
-
-}
 
 void notok_formmultipart(pool *p) 
 {
