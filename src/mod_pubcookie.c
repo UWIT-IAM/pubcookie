@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.131 2004-02-27 17:31:53 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.132 2004-03-03 17:53:05 fox Exp $
  */
 
 
@@ -1818,9 +1818,6 @@ static int pubcookie_typer(request_rec *r) {
   unsigned char *cookie;
   int first_time_in_session = 0;
   char *new_cookie = ap_palloc( r->pool, PBC_1K);
-
-  ap_log_rerror(PC_LOG_DEBUG, r,
-		"pre-typer");
 
   if(!ap_auth_type(r))
     return DECLINED;

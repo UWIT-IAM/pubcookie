@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.45 2004-02-19 23:07:03 fox Exp $
+ * $Id: keyserver.c,v 2.46 2004-03-03 17:53:05 fox Exp $
  */
 
 
@@ -76,7 +76,7 @@ typedef void pool;
 #include "security.h"
 
 #ifdef HAVE_DMALLOC_H
-# if (!defined(APACHE) && !defined(APACHE1_3))
+# if !defined(APACHE)
 #  include <dmalloc.h>
 
 #  ifdef __STDC__
@@ -142,13 +142,15 @@ const char *keyfile = "server.pem";
 const char *certfile = "server.pem";
 const char *cadir = NULL;
 const char *cafile = NULL;
+const char *gcfile = NULL;
 
 enum optype {
     NOOP,
     GENKEY,
     SETKEY,
     FETCHKEY,
-    PERMIT
+    PERMIT,
+    FETCHGC
 };
 
 /**
@@ -293,21 +295,25 @@ static int check_access_list(const char *peer)
  *	GENKEY - generate a new key for peer
  *      SETKEY - key from friend login server
  *      FETCHKEY - peer requests it's key
+ *      FETCHGC - peer requests the granting cert
  *      NOOP - for completeness
  * @param newkey if the operation is SETKEY, "peer;base64(key)"
  * @return 0 on success, non-zero on error
  */
 int doit(const char *peer, security_context *context, enum optype op, const char *newkey)
 {
-    char buf[4 * PBC_DES_KEY_BUF];
+    char buf[8 * PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
     pool *p = NULL;
     int dokeyret = 0;
     char *thepeer;
     char *thekey64;
+    FILE *gcf;
+    int lgcf;
 
     /* no HTML headers for me */
     myprintf("\r\n");
+    buf[0] = '\0';
 
     switch (op) {
         case PERMIT:
@@ -459,6 +465,23 @@ int doit(const char *peer, security_context *context, enum optype op, const char
             dokeyret = 1;
             break;
 
+        case FETCHGC:
+
+            pbc_log_activity(p, PBC_LOG_AUDIT, "Fetching the cert..");
+
+            if ( !(gcfile && (gcf=fopen(gcfile,"r")))) {
+               myprintf("NO couldn't open cert file\r\n");
+               return (1);
+            }
+            lgcf = fread(buf, 1, sizeof(buf)-1, gcf);
+            if (lgcf<=0) {
+               myprintf("NO couldn't read cert file\r\n");
+               return (1);
+            }
+            buf[lgcf] = '\0';
+            dokeyret = 0;
+            break;
+
         case NOOP:
 
             pbc_log_activity(p, PBC_LOG_AUDIT, "Noop..");
@@ -475,7 +498,7 @@ int doit(const char *peer, security_context *context, enum optype op, const char
 
        /* now give the key back to the application */
        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) buf, PBC_DES_KEY_BUF);
-    } else buf[0] = '\0';
+    }
 
     myprintf("OK %s\r\n", buf);
     fflush(stdout);
@@ -554,6 +577,7 @@ int main(int argc, char *argv[])
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
     cadir = libpbc_config_getstring(p, "ssl_ca_path", NULL);
+    gcfile = libpbc_config_getstring(p, "granting_cert_file", NULL);
 
     while ((c = getopt(argc, argv, "apc:k:C:D:")) != -1) {
 	switch (c) {
@@ -696,8 +720,12 @@ int main(int argc, char *argv[])
 	    op = SETKEY;
 	}
 
-	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=permit", 10)) {
+	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=permit", 13)) {
 	    op = PERMIT;
+	}
+
+	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=getgc", 12)) {
+	    op = FETCHGC;
 	}
 
 	/* look for 'setkey' */

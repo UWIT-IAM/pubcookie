@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.40 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: keyclient.c,v 2.41 2004-03-03 17:53:05 fox Exp $
  */
 
 
@@ -110,6 +110,7 @@ static void usage(void)
     printf("  -C <cert file>     : CA cert to use for client verification\n");
     printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
     printf("  -1                 : permit <hostname>\n");
+    printf("  -G <cert_out>      : get granting cert (to cert_out)\n");
 
     exit(1);
 }
@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in sa;
     struct hostent *h;
     char *str, *cp;
-    char buf[2 * PBC_DES_KEY_BUF]; /* plenty of room for base64 encoding */
+    char buf[8 * PBC_DES_KEY_BUF]; /* plenty of room for key or cert */
     unsigned char thekey[PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
     const char *hostname;
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
     int r;
     pool *p = NULL;
     security_context *context = NULL;
+    char *gcert = NULL;
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
@@ -194,7 +196,7 @@ int main(int argc, char *argv[])
 
     newkeyp = 1;
     permit = 0;
-    while ((c = getopt(argc, argv, "01apc:k:C:D:nudH:L:K:")) != -1) {
+    while ((c = getopt(argc, argv, "01apc:k:C:D:nudH:L:K:G:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -260,6 +262,11 @@ int main(int argc, char *argv[])
                 /* permit access to a cn */
                 newkeyp = -1;
                 permit = 1;
+                break;
+
+            case 'G':
+                gcert = strdup(optarg);
+                newkeyp = -1;
                 break;
 
             case '?':
@@ -414,15 +421,26 @@ int main(int argc, char *argv[])
     }
 
     /* make the HTTP query */
+
+    /* newkeyp = 1 means generate and get a key 
+       newkeyp = 0 means get a key 
+       newkeyp = -1 means something else
+     */
+
     if (newkeyp == -1) {
         char enckey[PBC_DES_KEY_BUF * 2];
 
-        if (permit) {
+        if (permit) {     /* permit or deny a host */
            snprintf(buf, sizeof(buf),
                   "GET %s?genkey=%s?setkey=%s;\r\n\r\n",
                    keymgturi, (permit<0?"deny":"permit"), hostname);
                
-        } else {
+        } else if (gcert) { /* get the granting cert */
+           snprintf(buf, sizeof(buf),
+                  "GET %s?genkey=getgc;\r\n\r\n",
+                   keymgturi);
+               
+        } else {   /* set the key */
           if (libpbc_get_crypt_key(p, &c_stuff, hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
             exit(1);
@@ -435,7 +453,7 @@ int main(int argc, char *argv[])
                  "GET %s?genkey=put?setkey=%s;%s\r\n\r\n",
                  keymgturi, hostname, enckey);
         }
-    } else {
+    } else {  /* get the key */
         snprintf(buf, sizeof(buf), 
                  "GET %s?genkey=%s HTTP/1.0\r\n\r\n", keymgturi,
                  newkeyp ? "yes" : "no");
@@ -447,7 +465,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-	r = SSL_write(ssl, buf, strlen(buf));
+    r = SSL_write(ssl, buf, strlen(buf));
     if (r < 0) {
         fprintf(stderr, "SSL_write failed. Return code: %d\n",SSL_get_error(ssl,r));
         ERR_print_errors_fp(stderr);
@@ -476,33 +494,25 @@ int main(int argc, char *argv[])
         if (cp[0] == '\r' && cp[1] == '\n' &&
             cp[2] == 'O' && cp[3] == 'K' &&
             cp[4] == ' ') {
+            char *s;
             cp += 5;
 
-            /* cp points to a base64 key we should decode */
-            if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
-                fprintf(stderr, "key too long\n");
-                exit(1);
-            }
-
             if (newkeyp != -1) {
-                if (strchr(cp, '\r')) {
-                    /* chomp new line */
-                    *(strchr(cp, '\r')) = '\0';
+                /* If getting a key, cp points to a base64 key to decode */
+                if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
+                    fprintf(stderr, "key too long\n");
+                    exit(1);
                 }
-                if (strchr(cp, '\n')) {
-                    /* chomp new line */
-                    *(strchr(cp, '\n')) = '\0';
-                }
+
+                if (s=strchr(cp, '\r')) *s = '\0';
+                if (s=strchr(cp, '\n')) *s = '\0';
 
                 if (noop) {
                     printf("would have set key to '%s'\n", cp);
                 } else {
 		    int osize = 0;
                     int ret;
-                    if (strchr(cp, '\r')) {
-                        /* chomp new line */
-                        *strchr(cp, '\r') = '\0';
-                    }
+                    if (s=strchr(cp, '\r')) *s = '\0';
                     ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         fprintf(stderr, "keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
@@ -519,6 +529,16 @@ int main(int argc, char *argv[])
                         exit(1);
                     }
                 }
+            } else if (gcert) {
+                /* If getting a cert, cp points to start of PEM cert */
+                FILE *cf = fopen(gcert, "w");
+                if (!cf) {
+                   perror("gcert");
+                   exit(1);
+                }
+                fputs(cp, cf);
+                fclose(cf);
+                fprintf(stdout,"Granting cert saved to %s\n", gcert);
             }
 
             done = 1;
