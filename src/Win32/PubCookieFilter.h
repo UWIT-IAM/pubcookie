@@ -4,12 +4,12 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.37 2004-07-29 23:40:21 dors Exp $
+//  $Id: PubCookieFilter.h,v 1.38 2004-08-10 22:07:21 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.1.2 pre-beta1"
 
-#define MAX_INSTANCE_ID 25
+#define MAX_INSTANCE_ID 64
 #define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
                              and malloc to find/set the buffer size */
 

@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.34 2004-06-16 21:27:00 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.35 2004-08-10 22:07:21 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -1670,7 +1670,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	pFC->GetServerVariable(pFC, "INSTANCE_ID",
 							szBuff, &dwBuffSize);
 	AddToLog(LogBuff,"  Instance ID    : %s\n",szBuff);
-	strncpy(p->instance_id, szBuff, 8);
+	strncpy(p->instance_id, szBuff, MAX_INSTANCE_ID);
 
 	//Check for logging sources and create if needed
 
