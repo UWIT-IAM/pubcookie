@@ -4,7 +4,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile,v 1.50 2002-06-13 17:15:56 jteaton Exp $
+# $Id: Makefile,v 1.51 2002-06-28 03:30:17 jjminer Exp $
 
 include Makefile.settings
 
@@ -35,5 +35,8 @@ tests:
 
 utils:
 	$(MAKE) -f Makefile.login utils
+
+test:
+	$(MAKE) -f Makefile.login test
 
 # vim: set noet:

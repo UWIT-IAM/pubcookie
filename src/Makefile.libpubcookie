@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.libpubcookie,v 1.6 2002-06-27 22:41:47 jjminer Exp $
+# $Id: Makefile.libpubcookie,v 1.7 2002-06-28 03:30:17 jjminer Exp $
 
 LIB_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h \
 	security.h pbc_logging.h
@@ -15,9 +15,32 @@ LIB_SRC=libpubcookie.c base64.c strlcpy.c pbc_myconfig.c security_legacy.c \
 LIB_OBJ=libpubcookie.o base64.o strlcpy.o pbc_myconfig.o security_legacy.o \
 	pbc_logging.o capture_cmd_output.o
 
+LIB_TESTS=base64 pbc_myconfig myconf
+
 MAKEFILES += Makefile.libpubcookie
 
 clean::
-	$(RM) -f $(LIB_OBJ)
+	$(RM) -f $(LIB_OBJ) $(LIB_TESTS)
+
+install:: $(PUBCOOKIE_DIR) $(KEY_DIR)
+
+$(PUBCOOKIE_DIR):
+	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
+
+$(KEY_DIR): $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(KEY_DIR)
+
+test:: base64 myconf pbc_myconfig
+	cat base64 | ./base64
+	./pbc_myconfig
+
+myconf:
+	echo "foo: hi hi2" > myconf
+
+base64: base64.c
+	$(CC) $(CFLAGS) -o base64 -DTEST_BASE64 base64.c
+
+pbc_myconfig: pbc_myconfig.c
+	$(CC) $(CFLAGS) -o pbc_myconfig -DTEST_MYCONFIG pbc_myconfig.c
 
 # vim: set noet:

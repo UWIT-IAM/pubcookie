@@ -42,7 +42,7 @@
  */
 
 /*
- * $Revision: 1.5 $
+ * $Revision: 1.6 $
  */
 
 /* xxx this should almost certainly use the registry on windows */
@@ -274,14 +274,17 @@ int main(int argc, char *argv[])
 
     v = libpbc_config_getlist("foo");
     if (v) {
-	c = 0;
-	while (v[c]) {
-	    printf("'%s'\n", v[c]);
-	    c++;
-	}
-	printf("c = %d\n", c);
+        c = 0;
+        while (v[c]) {
+            printf("'%s'\n", v[c]);
+            c++;
+        }
+        printf("c = %d\n", c);
     } else {
-	printf("NULL\n");
+        printf("NULL\n");
+        exit(1);
     }
+
+    return 0;
 }
 #endif

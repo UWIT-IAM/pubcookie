@@ -123,6 +123,7 @@ int libpbc_base64_decode(unsigned char *in, unsigned char *out, int *osizep) {
 #ifdef TEST_BASE64
 
 #include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
@@ -131,35 +132,124 @@ int main(int argc, char *argv[])
     int outlen = 0;
     int ret;
     char *outbuf;
+    char *outbuf2;
+    char *inbuf;
+    int inlen = BUFSIZ;
+    int tot = 0;
+    int compare = 0;
+    int verbose = 0;
 
-    if (argc < 2) {
-	fprintf(stderr, "%s [-d] <blob>\n", argv[0]);
-	exit(1);
+    if (argc > 1) {
+        if ( strcmp(argv[arg], "-d") == 0 ) {
+            decode = 1;
+            arg++;
+        }
+
+        if ( arg < argc && ( strcmp(argv[arg], "-h") == 0 ) ) {
+            printf( "Usage: %s [-d] [text]\n", argv[0] );
+            printf( "       -d   - Decode base64 text.\n" );
+            printf( "       -v   - Enable verbose output.\n" );
+            printf( "       -vv  - More verbose output (show base64.)\n" );
+            printf( "       -vvv - Even more verbose output (show unencoded.)\n" );
+            printf( "       text - Text to be encoded or decoded.\n" );
+            printf( "            If no text is specified, reads from STDIN.\n" );
+            exit(0);
+            arg++;
+        }
+
+        if ( arg < argc && ( strcmp(argv[arg], "-vvv") == 0 ) ) {
+            verbose = 3;
+            arg++;
+        }
+
+        if ( arg < argc && ( strcmp(argv[arg], "-vv") == 0 ) ) {
+            verbose = 2;
+            arg++;
+        }
+
+        if ( arg < argc && ( strcmp(argv[arg], "-v") == 0 ) ) {
+            verbose = 1;
+            arg++;
+        }
     }
 
-    if (!strcmp(argv[arg], "-d")) {
-	decode = 1;
-	arg++;
-    }
-
-    if (arg != (argc - 1)) {
-	fprintf(stderr, "%s [-d] <blob>\n", argv[0]);
-	exit(1);
-    }
-
-    if (decode) {
-	outbuf = (char *) malloc(strlen(argv[arg]));
-	ret = libpbc_base64_decode(argv[arg], outbuf, &outlen);
+    if (arg == (argc - 1)) {
+        inbuf = argv[arg];
+        tot = strlen(inbuf);
     } else {
-	outbuf = (char *) malloc(2 * strlen(argv[arg]));
-	ret = libpbc_base64_encode(argv[arg], outbuf, strlen(argv[arg]));
-	outlen = strlen(outbuf);
+        int num = 0;
+        inbuf = (char *) calloc( inlen, sizeof(char) );
+
+        while( ( num = read(0, inbuf + tot, BUFSIZ) ) > 0 ) {
+            tot += num;
+            inlen += BUFSIZ;
+            inbuf = (char *) realloc( inbuf, inlen );
+        }
     }
 
-    printf("ret = %d\n", ret);
-    if (ret) {
-	printf("outlen = %d\nout = %s\n", outlen, outbuf);
+    if ( ! decode ) {
+        if (verbose > 2) {
+            printf("Encoding \"%s\"\n", inbuf);
+        }
+
+        outbuf = (char *) malloc(2 * tot );
+        ret = libpbc_base64_encode(inbuf, outbuf, tot);
+        outlen = strlen(outbuf);
+
+        if (ret) {
+            if (verbose) {
+                printf("unencoded length: %d\n", tot);
+                printf("encoded length: %d\n", outlen);
+                if (verbose > 1) {
+                    printf("encoded text: %s\n", outbuf);
+                }
+            }
+        } else {
+            printf("Error encoding.\n");
+            exit(1);
+        }
+
+        if (verbose) {
+            printf( "\n" );
+        }
+        compare = 1;
+    } else {
+        outbuf = inbuf;
     }
+
+    if (verbose > 1) {
+        printf("Decoding \"%s\"\n", outbuf);
+    }
+
+    outbuf2 = (char *) malloc(tot);
+    ret = libpbc_base64_decode(outbuf, outbuf2, &outlen);
+
+    if (ret) {
+        if (verbose) {
+            printf("encoded length: %d\n", strlen(outbuf));
+            printf("unencoded length: %d\n", outlen);
+            if (verbose > 2) {
+                printf("decoded: %s\n", outbuf2);
+            }
+        }
+    } else {
+        printf("Error decoding.\n");
+        exit(1);
+    }
+
+    if (compare) {
+        if (verbose) {
+            printf( "\n" );
+        }
+        if ( strcmp(inbuf, outbuf2) == 0 ) {
+            printf( "Base64 encoding and decoding sucessfull.\n" );
+        } else {
+            printf( "Error in base64 encode and decode.\n" );
+            exit(1);
+        }
+    }
+
+    return 0;
 }
 
 #endif

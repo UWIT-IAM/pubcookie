@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.8 2002-06-25 19:40:30 greenfld Exp $
+# $Id: Makefile.login,v 1.9 2002-06-28 03:30:17 jjminer Exp $
 
 include Makefile.settings
 
@@ -31,6 +31,9 @@ EXTRA_LIBS += -ldes -lkrb5 -ldes
 # EXTRA_CFLAGS += -I/data/netscape/sdk3/include
 # EXTRA_LDFLAGS += -L/data/netscape/sdk3/include
 
+## HAVE_SHADOW - you want the shadow password verifier.
+DEFINES += -DHAVE_SHADOW
+
 ## MAKE_MIRROR - mirrors everything sent to the browser
 # DEFINES += -DMAKE_MIRROR
 
@@ -44,7 +47,8 @@ TEST_SRC=pbc_create.c pbc_verify.c candv.c dtest.c make_crypted_blob.c \
 TEST_OBJ=pbc_create.o pbc_verify.o candv.o dtest.o make_crypted_blob.o \
 		 check_crypted_blob.o
 
-TEST_FILES=pbc_create pbc_verify candv dtest make_crypted_blob check_crypted_blob
+TEST_FILES=pbc_create pbc_verify candv dtest make_crypted_blob check_crypted_blob \
+		   verify
 
 UTIL_SRC=pbc_key_local.c pbc_key_generic.c keyserver.c keyclient.c
 
@@ -170,16 +174,13 @@ tests: $(TEST_FILES)
 
 utils: $(UTIL_FILES)
 
-$(PUBCOOKIE_DIR):
-	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
-
 $(LOGIN_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(LOGIN_DIR)
 
 $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR)
 
-install:: $(PUBCOOKIE_DIR) $(LOGIN_DIR) $(TEMPLATE_DIR) $(UTIL_FILES) $(INDEX_FILES) $(LOGIN_TEMPLATES)
+install:: $(LOGIN_DIR) $(TEMPLATE_DIR) $(UTIL_FILES) $(INDEX_FILES) $(LOGIN_TEMPLATES)
 	$(INSTALL_BIN) $(UTIL_FILES) $(PUBCOOKIE_DIR)
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
@@ -198,5 +199,11 @@ dist: ver
 	$(TAR) cf $(BASENAME).tar $(BASENAME)/
 	$(GZIP) $(BASENAME).tar
 	$(RECURSIVE_FORCE_RM) ./$(BASENAME)/
+
+test:: verify
+	./verify alwaystrue nobody nothing
+
+verify: verify.c $(VERIFY_SRC)
+	$(CC) $(CFLAGS) -g -o verify -DTEST_VERIFY verify.c $(VERIFY_SRC)
 
 # vim: set noet:
