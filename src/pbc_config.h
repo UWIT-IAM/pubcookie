@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.17 1999-04-06 00:02:34 willey Exp $
+    $Id: pbc_config.h,v 1.18 1999-04-28 22:15:13 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -26,9 +26,17 @@
 
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
+
 #define PBC_LOGIN_PAGE "https://weblogin.washington.edu/"
+
+#if defined (WIN32)
+#define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
+#define PBC_MASTER_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\m_key"
+#else
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 #define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
+#endif
+
 #define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
 #define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
 #define PBC_MAX_HARD_EXPIRE 12 * 60 * 60
@@ -37,7 +45,7 @@
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
-/* why the hell is it PBC_NUWNETID_AUTHTYPE and not PBC_UWNETID_AUTHTYPE ???  */
+/* why is it PBC_NUWNETID_AUTHTYPE and not PBC_UWNETID_AUTHTYPE ???  */
 #define PBC_NUWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
@@ -71,6 +79,26 @@
 #define PBC_COOKIE_TYPE_S    '2'
 #define PBC_COOKIE_TYPE_L    '3'
 
+#if defined (WIN32)
+#define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
+
+/* lives only on login server */
+#define PBC_L_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.key"
+
+/* lives only on application server */
+#define PBC_S_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.cert"
+
+/* lives only on application server */
+#define PBC_S_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.key"
+
+/* lives on application servers */
+#define PBC_G_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.cert"
+
+/* lives only on login server */
+#define PBC_G_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.key"
+
+#else
+
 /* lives only on login servers */
 #define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
 
@@ -89,14 +117,18 @@
 /* lives only on login server */
 #define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
 
+#endif
+
 #ifdef APACHE1_2
 #define pbc_malloc(x) palloc(p, x)
+#define pbc_free(x) libpbc_void(x)
 #define pbc_strdup(x) pstrdup(p, x)
 #define pbc_strndup(s, n) pstrdup(p, s, n)
 #define pbc_fopen(x, y) pfopen(p, x, y)
 #define pbc_fclose(x) pfclose(p, x)
 #elif APACHE1_3
 #define pbc_malloc(x) ap_palloc(p, x)
+#define pbc_free(x) libpbc_void(x)
 #define pbc_strdup(x) ap_pstrdup(p, x)
 #define pbc_strndup(s, n) ap_pstrdup(p, s, n)
 #define pbc_fopen(x, y) ap_pfopen(p, x, y)
@@ -105,6 +137,9 @@
 
 #ifndef pbc_malloc
 #define pbc_malloc(x) malloc(x)
+#endif
+#ifndef pbc_free
+#define pbc_free(x) free(x)
 #endif
 #ifndef pbc_strdup
 #define pbc_strdup(x) strdup(x)
@@ -140,6 +175,8 @@
 #define libpbc_sign_cookie(a,b) 	   libpbc_sign_cookie_p(p, a,b)
 #define libpbc_sign_bundle_cookie(a,b,c) 	   libpbc_sign_bundle_cookie_p(p, a,b,c)
 #define libpbc_stringify_cookie_data(a) 	   libpbc_stringify_cookie_data_p(p, a)
+#define libpbc_free_md_context_plus(a)     libpbc_free_md_context_plus_p(p, a)
+#define libpbc_free_crypt(a)               libpbc_free_crypt_p(p, a)
 
 #else
 #define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) libpbc_gen_granting_req_np(a,b,c,d,e,f,g,h,i,j,k)
@@ -162,7 +199,9 @@
 #define libpbc_sign_cookie(a,b) 	 libpbc_sign_cookie_np(a,b)
 #define libpbc_sign_bundle_cookie(a,b,c) libpbc_sign_bundle_cookie_np(a,b,c)
 #define libpbc_stringify_cookie_data(a)  libpbc_stringify_cookie_data_np(a)
+#define libpbc_free_md_context_plus(a)   libpbc_free_md_context_plus_np(a)
+#define libpbc_free_crypt(a)             libpbc_free_crypt_np(a)
+
 #endif 
 
 #endif /* !PUBCOOKIE_CONFIG */
-

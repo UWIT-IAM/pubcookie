@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.h,v 1.8 1999-01-09 01:08:40 willey Exp $
+    $Id: libpubcookie.h,v 1.9 1999-04-28 22:13:03 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -30,6 +30,8 @@ void libpbc_pubcookie_exit_p(pool *);
 unsigned char *libpbc_alloc_init_p(pool *, int);
 unsigned char *libpbc_gethostip_p(pool *);
 crypt_stuff *libpbc_init_crypt_p(pool *, char *);
+void libpbc_free_md_context_plus_p(pool *, md_context_plus *);
+void libpbc_free_crypt_p(pool *, crypt_stuff *);
 
 #else
 #ifdef APACHE1_3
@@ -55,6 +57,8 @@ void libpbc_pubcookie_exit_p(ap_pool *);
 unsigned char *libpbc_alloc_init_p(ap_pool *, int);
 unsigned char *libpbc_gethostip_p(ap_pool *);
 crypt_stuff *libpbc_init_crypt_p(ap_pool *, char *);
+void libpbc_free_md_context_plus_p(ap_pool *, md_context_plus *);
+void libpbc_free_crypt_p(ap_pool *, crypt_stuff *);
 
 #else
 
@@ -79,6 +83,8 @@ void libpbc_pubcookie_exit_np();
 unsigned char *libpbc_alloc_init_np(int);
 unsigned char *libpbc_gethostip_np();
 crypt_stuff *libpbc_init_crypt_np(char *);
+void libpbc_free_md_context_plus_np(md_context_plus *);
+void libpbc_free_crypt_np(crypt_stuff *);
 
 #endif 
 #endif
@@ -86,6 +92,8 @@ crypt_stuff *libpbc_init_crypt_np(char *);
 char *libpbc_time_string(time_t);
 void *libpbc_abend(const char *,...);
 int libpbc_debug(const char *,...);
+void *malloc_debug(size_t x);
+void free_debug(void *p);
 void libpbc_augment_rand_state(unsigned char *, int);
 char *libpbc_mod_crypt_key(char *, unsigned char *);
 int libpbc_encrypt_cookie(unsigned char *, 
