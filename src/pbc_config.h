@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.97 2004-06-24 18:58:09 fox Exp $
+     $Id: pbc_config.h,v 1.98 2004-07-27 18:48:53 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -58,6 +58,7 @@
         #define PBC_DEFAULT_KEY "default"
 #endif
 
+#define PBC_DEFAULT_FORM_EXPIRE_TIME	30
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
 #define PBC_DEFAULT_INACT_EXPIRE     ( 30 * 60 )

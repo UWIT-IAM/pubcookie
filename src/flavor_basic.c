@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.56 2004-05-13 16:08:58 fox Exp $
+ * $Id: flavor_basic.c,v 1.57 2004-07-27 18:48:53 jteaton Exp $
  */
 
 
@@ -650,8 +650,8 @@ static login_result process_basic(pool *p, const security_context *context,
         /* Make sure response is timely */
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                "process_basic: create=%d\n", l->create_ts);
-        if (l->create_ts && (time(NULL) > (l->create_ts+30))) {
-            *errstr = "You have 30 seconds to login";
+        if (l->create_ts && (time(NULL) > (l->create_ts+ libpbc_config_getint(p, "form_expire_time", DEFAULT_FORM_EXPIRE_TIME) ))) {
+            *errstr = "The login form has expired.";
             rcode = FLB_FORM_EXPIRED;
         } else if (v->v(p, l->user, l->pass, NULL,
                      l->realm, credsp, errstr) == 0) {
