@@ -32,7 +32,9 @@
 	directive[4].name         = L"Logout_Action";
 	directive[4].type         = D_BOUND_INT;
 	directive[4].value        = L"0";
-	directive[4].description  = L"Logout action on this node:\n  0 : No logout action\n  1 : Clear session cookie and serve page; implicitly sets AuthType to None\n  2 : Clear session cookie and redirect to login server\n  3 : Clear session cookie and redirect to login server to clear login cookie";
+        directive[4].description  = L"Logout action on this node:\n  0 : No logout action\n  1 : Clear session cookie and serve page; implicitly sets AuthType to ";
+        directive[4].description  += PBC_AUTHTYPE0;
+        directive[4].description  += L"\n  2 : Clear session cookie and redirect to login server\n  3 : Clear session cookie and redirect to login server to clear login cookie";
 	directive[4].bound_val[0] = L"0";
 	directive[4].bound_val[1] = L"1";
 	directive[4].bound_val[2] = L"2";
