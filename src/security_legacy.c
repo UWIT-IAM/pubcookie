@@ -66,19 +66,42 @@
  */
 
 /* our private session keypair */
-EVP_PKEY *sess_key;
-X509 *sess_cert;
-EVP_PKEY *sess_pub;
+static EVP_PKEY *sess_key;
+static X509 *sess_cert;
+static EVP_PKEY *sess_pub;
 
 /* the granting key & certificate */
-EVP_PKEY *g_key;
-X509 *g_cert;
-EVP_PKEY *g_pub;
+static EVP_PKEY *g_key;
+static X509 *g_cert;
+static EVP_PKEY *g_pub;
+
+/* my name */
+static char *myname = NULL;
 
 static char *mystrdup(const char *s)
 {
     if (s) return strdup(s);
     else return NULL;
+}
+
+/* destructively returns the value of the CN */
+static char *extract_cn(char *s)
+{
+    char *p;
+    char *q;
+
+    if (!s) return NULL;
+
+    p = strstr(s, "CN=");
+    if (p) {
+        p += 3;
+        q = strstr(p, "/Email=");
+        if (q) {
+            *q = '\0';
+        }
+    }
+
+    return p;
 }
 
 /* find the keys that we'll be using.
@@ -227,6 +250,15 @@ int security_init(void)
 	return -1;
     }
     sess_pub = X509_extract_key(sess_cert);
+    myname = X509_NAME_oneline (X509_get_subject_name (sess_cert),0,0);
+    myname = extract_cn(myname);
+    if (!myname) {
+        char tmp[1024];
+        /* hmm, no name encoded in the certificate; we'll just use our
+           hostname */
+        gethostname(tmp, sizeof(tmp)-1);
+        myname = strdup(tmp);
+    }
     fclose(fp);
 
     /* granting key */
@@ -296,6 +328,11 @@ int security_init(void)
     return 0;
 }
 
+const char *libpbc_get_cryptname(void)
+{
+    return myname;
+}
+
 /**
  * generates the filename that stores the DES key
  * @param peername the certificate name of the peer
@@ -314,7 +351,6 @@ static void make_crypt_keyfile(const char *peername, char *buf)
 static int get_crypt_key(const char *peername, char *buf)
 {
     FILE *fp;
-    char *key_in;
     char keyfile[1024];
 
     make_crypt_keyfile(peername, keyfile);
@@ -368,7 +404,7 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
     assert(outbuf != NULL && outlen != NULL);
     assert(buf != NULL && len > 0);
 
-    peer2 = peer ? peer : get_my_hostname();
+    peer2 = peer ? peer : libpbc_get_cryptname();
     if (get_crypt_key(peer2, (char *) keybuf) < 0) {
 	return -1;
     }
@@ -459,7 +495,7 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
 
     /* since i'm reading a message, i always decrypt using my key in this
      security model. */
-    if (get_crypt_key(get_my_hostname(), (char *) keybuf) < 0) {
+    if (get_crypt_key(libpbc_get_cryptname(), (char *) keybuf) < 0) {
 	return -1;
     }
 
@@ -577,7 +613,7 @@ int libpbc_rd_safe(const char *peer, const char *buf, const int len,
 
     if (!r) {
 	/* xxx log openssl error */
-	syslog(LOG_ERR, "couldn't verify signature from %s", 
+	syslog(LOG_ERR, "couldn't verify signature for %s", 
 	       peer ? peer : "(self)");
     }
 
