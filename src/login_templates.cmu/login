@@ -65,7 +65,7 @@
                   </td>
                   <td valign="top" align="left" nowrap bgcolor="#DDDDDD">
                     <input type="text" name="user" size="17"
-                        value="%user%" tabindex="1">@<select name=
+                        value="" tabindex="1">@<select name=
                         "realm" tabindex="3">
                       <option value="ANDREW.CMU.EDU" selected>
                         ANDREW.CMU.EDU
