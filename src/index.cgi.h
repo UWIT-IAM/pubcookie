@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.6 2000-09-25 18:04:16 willey Exp $
+    $Id: index.cgi.h,v 1.7 2001-04-23 23:15:37 willey Exp $
  */
 
 typedef struct {
@@ -173,6 +173,35 @@ char *decode_granting_request(char *);
 
 
 /* text */
+
+/* Right hand side text */
+#define LOGIN_PAGE_RHS_TEXT "<td width=\"250\" valign=\"MIDDLE\">\n\
+<p>\n\
+<a href=\"https://uwnetid.washington.edu/newid/\">Need a UW NetID?</a>\n\
+</p>\n\
+<p>\n\
+<a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html\">Forget your password?</a>\n\
+</p>\n\
+<dl>\n\
+<dt>Have a question?</dt>\n\
+<dd>\n\
+  <a href=\"http://www.washington.edu/computing/uwnetid/\">Read About UW NetIDs</a><BR>\n\
+  <a href=\"http://www.washington.edu/computing/help/\">Contact C&amp;C</a>\n\
+</dd>\n\
+</dl>\n\
+</td>"
+
+/* login page bottom text about expires and such */
+#define LOGIN_PAGE_BOTTOM_TEXT "</tr>\n\
+\n\
+<tr>\n\
+<td colspan=\"5\" align=\"center\">\n\
+<p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>\n\
+<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>\n\
+<a href=\"http://www.washington.edu/computing/web/logout.html\">Completely exit your Web browser when you are finished.</a></p>\n\
+</td>\n\
+</tr>"
+
 #define NOTOK_NO_G_OR_L_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">\
 A problem has been detected!</font></B></P> \
 \
