@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.33 2003-04-19 21:34:54 jjminer Exp $
+# $Id: Makefile.in,v 1.34 2003-04-20 00:04:18 jjminer Exp $
 
 @SET_MAKE@
 
@@ -165,7 +165,10 @@ LIB_OBJ=$(builddir)/src/libpubcookie.o \
 		$(builddir)/src/pbc_configure.o
 
 MOD_SRC=$(srcdir)/src/mod_pubcookie.c \
-                $(srcdir)/src/pbc_apacheconfig.c
+        $(srcdir)/src/pbc_apacheconfig.c
+
+MOD_HEAD=$(srcdir)/src/mod_pubcookie.h \
+		 $(srcdir)/src/pbc_apacheconfig.h
 
 LIB_TESTS=base64 pbc_myconfig myconf
 
@@ -396,7 +399,7 @@ apache_module: a_ver mod_pubcookie.so keyclient
 a_ver:
 	@echo Making $(DISTNAME) apache module;
 
-mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
+mod_pubcookie.so: $(MOD_SRC) $(MOD_HEAD) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) \
 			$(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 
@@ -494,13 +497,15 @@ dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)/cgic
 	-$(RECURSIVE_CP) $(srcdir)/src/contrib $(DISTNAME)
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic
+	$(MKDIR) $(DISTNAME)/src/login_templates.generic/images
 	$(CP) $(LOGIN_TEMPLATES) $(DISTNAME)/src/login_templates.generic
+	$(CP) $(LOGIN_IMAGES) $(DISTNAME)/src/login_templates.generic/images
 	$(CP) $(DOCS) $(DISTNAME)/doc
 	$(CP) $(CONFIGURE_FILES) $(DISTNAME)/
 	$(CP) $(SRC_CONFIGURE_FILES) $(DISTNAME)/src
 	$(CP) $(TEST_SRC) $(UTIL_SRC) $(VERIFY_SRC) $(DISTNAME)/src
-	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(MOD_SRC) \
-		  $(DISTNAME)/src
+	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(DISTNAME)/src
+	$(CP) $(MOD_SRC) $(MOD_HEAD) $(DISTNAME)/src
 	$(CP) $(INDEX_HEAD) $(LIB_HEAD) $(DISTNAME)/src
 	$(CP) $(CGIC_FILES) $(DISTNAME)/cgic
 	$(CP) $(srcdir)/src/Makefile.tmpl $(DISTNAME)/src
