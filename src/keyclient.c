@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.41 2004-03-03 17:53:05 fox Exp $
+ * $Id: keyclient.c,v 2.42 2004-03-07 23:54:33 jteaton Exp $
  */
 
 
@@ -93,6 +93,17 @@ extern char * optarg;
 
 /* globals */
 int noop = 0;
+
+/*
+ * keyclient should print errors to standard error, not syslog
+ * because no one ever will see them in syslog
+ */
+static void mylog(pool *p, int logging_level, const char *msg)
+{
+    if (logging_level <= libpbc_config_getint(p, "logging_level", 0)) {
+        fprintf(stderr, "%s", msg);
+    }
+}
 
 static void usage(void)
 {
@@ -185,7 +196,7 @@ int main(int argc, char *argv[])
 #endif
 
     libpbc_config_init(p, NULL, "keyclient");
-    pbc_log_init(p, "keyclient", NULL, NULL, NULL);
+    pbc_log_init(p, "keyclient", NULL, &mylog, NULL);
     libpbc_pubcookie_init(p, &context);
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
@@ -552,6 +563,8 @@ jump:
 
     if (!done) {
         printf("operation failed: %s\n", buf);
+    } else {
+        printf("operation succeeded\n", buf);
     }
 
     close(sd);
