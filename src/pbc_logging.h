@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: pbc_logging.h,v 1.16 2003-07-03 04:25:21 willey Exp $
+/** @file pbc_logging.h
+ * Header file for logging stuff
+ *
+ * $Id: pbc_logging.h,v 1.17 2003-07-10 19:06:40 willey Exp $
  */
+
 
 #ifndef INCLUDED_PBC_LOGGING_H
 #define INCLUDED_PBC_LOGGING_H

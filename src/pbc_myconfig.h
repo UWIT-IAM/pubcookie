@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: pbc_myconfig.h,v 1.12 2003-07-03 04:25:21 willey Exp $
+/** @file pbc_myconfig.h
+ * header file for Runtime configuration
+ *
+ * $Id: pbc_myconfig.h,v 1.13 2003-07-10 19:06:40 willey Exp $
  */
+
 
 #ifndef INCLUDED_PBC_MYCONF_H
 #define INCLUDED_PBC_MYCONF_H

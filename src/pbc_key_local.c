@@ -3,10 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/** @file pub_key_local.c
+/** @file pbc_key_local.c
  * Old (and i think obsolete) key mgmt
  *
- * $Id: pbc_key_local.c,v 1.9 2003-07-02 22:04:04 willey Exp $
+ * $Id: pbc_key_local.c,v 1.10 2003-07-10 19:06:40 willey Exp $
  */
 
 

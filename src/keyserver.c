@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.36 2003-07-03 04:25:21 willey Exp $
+ * $Id: keyserver.c,v 2.37 2003-07-10 19:06:40 willey Exp $
  */
 
 
@@ -259,9 +259,38 @@ int pushkey(const char *peer)
 }
 
 /**
+ @param peer machine talking to the keyserver
+ @return PBC_FAIL if not in the access list, PBC_OK if ok.
+ */
+static int check_access_list(const char *peer)
+{
+    pool *p = NULL;
+    char **access_list = libpbc_config_getlist(p, "keyserver_client_list");
+    int i;
+
+    /* if there is no access list then everyone is ok */
+    if (access_list == NULL) {
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
+		"No keyserver_client_list, hope that's ok");
+        return(PBC_OK);
+    }
+    
+    for (i = 0; access_list[i] != NULL; i++)
+        if( strcasecmp(access_list[i], peer) == 0 )
+            return PBC_OK;
+
+    return PBC_FAIL;
+
+}
+
+/**
  * do the keyserver operation
  * @param peer the name of the client that's connected to us
- * @param op the operation to perform, one of GENKEY, SETKEY, FETCHKEY
+ * @param op the operation to perform, one of: 
+ *	GENKEY - generate a new key for peer
+ *      SETKEY - key from friend login server
+ *      FETCHKEY - peer requests it's key
+ *      NOOP - for completeness
  * @param newkey if the operation is SETKEY, "peer;base64(key)"
  * @return 0 on success, non-zero on error
  */
@@ -273,6 +302,13 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
     /* no HTML headers for me */
     myprintf("\r\n");
+
+    /* check access list for client operations */
+    if( op != SETKEY && check_access_list(peer) == PBC_FAIL ) {
+        myprintf("you (%s) are not in keyserver client list\r\n", peer);
+        pbc_log_activity(p, PBC_LOG_ERROR, "operation not allowed: %s", peer);
+        return(1);
+    }
 
     switch (op) {
         case GENKEY:
@@ -445,6 +481,7 @@ int main(int argc, char *argv[])
     pool *p = NULL;
 
     libpbc_config_init(p, NULL, "keyserver");
+    pbc_log_init(p, "keyclient", NULL, NULL, NULL);
     libpbc_pubcookie_init(p);
 
     debug = libpbc_config_getint(p, "debug", 0);

@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.32 2003-07-03 04:25:21 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.33 2003-07-10 19:06:40 willey Exp $
  */
 
 
@@ -57,6 +57,7 @@ typedef void pool;
 # define EX_OSERR 71
 #endif /* HAVE_SYSEXITS_H */
 
+#include "pbc_logging.h"
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -83,10 +84,13 @@ struct configlist {
     char *value;
 };
 
+#define REQUIRED 1
+#define NOT_REQUIRED 0
+
 static struct configlist *configlist;
 static int nconfiglist;
 
-static void myconfig_read(pool *p, const char *alt_config);
+static void myconfig_read(pool *p, const char *alt_config, int required);
 static void fatal(pool *p, const char *s, int ex);
 
 #ifdef WIN32
@@ -95,18 +99,37 @@ static void fatal(pool *p, const char *s, int ex);
 
 #ifndef WIN32
 
-/**
- * libpbc_myconfig_init() 
- * @param p memory pool
- * @param alt_config different config file to read
- */
 int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
 {
     const char *val;
     int umaskval = 0;
+    char *sub_config, *ptr, *ptr2;
+    int len;
     
-    myconfig_read(p, alt_config);
+    myconfig_read(p, alt_config, REQUIRED);
     
+    /* get the sub config file for the pubcookie sub-system */
+    if (ident != NULL ) {
+        /* +1 for oes and +1 for extra '/' */
+        len = strlen(PBC_PATH) + strlen(ident) + strlen(PBC_SUBCONFIG) + 1 + 1;
+        sub_config = pbc_malloc(p, sizeof(char *) * len);
+        bzero(sub_config, len);
+        snprintf(sub_config, len, "%s/%s%s", PBC_PATH, ident, PBC_SUBCONFIG);
+        
+        /* remove that extra slash */
+        ptr = ptr2 = sub_config;
+        while( *ptr2 ) {
+            if( ptr2 != sub_config && *ptr2 == '/' &&  *(ptr2-1) == '/' )
+                ptr2++;
+             else
+                *ptr++ = *ptr2++;
+        }
+        *ptr = '\0';
+
+        myconfig_read(p, sub_config, NOT_REQUIRED);
+        free(sub_config);
+    }
+
     /* Look up umask */
     val = libpbc_myconfig_getstring(p, "umask", "022");
     while (*val) {
@@ -239,18 +262,23 @@ int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
 #ifndef WIN32
 
 #define CONFIGLISTGROWSIZE 30 /* 100 */
-static void myconfig_read(pool *p, const char *alt_config)
+static void myconfig_read(pool *p, const char *alt_config, int required)
 {
     FILE *infile;
+    const char *filename;
     int lineno = 0;
     int alloced = 0;
-    char buf[4096];
+    char buf[8192];
     char *ptr, *q, *key;
     
-    infile = pbc_fopen(p, alt_config ? alt_config : PBC_CONFIG, "r");
+    filename = alt_config ? alt_config : PBC_CONFIG;
+    infile = pbc_fopen(p, filename, "r");
     if (!infile) {
+        if ( required == NOT_REQUIRED ) {
+            return;
+        }
         snprintf(buf, sizeof(buf), "can't open configuration file %s: %s",
-                 alt_config ? alt_config : PBC_CONFIG,
+                 filename,
                  strerror(errno));
         fatal(p, buf, EX_CONFIG);
     }
@@ -269,8 +297,8 @@ static void myconfig_read(pool *p, const char *alt_config)
         }
         if (*ptr != ':') {
             snprintf(buf, sizeof(buf),
-		     "invalid option name on line %d of configuration file",
-		     lineno);
+		     "invalid option name on line %d of configuration file %s",
+		     lineno, filename);
             fatal(p, buf, EX_CONFIG);
         }
         *ptr++ = '\0';
@@ -284,8 +312,8 @@ static void myconfig_read(pool *p, const char *alt_config)
         
         if (!*ptr) {
             snprintf(buf, sizeof(buf),
-                     "empty option value on line %d of configuration file",
-                     lineno);
+                     "empty option value on line %d of configuration file %s",
+                     lineno, filename);
             fatal(p, buf, EX_CONFIG);
         }
 	

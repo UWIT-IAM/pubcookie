@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.35 2003-07-04 07:41:58 ryanc Exp $
+ * $Id: keyclient.c,v 2.36 2003-07-10 19:06:40 willey Exp $
  */
 
 
@@ -180,6 +180,7 @@ int main(int argc, char *argv[])
 #endif
 
     libpbc_config_init(p, NULL, "keyclient");
+    pbc_log_init(p, "keyclient", NULL, NULL, NULL);
     libpbc_pubcookie_init(p);
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");

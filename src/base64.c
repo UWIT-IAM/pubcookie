@@ -3,10 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/** @file base64.cgi.c
+/** @file base64.c
  * Base64 functions
  *
- * $Id: base64.c,v 1.15 2003-07-03 04:25:21 willey Exp $
+ * $Id: base64.c,v 1.16 2003-07-10 19:06:39 willey Exp $
  */
                                                                                 
 
