@@ -85,31 +85,49 @@ Apache web server software. Other web server software which supports CGI
 and SSL should also work, but this supposition has not been tested.
 </p>
 
-<h4><a name="authsvcs">Authentication Services</a></h4>
+<h4><a name="authsvcs">Authentication Services &amp; Login Flavors</a></h4>
 
-<p>
-The login cgi is designed to support different authentication feature
-sets by abstracting them into login "flavors". However, only one login 
-flavor is currently provided: the "basic" login flavor. The basic login 
-flavor supports username/password single-sign-on authentication and a 
-simple pluggable interface to backend authentication services called 
-"verifiers." Pubcookie currently ships with several verifiers for the 
-basic login flavor:
-</p>
+<p>The login cgi is designed to support different authentication feature sets by
+abstracting them into individual login "flavors". One login flavor is currently
+provided in the distrubtion. It's called the "basic" login flavor.</p>
+
+<p>The basic login flavor supports single sign-on user authentication by
+username-and-password credential verification through a simple pluggable
+interface to backend authentication services called "verifiers." Pubcookie
+currently ships with several verifiers that can be used by the basic login
+flavor:</p>
 
 <ul>
-<li> "kerberos_v5": check username/password against a Kerberos 5 KDC. </li>
-<li> "ldap": check username/password against an LDAP server. </li>
-<li> "shadow": check username/password against <tt>/etc/shadow</tt>. </li>
-<li> "alwaystrue": allow any username/password combination to authenticate. </li>
+<li> "kerberos_v5": verifies credentials using a Kerberos 5 KDC.</li>
+<li> "ldap": verifies credentials using an LDAP server.</li>
+<li> "shadow": verifies credentials using <tt>/etc/shadow</tt>.</li>
+<li> "alwaystrue": verifies all credentials as successful.</li>
+<li> "fork": [fixme: do we want to document this?]</li>
 </ul>
 
-<p>
-You can choose which verifiers to build at compile time and then decide at run-time 
-which verifier is used by the basic login flavor by setting the "basic_verifier" 
-configuration variable (see <a href="#config">run-time configuration</a>).  Some 
-verifiers allow or require further configuration; see the section referring to each 
-verifier for details.
+<p>You can choose to compile more than one verifier, but the basic login flavor
+can only use one at a time, as defined by the <tt>basic_verifier</tt> run-time
+configuration variable (see <a href="#config">run-time configuration</a>). Some
+verifiers allow or require further configuration; see the section referring to
+each verifier for details.</p>
+
+<p>Note: the authentication type (i.e.  AuthType) requested by an application
+corresponds directly to a specific login flavor, not a verifier. This
+indirection is a feature, helping applications be independent of the method or
+methods used by the login server to authenticate or verify user credentials.  
+For example, a site might start by verifying users via LDAP, then migrate to
+Kerberos, perhaps having users split between the two for a while. It's
+attractive to hide this transition from applications. In this case apps would
+just ask for the "basic" authtype, corresponding with the basic login flavor,
+and the login server would implement the transition transparently through
+changes from one verifier to another.</p>
+
+<p>In some cases you may want apps to be able to choose from different backend 
+authentication services. For example, the University of Washington uses
+the basic login flavor (which happens to use the Kerberos verifier now,
+but used to use different ones) and a more-secure flavor that uses SecurID
+in addition to username and password. Applications choose which type they want 
+by configuring the appropriate AuthType. [fixme: that stuff isn't really a note]
 </p>
 
 <h4><a name="apacheconfig">Apache Configuration</a></h4>
@@ -438,16 +456,17 @@ going to use the Common Name to create a host key in the keystore.</p>
 
 <h4><a name="keyserver">Keyserver Setup</a></h4>
 
-<p>To set up your keyserver, first make sure you've configured
+<p>To set up your keyserver, make sure you've configured
 <tt>ssl_key_file</tt>, <tt>ssl_cert_file</tt>,
 <tt>keyserver_client_list</tt>, and either <tt>ssl_ca_file</tt> or
-<tt>ssl_ca_path</tt> depending on how you handle CA information.</p>
+<tt>ssl_ca_path</tt> depending on how you handle trusted root CA
+certificates. Keyserver also uses <tt>granting_cert_file</tt> for 
+distributing your "granting" certificate.</p>
 
-<p>Next setup keyserver to run from inetd or xinetd. Unfortunately, due to
-subtleties in the key usage constraints, keyserver cannot run as a cgi
-script underneath a login server.</p>
+<p>You can run your keyserver from inetd or xinetd, but not as a cgi
+program along side the login cgi due to subtle constraits in key usage.</p>
 
-<p>Add a line like the following to the login server's
+<p>If you use inetd, add a line like the following to the login server's
 <tt>/etc/inetd.conf</tt>:</p>
 
 <pre>
@@ -567,49 +586,45 @@ likely sufficient for normal operation of the login server.</p>
 
 <h4><a name="templates">Login Page Templates</a></h4>
 
-<p>
-The login cgi serves up pages based on a set of HTML templates.
-By default, these templates reside in <tt>{PUBCOOKIE_DIR}/login_templates</tt>, 
-but the location can be set by changing <tt>template_root</tt> in your config 
-file. Generic templates are installed by default in
-<tt>{PUBCOOKIE_DIR}/login_templates.default</tt>.  They should be
-copied to <tt>{PUBCOOKIE_DIR}/login_templates</tt> and they will 
-serve as a starting point for further localization.
-</p>
+<p>The login cgi uses HTML templates, individually or pieced together, to
+create your login pages, error and logout response pages, and redirect
+pages.</p>
 
-<p>
-Note: For reference and comparison purposes, copies of CMU and 
-Washington's login templates (of some vintage) are provided in this
-source distribution. See <tt>src/login_templates.cmu</tt> and 
-<tt>src/login_templates.uw</tt>, respectively. Note: the syntax
-for variable substitution within the templates changed during the
-development of version 3.0.0. The UWash and CMU templates may be in 
-the older format.
-</p>
+<p>By default, the login cgi reads these templates from the
+<tt>{PUBCOOKIE_DIR}/login_templates</tt> directory. The
+<tt>template_root</tt> config file variable can be used to specify an an
+alternative location.</p>
 
-<p>
-The name of each template file can be set via the
-<tt>{PUBCOOKIE_DIR}/config</tt> file.  The name for each config
-variable is tmpl_{default_file_name}, and they are located relative to the
-<tt>template_root</tt>.  (For example, the attribute that controls the
-name of the login page is <tt>tmpl_login</tt>.)
+<p>A set of generic templates is installed by default in
+<tt>{PUBCOOKIE_DIR}/login_templates.generic</tt>. Copy these starter
+templates to <tt>{PUBCOOKIE_DIR}/login_templates</tt> and edit them 
+according to local designs and conventions.</p>
+
+<p>The name of each template file can be set in your config file, if you
+desire alternative filenames. The name for each config variable is
+<tt>tmpl_{default_file_name}</tt>. Therefore, as an example,
+<tt>tmpl_login</tt> is the variable that controls the name of the
+<tt>login</tt> template.</p>
 
 <h5>Template Files (incomplete)</h5>
 
-<p> We are in the process of reworking the template files to make them 
-more user-friendly.  The list below will be updated as work progresses.</p>
+<p>Note: We are in the process of reworking the template files to make
+them more user-friendly.  The list below will be updated as work
+progresses.</p>
 
 <dl compact="compact">
  <dt>login</dt>
- <dd>The Login HTML page.
-  <ol>Paramters
-   <li>Login Server URL</li>
-   <li>The reason for the redirect (pulled from the <tt>login_*</tt>
-    snippets)</li>
-   <li>Hidden fields maintaining state</li>
-   <li>GetCred Hidden fields</li>
-  </ol>
- </dd>
+ <dd>The main login page, with automatic variable substitutions for: the
+   login server URL, the reason for the redirect (pulled from various
+   <tt>login_*</tt> templates), the user input field (also pulled from
+   other templates), hidden fields maintaining state information, and
+   GetCred hidden fields</dd>
+ <dt>nonpost_redirect</dt>
+ <dd>The redirect page back to the target. The use of script-no-script 
+  tags with <tt>window.location.replace</tt> (requires JavaScript 
+  1.1) doesn't work well with all older browsers (e.g. Netscape 4.x); for 
+  best compatibility just use meta-refresh by itself, without the 
+  script-no-script tags.</dd>
  <dt>login_bad_auth</dt>
  <dd>The error displayed when the authentication failed.</dd>
  <dt>login_cache_creds_wrong</dt>
@@ -622,14 +637,19 @@ more user-friendly.  The list below will be updated as work progresses.</p>
  <dd>The error displayed when the application has requested that the user
   reauthenticate.</dd>
  <dt>status</dt>
- <dd>The status page displaying the time remaining on the login.
-  <ol>Parameters
-   <li>Refresh header</li>
-   <li>User name</li>
-   <li>Time remaining.</li>
-  </ol>
+ <dd>The status page displaying SSO time remaining, with automatic 
+   variable substitutions for: refresh headers, the user name, and 
+   time remaining.</dd>
  </dd>
 </dl>
+
+<p>Note: For comparison purposes, login templates (of some vintage) from
+Carnegie Mellon University and the Univerisity of Washington are provided
+in the source distribution. See <tt>src/login_templates.cmu</tt> and
+<tt>src/login_templates.uw</tt>, respectively. Be warned, however, that
+the syntax for variable substitution within the templates changed during
+the development of version 3.0.0, and therefore the CMU and UWash
+templates may be in the older format.</p>
 
 <h4><a name="ok_browsers">Browser Acceptance Configuration </a></h4>
 
@@ -938,7 +958,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.18 2004-02-10 18:59:50 dors Exp $
+$Id: install-login.html,v 1.19 2004-03-11 19:13:22 dors Exp $
 </pre>
 </body>
 

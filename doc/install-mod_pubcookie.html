@@ -23,8 +23,8 @@
                     <li><a href="#req">System Requirements</a></li>
                     <li><a href="#build">Build Pubcookie</a></li>
                     <li><a href="#install">Install Pubcookie</a></li>
-                    <li><a href="#granting">Install Granting Certificate</a></li>
                     <li><a href="#keyclient">Configure &amp; Run Keyclient</a></li>
+                    <li><a href="#granting">Download Granting Certificate</a></li>
                     <li><a href="#httpd">Configure &amp; Start Apache (httpd.conf)</a></li>
                     <li><a href="#logout">Logout Configuration and Use</a></li>
                     <li><a href="#test">Test Pubcookie (with sample .htaccess)</a></li>
@@ -187,6 +187,15 @@
                         </TR>
                       </TABLE></p>
                     <li> 
+                      <p>[Fixme: new --enable-apache-static for static builds!]</p>
+                      <p> 
+                      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                        <TR> 
+                          <TD> <pre>% configure --enable-apache-static</pre></TD>
+                        </TR>
+                      </TABLE></p>
+                      <p>[Fixme: yeah, so now what?]</p>
+                    <li> 
                       <p>If you use the top level Apache Configure script, you 
                         will need to add the following option to configure it:</p>
                       <p> 
@@ -292,45 +301,20 @@ AddModule mod_pubcookie.c
                       </ol>
                   </ol>
 
-                  <h4><a name="granting">Install Granting Certificate</a></h4>
-                  <p>The Pubcookie module uses your login server's "granting" certificate to verify the
-                    signature of the "granting" cookies sent from your login server to your
-                    application server.</p>
-                  <ol>
-		    <li> 
-                      <p>Obtain a copy of your login server's "granting"
-                        certificate (e.g., <tt>pubcookie_granting.cert</tt>). 
-                        You may have to contact your login server administrator
-                        for the location.</p>
-		    </li>
-		    <li>
-                      <p>Place the granting certificate in the keys subdirectory of your 
-                        Pubcookie directory, e.g.:</p>
-                      <p>
-                      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
-                        <TR> 
-                          <TD> <pre>% mv pubcookie_granting.cert /usr/local/pubcookie/keys</pre></TD>
-                        </TR>
-                      </TABLE></p>
-		    </li> 
-		  </ol>
-                  <p>Note: During configuration, this certificate corresponds with 
-                    the <a href="mod_pubcookie-directives.html#PubcookieGrantingCertFile">PubcookieGrantingCertFile</a>
-                    directive in httpd.conf. It also corresponds with the <tt>granting_cert_file</tt> config
-                    file variable, which is only necessary if you choose a
-                    filename other than pubcookie_granting.cert. [fixme: does keyclient
-                    run without this config variable?]</p>
-
                   <!-- keyclient section -->
 
 		  <h4><a name="keyclient">Configure &amp; Run Keyclient</a></h4>
-                  <p>Pubookie version 3 uses a keyserver to distribute DES encryption keys 
-                    between a site's login server and participating application servers. 
+
+                  <p>Pubookie uses a keyserver to distribute encryption keys 
+                    and a site's "granting" certificate to participating application servers. 
                     This section describes how to configure and run the keyclient utility 
                     to negotiate a key from your local keyserver.</p>
-                  <p>Note: The keyclient depends quite a bit on local practices, so contact 
-                    your login server administrator for local tips and recommended configuration.</p>
+
+                  <p>Note: keyclient configuration depends on local practices, so contact 
+                    your login server administrator for tips and recommendations.</p>
+
                   <p><b>To create a configuration file for the keyclient:</b></p>
+
                   <ol>
                     <li> 
                       <p>Create and edit your keyclient config file:</p>
@@ -413,6 +397,36 @@ appserver.example.edu</pre></td>
                       <p>If keyclient is not successful, note any error messages and refer 
                         to the <a href="#debug">troubleshooting</a> section below.</p>
                   </ol>
+
+                  <h4><a name="granting">Download Granting Certificate</a></h4>
+
+                  <p>The Pubcookie module uses your login server's "granting" certificate to verify the
+                    signature of the "granting" cookies sent from your login server to your
+                    application server.</p>
+
+                  <ol>
+		    <li>
+                      <p>Run keyclient with the <tt>-G</tt> option to retrieve your site's
+                        "granting" certificate.
+                      <p>
+                      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                        <TR> 
+                          <TD> <pre>% keyclient -G /usr/local/pubcookie/keys/pubcookie_granting.cert</pre></TD>
+                        </TR>
+                      </TABLE></p>
+		    </li> 
+		    <li> 
+                      <p>If keyclient cannot download your "granting" certificate, your keyserver
+                         may not support this method and you'll have to obtain a copy manually.</p>
+		    </li> 
+
+		  </ol>
+                  <p>Note: During configuration, this certificate corresponds with 
+                    the <a href="mod_pubcookie-directives.html#PubcookieGrantingCertFile">PubcookieGrantingCertFile</a>
+                    directive in httpd.conf. It also corresponds with the <tt>granting_cert_file</tt> config
+                    file variable, which is only necessary if you choose a
+                    filename other than pubcookie_granting.cert. [fixme: does keyclient
+                    run without this config variable?]</p>
 
                   <h4><a name="httpd"></a>Configure &amp; Start Apache (httpd.conf)</h4>
                   <p>The Pubcookie module is initially configured by directives
