@@ -1,12 +1,14 @@
 /*
-    $Id: pbc_create.c,v 1.6 1998-12-18 16:03:49 willey Exp $
+    $Id: pbc_create.c,v 1.7 1999-04-16 23:15:11 willey Exp $
  */
 
 /* this is not meant to be user friendly, no friendlyness for anyone          */
 /*   but me and i have the src code                                           */
 /*                                                                            */
-/* args are: user appsrv_id app_id type creds serial                          */
+/* args are: user appsrv_id app_id type creds serial [crypt_file] [cert_key_file]  */
 /*    (anything too big is just truncated)                                    */
+/*      since i'm lazy the argments aren't at all parsed, if you              */
+/*	want to specify a cert_file you must also specifiy a crypt key        */
 /*                                                                            */
 
 #include <stdio.h>
@@ -31,7 +33,7 @@ int main(int argc, char **argv) {
 
     unsigned char 	*cookie;
 
-    if(argc != 7)
+    if(argc < 7)
         exit(1);
 
     strncpy(user, argv[1], sizeof(user));
@@ -44,7 +46,14 @@ int main(int argc, char **argv) {
     creds = argv[5][0];
     serial = atoi(argv[6]);
 
-    if ( type == PBC_COOKIE_TYPE_G ) 
+    if ( argv[7] ) 
+        c_stuff = libpbc_init_crypt(argv[7]);
+    else
+        c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+
+    if ( argv[7] && argv[8] ) 
+        ctx_plus = libpbc_sign_init(argv[8]);
+    else if ( type == PBC_COOKIE_TYPE_G ) 
         ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
     else if ( type == PBC_COOKIE_TYPE_L ) 
         ctx_plus = libpbc_sign_init(PBC_L_KEYFILE);
@@ -53,8 +62,6 @@ int main(int argc, char **argv) {
     else
         exit(1);
 
-    c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
-
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, ctx_plus, c_stuff);
 
     printf("%s", cookie);
@@ -62,4 +69,3 @@ int main(int argc, char **argv) {
     exit(0);
 
 }
-
