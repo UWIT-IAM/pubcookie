@@ -126,8 +126,8 @@
 /* Define to 1 if you have the `ldap50' library (-lldap50). */
 #undef HAVE_LIBLDAP50
 
-/* Define to 1 if you have the `mgoapi' library (-lmgoapi). */
-#undef HAVE_LIBMGOAPI
+/* Define to 1 if you have the `mgoapi2' library (-lmgoapi2). */
+#undef HAVE_LIBMGOAPI2
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
@@ -156,11 +156,8 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
-/* Define to 1 if you have the <mgoapi.h> header file. */
-#undef HAVE_MGOAPI_H
-
-/* Define to 1 if you have the <mgostuff.h> header file. */
-#undef HAVE_MGOSTUFF_H
+/* Define to 1 if you have the <mango/mgoapi2.h> header file. */
+#undef HAVE_MANGO_MGOAPI2_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H

@@ -31,7 +31,7 @@
  *   @return 0 on success, -1 if sid lookup fails, -3 next PRN,
  *          -2 on system error
  *
- * $Id: verify_uwsecurid.c,v 2.3 2004-07-15 22:51:50 willey Exp $
+ * $Id: verify_uwsecurid.c,v 2.4 2004-07-16 17:32:15 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -95,7 +95,7 @@ pool *p = NULL;
 # include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
 
-#ifdef HAVE_MGOAPI_H
+#ifdef HAVE_MANGO_MGOAPI2_H
 # include <mango/mgoapi2.h>
 # include <mango/sidapi.h>
 # include <mango/messages.h>
