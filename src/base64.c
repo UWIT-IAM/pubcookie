@@ -1,3 +1,5 @@
+#include <string.h>  /* for win32 */
+
 /* BASE64 encoding stuff. */
 
 #define NL 99   /* invalid character */
@@ -74,7 +76,7 @@ int base64_encode(unsigned char *in, unsigned char *out, int size) {
 
 int base64_decode(unsigned char *in, unsigned char *out) {
   unsigned int a, b, c, d;
-  int size = strlen(in);
+  int size = strlen((const char *)in);
   int correct = 0;
 
   while(size > 0) {
