@@ -35,15 +35,13 @@ int main(argc,argv)
 int argc;
 char **argv;
 {
-  char   *s, *t, *list, crn[20], host[32], buf[1000], myshell[100];
-  char   p[6];
-  char   pwddir[200];
+  char   buf[1024];
   char   name[9], prn[7], junk[20];
   int    i;
 
   printf("want: name <userid> securid <sid>\n");
 
-  while ( gets(buf) ) {
+  while ( fgets(buf, 1024, stdin) ) {
       sscanf (buf, "%s", junk);
       if ( ! strcmp(junk, "exit") ) break;
       i=sscanf (buf, "name %s securid %s", name, prn);
@@ -56,13 +54,14 @@ char **argv;
       *prn='\0'; *name='\0';
   }
 
+  exit(0);
+
 }
 
 void log_message(const char *format, ...)
 {
     va_list     args;
     char        new_format[PBC_4K];
-    char        message[PBC_4K];
 
     va_start(args, format);
     snprintf(new_format, sizeof(new_format), "%s: %s\n",

@@ -1,5 +1,5 @@
 /*
-    $Id: securid_server.c,v 1.2 2000-01-12 04:18:34 willey Exp $
+    $Id: securid_server.c,v 1.3 2000-01-14 19:11:15 willey Exp $
      */
 
 #include <unistd.h>
@@ -141,9 +141,9 @@ int ro;                 /* true if read-only access needed */
 	char *cp;
 	if ( (cp = strchr(host->h_name,'.')) ) {
 	  *cp++ = '\0';
-/*	  sprintf(host_name,"%sb.u.washington.edu",cp); */
 /* what's with the extra arg? */
-	  sprintf(host_name,"%sb.u.washington.edu",host->h_name,cp);
+/*	  sprintf(host_name,"%sb.u.washington.edu",host->h_name,cp); */
+	  sprintf(host_name,"%sb.u.washington.edu",host->h_name);
 	  host = gethostbyname(host_name);
 	}
       }
