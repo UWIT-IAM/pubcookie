@@ -1,0 +1,6 @@
+<!-- begin tmpl logout_already_weblogin -->
+<p>
+<img src="/images/check.gif" align="absmiddle" alt="" height="35" width="35"> 
+<font size="+1">You already logged out of the <b>weblogin service</b></font></P>
+<!-- end tmpl logout_already_weblogin -->
+
