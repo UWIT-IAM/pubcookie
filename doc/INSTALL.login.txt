@@ -17,7 +17,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.14 2002-06-07 18:13:29 greenfld Exp $
+    $Id: INSTALL.login.txt,v 1.15 2002-06-17 16:05:31 jteaton Exp $
  */
 
 
@@ -61,6 +61,7 @@ ones shipped with pubcookie as of this writing are:
 
 * kerberos_v5: check username/password against a Kerberos 5 KDC.
 * ldap: check username/password against an LDAP server.
+* shadow: check username/password against /etc/shadow
 * alwaystrue: allow any username/password combination to authenticate.
 
 You can set which verifier to be used with the "basic_verifier"
@@ -189,6 +190,8 @@ named via their OpenSSL hashes.
 ssl_ca_file - the location of a single CA
 ssl_ca_path - a directory containing files named after their OpenSSL hash
 
+See CONFIG.txt for a full list of attributes.
+
 7. Localization
 
 The design of the login cgi preceded consideration of external use of
@@ -280,6 +283,26 @@ file.
 
 * Maintaining DES key compatibility from hashed IP addresses
 
+If you have an exisiting pubcookie installation using a shared DES key
+with hashed IP addresses, you can upgrade your login server without 
+generating new keys on every application server.
+
+On the login server, in the .../pubcookie/keys/ directory, make a copy of
+the master DES key (before hashing it to any IP address) for each application
+server, named with the full hostname of the server.
+
+For example, create
+
+.../pubcookie/keys/oldappserver.somewhere.edu
+
+containing the original DES keyfile.
+
+The login server will use this key to encrypt data going to that application
+server, and the application server can continue to use it's key (XOR'd with
+it's IP address) to decrypt the data.
+
+During the application server's next scheduled downtime, you can create a new
+unique DES key for that application, as in 9.4 above.
 
 
 
