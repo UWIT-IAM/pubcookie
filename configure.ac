@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.14 $)
+AC_REVISION($Revision: 1.15 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta3], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -237,8 +237,8 @@ OLDLIBS=$LIBS
 
 if test "$enable_login" = yes; then
 
-    CPPFLAGS="$CPPFLAGS -Icgic/"
-    LDFLAGS="$LDFLAGS -Lcgic/"
+    CPPFLAGS="$CPPFLAGS -I$srcdir/cgic/"
+    LDFLAGS="$LDFLAGS -L\$(builddir)/cgic/"
 
 AC_CHECK_HEADERS([cgic.h])
 

@@ -1,9 +1,12 @@
-#    $Id: Makefile.in,v 1.1 2002-08-15 23:47:15 jjminer Exp $
+#    $Id: Makefile.in,v 1.2 2002-10-24 19:26:49 jjminer Exp $
 
 #You may wish to add -DNO_UNISTD and -DNO_SYSTEM to CFLAGS if
 #your system lacks the /usr/include/unistd.h header file
 #or the system() function, respectively. Non-unix systems
 #will also definitely have different linker syntax.
+
+srcdir=@srcdir@
+builddir=@builddir@
 
 # potential flags CGICDEBUG
 CFLAGS=@CFLAGS@
@@ -14,18 +17,18 @@ FORCE_RM=@RM@ -f
 
 all: libcgic.a cgictest capture
 
-libcgic.a: cgic.o cgic.h
+libcgic.a: cgic.o $(srcdir)/cgic.h
 	rm -f libcgic.a
 	$(AR) rc libcgic.a cgic.o
 
 cgictest: cgictest.o libcgic.a 
-	$(CC) cgictest.o -o cgictest ${LIBS}
+	$(CC) $(CFLAGS) cgictest.o -o cgictest ${LIBS}
 
-tmp: tmp.c
-	cc -o tmp -I. tmp.c $(LIBS)
+tmp: $(srcdir)/tmp.c
+	cc -o tmp -I. $(srcdir)/tmp.c $(LIBS)
 
 capture: capture.o libcgic.a
-	$(CC) capture.o -o capture ${LIBS}
+	$(CC) $(CFLAGS) capture.o -o capture ${LIBS}
 
 clean:
 	$(FORCE_RM) *.o *.a cgictest capture
@@ -33,9 +36,8 @@ clean:
 distclean:
 	$(FORCE_RM) Makefile
 
-capture.o: capture.c Makefile
-cgic.o: cgic.c Makefile
-cgictest.o: cgictest.c Makefile
+%.o: $(srcdir)/%.c $(builddir)/Makefile
+	$(CC) $(CFLAGS) -c $<
 
 DISTDIR=cgic1.07-pubcookie1.01
 TARFILE=cgic1.07-pubcookie1.01.tar
