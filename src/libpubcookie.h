@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.23 2002-07-05 23:35:48 jjminer Exp $
+    $Id: libpubcookie.h,v 1.24 2002-08-01 00:17:58 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -193,7 +193,8 @@ enum {
     PBC_RR_WRONGAPPID_CODE =     8,
     PBC_RR_WRONGAPPSRVID_CODE =  9,
     PBC_RR_WRONGVER_CODE =       10,
-    PBC_RR_WRONGCREDS_CODE =     11
+    PBC_RR_WRONGCREDS_CODE =     11,
+    PBC_RR_BADPRES_CODE =        12
 };
 
 /* string translations of the above reasons */

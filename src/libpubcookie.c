@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.32 2002-07-05 23:35:48 jjminer Exp $
+    $Id: libpubcookie.c,v 2.33 2002-08-01 00:17:58 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -109,6 +109,7 @@ typedef  int pid_t;  /* win32 process ID */
 #include "pbc_version.h"
 #include "strlcpy.h"
 #include "security.h"
+#include "pbc_logging.h"
 
 /* CONSTANTS */
 
@@ -140,6 +141,8 @@ char PBC_S_KEYFILE[1024];
 char PBC_G_CERTFILE[1024];
 /* lives only on login server */
 char PBC_G_KEYFILE[1024];
+
+#include <sys/utsname.h>
 
 char *get_my_hostname()
 {
@@ -1377,9 +1380,12 @@ int libpbc_check_version(pbc_cookie_data *cookie_data)
 
 }
 
-/*                                                                            */
-/* check to see if whatever has timed out                                     */
-/*                                                                            */
+/** 
+ * check to see if whatever has timed out
+ * @param fromc time to be checked, format unix time
+ * @param exp number of seconds for timeout
+ * @returns PBC_OK if not expired, PBC_FAIL if expired
+ */
 int libpbc_check_exp(time_t fromc, int exp)
 {
     if( (fromc + exp) > time(NULL) )
@@ -1389,9 +1395,29 @@ int libpbc_check_exp(time_t fromc, int exp)
 
 }
 
-/*                                                                            */
-/* something that should never be executed, but shuts-up the compiler warning */
-/*                                                                            */
+/** 
+ * use openssl calls to get a random int
+ * @returns random int or -1 for error
+ */
+int libpbc_random_int()
+{
+    int i;
+    unsigned long err;
+
+    if( RAND_bytes((char *)i, sizeof(int)) != 0 ) {
+        while( (err=ERR_get_error()) )
+            pbc_log_activity(PBC_LOG_ERROR, 
+            		"OpenSSL error getting random bytes: %lu", err);
+        return(-1);
+    }
+
+    return(i);
+
+}
+
+/** 
+ * something that should never be executed, but shuts-up the compiler warning
+ */
 void libpbc_dummy()
 {
     char c;

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.89 2002-07-18 20:14:46 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.90 2002-08-01 00:17:58 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -213,9 +213,19 @@ int put_out_post(request_rec *r) {
 
 }
 
-/* make-up the token to be used to bind the granting cookie and pre-session   */
-int get_pre_s_token() {
-    return(42);
+/**
+ * get a random int used to bind the granting cookie and pre-session
+ * @returns random int or -1 for error
+ */
+int get_pre_s_token(request_rec *r) {
+    int i;
+    
+    if( (i = libpbc_random_int()) < 0 ) {
+        ap_log_rerror(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, r, 
+		"get_pre_s_token: OpenSSL error");
+    }
+
+    return(i);
 
 }
 
@@ -678,6 +688,7 @@ static int auth_failed(request_rec *r) {
     char                 misc_flag = '0';
     char                 *file_to_upld = NULL;
     const char           *referer;
+    int			 pre_sess_tok;
 #ifdef PORT80_TEST
     char *secure = "";
 #else
@@ -724,12 +735,14 @@ static int auth_failed(request_rec *r) {
     /* To knit the referer history together */
     referer = ap_table_get(r->headers_in, "Referer");
 
+    pre_sess_tok = get_pre_s_token(r);
+
     /* make the granting request */
     /* the granting request is a cookie that we set  */
     /* that gets sent up to the login server cgi, it */
     /* is our main way of communicating with it      */
     ap_snprintf(g_req_contents, PBC_4K-1, 
-          "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%s&%s=%s&%s=%d&%s=%c", 
+          "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c", 
           PBC_GETVAR_APPSRVID,
           appsrvid(r),
           PBC_GETVAR_APPID, 
@@ -756,6 +769,8 @@ static int auth_failed(request_rec *r) {
           referer,
           PBC_GETVAR_SESSION_REAUTH,
           cfg->session_reauth,
+	  PBC_GETVAR_PRE_SESS_TOK,
+          pre_sess_tok,
           PBC_GETVAR_FLAG,
           misc_flag);
 
@@ -814,7 +829,7 @@ static int auth_failed(request_rec *r) {
                                    (unsigned char *) "presesuser",
                                    PBC_COOKIE_TYPE_PRE_S, 
                                    PBC_CREDS_NONE, 
-                                   get_pre_s_token(),
+                                   pre_sess_tok,
                                    (unsigned char *)appsrvid(r), 
                                    appid(r), 
 				   NULL);
@@ -927,7 +942,6 @@ char *make_session_cookie_name(pool *p, char *cookiename, unsigned char *_appid)
     return name;
 }
 
-/*                                                                            */
 /*
  * Since we blank out cookies, they're stashed in the notes table.
  * blank_cookie only stashes in the topmost request's notes table, so
@@ -937,37 +951,38 @@ char *make_session_cookie_name(pool *p, char *cookiename, unsigned char *_appid)
  * headers because only the pointer is copied, anyway.
  */
 char *get_cookie(request_rec *r, char *name) {
-  const char *cookie_header; 
-  char *cookie, *ptr;
-  request_rec *mr = top_rrec (r);
-  char *name_w_eq;
+    const char *cookie_header; 
+    char *cookie, *ptr;
+    request_rec *mr = top_rrec (r);
+    char *name_w_eq;
 
-  /* get cookies */
-  if( (cookie_header = ap_table_get(mr->notes, name)) )
-    return ap_pstrdup(r->pool, cookie_header);
-  if(!(cookie_header = ap_table_get(r->headers_in, "Cookie")))
-    return NULL;
+    /* get cookies */
+    if( (cookie_header = ap_table_get(mr->notes, name)) )
+        return ap_pstrdup(r->pool, cookie_header);
+    if(!(cookie_header = ap_table_get(r->headers_in, "Cookie")))
+        return NULL;
 
-  /* add an equal on the end */
-  name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+    /* add an equal on the end */
+    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
 
-  /* find the one that's pubcookie */
-  if(!(cookie_header = strstr(cookie_header, name_w_eq)))
-    return NULL;
+    /* find the one that's pubcookie */
+    if(!(cookie_header = strstr(cookie_header, name_w_eq)))
+        return NULL;
 
-  cookie_header += strlen(name_w_eq);
+    cookie_header += strlen(name_w_eq);
 
-  cookie = ap_pstrdup(r->pool, cookie_header);
+    cookie = ap_pstrdup(r->pool, cookie_header);
 
-  ptr = cookie;
-  while(*ptr) {
-    if(*ptr == ';')
-      *ptr = 0;
-    ptr++;
-  }
+    ptr = cookie;
+    while(*ptr) {
+        if(*ptr == ';')
+            *ptr = 0;
+        ptr++;
+    }
 
-  blank_cookie (r, name);
-  return cookie;
+    blank_cookie(r, name);
+    return cookie;
+
 }
 
 static void pubcookie_init(server_rec *s, pool *p) {
@@ -1135,7 +1150,35 @@ void pubcookie_server_defaults(pubcookie_server_rec *scfg)
     
 }
 				 
+int get_pre_s_from_cookie(request_rec *r)
+{
+    pubcookie_dir_rec   *cfg;
+    pbc_cookie_data     *cookie_data = NULL;
+    char 		*cookie = NULL;
+    pool 		*p = r->pool;
 
+    cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config, 
+                &pubcookie_module);
+
+    if( (cookie = get_cookie(r, PBC_PRE_S_COOKIENAME)) == NULL )
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+      		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
+		r->uri);
+    else
+        cookie_data = libpbc_unbundle_cookie(cookie, ap_get_server_name(r));
+
+    if( cookie_data == NULL ) {
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+      		"get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", 
+		r->uri);
+	cfg->failed = PBC_BAD_AUTH;
+	cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
+	return -1;
+    }
+ 
+    return((*cookie_data).broken.serial);
+
+}
 
 /*                                                                            */
 static int pubcookie_user(request_rec *r) {
@@ -1148,6 +1191,7 @@ static int pubcookie_user(request_rec *r) {
   char *sess_cookie_name;
   char *new_cookie = ap_palloc( r->pool, PBC_1K);
   int cred_from_trans;
+  int pre_sess_from_cookie;
 
   if(!ap_auth_type(r))
     return DECLINED;
@@ -1220,7 +1264,7 @@ static int pubcookie_user(request_rec *r) {
   /* do we hav a session cookie for this appid? if not check the g cookie */
   if( ! cookie_data || strncasecmp( (const char *) appid(r), 
                                     (const char *) cookie_data->broken.appid, 
-                                    sizeof(cookie_data->broken.appid)-1) != 0 ) {
+                                    sizeof(cookie_data->broken.appid)-1) != 0 ){
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
 
       if( cfg->super_debug )
@@ -1229,7 +1273,7 @@ static int pubcookie_user(request_rec *r) {
       cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
       return OK;
     }
-    else {
+    else {  /* hav S cookie */
 
       cookie_data = libpbc_unbundle_cookie(cookie, NULL);
       if( ! cookie_data ) {
@@ -1278,8 +1322,21 @@ static int pubcookie_user(request_rec *r) {
     clear_granting_cookie(r);
     clear_pre_session_cookie(r);
 
-    if( cfg->super_debug )
-      libpbc_debug("super-debug: pubcookie_user: has granting; current uri is: %s\n", r->uri);
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+	"pubcookie_user: has granting; current uri is: %s\n", r->uri);
+
+    /* check pre_session cookie */
+    pre_sess_from_cookie = get_pre_s_from_cookie(r);
+    if( (*cookie_data).broken.serial != pre_sess_from_cookie ) {
+      ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
+      	"pubcookie_user, pre session tokens mismatched, uri: %s", r->uri);
+      ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+      	"pubcookie_user, pre session from G: %d PRE_S: %s, uri: %s", 
+	  (*cookie_data).broken.serial, pre_sess_from_cookie, r->uri);
+      cfg->failed = PBC_BAD_AUTH;
+      cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
+      return OK;
+    }
 
     /* the granting cookie gets blanked too early and another login */
     /* server loop is required, this just speeds up that loop */

@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.31 $
+ * $Revision: 1.32 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -71,6 +71,7 @@ typedef struct {
     int		reply;
     int		alterable_username;
     int		pinit;
+    int		pre_sess_tok;   
     char        *check_error;
     void *flavor_extension; /* used for ad-hoc purposes until
 			       we add a general extension mechanism to the

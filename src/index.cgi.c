@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.78 $
+ * $Revision: 1.79 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -348,6 +348,7 @@ void init_login_rec(login_rec *r)
     r->expire_ts = PBC_FALSE;
     r->pinit = PBC_FALSE;
     r->reply = PBC_FALSE;
+    r->pre_sess_tok = 0;
 
     r->flavor_extension = NULL;
 }
@@ -658,6 +659,7 @@ login_rec *load_login_rec(login_rec *l)
     l->reply 	      = get_int_arg(PBC_GETVAR_REPLY, 0);
     l->duration       = get_int_arg(PBC_GETVAR_DURATION, 0);
     l->pinit          = get_int_arg(PBC_GETVAR_PINIT, 0);
+    l->pre_sess_tok   = get_int_arg(PBC_GETVAR_PRE_SESS_TOK, 0);
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "load_login_rec: bye\n");
 
@@ -819,14 +821,6 @@ int has_login_cookie()
     else
         return(0);
 
-}
-
-/* we've decided not to serialize cookies, but we'll use this field          */
-/* for something else in the future                                          */
-/* why 23?  consult the stars                                                */
-int get_next_serial()
-{
-    return(23);
 }
 
 char *get_granting_request() 
@@ -1834,7 +1828,6 @@ int check_user_agent()
 
 void print_redirect_page(login_rec *l, login_rec *c)
 {
-    int			serial = 0;
     char		*g_cookie;
     char		*l_cookie;
     char		*redirect_uri;
@@ -1870,7 +1863,6 @@ void print_redirect_page(login_rec *l, login_rec *c)
     if (!(l_cookie = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
-    serial = get_next_serial();
 
     pbc_log_activity(PBC_LOG_AUDIT, "l->user=%s l->appsrvid=%s l->appid=%s",
 		    l->user, l->appsrvid, l->appid);
@@ -1882,7 +1874,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         url_encode(l->appid),
         PBC_COOKIE_TYPE_L,
 	l->creds,
-        serial,
+        0,
 	(c == NULL || c->expire_ts < time(NULL) ? compute_l_expire(l) : c->expire_ts),
         l_cookie,
         NULL, /* sending it to myself */
@@ -1896,7 +1888,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         url_encode(l->appid),
         PBC_COOKIE_TYPE_G,
         l->creds_from_greq,
-        serial,
+        l->pre_sess_tok,
         0,
         g_cookie,
         l->host,
@@ -2262,7 +2254,7 @@ int create_cookie(char *user_buf,
                   char *appid_buf,
                   char type,
                   char creds,
-                  int serial,
+                  int pre_sess_tok,
 		  time_t expire,
                   char *cookie,
                   const char *peer,
@@ -2290,8 +2282,8 @@ int create_cookie(char *user_buf,
 		       (int)expire);
 
     /* go get the cookie */
-    cookie_local = (char *) libpbc_get_cookie_with_expire(user, type, creds, serial, 
-							  expire, appsrvid, appid, peer);
+    cookie_local = (char *) libpbc_get_cookie_with_expire(user, type, creds, 
+		      pre_sess_tok, expire, appsrvid, appid, peer);
     
     strncpy (cookie, cookie_local, max);
 
