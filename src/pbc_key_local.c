@@ -17,10 +17,10 @@
 #include "pbc_version.h"
 
 void usage(const char *progname) {
-    printf("%s -a ip [-o out_file] [-i in_file] [-h]\n\n", progname);
-    printf("\t ip:       numbers-and-dots notation\n");
-    printf("\t out_file: default is stdout\n");
-    printf("\t in_file:  default is %s\n\n", PBC_CRYPT_KEYFILE);
+    printf("%s -a ip [-o out_keyfile] [-i master_keyfile] [-h]\n\n", progname);
+    printf("\t ip:              numbers-and-dots notation\n");
+    printf("\t master_keyfile:  master keyfile, default is %s\n", PBC_MASTER_CRYPT_KEYFILE);
+    printf("\t out_keyfile:     new keyfile, default is stdout\n\n");
     exit (1);
 }
 
@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
         if( ! (ifp = pbc_fopen(in_file, "r")) )
             libpbc_abend("cannot open the input key file %s for read\n", in_file);
     } else {
-        if( ! (ifp = pbc_fopen(PBC_CRYPT_KEYFILE, "r")) )
-            libpbc_abend("make localized crypt key: Failed open %s\n", PBC_CRYPT_KEYFILE);
+        if( ! (ifp = pbc_fopen(PBC_MASTER_CRYPT_KEYFILE, "r")) )
+            libpbc_abend("make localized crypt key: Failed open %s\n", PBC_MASTER_CRYPT_KEYFILE);
     }
 
     if ( out_file ) {
