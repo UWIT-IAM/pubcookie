@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.50 2004-02-19 23:07:02 fox Exp $
+ * $Id: flavor_basic.c,v 1.51 2004-03-19 17:18:26 fox Exp $
  */
 
 
@@ -596,6 +596,7 @@ static login_result process_basic(pool *p, const security_context *context,
     struct credentials *creds = NULL;
     struct credentials **credsp = NULL;
     int also_allow_cred = 0;
+    int rcode;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n" );
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
@@ -647,16 +648,13 @@ static login_result process_basic(pool *p, const security_context *context,
         }
 
         /* Make sure response is timely */
-      pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_basic: create=%d\n",
-              l->create_ts);
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+               "process_basic: create=%d\n", l->create_ts);
         if (l->create_ts && (time(NULL) > (l->create_ts+30))) {
-            print_login_page(p, l, c, FLB_FORM_EXPIRED);
-
-            pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                             "process_basic: slow form response: retry\n" );
-            return LOGIN_INPROGRESS;
-        }
-        if (v->v(p, l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
+            *errstr = "You have 30 seconds to login";
+            rcode = FLB_FORM_EXPIRED;
+        } else if (v->v(p, l->user, l->pass, NULL,
+                     l->realm, credsp, errstr) == 0) {
             if (debug) {
                 /* xxx log realm */
                 pbc_log_activity(p,  PBC_LOG_AUDIT,
@@ -742,65 +740,40 @@ static login_result process_basic(pool *p, const security_context *context,
             if ( ! libpbc_config_getswitch(p, "retain_username_on_failed_authn", 0)) {
                 l->user = NULL;	/* in case wrong username */
             }
-            print_login_page(p, l, c, FLB_BAD_AUTH);
-
-            pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                             "process_basic: login in progress, goodbye\n" );
-            return LOGIN_INPROGRESS;
+            rcode = FLB_BAD_AUTH;
         }
+
+    /* Auth request entry. */
+    /* If reauth, check time limit */
     } else if (l->session_reauth &&  
            ( (l->session_reauth==1) ||
              (c && (c->create_ts+(l->session_reauth) < time(NULL))) )) {
         *errstr = "reauthentication required";
-        pbc_log_activity(p, PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
+        rcode = FLB_REAUTH;
 
-        print_login_page(p, l, c, FLB_REAUTH);
-        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
-        return LOGIN_INPROGRESS;
-
-        /* If the pinit flag is set, show a pinit login page */
+    /* If the pinit flag is set, show a pinit login page */
     } else if (l->pinit == PBC_TRUE) {
-        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: pinit");
+        *errstr = "pinit";
+        rcode = FLB_PINIT;
 
-        print_login_page(p, l, c, FLB_PINIT);
-        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
-        return LOGIN_INPROGRESS;
-
-        /* l->check_error will be set whenever the l cookie isn't valid
-           including (for example) when the login cookie has expired.
-         */
+    /* l->check_error will be set whenever the l cookie isn't valid
+       including (for example) when the login cookie has expired.  */
     } else if (l->check_error) {
         *errstr = l->check_error;
-        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
+        if (strcmp(l->check_error,"expired")) rcode = FLB_LCOOKIE_ERROR;
+        else rcode = FLB_LCOOKIE_EXPIRED;
 
-
-        if ( strcmp(l->check_error, "expired") == 0 )
-            print_login_page(p, l, c, FLB_LCOOKIE_EXPIRED);
-        else
-            print_login_page(p, l, c, FLB_LCOOKIE_ERROR);
-
-        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
-        return LOGIN_INPROGRESS;
-
-        /* if l->check_error is NULL, then 'c' must be set and must
-           contain the login cookie information */
+    /* if l->check_error is NULL, then 'c' must be set and must
+       contain the login cookie information */
     } else if (!c) {
         pbc_log_activity(p, PBC_LOG_ERROR,
                          "flavor_basic: check_error/c invariant violated");
         abort();
 
-        /* make sure the login cookie represents credentials for this flavor */
+    /* make sure the login cookie represents credentials for this flavor */
     } else if (c->creds != PBC_BASIC_CRED_ID && c->creds != also_allow_cred) {
         *errstr = "cached credentials wrong flavor";
-        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
-
-        print_login_page(p, l, c, FLB_CACHE_CREDS_WRONG);
-        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
-        return LOGIN_INPROGRESS;
+        rcode = FLB_CACHE_CREDS_WRONG;
 
     } else { /* valid login cookie */
         pbc_log_activity(p, PBC_LOG_AUDIT,
@@ -809,6 +782,21 @@ static login_result process_basic(pool *p, const security_context *context,
                          "process_basic: L cookie valid, goodbye\n" );
         return LOGIN_OK;
     }
+
+    /* User not properly logged in.  Show login page unless quiet login */ 
+    pbc_log_activity(p, PBC_LOG_ERROR,
+            "flavor_basic: %s: %s", l->user?l->user:"(null)", *errstr);
+    if (strchr(l->flag, 'Q')) {
+       pbc_log_activity(p, PBC_LOG_ERROR,
+            "flavor_basic: quiet login, returning no user");
+       l->user = strdup("");
+       return LOGIN_OK;
+    }
+       
+    print_login_page(p, l, c, rcode);
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+                     "process_basic: login in progress, goodbye\n" );
+    return LOGIN_INPROGRESS;
 }
 
 struct login_flavor login_flavor_basic =

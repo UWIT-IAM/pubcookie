@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.69 2004-02-19 23:07:03 fox Exp $
+ * $Id: libpubcookie.c,v 2.70 2004-03-19 17:18:26 fox Exp $
  */
 
 
@@ -155,7 +155,8 @@ const char *redirect_reason[] = {
     "Wrong app server id",	/* 9 */
     "Wrong version id",		/* 10 */
     "Wrong creds",		/* 11 */
-    "Bad Pre-session Cookie" /* 12 */
+    "Bad Pre-session Cookie",   /* 12 */
+    "New Forced ReAuth"         /* 13 */
 };
 
 const char *get_my_hostname(pool *p, const security_context *context)

@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.46 2004-03-03 17:53:05 fox Exp $
+ * $Id: keyserver.c,v 2.47 2004-03-19 17:18:26 fox Exp $
  */
 
 
@@ -272,11 +272,11 @@ static int check_access_list(const char *peer)
     char **access_list = libpbc_config_getlist(p, "keyserver_client_list");
     int i;
 
-    /* if there is no access list then noone is ok */
+    /* if there is no access list then everyone is ok */
     if (access_list == NULL) {
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
-		"No keyserver_client_list, no access");
-        return(PBC_FAIL);
+		"No keyserver_client_list, hope that's ok");
+        return(PBC_OK);
     }
     
     for (i = 0; access_list[i] != NULL; i++)

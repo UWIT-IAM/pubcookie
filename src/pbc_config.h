@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.93 2004-03-09 20:06:02 jteaton Exp $
+     $Id: pbc_config.h,v 1.94 2004-03-19 17:18:26 fox Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -98,6 +98,8 @@
 #define PBC_FORM_MP_COOKIENAME "pubcookie_formmultipart"
 #define PBC_CRED_COOKIENAME "pubcookie_cred"
 #define PBC_CRED_TRANSFER_COOKIENAME "pubcookie_transcred"
+#define PBC_ODKEY_COOKIENAME "OnDemandKey"
+#define PBC_ODKEY_ENVNAME "ON_DEMAND_KEY"
 
 /* this apache module stuff should go into something like mod_pubcookie.h */
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"

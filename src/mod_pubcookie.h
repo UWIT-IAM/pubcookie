@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.6 2004-02-16 17:05:31 jteaton Exp $
+    $Id: mod_pubcookie.h,v 2.7 2004-03-19 17:18:26 fox Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -70,6 +70,7 @@
 
 /* misc prototype */
 char *make_session_cookie_name(pool *, char *, unsigned char *);
+static int load_keyed_directives(request_rec *r, char *key);
 
 module pubcookie_module;
 
@@ -106,6 +107,8 @@ typedef struct {
 
   int strip_realm;
   char *accept_realms;
+  table *keydirs;
+  int noprompt;
 } pubcookie_dir_rec;
 
 #endif /* INCLUDED_MOD_PUBCOOKIE_H */

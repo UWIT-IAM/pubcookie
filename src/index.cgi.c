@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.119 2004-03-02 16:14:44 dors Exp $
+ * $Id: index.cgi.c,v 1.120 2004-03-19 17:18:26 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2508,7 +2508,7 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
     } else {
         set_pinit_cookie(p);
     }
-    print_header(p, "%s\n", l_set_cookie);
+    if (*l->user) print_header(p, "%s\n", l_set_cookie);
     clear_greq_cookie(p);
 
     /* incase we have a relay */
