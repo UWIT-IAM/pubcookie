@@ -1,1 +1,1 @@
-msiexec /i pubcookie.msi ENTDOMAIN=".washington.edu" LOGINURI=https://weblogin.washington.edu KEYMGTURI=https://weblogin.washington.edu:2222 AUTHID=UWNETID AUTHID1="" AUTHID2=SECURID
+msiexec /i pubcookie.msi ENTDOMAIN=".washington.edu" LOGINURI=https://weblogin.washington.edu KEYMGTURI=https://weblogin.washington.edu:2222 AUTHID=UWNETID AUTHID1="" AUTHID2=SECURID RUNKEYCLIENT=1
