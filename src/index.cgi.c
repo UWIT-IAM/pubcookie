@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.94 $
+ * $Revision: 1.95 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -168,7 +168,7 @@ static char *get_file_template(const char *fname)
 
   tmpl_file = fopen (fname,"r");
   if (tmpl_file == NULL) {
-    pbc_log_activity(PBC_LOG_ERROR, "unable to pen template file %s",
+    pbc_log_activity(PBC_LOG_ERROR, "unable to open template file %s",
                      fname);
     return NULL;
   }
@@ -1207,8 +1207,11 @@ int logout(login_rec *l, login_rec *c, int logout_action)
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
 			 "logout: logout_action: %d\n", logout_action);
 
-    appid = get_string_arg(PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
-    appsrvid = get_string_arg(PBC_GETVAR_APPSRVID, NO_NEWLINES_FUNC);
+    /* get appid and appsrvid from env */
+    if( (appid=get_string_arg(PBC_GETVAR_APPID,NO_NEWLINES_FUNC)) == NULL )
+        appid = strdup("");
+    if( (appsrvid=get_string_arg(PBC_GETVAR_APPSRVID,NO_NEWLINES_FUNC)) == NULL)
+        appsrvid = strdup("");
 
     clear_greq_cookie();     /* just in case there in one lingering */
 
@@ -1302,6 +1305,7 @@ int check_logout(login_rec *l, login_rec *c)
     char *logout_prog;
     char *uri;
     char *p;
+    char *new_uri;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
 			 "check_logout: program name: %s\n", cgiScriptName);
@@ -1321,14 +1325,13 @@ int check_logout(login_rec *l, login_rec *c)
     uri = strdup(cgiScriptName);
 
     /* remove multiple slashes */
-    p = uri;
+    p = new_uri = uri;
     while( *p ) {
-        if( p-1 >= uri && *p == '/' &&  *(p-1) == '/' )
-            ;
-        else
-            p++;
+        if( p == uri || (*p != '/' &&  *(p-1) != '/') )
+            *new_uri++ = *p;
+        p++;
     }
-    *p = '\0';
+    *new_uri = '\0';
 
     if(logout_prog != NULL && uri != NULL &&
        strcasecmp(logout_prog, uri) == 0 ) {
