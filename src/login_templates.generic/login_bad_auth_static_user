@@ -1,3 +1,4 @@
+<!-- begin tmpl login_bad_auth_static_user -->
 <P>
   <B>
     <FONT COLOR="#FF0000" SIZE="+1">Login failed.  Please re-enter.</FONT>
@@ -8,3 +9,5 @@
 <p>
   Please make sure your <b>Caps Lock key is OFF</b> and your <b>Number Lock key is ON</b>.
 </p>
+<!-- end tmpl login_bad_auth_static_user -->
+

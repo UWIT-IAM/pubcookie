@@ -1,3 +1,5 @@
+<!-- begin tmpl login_unauth_grant -->
 <p>The application that sent you here is not authorized to
-request weblogin</p>
+request login.</p>
+<!-- end tmpl login_unauth_grant -->
 
