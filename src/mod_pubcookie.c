@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.141 2004-04-14 20:52:40 jteaton Exp $
+ * $Id: mod_pubcookie.c,v 1.142 2004-04-28 21:06:05 willey Exp $
  */
 
 
@@ -839,7 +839,9 @@ static int stop_the_show_handler(request_rec *r)
     ap_rprintf(r, " </HEAD>\n");
     ap_rprintf(r, " <BODY BGCOLOR=\"#FFFFFF\">\n");
     ap_rprintf(r, "  <H1>A problem has occurred</H1>\n");
-    ap_rprintf(r, "  <P>%s</P>\n", cfg->stop_message);
+    ap_rprintf(r, "  <P>Please contact %s</P>\n", r->server->server_admin);
+    ap_rprintf(r, "  <P>Error message: \"%s\"</P>\n", 
+		(cfg->stop_message == NULL ? "" : cfg->stop_message) );
     ap_rprintf(r, "  <P>Hitting Refresh will attempt to ");
     ap_rprintf(r, "  resubmit your request</P>\n");
     ap_rprintf(r, " </BODY>\n");
@@ -1529,7 +1531,8 @@ int get_pre_s_from_cookie(request_rec *r)
         ap_log_rerror(PC_LOG_INFO, r, 
       		"get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", 
 		r->uri);
-	cfg->failed = PBC_BAD_AUTH;
+	cfg->failed = PBC_BAD_G_STATE;
+        cfg->stop_message = ap_pstrdup(p, "Couldn't decode pre-session cookie");
 	cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
 	return -1;
     }
@@ -1634,7 +1637,8 @@ static int pubcookie_user(request_rec *r) {
 	  		"can't unbundle G cookie; uri: %s\n", r->uri);
             ap_log_rerror(PC_LOG_INFO, r, 
 	  		"cookie is:\n%s\n", cookie);
-	  cfg->failed = PBC_BAD_AUTH;
+	  cfg->failed = PBC_BAD_G_STATE;
+          cfg->stop_message = ap_pstrdup(p, "Couldn't decode granting message");
 	  cfg->redir_reason_no = PBC_RR_BADG_CODE;
 	  return OK;
         }
@@ -1724,7 +1728,8 @@ static int pubcookie_user(request_rec *r) {
                   cfg->hard_exp,
                   time(NULL),
                   r->uri);
-          cfg->failed = PBC_BAD_AUTH;
+          cfg->failed = PBC_BAD_G_STATE;
+          cfg->stop_message = ap_pstrdup(p, "Expired granting message, clock set correctly?");
           cfg->redir_reason_no = PBC_RR_SHARDEX_CODE;
           return OK;
         }
@@ -2108,6 +2113,11 @@ static int pubcookie_typer(request_rec *r) {
       } else set_session_cookie(r, first_time_in_session);
     }
     return DECLINED;
+  } else if(cfg->failed == PBC_BAD_G_STATE) {
+    ap_log_rerror(PC_LOG_DEBUG, r,
+      			"pubcookie_typer: Can't use Granting cookie");
+    r->handler = PBC_STOP_THE_SHOW_HANDLER;
+    return OK;
   } else if(cfg->failed == PBC_BAD_AUTH) {
     ap_log_rerror(PC_LOG_DEBUG, r,
       			"pubcookie_typer: bad auth");
