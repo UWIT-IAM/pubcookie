@@ -63,9 +63,29 @@ CODE facilitynames[] =
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"
 
-static pbc_open_log *olog;
-static pbc_log_func *logf;
-static pbc_close_log *clog;
+static void mylog(int logging_level, const char *mymsg);
+
+static pbc_open_log *olog = NULL;
+static pbc_log_func *logf = &mylog;
+static pbc_close_log *clog = NULL;
+
+#if defined (WIN32)
+/* xxx is there a better win32 function? */
+
+extern int Debug_Trace;
+extern FILE *debugFile;  /* from PubcookieFilter */
+
+static void mylog(int logging_level, const char *mymsg)
+{
+    /* xxx should we prepend the time? */
+
+    OutputDebugString(mymsg);  /* win32 debugging */
+    if ( debugFile ) {
+        fprintf(debugFile,"%s",buff);
+    }
+}
+
+#else
 
 static void mylog(int logging_level, const char *mymsg)
 {
@@ -99,6 +119,8 @@ static void mylog(int logging_level, const char *mymsg)
     syslog(LOG_MAKEPRI(LOG_FAC(fac),pri), "%s", mymsg);
 }
 
+#endif
+
 void pbc_log_init(const char *ident,
                   pbc_open_log *o, pbc_log_func *l, pbc_close_log *c)
 {
@@ -115,8 +137,10 @@ void pbc_log_init(const char *ident,
         ident = "pubcookie";
     }
 
-    /* open syslog - we are appending the PID to the log */
-    olog((char *) ident, LOG_PID, LOG_AUTHPRIV);
+    if (olog) {
+        /* open syslog - we are appending the PID to the log */
+        olog((char *) ident, LOG_PID, LOG_AUTHPRIV);
+    }
 }
 
 
@@ -136,7 +160,7 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
     char      log[PBC_4K];
         
     if (logging_level <= (libpbc_config_getint("logging_level", logging_level))) {
-
+        /* xxx deal with %m here? */
         vsnprintf(log, sizeof(log)-1, format, args);
         
         logf(logging_level, log);
@@ -145,7 +169,9 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 
 void pbc_log_close()
 {
-    clog();
+    if (clog) {
+        clog();
+    }
 }
 
 #if 0
