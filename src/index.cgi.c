@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.8 2000-08-17 21:53:25 willey Exp $
+    $Id: index.cgi.c,v 1.9 2000-08-22 18:10:58 willey Exp $
  */
 
 
@@ -511,17 +511,16 @@ int cgiMain()
 
     /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
     /*                                                                   */
-    /* the following text should be updated for support for POST         */
     /*                                                                   */
     /* four cases for the main thingie                                   */
-    /*   - first time or creds include securid:                          */
+    /*   - no prev login or creds include securid:                       */
     /*         in: no L cookie, bunch of GET data                        */
     /*               OR creds include securid info in g req              */
     /*         out: the login page (includes data from g req)            */
     /*                                                                   */
     /*   - not first time (have L cookie) but L cookie expired or invalid*/
     /*         in: expired or invalid L cookie, g req                    */
-    /*         out: the login page (includes data from g req             */
+    /*         out: the login page (includes data from g req)            */
     /*                                                                   */
     /*   - not first time (have L cookie) L cookie not expired and valid */
     /*         in: valid L cookie, g req                                 */
@@ -531,8 +530,6 @@ int cgiMain()
     /*         in: POST data that include creds                          */
     /*         process: validate creds                                   */
     /*         out: if successful L & G cookies redirect else login page */
-    /*                                                                   */
-    /* the above text should be updated for support for POST             */
     /*                                                                   */
     /*                                                                   */
     /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
@@ -558,23 +555,23 @@ int cgiMain()
                     AUTH_TROUBLE,
                     PBC_EM1_END);
             }
-            print_login_page(l, message, "bad auth", NO_CLEAR_LOGIN);
+            print_login_page(l, message, "bad auth", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
             exit(0);
         }
         log_message("Authentication success: %s type: %d", l->user, l->creds);
     }
     else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {             /* securid */
         log_message("securid implies reauth by %s at %s", l->host, l->appid);
-        print_login_page(l, PRINT_LOGIN_PLEASE, "securid", YES_CLEAR_LOGIN);
+        print_login_page(l, PRINT_LOGIN_PLEASE, "securid requires reauth", YES_CLEAR_LOGIN, YES_CLEAR_GREQ);
         exit(0);
     }
     else if ( !has_login_cookie() ) {          /* no l cookie, must login */
-        print_login_page(l, PRINT_LOGIN_PLEASE, "no L cookie yet", NO_CLEAR_LOGIN);
+        print_login_page(l, PRINT_LOGIN_PLEASE, "no L cookie yet", NO_CLEAR_LOGIN, YES_CLEAR_GREQ);
         exit(0);
     }
     else if ( (res=check_l_cookie(l)) ) {      /* problem w/ the l cookie*/
         log_message("Login cookie bad: %s", res);
-        print_login_page(l, PRINT_LOGIN_PLEASE, res, YES_CLEAR_LOGIN);
+        print_login_page(l, PRINT_LOGIN_PLEASE, res, YES_CLEAR_LOGIN, YES_CLEAR_GREQ);
         exit(0);
     }
 
@@ -601,15 +598,15 @@ void print_form_field(char *field, char *var) {
     else
         field_type = strdup("password");
 
-    print_out("%s\n", field);
-    print_out("<INPUT TYPE=\"%s\" ", field_type);
-    print_out("NAME=\"%s\" SIZE=\"20\">\n", var);
     print_out("<P>\n");
+    print_out("%s\n", field);
+    print_out("<input type=\"%s\" ", field_type);
+    print_out("name=\"%s\" SIZE=\"20\">\n", var);
 
 }
 
 
-void print_login_page(login_rec *l, char *message, char *reason, int need_clear_login)
+void print_login_page(login_rec *l, char *message, char *reason, int need_clear_login, int need_clear_greq)
 {
     char	*log_in_with = NULL;
     char	*field1 = NULL;
@@ -639,7 +636,16 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
 
     print_out("Content-Type: text/html\n");
     if( need_clear_login ) 
-        print_out("Set-Cookie: %s=clear; domain=%s; path=%s; expires=Fri, 11-Jan-1990 00:00:01 GMT; secure\n", PBC_L_COOKIENAME, hostname, LOGIN_DIR);
+        print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+            PBC_L_COOKIENAME, 
+            hostname, 
+            LOGIN_DIR, 
+            EARLIEST_EVER);
+    if( need_clear_greq ) 
+        print_out("Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
+            PBC_G_REQ_COOKIENAME, 
+            G_REQ_RECIEVED,
+            PBC_ENTRPRS_DOMAIN);
     print_out("\n");
 
     print_login_page_part1(YES_FOCUS);
@@ -894,7 +900,7 @@ void notok_no_g_or_l()
 
     print_out("<NOSCRIPT>\n");
 
-    print_out("%s", NOTOK_NO_G_OR_L_TEXT1);
+    print_out("%s\n", NOTOK_NO_G_OR_L_TEXT1);
 
     print_out("</NOSCRIPT>\n");
 
@@ -939,16 +945,22 @@ void notok ( void (*notok_f)() )
 
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), PBC_FORM_MP_COOKIENAME) ) {
-        print_out("Set-Cookie: %s=done; domain=.washington.edu; path=/; expires=Fri, 11-Jan-1990 00:00:01 GMT", PBC_FORM_MP_COOKIENAME);
+        print_out("Set-Cookie: %s=done; domain=%s; path=/; expires=%s\n", 
+            PBC_FORM_MP_COOKIENAME, 
+            PBC_ENTRPRS_DOMAIN, 
+            EARLIEST_EVER);
     }
 
+    /* newline that ends the header info */
     print_out("\n");
 
     print_login_page_part1(NO_FOCUS);
+    print_out("<td valign=\"middle\">\n");
     print_uwnetid_logo();
 
     notok_f();
 
+    print_out("</td>\n</tr>\n");
     print_login_page_bottom();
 
 }
@@ -992,21 +1004,21 @@ int cookie_test()
 /*	################################### The beginning of the table        */
 void print_table_start()
 {
-    print_out("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=580>\n");
+    print_out("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"580\">\n");
 
 }
 
 /*	################################### da copyright, it's ours!          */
 void print_copyright()
 {
-    print_out("<address>&copy; 2000 University of Washington</address>\n");
+    print_out("<address>&#169; 2000 University of Washington</address>\n");
 
 }
 
 /*	################################### UWNetID Logo                      */
 void print_uwnetid_logo()
 {
-    print_out("<IMG SRC=\"/images/login.gif\" ALT=\"\" HEIGHT=\"64\" WIDTH=\"208\">\n");
+    print_out("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\">\n");
 
 }
 
@@ -1014,38 +1026,38 @@ void print_uwnetid_logo()
 void print_login_page_part1(int focus)
 {
     print_out("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-    print_out("<HTML>\n");
-    print_out("<HEAD>\n");
-    print_out("<TITLE>UW NetID Login</TITLE>\n");
-    print_out("</HEAD>\n");
+    print_out("<html>\n");
+    print_out("<head>\n");
+    print_out("<title>UW NetID Login</title>\n");
+    print_out("</head>\n");
 
     if( focus ) {
-        print_out("<BODY BGCOLOR=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n");
+        print_out("<body bgcolor=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n");
     }
     else {
-        print_out("<BODY BGCOLOR=\"#FFFFFF\">\n");
+        print_out("<body bgcolor=\"#FFFFFF\">\n");
     }
 
-    print_out("<CENTER>\n");
+    print_out("<center>\n");
 
     print_table_start();
     
-    print_out("<TR>\n");
+    print_out("<tr>\n");
 }
 
 /*	################################### left hand side of big table       */
 void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
 {
-    print_out("<td width=\"310\" valign=\"MIDDLE\">");
+    print_out("<td width=\"310\" valign=\"middle\">\n");
 
     print_uwnetid_logo();
 
     /* any additional messages and hints from the cgi */
     if( reason != NULL ) 
-        print_out("<!-- -- %s -- -->\n\n", reason);
+        print_out("<!-- %s -->\n\n", reason);
 
     /* open the form */
-    print_out("\n<FORM METHOD=\"POST\" ACTION=\"/\" ENCTYPE=\"application/x-www-form-urlencoded\" NAME=\"query\">\n");
+    print_out("\n<form method=\"POST\" action=\"/\" enctype=\"application/x-www-form-urlencoded\" name=\"query\">\n");
 
     /* text before the for fields */
     if( message != NULL && strcmp(message, PRINT_LOGIN_PLEASE) ) {
@@ -1054,7 +1066,6 @@ void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
     else {
         print_out("<P>The resource you requested requires you to log in ");
         print_out(" with your %s.</P>\n", log_in_with);
-        print_out("<P>\n");
     }
 
 }
@@ -1062,9 +1073,8 @@ void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
 /*	################################### more, left hand side of big table */
 void print_login_page_lhs2(login_rec *l)
 {
-    print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Login\">\n");
-    print_out("</strong></p>\n");
-    print_out("<P>\n");
+    print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Login\">");
+    print_out("</strong>\n");
     print_login_page_hidden_stuff(l);
     print_out("</form>\n");
     print_out("</td>\n");
@@ -1076,8 +1086,7 @@ void print_login_page_lhs2(login_rec *l)
 void print_login_page_centre()
 {
     print_out("<td width=\"2\" bgcolor=\"#000000\">\n");
-    print_out("<img src=\"/images/1pixffcc33iystpiwfy.gif\" width=\"1\" height=\"1\" align=\"BOTTOM\" alt=\"\">\n");
-    print_out("</td>\n");
+    print_out("<img src=\"/images/1pixffcc33iystpiwfy.gif\" width=\"1\" height=\"1\" align=\"BOTTOM\" alt=\"\"></td>\n");
     print_out("<td width=\"9\">&nbsp;</td>\n");
 
 }
@@ -1089,37 +1098,21 @@ void print_login_page_rhs()
     print_out("<td width=\"250\" valign=\"MIDDLE\">\n");
     print_out("<dl>\n");
     print_out("<dt>Need a UW NetID?</dt>\n");
-    print_out("\n");
-    print_out("<dd><a href=\"https://accounts.washington.edu/new/new\">\n");
-    print_out("Students</a></dd>\n");
-    print_out("\n");
-    print_out("<dd><a href=\"https://accounts.washington.edu/new/new?type=staff\">\n");
-    print_out("Faculty or staff</a></dd>\n");
+    print_out("<dd><a href=\"https://accounts.washington.edu/new/new\">Students</a></dd>\n");
+    print_out("<dd><a href=\"https://accounts.washington.edu/new/new?type=staff\">Faculty or staff</a></dd>\n");
     print_out("</dl>\n");
-    print_out("\n");
     print_out("<dl>\n");
     print_out("<dt>Forget your password?</dt>\n");
-    print_out("\n");
-    print_out("<dd><a href=\"https://accounts.washington.edu/renew/renew\">\n");
-    print_out("Students</a></dd>\n");
-    print_out("\n");
-    print_out("<dd><a href=\n");
-    print_out("\"http://www.washington.edu/computing/uwnetid/password/forget.html#FAC\">\n");
-    print_out("Faculty or staff</a></dd>\n");
+    print_out("<dd><a href=\"https://accounts.washington.edu/renew/renew\">Students</a></dd>\n");
+    print_out("<dd><a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html#FAC\">Faculty or staff</a></dd>\n");
     print_out("</dl>\n");
-    print_out("\n");
     print_out("<dl>\n");
     print_out("<dt>Have a question?</dt>\n");
-    print_out("\n");
-    print_out("<dd><a href=\"mailto:help@cac.washington.edu\">\n");
-    print_out("help@cac.washington.edu</a></dd>\n");
+    print_out("<dd><a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a></dd>\n");
     print_out("</dl>\n");
-    print_out("\n");
     print_out("<dl>\n");
     print_out("<dt>Want to know more?</dt>\n");
-    print_out("\n");
-    print_out("<dd><a href=\"http://www.washington.edu/computing/uwnetid/\">About UW\n");
-    print_out("NetIDs</a></dd>\n");
+    print_out("<dd><a href=\"http://www.washington.edu/computing/uwnetid/\">About UW NetIDs</a></dd>\n");
     print_out("</dl>\n");
     print_out("</td>\n");
 
@@ -1130,38 +1123,38 @@ void print_login_page_hidden_stuff(login_rec *l)
 {
 
     print_out("\n");
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"one\" VALUE=\"%s\">\n", 
+    print_out("<input type=\"hidden\" name=\"one\" value=\"%s\">\n", 
 		(l->appsrvid ? l->appsrvid : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"two\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"two\" value=\"%s\">\n",
 		(l->appid ? l->appid : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"three\" VALUE=\"%c\">\n", l->creds);
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"four\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"three\" value=\"%c\">\n", l->creds);
+    print_out("<input type=\"hidden\" name=\"four\" value=\"%s\">\n",
 		(l->version ? l->version : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"five\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"five\" value=\"%s\">\n",
 		(l->method ? l->method : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"six\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"six\" value=\"%s\">\n",
 		(l->host ? l->host : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"seven\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"seven\" value=\"%s\">\n",
 		(l->uri ? l->uri : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"eight\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"eight\" value=\"%s\">\n",
 		(l->args ? l->args : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"fr\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"fr\" value=\"%s\">\n",
 		(l->fr ? l->fr : "") );
 
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"real_hostname\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"real_hostname\" value=\"%s\">\n",
 		(l->real_hostname ? l->real_hostname : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"appsrv_err\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"appsrv_err\" value=\"%s\">\n",
 		(l->appsrv_err ? l->appsrv_err : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"file\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"file\" value=\"%s\">\n",
 		(l->file ? l->file : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"flag\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"flag\" value=\"%s\">\n",
 		(l->flag ? l->flag : "") );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"next_securid\" VALUE=\"%d\">\n",
+    print_out("<input type=\"hidden\" name=\"next_securid\" value=\"%d\">\n",
 		(l->next_securid ? l->next_securid : 0) );
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"referer\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"referer\" value=\"%s\">\n",
 		(l->referer ? l->referer : "") );
 
-    print_out("<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"%s\">\n",
+    print_out("<input type=\"hidden\" name=\"post_stuff\" value=\"%s\">\n",
 		(l->post_stuff ? l->post_stuff : "") );
 
 }
@@ -1171,7 +1164,7 @@ void print_login_page_bottom()
 {
 
     print_out("<tr>\n");
-    print_out("<td colspan=\"5\" align=\"CENTER\">\n");
+    print_out("<td colspan=\"5\" align=\"center\">\n");
     print_copyright();
     print_out("</td>\n");
     print_out("</tr>\n");
@@ -1189,13 +1182,9 @@ void print_login_page_expire_info()
     print_out("</tr>\n");
     print_out("\n");
     print_out("<tr>\n");
-    print_out("<td colspan=\"5\" align=\"CENTER\">\n");
-    print_out("<p>Login gives you 8-hour access without repeat login to UW\n");
-    print_out("NetID-protected Web resources.</p>\n");
-    print_out("\n");
-    print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent\n");
-    print_out("unauthorized use! Close all Web browser windows and Web-enabled\n");
-    print_out("applications when you are finished.</p>\n");
+    print_out("<td colspan=\"5\" align=\"center\">\n");
+    print_out("<p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>\n");
+    print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use! Close all Web browser windows and Web-enabled applications when you are finished.</p>\n");
     print_out("</td>\n");
     print_out("</tr>\n");
 
@@ -1266,6 +1255,8 @@ void print_redirect_page(login_rec *l)
     char		g_set_cookie[PBC_1K];
     char		l_set_cookie[PBC_1K];
     char		clear_g_req_cookie[PBC_1K];
+    char		*post_stuff_lower = NULL;
+    char		*p = NULL;
     int			g_res, l_res;
     int			limitations_mentioned = 0;
     char		*submit_value = NULL;
@@ -1320,7 +1311,7 @@ fprintf(stderr, "in print_redirect_page got cookies\n");
       		PBC_EM2_START,
 		PROBLEMS_PERSIST,
          	PBC_EM2_END);
-          print_login_page(l, message, "cookie create failed", NO_CLEAR_LOGIN);
+          print_login_page(l, message, "cookie create failed", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
           log_error(1, "system-problem", 0, "Not able to create cookie for user %s at %s-%s", l->user, l->appsrvid, l->appid);
           free(message);
           return;
@@ -1330,19 +1321,20 @@ fprintf(stderr, "in print_redirect_page cookies are ok\n");
 
     /* create the http header line with the cookie */
     snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
-		"Set-Cookie: %s=%s; domain=.washington.edu; path=/; secure", 
+		"Set-Cookie: %s=%s; domain=%s; path=/; secure", 
 		PBC_G_COOKIENAME,
-                g_cookie);
+                g_cookie,
+                PBC_ENTRPRS_DOMAIN);
     snprintf( l_set_cookie, sizeof(l_set_cookie)-1, 
 		"Set-Cookie: %s=%s; domain=%s; path=%s; secure", 
 		PBC_L_COOKIENAME,
                 l_cookie,
                 get_domain_hostname(),
                 LOGIN_DIR);
-    snprintf( clear_g_req_cookie, sizeof(g_set_cookie)-1, 
-		"Set-Cookie: %s=done; domain=.washington.edu; path=/; expires=%s",
+    snprintf( clear_g_req_cookie, sizeof(l_set_cookie)-1, 
+		"Set-Cookie: %s=clear; domain=%s; path=/; secure", 
 		PBC_G_REQ_COOKIENAME,
-		EARLIEST_EVER);
+                PBC_ENTRPRS_DOMAIN);
 
     /* whip up the url to send the browser back to */
     if( !strcmp(l->fr, "NFR") )
@@ -1387,14 +1379,27 @@ fprintf(stderr, "these are the post args %s\n", l->post_stuff);
 	/* when the page loads click on the last element */
         /* (which will always be the submit) in the array */
         /* of elements in the first, and only, form. */
-	print_out("<BODY BGCOLOR=\"white\" onLoad=\"document.forms[0].elements[document.forms[0].elements.length-1].click()\">\n");
-	print_out("<CENTER>");
-        print_table_start();
-	print_out("<TR><TD ALIGN=\"LEFT\">\n");
+	print_out("<BODY BGCOLOR=\"white\" onLoad=\"");
 
-	print_out("<FORM METHOD=\"POST\" ACTION=\"%s\" ", redirect_dest);
-        print_out("ENCTYPE=\"application/x-www-form-urlencoded\" ");
-        print_out("NAME=\"query\">\n");
+        /* depending on whether-or-not there is a SUBMIT field in the form */
+        /* use the correct javascript to autosubmit the POST */
+        post_stuff_lower = strdup(l->post_stuff);
+        for(p=post_stuff_lower; *p != '\0'; p++)
+            *p = tolower(*p);
+        if( strstr(post_stuff_lower, "submit") != NULL )
+            print_out("document.query.submit.click()");
+        else
+            print_out("document.query.submit");
+
+        print_out("\">\n");
+
+	print_out("<center>");
+        print_table_start();
+	print_out("<tr><td align=\"LEFT\">\n");
+
+	print_out("<form method=\"POST\" action=\"%s\" ", redirect_dest);
+        print_out("enctype=\"application/x-www-form-urlencoded\" ");
+        print_out("name=\"query\">\n");
 
         c = cgiFormEntryFirst;
         while (c) {
@@ -1409,8 +1414,8 @@ fprintf(stderr, "these are the post args %s\n", l->post_stuff);
                     print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
                     limitations_mentioned++;
                 }
-                print_out("<TEXTAREA COLS=0 ROWS=0 NAME=\"%s\">\n", c->attr);
-                print_out("%s</TEXTAREA>", c->value);
+                print_out("<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n", c->attr);
+                print_out("%s</textarea>", c->value);
                 print_out("<P>\n");
             }
             else {
@@ -1419,8 +1424,8 @@ fprintf(stderr, "these are the post args %s\n", l->post_stuff);
                     submit_value = c->value;
                 }
                 else {
-                    print_out("<INPUT TYPE=\"hidden\" ");
-		    print_out("NAME=\"%s\" VALUE='%s'>\n", c->attr, c->value);
+                    print_out("<input type=\"hidden\" ");
+		    print_out("name=\"%s\" value='%s'>\n", c->attr, c->value);
                 }
     	    }
 
@@ -1430,21 +1435,21 @@ fprintf(stderr, "these are the post args %s\n", l->post_stuff);
         } /* while c */
 
 
-        print_out("</TD></TR>\n");
+        print_out("</td></tr>\n");
         print_uwnetid_logo();
         print_out("<P>");
         print_out("%s\n", PBC_POST_NO_JS_TEXT);
-        print_out("</TD></TR></TABLE>\n");
+        print_out("</td></tr></table>\n");
 
         /* put submit at the bottom so it looks better and */
         if( submit_value )
-            print_out("<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\'%s\'>\n", submit_value);
+            print_out("<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
         else
-            print_out("<INPUT TYPE=\"SUBMIT\" VALUE=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
+            print_out("<input type=\"submit\" value=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
 
-        print_out("</FORM>\n");
+        print_out("</form>\n");
         print_copyright();
-        print_out("</CENTER>");
+        print_out("</center>");
         print_out("</BODY></HTML>\n");
     }
     else {
@@ -1452,8 +1457,8 @@ fprintf(stderr, "these are the post args %s\n", l->post_stuff);
         /* non-post redirect area                 non-post redirect area */
         /*                                                               */
         print_out("Content-Type: text/html\n\n\n");
-        print_out("<HTML><HEAD>\n");
-        print_out("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%s;URL=%s\">\n", REFRESH, redirect_dest);
+        print_out("<html><head>\n");
+        print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_dest);
         print_out("<BODY BGCOLOR=\"white\">");
         print_out("<!--redirecting to %s-->", redirect_dest);
         print_out("</BODY></HTML>\n");
@@ -1490,7 +1495,7 @@ fprintf(stderr, "past that printf\n");
     if( !l->user ) {
         if( !(g_req = get_granting_request()) ) {
             log_message("no granting request cookie");
-            notok(notok_generic);
+            notok(notok_no_g_or_l);
             return(NULL);
         }
         g_req_clear = decode_granting_request(g_req);
@@ -1744,7 +1749,7 @@ char *auth_securid(char *username, char *sid, int next, login_rec *l)
 
     /* securid and next prn */
     if( (intret=securid(username, sid,0,SECURID_TYPE_NORM,SECURID_DO_SID) == -1) ) {
-         print_login_page(l, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN);
+         print_login_page(l, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
     } 
     else if( intret == 0 ) {
         return(NULL);
