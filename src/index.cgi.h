@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.50 2004-08-11 00:41:00 willey Exp $
+  $Id: index.cgi.h,v 1.51 2004-08-23 21:48:35 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -79,13 +79,21 @@ struct browser {
 
 typedef struct browser browser_rec;
 
+typedef enum {
+    NOTOK_OK = 0,                   /* really ok */
+    NOTOK_GENERIC = 1,              /* who knows? */
+    NOTOK_FORMMULTIPART = 2,        /* we don't support form multipart */
+    NOTOK_BADAGENT = 3,             /* not a supported or supportable browser */
+    NOTOK_NEEDSSL = 4               /* requires ssl */
+} notok_event;
+
 #define FREE_RIDE_MESSAGE "You entered it less than 10 minutes ago.<BR>\n"
 
 /* prototypes */
 int cgiMain();
 void abend(pool *, char *);
 int cookie_test(pool *, const security_context *, login_rec *, login_rec *);
-void notok(pool *, void (*)() );
+void notok(pool *, notok_event, char *);
 void print_http_header(pool *);
 void notok_need_ssl(pool *);
 void notok_formmultipart(pool *);
@@ -179,36 +187,6 @@ void print_header(pool *, const char *format, ...);
 /* flags to send to print_login_page_part1 */
 #define YES_FOCUS 1
 #define NO_FOCUS 0
-
-/* text */
-
-#define NOTOK_FORMMULTIPART_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \
-\
-<p><b><font size=\"+1\">The resource you requested requires \"multipart/form-data\" capabilities not supported by the UW NetID \"weblogin\" service. Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a> for further assistance.</font></b></p>\
-\
-"
-
-#define NOTOK_BAD_AGENT_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">This browser is either incompatible or has serious security flaws.</font></B></P>\
-\
-<p><b><font size=\"+1\">Please upgrade to the most recent version of either <A HREF=\"http://home.netscape.com/computing/download/index.html\">Netscape Navigator</A>, <A HREF=\"http://www.microsoft.com/windows/ie/default.htm\">Internet Explorer</A>, or <A HREF=\"http://www.opera.com/\">Opera</A>.  "
-
-#define NOTOK_BAD_AGENT_TEXT2 "<P>\
-\
-Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a> for further assistance.</font></b></p>\
-\
-<p>&nbsp;</p>\
-"
-
-#define NOTOK_GENERIC_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \
-\
-<p>Review <A HREF=\"http://www.washington.edu/computing/web/login-problems.html\">Common Problems With the UW NetID Login Page</A> for further advice.</p>\
-\
-<p>&nbsp;</p>\
-"
-
-#define NOTOK_NEEDSSL_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \n\
-<P>This service requires a SSL protected connection.<BR>\n\
-"
 
 /* how big can a filled-in template be? */
 #define MAX_EXPANDED_TEMPLATE_SIZE (110*1024)

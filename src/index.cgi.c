@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.137 2004-08-20 22:56:33 willey Exp $
+ * $Id: index.cgi.c,v 1.138 2004-08-23 21:48:35 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -901,7 +901,7 @@ void abend(pool *p, char *message)
     pbc_log_activity(p, PBC_LOG_ERROR, "abend", message);
     pbc_log_close(p);
 
-    notok(p, notok_generic);
+    notok(p, NOTOK_GENERIC, NULL);
     do_output(p);
     exit(0);
 
@@ -1869,7 +1869,7 @@ int cgiMain()
     /* bail if not ssl */
     if (!getenv("HTTPS") || strcmp( getenv("HTTPS"), "on" ) ) { 
         /* instead of just bailing, why not just redirect to an SSL port */
-        /* notok(p, notok_need_ssl); */
+        /* notok(p, NOTOK_NEED_SSL, NULL); */
 
         char * redirect_final;
 
@@ -1932,7 +1932,7 @@ int cgiMain()
 			 user_agent(p), 
 			 l->user == NULL ? "(null)" : l->user, 
 			 cgiRemoteAddr);
-        notok(p, notok_bad_agent);
+        notok(p, NOTOK_BADAGENT, NULL);
 	goto done;
     }
     
@@ -2054,35 +2054,11 @@ char *check_l_cookie(pool *p, const security_context *context, login_rec *l, log
 /*	functions                                                          */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
-void notok_formmultipart(pool *p) 
+/* show a nice page when things don't go well */
+void notok (pool *p, notok_event event, char *reason)
 {
-    print_html(p, "%s", NOTOK_FORMMULTIPART_TEXT1);
+    char *subtext = NULL;
 
-}
-
-void notok_need_ssl(pool *p) 
-{
-    print_html(p, "%s", NOTOK_NEEDSSL_TEXT1);
-    pbc_log_activity(p, PBC_LOG_AUDIT,
-		     "host %s came in on a non-ssl port, why?", cgiRemoteAddr);
-}
-
-void notok_bad_agent(pool *p) 
-{
-    print_html(p, "%s", NOTOK_BAD_AGENT_TEXT1);
-    print_html(p, "The browser you are using identifies itself as:<P><TT></TT>",
-                 cgiUserAgent);
-    print_html(p, "%s", NOTOK_BAD_AGENT_TEXT2);
-}
-
-void notok_generic(pool *p) 
-{
-    print_html(p, "%s", NOTOK_GENERIC_TEXT1);
-
-}
-
-void notok (pool *p,  void (*notok_f)() )
-{
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), 
 					 PBC_FORM_MP_COOKIENAME) ) {
@@ -2093,17 +2069,45 @@ void notok (pool *p,  void (*notok_f)() )
                      enterprise_domain(p), 
 		     EARLIEST_EVER);
     }
+ 
+    switch(event) {
+        case NOTOK_BADAGENT:
+            subtext = ntmpl_sub_template(p, TMPL_FNAME,
+			libpbc_config_getstring(p, "tmpl_notok_badagent",
+                        "notok_badagent"), 
+			"browser", (cgiUserAgent == NULL ? "" : cgiUserAgent), 
+			NULL); 
+            break;
+        case NOTOK_FORMMULTIPART:
+            subtext = ntmpl_sub_template(p, TMPL_FNAME,
+			libpbc_config_getstring(p, "tmpl_notok_form_multipart",
+                        "notok_form_multipart"), NULL); 
+            break;
+        case NOTOK_NEEDSSL:
+            subtext = ntmpl_sub_template(p, TMPL_FNAME,
+			libpbc_config_getstring(p, "tmpl_notok_needssl",
+                        "notok_needssl"), NULL); 
+            pbc_log_activity(p, PBC_LOG_AUDIT,
+		     "host %s came in on a non-ssl port, why?", 
+		     (cgiRemoteAddr == NULL ? "" : cgiRemoteAddr));
+            break;
+        case NOTOK_GENERIC:
+        default:
+            subtext = ntmpl_sub_template(p, TMPL_FNAME,
+			libpbc_config_getstring(p, "tmpl_notok_generic",
+                        "notok_generic"), NULL); 
+            break;
+    }
 
     ntmpl_print_html(p, TMPL_FNAME,
-                    libpbc_config_getstring(p, "tmpl_notok_part1",
-                                            "notok_part1"),
-                    NULL);
-    notok_f();
-    ntmpl_print_html(p, TMPL_FNAME,
-                    libpbc_config_getstring(p, "tmpl_notok_part2",
-                                            "notok_part2"),
-                    "version", PBC_VERSION_STRING,
-                    NULL);
+    	 libpbc_config_getstring(p, "tmpl_notok", "notok"),
+	 "subtext", (subtext == NULL ? "<BR>" : subtext), 
+ 	 "reason", (reason == NULL ? "<BR>" : reason), NULL);
+
+    if(reason != NULL)
+       pbc_free(p, reason);
+    if(subtext != NULL)
+       pbc_free(p, subtext);
 
 }
 
@@ -2230,7 +2234,7 @@ int cookie_test(pool *p, const security_context *context, login_rec *l, login_re
     /* we don't currently handle form-multipart */
     /* the formmultipart cookie is set by the module */
     if ( strstr(cookies, PBC_FORM_MP_COOKIENAME) ) {
-        notok(p, notok_formmultipart);
+        notok(p, NOTOK_FORMMULTIPART, NULL);
         return(PBC_FAIL);
     }
 
@@ -2499,7 +2503,7 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
                    != cgiParseSuccess ) {
 	    pbc_log_activity(p, PBC_LOG_ERROR,
 		      "couldn't parse the decoded granting request cookie");
-            notok(p, notok_generic);
+            notok(p, NOTOK_GENERIC, NULL);
             return;
         }
 
@@ -2671,7 +2675,7 @@ login_rec *get_query(pool *p)
                    != cgiParseSuccess ) {
 		pbc_log_activity(p, PBC_LOG_ERROR,
 		      "couldn't parse the decoded granting request cookie");
-                notok(p, notok_generic);
+                notok(p, NOTOK_GENERIC, NULL);
                 if ( g_req != NULL )
                     pbc_free(p, g_req );
                 return(NULL);
