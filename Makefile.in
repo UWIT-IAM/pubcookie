@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.11 2002-09-02 18:08:30 greenfld Exp $
+# $Id: Makefile.in,v 1.12 2002-09-16 18:43:45 jjminer Exp $
 
 @SET_MAKE@
 
@@ -122,17 +122,19 @@ LOGIN_TEMPLATES=src/login_templates.generic/login_part1 \
 				src/login_templates.generic/status_part2 \
 				src/login_templates.generic/logout_time_remaining
 
-DOCS=doc/NEW_SITE.txt \
-	 doc/INSTALL.login.txt \
-	 doc/CHANGES.login.txt \
+DOCS=doc/CHANGES.login.txt \
 	 doc/CHANGES.mod_pubcookie.txt \
-	 doc/README.txt \
+	 doc/config.html \
 	 doc/CREDITS.txt \
 	 doc/LICENSE.txt \
+	 doc/NEW_SITE.txt \
+	 doc/README.txt \
 	 doc/config.sample \
-	 doc/CONFIG.txt \
 	 doc/install-mod_pubcookie-3.0.html \
-	 doc/mod_pubcookie-directives.html
+	 doc/mod_pubcookie-directives.html \
+	 doc/mod_pubcookie_dev_notes.txt \
+	 doc/pubcookie_style_guide.txt \
+	 doc/install-login.html
 
 CGIC_FILES=cgic/Makefile.in \
 		   cgic/capture.c \
@@ -302,11 +304,96 @@ a_ver:
 	@echo Making $(DISTNAME) apache module;
 
 mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) src/config.h
-	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) $(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
+	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) \
+			$(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
+
+# Win32 ... Nothing here except the Dist files.
+
+WIN32_SSL_SRC=src/Win32/include/openssl/asn1_mac.h \
+			  src/Win32/include/openssl/asn1.h \
+			  src/Win32/include/openssl/blowfish.h \
+			  src/Win32/include/openssl/bio.h \
+			  src/Win32/include/openssl/buffer.h \
+			  src/Win32/include/openssl/bn.h \
+			  src/Win32/include/openssl/conf_api.h \
+			  src/Win32/include/openssl/cast.h \
+			  src/Win32/include/openssl/comp.h \
+			  src/Win32/include/openssl/conf.h \
+			  src/Win32/include/openssl/obj_mac.h \
+			  src/Win32/include/openssl/crypto.h \
+			  src/Win32/include/openssl/des.h \
+			  src/Win32/include/openssl/dh.h \
+			  src/Win32/include/openssl/dsa.h \
+			  src/Win32/include/openssl/dso.h \
+			  src/Win32/include/openssl/e_os.h \
+			  src/Win32/include/openssl/e_os2.h \
+			  src/Win32/include/openssl/ebcdic.h \
+			  src/Win32/include/openssl/err.h \
+			  src/Win32/include/openssl/evp.h \
+			  src/Win32/include/openssl/hmac.h \
+			  src/Win32/include/openssl/idea.h \
+			  src/Win32/include/openssl/lhash.h \
+			  src/Win32/include/openssl/md2.h \
+			  src/Win32/include/openssl/md4.h \
+			  src/Win32/include/openssl/md5.h \
+			  src/Win32/include/openssl/mdc2.h \
+			  src/Win32/include/openssl/opensslconf.h \
+			  src/Win32/include/openssl/objects.h \
+			  src/Win32/include/openssl/safestack.h \
+			  src/Win32/include/openssl/opensslv.h \
+			  src/Win32/include/openssl/pem.h \
+			  src/Win32/include/openssl/pem2.h \
+			  src/Win32/include/openssl/pkcs12.h \
+			  src/Win32/include/openssl/pkcs7.h \
+			  src/Win32/include/openssl/rand.h \
+			  src/Win32/include/openssl/rc2.h \
+			  src/Win32/include/openssl/rc4.h \
+			  src/Win32/include/openssl/rc5.h \
+			  src/Win32/include/openssl/ripemd.h \
+			  src/Win32/include/openssl/rsa.h \
+			  src/Win32/include/openssl/rsaref.h \
+			  src/Win32/include/openssl/sha.h \
+			  src/Win32/include/openssl/ssl.h \
+			  src/Win32/include/openssl/ssl2.h \
+			  src/Win32/include/openssl/ssl23.h \
+			  src/Win32/include/openssl/ssl3.h \
+			  src/Win32/include/openssl/stack.h \
+			  src/Win32/include/openssl/symhacks.h \
+			  src/Win32/include/openssl/tls1.h \
+			  src/Win32/include/openssl/tmdiff.h \
+			  src/Win32/include/openssl/txt_db.h \
+			  src/Win32/include/openssl/x509.h \
+			  src/Win32/include/openssl/x509_vfy.h \
+			  src/Win32/include/openssl/x509v3.h
+
+WIN32_LIB_SRC=src/Win32/lib/libeay32.lib \
+			  src/Win32/lib/openssl.cnf \
+			  src/Win32/lib/ssleay32.lib
+
+WIN32_FILTER_SRC=src/Win32/PubCookieFilter.cpp \
+				 src/Win32/PubCookieFilter.def \
+				 src/Win32/PubCookieFilter.dsp \
+				 src/Win32/PubCookieFilter.dsw \
+				 src/Win32/PubCookieFilter.h \
+				 src/Win32/PubCookieFilter.rc
+
+WIN32_MISC_SRC=src/Win32/debug.c \
+			   src/Win32/debug.h \
+			   src/Win32/getopt.c \
+			   src/Win32/getopt.h \
+			   src/Win32/pbc_w32_myconfig.c \
+			   src/Win32/resource.h
+
+WIN32_KEYCLIENT_SRC=src/Win32/keyclient.dsp \
+					src/Win32/keyclient.dsw
+
+WIN32_SRC=$(WIN32_SSL_SRC) \
+		  $(WIN32_LIB_SRC) \
+		  $(WIN32_FILTER_SRC) \
+		  $(WIN32_MISC_SRC) \
+		  $(WIN32_KEYCLIENT_SRC)
 
 # Dist stuff
-
-# DISTNAME=pubcookie-$(A_VERSION)-$(L_VERSION)
 
 dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)
@@ -320,10 +407,20 @@ dist: a_ver l_ver
 	$(CP) $(CONFIGURE_FILES) $(DISTNAME)/
 	$(CP) $(SRC_CONFIGURE_FILES) $(DISTNAME)/src
 	$(CP) $(TEST_SRC) $(UTIL_SRC) $(VERIFY_SRC) $(DISTNAME)/src
-	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(MOD_SRC) $(DISTNAME)/src
+	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(MOD_SRC) \
+		  $(DISTNAME)/src
 	$(CP) $(INDEX_HEAD) $(LIB_HEAD) $(DISTNAME)/src
 	$(CP) $(CGIC_FILES) $(DISTNAME)/cgic
 	$(CP) src/Makefile.tmpl $(DISTNAME)/src
+	$(MKDIR) $(DISTNAME)/src/Win32
+	$(MKDIR) $(DISTNAME)/src/Win32/include
+	$(MKDIR) $(DISTNAME)/src/Win32/include/openssl
+	$(MKDIR) $(DISTNAME)/src/Win32/lib
+	$(CP) $(WIN32_SSL_SRC) $(DISTNAME)/src/Win32/include/openssl
+	$(CP) $(WIN32_LIB_SRC) $(DISTNAME)/src/Win32/lib
+	$(CP) $(WIN32_FILTER_SRC) $(DISTNAME)/src/Win32
+	$(CP) $(WIN32_MISC_SRC) $(DISTNAME)/src/Win32
+	$(CP) $(WIN32_KEYCLIENT_SRC) $(DISTNAME)/src/Win32
 	$(TAR) cf $(DISTNAME).tar $(DISTNAME)/
 	$(GZIP) $(DISTNAME).tar
 	$(RECURSIVE_FORCE_RM) ./$(DISTNAME)/
