@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.43 2004-07-29 00:23:51 jteaton Exp $
+ * $Id: security_legacy.c,v 1.44 2004-11-15 23:25:10 fox Exp $
  */
 
 
@@ -780,6 +780,7 @@ int libpbc_rd_priv(pool *p, const security_context *context, const char *peer,
  * libpbc_mk_safe allocates a signature and returns it to the
  * application. 'outbuf' does not contain the plaintext message; both
  * 'buf' and 'outbuf' must be sent to the other side
+ * Returns 0 on success, -1 on error
  */
 int libpbc_mk_safe(pool *p, const security_context *context, const char *peer,
                    const char use_granting, const char *buf, const int len,
@@ -807,7 +808,7 @@ int libpbc_mk_safe(pool *p, const security_context *context, const char *peer,
 
     EVP_SignInit(&ctx, EVP_md5());
     EVP_SignUpdate(&ctx, buf, len);
-    if (EVP_SignFinal(&ctx, sig, &sig_len, thekey)) {
+    if (EVP_SignFinal(&ctx, sig, &sig_len, thekey)==1) {
 	*outbuf = (char *) sig;
 	*outlen = sig_len;
 	r = 0;
@@ -824,6 +825,9 @@ int libpbc_mk_safe(pool *p, const security_context *context, const char *peer,
     return r;
 }
 
+/*
+ * Returns 0 on success, -1 on error
+ */
 int libpbc_rd_safe(pool *p, const security_context *context, const char *peer,
                    const char use_granting, const char *buf, const int len,
                    const char *sigbuf, const int siglen)
@@ -839,20 +843,21 @@ int libpbc_rd_safe(pool *p, const security_context *context, const char *peer,
     EVP_VerifyInit(&ctx, EVP_md5());
     EVP_VerifyUpdate(&ctx, buf, len);
 	pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "Verifying signature with %s certificate",use_granting ? "granting" : "session");
-    r = EVP_VerifyFinal(&ctx, (unsigned char *) sigbuf, siglen, 
-			use_granting ? context->g_pub : context->sess_pub);
-
-    if (!r) {
+    if (EVP_VerifyFinal(&ctx, (unsigned char *) sigbuf, siglen, 
+			use_granting ? context->g_pub : context->sess_pub)==1) {
+        r = 0;
+    } else {
 	/* xxx log openssl error */
         ERR_load_crypto_strings();
         pbc_log_activity(p, PBC_LOG_ERROR, 
                          "libpbc_rd_safe: couldn't verify signature for %s OpenSSL error: %s", 
                          peer ? peer : "(self)",
                          ERR_error_string(ERR_get_error(), NULL));
+        r = -1;
     }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_rd_safe: goodbye, r: %d", r);
 
-    return !r;
+    return r;
 }
 
