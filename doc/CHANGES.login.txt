@@ -4,6 +4,9 @@ This is where changes to the pubcookie login software is recorded
 (changes prior to 1.20 are straight out of the rcs logs, including crappy
 cryptic messages)
 
+a5 1.35b 11Jan2002
+- added some windows encrypt/decrypt diagnostic tools to the distribution
+
 a5 1.35 13Nov2001
 - Abandoned Location and Refresh headers since Mozilla on Linux uses them 
   as "moved permanently"
