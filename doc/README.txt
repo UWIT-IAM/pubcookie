@@ -52,7 +52,6 @@ The pubcookie login server distribution contains the following files:
 	libpubcookie.h
 	securid.c
 	securid.h
-	make_crypted_bit.c
 	pbc_key_generic.c
 	pbc_key_local.c
 	pbc_key_local.txt
@@ -64,8 +63,15 @@ The pubcookie login server distribution contains the following files:
         pbc_create.c
         pbc_verify.c
         candv.c
+	make_crypted_bit.c
+	check_crypted_bit.c
+	Test_local_blob.bat - windows batchfile for testing crypto functions
+	Test_login_blob.bat - windows batchfile for testing key from admin
+	check_crypted_blob.exe - windows binary for genrating crypted blob
+	make_crypted_blob.exe - windows binary for decrypting/checking blob
+	ssleay.exe - windows OpenSSL binary for utility functions
 	contrib/*   
 
 
-$Id: README.txt,v 1.12 2001-12-13 23:30:37 willey Exp $
+$Id: README.txt,v 1.13 2002-01-11 23:44:10 willey Exp $
 

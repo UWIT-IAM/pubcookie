@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.47 2001-12-20 18:41:34 willey Exp $
+#   $Id: Makefile,v 1.48 2002-01-11 23:43:52 willey Exp $
 #
 
 # your compiler here
@@ -53,6 +53,7 @@ LOGINSRC=index.cgi.c \
          login_templates/notok_part1 \
          login_templates/notok_part2 \
 	 make_crypted_blob.c \
+	 check_crypted_blob.c \
 	 pbc_key_generic.c \
 	 pbc_key_local.c
 TESTSRC=dtest.c \
@@ -73,6 +74,11 @@ LOGINMISC=CHANGES.login.txt \
           Makefile \
           Makefile.index.cgi \
           contrib/* \
+	  Test_local_blob.bat \
+	  Test_login_blob.bat \
+	  check_crypted_blob.exe \
+	  make_crypted_blob.exe \
+	  ssleay.exe \
 	  INSTALL.login.txt
 TESTMISC=Makefile
 ALLMISC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
@@ -84,7 +90,7 @@ GZIP=gzip
 
 default:	all
 
-test_apps:	candv dtest speed_test pbc_create pbc_verify check_crypted_blob what_is_my_ip
+test_apps:	candv dtest speed_test pbc_create pbc_verify check_crypted_blob what_is_my_ip make_crypted_blob
 
 all:	candv dtest pbc_key_generic pbc_key_local make_crypted_blob pbc_create pbc_verify check_crypted_blob what_is_my_ip
 
@@ -98,7 +104,7 @@ candv:		candv.o libpubcookie.o base64.o
 dtest:		dtest.o libpubcookie.o 
 	$(CC) ${CFLAGS} -o $@ dtest.o libpubcookie.o base64.o $(LDFLAGS)
 
-check_crypted_blob:	check_crypted_blob.o libpubcookie.o 
+check_crypted_blob:	check_crypted_blob.o libpubcookie.o base64.o
 	$(CC) ${CFLAGS} -o $@ check_crypted_blob.o libpubcookie.o base64.o $(LDFLAGS)
 
 pbc_create:	pbc_create.o libpubcookie.o base64.o
@@ -116,8 +122,8 @@ pbc_key_generic:	pbc_key_generic.o libpubcookie.o
 pbc_key_local:		pbc_key_local.o libpubcookie.o 
 	$(CC) ${CFLAGS} -o $@ pbc_key_local.o libpubcookie.o base64.o $(LDFLAGS)
 
-make_crypted_blob:	make_crypted_blob.o libpubcookie.o 
-	$(CC) ${CFLAGS} -o $@ make_crypted_blob.o libpubcookie.o base64.o $(LDFLAGS)
+make_crypted_blob:	make_crypted_blob.o libpubcookie.o base64.o
+	$(CC) ${CFLAGS} -o $@ make_crypted_blob.o base64.o libpubcookie.o $(LDFLAGS)
 
 what_is_my_ip:		what_is_my_ip.o libpubcookie.o base64.o
 	$(CC) ${CFLAGS} -o $@ what_is_my_ip.o libpubcookie.o base64.o $(LDFLAGS)
