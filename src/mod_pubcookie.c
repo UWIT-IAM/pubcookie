@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.65 2001-10-27 18:07:14 willey Exp $
+    $Id: mod_pubcookie.c,v 1.66 2001-10-30 02:26:12 willey Exp $
  */
 
 /* apache includes */
@@ -636,6 +636,7 @@ static int auth_failed(request_rec *r) {
     }
 
     refresh_e = os_escape_path(r->pool, refresh, 0);
+    /* this is now the default */
 #ifdef REDIRECT_IN_HEADER
     if ( !(tenc || lenp) || r->method_number != M_POST )
         table_add(r->headers_out, "Refresh", refresh_e);
@@ -666,6 +667,7 @@ static int auth_failed(request_rec *r) {
     }
 
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
+    /* this is now the default */
 #ifdef REDIRECT_IN_HEADER
     if ( !(tenc || lenp) )
         ap_table_add(r->headers_out, "Refresh", refresh_e);
@@ -706,17 +708,11 @@ static int auth_failed(request_rec *r) {
     }
     else {
 #ifdef APACHE1_2
-#ifdef REDIRECT_IN_HEADER
-        rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
-#else  
+        /* now we redirect both in the header and this meta-tag */
         rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
-#endif
 #else
-#ifdef REDIRECT_IN_HEADER
-        ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
-#else
+        /* now we redirect both in the header and this meta-tag */
         ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
-#endif
 #endif
     }
 
