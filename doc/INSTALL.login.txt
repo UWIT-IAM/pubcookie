@@ -17,7 +17,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.15 2002-06-17 16:05:31 jteaton Exp $
+    $Id: INSTALL.login.txt,v 1.16 2002-06-20 22:12:23 willey Exp $
  */
 
 
@@ -69,7 +69,9 @@ configuration parameter (see "Run-time configuration").  Some
 verifiers will allow or require further customization; see the section
 referring to that verifier.
 
-4. Choosing the location of your login page
+4. Apache Configuration (assuming you are using Apache for the login server)
+
+4.1. Choosing the location of your login page
 
 Depending on your instalation environment you may choose to install the
 login server in a number of configurations.  Two general models are
@@ -127,6 +129,15 @@ The default login server and login URI are specified as "login_host"
 and "login_uri" in pubcookie configuration file.  (Individual
 applications may override what login server they refer to with the
 PubCookieLogin directive in their apache configuration file.)
+
+4.1. Apache configuration directive you might hav to tweak
+
+Apache needs to know how to identify and handle cgi scripts.  Some
+distributions of Apache will hav the cgi handler disabled, you will
+want to make sure the following line is in your httpd.conf and not 
+commented out.
+
+AddHandler cgi-script .cgi
 
 5. Compiling
 
