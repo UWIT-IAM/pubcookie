@@ -6,7 +6,7 @@ Content-Type: text/html
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <title>UW NetID Login</title>
+    <title>UW NetID Weblogin</title>
   </head>
 
   <body bgcolor="#FFFFFF" %s>
@@ -14,7 +14,7 @@ Content-Type: text/html
     <table cellpadding="0" cellspacing="0" border="0" width="580">
       <tr>
         <td width="310" valign="middle">
-          <img src="/images/login.gif" alt="" height="64" width="208">
+          <img src="/images/login/weblogin.gif" alt="" height="57" width="198">
           <!-- %s -->
 
 
