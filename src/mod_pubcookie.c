@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.40 2000-01-27 22:11:14 willey Exp $
+    $Id: mod_pubcookie.c,v 1.41 2000-02-03 18:58:31 willey Exp $
  */
 
 /* apache includes */
@@ -165,11 +165,10 @@ unsigned char *get_app_path(pool *p, const char *uri, const char *filename) {
         }
     }
 
-    if ( path[strlen(path)-1] != '/' )
 #ifdef APACHE1_2
-        return (unsigned char *) pstrcat( p, path, "/", NULL);
+    no2slash(path);
 #else
-        return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
+    ap_no2slash(path);
 #endif
   
     /* removed any GET args from the end of the path */
@@ -182,6 +181,13 @@ unsigned char *get_app_path(pool *p, const char *uri, const char *filename) {
         ptr++;
     }
 
+    if ( path[strlen(path)-1] != '/' )
+#ifdef APACHE1_2
+        return (unsigned char *) pstrcat( p, path, "/", NULL);
+#else
+        return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
+#endif
+  
     return path;
 
 }
