@@ -10,7 +10,7 @@
 #
 #
 #   All comments and suggestions to pubcookie@cac.washington.edu
-#   More info: https:/www.washington.edu/pubcookie/
+#   More info: http://www.washington.edu/pubcookie/
 #   Written by the Pubcookie Team
 #
 #   This is the pubcookie general Makefile.  It is not for the Apache module
@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.32 2001-05-03 22:50:17 willey Exp $
+#   $Id: Makefile,v 1.33 2001-05-29 20:56:40 willey Exp $
 #
 
 # your compiler here
@@ -33,32 +33,34 @@ LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto
 # hopefully you don't have to change anything below here
 ################################################################################
 
-GENHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
+GENERALHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 MODULEHEAD=
-LOGINHEAD=index.cgi.h 
-
-ALLHEAD=${GENHEAD} ${LOGINHEAD} ${MODULEHEAD}
+LOGINHEAD=index.cgi.h \
+          securid.h
+TESTHEAD=
+ALLHEAD=${GENERALHEAD} ${LOGINHEAD} ${MODULEHEAD} ${TESTHEAD}
 
 GENERALSRC=libpubcookie.c \
            base64.c
-
 MODULESRC=mod_pubcookie.c
-
+LOGINSRC=index.cgi.c \
+	 index.cgi_krb.c \
+	 index.cgi_securid.c \
+	 securid.c \
+	 make_crypted_bit.c \
+	 mkc_key_generic.c \
+	 mkc_key_local.txt \
+	 mkc_key_local.c
 TESTSRC=dtest.c \
         pbc_create.c \
         test_localc_key.c \
         what_is_my_ip.c \
         pbc_verify.c \
         candv.c
+ALLSRC=${GENERALSRC} ${TESTSRC} ${LOGINSRC} ${MODULESRC}
 
-LOGINSRC=index.cgi.c \
-	 index.cgi_krb.c \
-	 make_crypted_bit.c \
-	 mkc_key_generic.c \
-	 mkc_key_local.c \
-
-ALLSRC=${GENERASRC} ${TESTSRC} ${LOGINSRC} ${MODULESRC}
-
+GENERALMISC=README \
+            LICENSE
 MODULEMISC=CHANGES.mod_pubcookie \
            Makefile.tmpl \
            Makefile.apxs 
@@ -66,8 +68,7 @@ LOGINMISC=CHANGES.login \
           Makefile.index.cgi \
 	  INSTALL.login
 TESTMISC=Makefile
-MISCMISC=README \
-         LICENSE
+ALLSRC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
 
 MAKEFILE=Makefile
 TAR=tar
@@ -128,7 +129,7 @@ moduletar:
 	TARFILE=$$BASENAME-$${VERSION}.tar; \
 	rm -rf $$DIR_NAME; \
 	mkdir $$DIR_NAME; \
-	for i in ${GENERALSRC} $(MODULESRC) $(GENHEAD) ${MODULEHEAD} ${MODULEMISC} $(MISC) ;\
+	for i in ${GENERALSRC} $(MODULESRC) $(GENERALHEAD) ${MODULEHEAD} ${MODULEMISC} $(GENERALMISC) ;\
 	do \
 		cp $$i $$DIR_NAME; \
 		chmod 664 $$DIR_NAME/$$i; \
@@ -145,7 +146,7 @@ logintar:
 	TARFILE=$$BASENAME-$${LVERSION}.tar; \
 	rm -rf $$DIR_NAME; \
 	mkdir $$DIR_NAME; \
-	for i in ${GENERALSRC} $(LOGINSRC) $(GENHEAD) ${LOGINEAD} ${LOGINMISC} $(MISC) ;\
+	for i in ${GENERALSRC} ${LOGINSRC) $(GENERALHEAD) ${LOGINHEAD} ${LOGINMISC} $(GENERALMISC) ;\
 	do \
 		cp $$i $$DIR_NAME; \
 		chmod 664 $$DIR_NAME/$$i; \
@@ -155,23 +156,23 @@ logintar:
 	$(RM) -rf $$DIR_NAME; \
 	echo Created $$TARFILE
 
-base64.o: base64.c ${GENHEAD} ${MAKEFILE}
-candv.o: candv.c ${GENHEAD} ${MAKEFILE}
-dtest.o: dtest.c ${GENHEAD} ${MAKEFILE}
-libpubcookie.o: libpubcookie.c libpubcookie.h ${GENHEAD} ${MAKEFILE}
-make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GENHEAD} ${MAKEFILE}
-mkc_key_generic.o: mkc_key_generic.c ${GENHEAD} ${MAKEFILE}
-mkc_key_local.o: mkc_key_local.c ${GENHEAD} ${MAKEFILE}
+base64.o: base64.c ${GENERALHEAD} ${MAKEFILE}
+candv.o: candv.c ${GENERALHEAD} ${MAKEFILE}
+dtest.o: dtest.c ${GENERALHEAD} ${MAKEFILE}
+libpubcookie.o: libpubcookie.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
+make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
+mkc_key_generic.o: mkc_key_generic.c ${GENERALHEAD} ${MAKEFILE}
+mkc_key_local.o: mkc_key_local.c ${GENERALHEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
-pbc_create.o: pbc_create.c ${GENHEAD} ${MAKEFILE}
-pbc_verify.o: pbc_verify.c ${GENHEAD} ${MAKEFILE}
-t.o: t.c ${GENHEAD} ${MAKEFILE}
-test_local_c_key.o: test_local_c_key.c ${GENHEAD} ${MAKEFILE}
-what_is_my_ip.o: what_is_my_ip.c ${GENHEAD} ${MAKEFILE}
+pbc_create.o: pbc_create.c ${GENERALHEAD} ${MAKEFILE}
+pbc_verify.o: pbc_verify.c ${GENERALHEAD} ${MAKEFILE}
+t.o: t.c ${GENERALHEAD} ${MAKEFILE}
+test_local_c_key.o: test_local_c_key.c ${GENERALHEAD} ${MAKEFILE}
+what_is_my_ip.o: what_is_my_ip.c ${GENERALHEAD} ${MAKEFILE}
 
 clean: 
 	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local
 
-# to purify candv (then run a.out)
+# to purify candv {then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
 
