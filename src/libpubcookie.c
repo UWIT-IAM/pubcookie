@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.35 2002-08-03 00:48:05 willey Exp $
+    $Id: libpubcookie.c,v 2.36 2002-08-06 16:01:07 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -129,30 +129,9 @@ const char *redirect_reason[] = {
     "Wrong creds"		/* 11 */
 };
 
-/* lives only on login servers */
-char PBC_L_CERTFILE[1024];
-/* lives only on login server */
-char PBC_L_KEYFILE[1024];
-/* lives only on application server */
-char PBC_S_CERTFILE[1024];
-/* lives only on application server */
-char PBC_S_KEYFILE[1024];
-/* lives everywhere (on application servers & login server) */
-char PBC_G_CERTFILE[1024];
-/* lives only on login server */
-char PBC_G_KEYFILE[1024];
-
-#include <sys/utsname.h>
-
-char *get_my_hostname()
+const char *get_my_hostname()
 {
-    struct utsname      myname;
-
-    if ( uname(&myname) < 0 )
-        return NULL;
-
-    return(strdup(myname.nodename));
-
+    return libpbc_get_cryptname();
 }
 
 /** 
@@ -162,9 +141,14 @@ char *get_my_hostname()
  */
 const char libpbc_get_credential_id(const char *name)
 {
-    if (!strcmp(name, "webiso-vanilla")) {
+    if (!strcasecmp(name, "uwnetid")) {
+         libpbc_debug("WARNING: AuthType %s will not be supported in future versions - user AuthType WebISO\n", name);
+         return PBC_BASIC_CRED_ID;
+    }
+    if (!strcasecmp(name, "webiso") ||
+        !strcasecmp(name, "webiso-vanilla")) {
 	return PBC_BASIC_CRED_ID; /* flavor_basic */
-    } else if (!strcmp(name, "webiso-getcred")) {
+    } else if (!strcasecmp(name, "webiso-getcred")) {
 	return PBC_GETCRED_CRED_ID; /* flavor_getcred */
     } else {
 	return PBC_CREDS_NONE;
@@ -378,68 +362,12 @@ void libpbc_pubcookie_init_np()
 {
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
-    const char *ptr;
 
     /*  libpbc_debug("libpbc_pubcookie_init\n"); */
 
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
-
-    /* xxx compare this to security_legacy.c:security_init() */
-
-    /* login keys */
-    /* if we can use the SSL keys, do so; otherwise, use the login files */
-    ptr = libpbc_config_getstring("ssl_cert_file", NULL);
-    if (ptr && !access(ptr, R_OK | F_OK)) {
-        strlcpy(PBC_L_CERTFILE, ptr, sizeof PBC_L_CERTFILE);
-    } else {
-        snprintf(PBC_L_CERTFILE, sizeof(PBC_L_CERTFILE),
-                 "%s/%s", PBC_KEY_DIR, "pubcookie_login.cert");
-    }
-
-    ptr = libpbc_config_getstring("ssl_key_file", NULL);
-    if (ptr && !access(ptr, R_OK | F_OK)) {
-        strlcpy(PBC_L_KEYFILE, ptr, sizeof PBC_L_KEYFILE);
-    } else {
-        snprintf(PBC_L_KEYFILE, sizeof(PBC_L_KEYFILE),
-                 "%s/%s", PBC_KEY_DIR, "pubcookie_login.key");
-    }
-
-
-    /* session keys */
-    /* if we can use the SSL keys, do so; otherwise, use the session files */
-    ptr = libpbc_config_getstring("ssl_cert_file", NULL);
-    if (ptr && !access(ptr, R_OK | F_OK)) {
-        strlcpy(PBC_S_CERTFILE, ptr, sizeof PBC_S_CERTFILE);
-    } else {
-        snprintf(PBC_S_CERTFILE, sizeof(PBC_S_CERTFILE),
-                 "%s/%s", PBC_KEY_DIR, "pubcookie_session.cert");
-    }
-
-    ptr = libpbc_config_getstring("ssl_key_file", NULL);
-    if (ptr && !access(ptr, R_OK | F_OK)) {
-        strlcpy(PBC_S_KEYFILE, ptr, sizeof PBC_S_KEYFILE);
-    } else {
-        snprintf(PBC_S_KEYFILE, sizeof(PBC_S_KEYFILE),
-                 "%s/%s", PBC_KEY_DIR, "pubcookie_session.key");
-    }
-
-    /* granting keys */
-    ptr = libpbc_config_getstring("granting_cert_file", NULL);
-    if (ptr) {
-        strlcpy(PBC_G_CERTFILE, ptr, sizeof(PBC_G_CERTFILE));
-    } else {
-        snprintf(PBC_G_CERTFILE, sizeof(PBC_G_CERTFILE),
-                 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.cert");
-    }
-    ptr = libpbc_config_getstring("granting_key_file", NULL);
-    if (ptr) {
-        strlcpy(PBC_G_KEYFILE, ptr, sizeof(PBC_G_KEYFILE));
-    } else {
-        snprintf(PBC_G_KEYFILE, sizeof(PBC_G_KEYFILE),
-                 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.key");
-    }
 
     if (security_init()) {
         syslog(LOG_ERR, "security_init failed");
@@ -761,9 +689,9 @@ int libpbc_set_crypt_key_np(const char *key, const char *peer)
 
 /*                                                                           */
 #ifdef APACHE
-int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *peer)
+int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, const char *peer)
 #else
-int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *peer)
+int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, const char *peer)
 #endif
 {
     FILE             *fp;
@@ -807,9 +735,6 @@ crypt_stuff *libpbc_init_crypt_np(char *peername)
 #endif
 {
     crypt_stuff	*c_stuff;
-    char keyfile[1024];
-
-    libpbc_debug("libpbc_init_crypt: peername=%s\n", peername);
 
     c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
 
@@ -1124,9 +1049,6 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
 #endif
 {
     unsigned char		*cookie;
-    unsigned char		*sig;
-    unsigned char		buf[PBC_4K];
-    unsigned char		buf2[PBC_4K];
     char *out;
     int outlen;
 
@@ -1147,51 +1069,6 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
     free(out);
 
     return cookie;
-}
-
-/*                                                                            */
-/* get public key and initialize verify context                               */
-/*                                                                            */
-#ifdef APACHE
-md_context_plus *libpbc_verify_init_p(pool *p, char *certfile) 
-#else
-md_context_plus *libpbc_verify_init_np(char *certfile) 
-#endif
-{
-    md_context_plus *ctx_plus;
-
-/*  libpbc_debug("libpbc_verify_init: certfile= %s\n",certfile); */
-
-    ctx_plus = libpbc_init_md_context_plus();
-
-    if ( libpbc_get_public_key(ctx_plus, certfile) == PBC_OK ) {
-        return ctx_plus;
-    } else {
-	libpbc_free_md_context_plus(ctx_plus);
-	return NULL;
-    }
-
-}
-
-/*                                                                            */
-/* get private key and initialize context                                     */
-/*                                                                            */
-#ifdef APACHE
-md_context_plus *libpbc_sign_init_p(pool *p, char *keyfile) 
-#else
-md_context_plus *libpbc_sign_init_np(char *keyfile) 
-#endif
-{
-    md_context_plus *ctx_plus;
-
-    ctx_plus = libpbc_init_md_context_plus();
-
-    if ( libpbc_get_private_key(ctx_plus, keyfile) == PBC_OK ) {
-	return ctx_plus;
-    } else {
-	libpbc_free_md_context_plus(ctx_plus);
-	return NULL;
-    }
 }
 
 /*                                                                            */
@@ -1284,7 +1161,6 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in,
 					   const char *peer)
 #endif
 {
-    int			i;
     pbc_cookie_data	*cookie_data;
     char *plain;
     int plainlen;
