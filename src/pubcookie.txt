@@ -265,6 +265,18 @@ These applications cab be used to demonstrate pubcookie and to test bouncing
 between your server and another pubcookie enabled server without having 
 to re-authenticate.
 
+Pubcookie and Authorization
+---------------------------
+
+Pubcookie only does authentication and has no facilities for authorization.
+
+In Apache this means that authorization will fall back to Basic auth.  If the
+Basic authorization fails the user will get a popup dialogue box with no
+explination and the auth will not succeed.
+
+It is recommended that web administrators use other mechanisms then Basic auth
+for authorization
+
 Platform/Architecture Specific Notes
 ------------------------------------
 
@@ -296,6 +308,6 @@ src/global.h, line 26 needs to change from 'unsigned long int' to
 
 
 
-$Id: pubcookie.txt,v 1.6 1999-01-12 00:15:05 willey Exp $
+$Id: pubcookie.txt,v 1.7 1999-01-12 00:20:56 willey Exp $
 
 
