@@ -23,8 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.22 2002-08-20 20:31:18 greenfld Exp $
- */
+    $Id: flavor_basic.c,v 1.23 2002-08-21 18:29:26 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
