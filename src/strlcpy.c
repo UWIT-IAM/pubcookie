@@ -1,45 +1,24 @@
-/* strlcpy/strlcat replacements
- *
- * Copyright (c) 1998-2002 Carnegie Mellon University.  All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The name "Carnegie Mellon University" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For permission or any other legal
- *    details, please contact  
- *      Office of Technology Transfer
- *      Carnegie Mellon University
- *      5000 Forbes Avenue
- *      Pittsburgh, PA  15213-3890
- *      (412) 268-4387, fax: (412) 268-7395
- *      tech-transfer@andrew.cmu.edu
- *
- * 4. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by Computing Services
- *     at Carnegie Mellon University (http://www.cmu.edu/computing/)."
- *
- * CARNEGIE MELLON UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO
- * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS, IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY BE LIABLE
- * FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
- * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
- * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
 /*
- * $Id: strlcpy.c,v 2.3 2002-08-15 22:50:06 jjminer Exp $
+
+    Copyright 1999-2002, University of Washington.  All rights reserved.
+    see doc/LICENSE.txt for copyright information
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More information: http://www.pubcookie.org/
+    Written by the Pubcookie Team
+
+    strlcat/strlcpy compatibility
+
+ */
+
+/*
+    $Id: strlcpy.c,v 2.4 2002-08-20 20:17:51 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -68,18 +47,18 @@ size_t strlcpy(char *dst, const char *src, size_t len)
 {
     size_t n;
 
-    if (len <= 0) return strlen(src);
-    for (n = 0; n < len; n++) {
-        if ((dst[n] = src[n]) == '\0') break;
+    /* Avoid problems if size_t is unsigned */
+    if(len == 0) return strlen(src);
+    
+    for (n = 0; n < len-1; n++) {
+	if ((dst[n] = src[n]) == '\0') break;
     }
-    if (src[n] == '\0') {
-        /* copied entire string */
-        return n;
-    } else {
-        dst[n] = '\0';
-        /* ran out of space */
-        return n + strlen(src + n);
+    if (src[n] != '\0') {
+	/* ran out of space */
+	dst[n] = '\0';
+	while(src[n]) n++;
     }
+    return n;
 }
 #endif
 
@@ -87,19 +66,19 @@ size_t strlcpy(char *dst, const char *src, size_t len)
 size_t strlcat(char *dst, const char *src, size_t len)
 {
     size_t i, j, o;
-
+    
     o = strlen(dst);
     if (len < o + 1)
-        return o + strlen(src);
+	return o + strlen(src);
     len -= o + 1;
     for (i = 0, j = o; i < len; i++, j++) {
-        if ((dst[j] = src[i]) == '\0') break;
+	if ((dst[j] = src[i]) == '\0') break;
     }
     dst[j] = '\0';
     if (src[i] == '\0') {
-        return j;
+	return j;
     } else {
-        return j + strlen(src + i);
+	return j + strlen(src + i);
     }
 }
 #endif
