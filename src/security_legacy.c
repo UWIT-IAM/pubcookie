@@ -387,7 +387,7 @@ static int get_crypt_key(const char *peername, char *buf)
 
     if( fread(buf, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
 	pbc_log_activity(PBC_LOG_ERROR, 
-                         "canb't read crypt key %s: short read", keyfile);
+                         "can't read crypt key %s: short read", keyfile);
 	fclose(fp);
 	return -1;
     }
