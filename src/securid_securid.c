@@ -64,7 +64,7 @@ char *prn;
 
   if ((fd = server("smart",s,1023,0)) < 0) {
     log_error("Unable to connect to server.\n");
-    return(1);
+    return(-2);
   }
 
   /*
@@ -73,7 +73,12 @@ char *prn;
   **  using or an abbreviation or an abbreviation of an alias.
   */
 
-  if (!(list = get_clist(name))) {
+  /* ssw modified get_clist for return value */
+  if ( (list = get_clist(name)) < 0 ) {
+    log_error("Problem getting clist.\n");
+    return(-2);
+  }
+  else if (!list ) {
     log_message("eac_securid: No card list for %s.\n", name);
     close(fd);
     return(1);
@@ -113,17 +118,17 @@ char *prn;
   if ((i = write(fd,&msg,n)) != n) {
     log_message("Tried to write %d, got %d.\n",n,i);
     if (i < 0) {
-      perror("write");
+      perror("eac_securid: securid: write");
     }
     close(fd);
-    return(1);
+    return(-2);
   }
 
   if ((i = read(fd,&msg,sizeof(msg))) <= 0) {
     log_message("Got %d: ",i);
-    perror("read");
+    perror("eac_securid: securid: read");
     close(fd);
-    return(1);
+    return(-2);
   }
 
   if (i != MSG_HEADLEN) {
@@ -182,19 +187,19 @@ char *id;
   if ((fd = getserver("li","li",1023,logflag,1)) >= 0) {
 
     if (!(fp = fdopen(fd,"r+"))) {
-      perror("fdopen");
-      exit(1);
+      perror("securid_securid: get_clist: fdopen");
+      return((char *)-1);
     }
 
     sprintf(line,"access %s; user ssu; getcrn id=%s seq=71\nend\n",LI_READ,id);
     if (write(fd,line,strlen(line)) < 0) {
-      perror("li write");
-      exit(1);
+      perror("securid_securid: get_clist: li write");
+      return((char *)-1);
     }
 
     while (fgets(line,sizeof(line),fp)) {
       if (!strncmp(line,"nak",3)) {
-	log_message("%s", line);
+	log_message("securid_securid: get_clist: %s", line);
       } else if (!strncmp(line,"ack seq=71",10)) {
 	char *s, *t;
         if ((s = (char *)index(line,'(')) && (t = (char *)index(s,')'))) {
@@ -209,8 +214,8 @@ char *id;
     log_error("eac_securid: No crn found in li reply.\n");
 
   } else {
-
     log_error("eac_securid: Unable to communicate with li server.\n");
+    return((char *)-1);
 
   }
 

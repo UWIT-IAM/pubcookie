@@ -18,11 +18,8 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.2 1999-10-21 01:29:27 willey Exp $
+    $Id: index.cgi.h,v 1.3 2000-01-27 22:15:12 willey Exp $
  */
-
-/* utility macros */
-#define SWSTRCAT(a,b) (strcat( strcpy( calloc(strlen(a)+strlen(b)+1, sizeof(char)), a), b) )
 
 typedef struct {
     char	*args;
@@ -30,7 +27,7 @@ typedef struct {
     char	*host;
     char	*method;
     char	*version;
-    int		creds;
+    char	creds;
     char	*appid;
     char	*appsrvid;
     char	*fr;
@@ -38,10 +35,22 @@ typedef struct {
     char	*pass;
     char	*pass2;
     char	*post_stuff;
+    char	*real_hostname;
+    char	*appsrv_err;
+    char	*file;
+    char	*flag;
+    char	*referer;
+    char	type;
+    time_t	create_ts;
+    time_t	last_ts;
+    int		serial;
 } login_rec;
 
 /* prototypes */
 int cgiMain();
+int auth_kdc(char *, char *);
+int auth_securid(char *, char *, login_rec *);
+void abend(char *);
 int cookie_test();
 void notok( void (*)() );
 void notok_no_g_or_l();
@@ -54,21 +63,33 @@ void notok_bad_agent();
 void print_login_page_part1(int);
 void print_login_page_part5();
 int check_user_agent();
-// todo
+void log_message(const char *, ...);
+void log_error(const char *, ...);
+void print_login_page_part2a();
+void print_login_page_part2b();
+void print_login_page_part3();
+void print_login_page_part4();
+void print_login_page_part_expire_info();
+void print_login_page_part5();
+login_rec *verify_login_cookie (char *, login_rec *);
+int create_cookie(char *, char *, char *, char, char, int, char *, int);
 login_rec *get_query();
 char *check_login(login_rec *);
 char *check_l_cookie(login_rec *);
-void print_login_page(char *, char *, int, int);
+void print_login_page(char *, char *, char, int);
 void print_redirect_page(login_rec *);
 int get_next_serial();
 char *url_encode();
 char *get_cookie_created(char *);
+char *decode_granting_request(char *);
+
+#define OK 1
+#define FAIL 0
 
 #define LOGIN_DIR "/"
+#define THIS_CGI "cindex.cgi"
 #define REFRESH "0"
 #define EXPIRE_LOGIN 60 * 60 * 8
-
-#define NOTOK_NEEDSSL "I'm sorry this page is only accessible via a ssl protected connection.<BR>\n"
 
 /* some messages about people who hit posts and don't have js on */
 #define PBC_POST_NO_JS_TEXT "Thank you for logging in\n"
@@ -80,6 +101,11 @@ char *get_cookie_created(char *);
 #define AUTH_FAILED_MESSAGE2 "Please make sure:<BR><UL><LI>Your caps lock key is off.<LI>Your number lock key is on.</UL>"
 #define AUTH_TROUBLE "There are currently problems with authentication services, please try again later"
 
+#define CHECK_LOGIN_RET_BAD_CREDS "invalid creds"
+#define CHECK_LOGIN_RET_SUCCESS "success"
+#define CHECK_LOGIN_RET_FAIL "fail"
+
+#define EARLIEST_EVER "Fri, 11-Jan-1990 00:00:01 GMT"
 #define PROMPT_UWNETID "<B>Password:</B><BR>\n"
 #define PROMPT_SECURID "<B>Securid:</B><BR>\n"
 
@@ -102,19 +128,18 @@ char *get_cookie_created(char *);
 #define YES_CLEAR_LOGIN 1
 #define NO_CLEAR_LOGIN 0
 
+/* a date before pubcookie that is guaranteed to be expired */
+#define EXPIRED_EXPIRES "Fri, 11-Jan-1990 00:00:01 GMT"
+
 /* flags to send to print_login_page_part1 */
 #define YES_FOCUS 1
-#define NO_FOCUS 1
+#define NO_FOCUS 0
 
 /* keys and certs */
 #define KEY_DIR "/usr/local/pubcookie/"
 #define CRYPT_KEY_FILE "c_key"
 #define CERT_FILE "pubcookie.cert"
 #define CERT_KEY_FILE "pubcookie.key"
-
-/* programs for creating and verifying cookies */
-#define CREATE_PGM "/usr/local/pubcookie/pbc_create"
-#define VERIFY_PGM "/usr/local/pubcookie/pbc_verify"
 
 /* some misc settings */
 #define SERIAL_FILE "/tmp/s"
@@ -143,50 +168,52 @@ Problems With the UW NetID Login Page</A> for further advice.</p>\
 
 #define J_TEST_TEXT1 "<SCRIPT LANGUAGE=\"JavaScript\"><!-- \
  \
-name = \"cookie_test\"; \
-s = (new Date().getSeconds()); \
-document.cookie = name + \"=\" + s; \
- \
-dc = document.cookie; \
-prefix = name + \"=\"; \
-begin = dc.indexOf(\"; \" + prefix); \
-if (begin == -1) { \
-    begin = dc.indexOf(prefix); \
-    if (begin != 0) returned = \"\"; \
-} else \
-    begin += 2; \
-end = document.cookie.indexOf(\";\", begin); \
-if (end == -1) \
-    end = dc.length; \
-returned = unescape(dc.substring(begin + prefix.length, end)); \
- \
-if ( returned == s ) { \
+name = \"cookie_test\"; \n
+    s = (new Date().getSeconds());
+    document.cookie = name + \"=\" + s;
+\n
+    dc = document.cookie;
+    prefix = name + \"=\";
+    begin = dc.indexOf(\"; \" + prefix);
+\n
+    if (begin == -1) {
+        begin = dc.indexOf(prefix);
+        if (begin != 0) returned = \"\";
+    } else
+        begin += 2;
+    end = document.cookie.indexOf(\";\", begin);
+\n
+    if (end == -1)
+        end = dc.length;
+    returned = unescape(dc.substring(begin + prefix.length, end));
+\n
+if ( returned == s ) {
 "
 
-#define J_TEST_TEXT2 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">A problem has been detected!</font></B></P>\");\
-document.write(\"<p><b><font size=\\\"+1\\\">Either you tried to use the BACK button to return to pages you\");\
-document.write(\" visited before the UW NetID login page, or the URL address you opened contains a shortened\");\
-document.write(\" domain name. </font></b></p>\");\
-document.write(\"<p>Review <A HREF=\\\"http://www.washington.edu/computing/web/login-problems.html\\\">Common\");\
-document.write(\" Problems With the UW NetID Login Page</A> for further advice.</p>\");\
-document.write(\"<p>&nbsp;</p>\");\
+#define J_TEST_TEXT2 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">A problem has been detected!</font></B></P>\");
+    document.write(\"<p><b><font size=\\\"+1\\\">Either you tried to use the BACK button to return to pages you\");
+    document.write(\" visited before the UW NetID login page, or the URL address you opened contains a shortened\");
+    document.write(\" domain name. </font></b></p>\");
+    document.write(\"<p>Review <A HREF=\\\"http://www.washington.edu/computing/web/login-problems.html\\\">Common\");
+    document.write(\" Problems With the UW NetID Login Page</A> for further advice.</p>\");
+    document.write(\"<p>&nbsp;</p>\");
 "
 
-#define J_TEST_TEXT3 "    document.cookie = name + \"=; expires=Thu, 01-Jan-70 00:00:01 GMT\";\
-}\
-else {\
+#define J_TEST_TEXT3 "    document.cookie = name + \"=; expires=Thu, 01-Jan-70 00:00:01 GMT\";
+}
+else {
 "
 
-#define J_TEST_TEXT4 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">This browser doesn't accept cookies!</font></B></P>\");\
-document.write(\"<p><b><font size=\\\"+1\\\">Your browser must <a href=\\\"http://www.washington.edu/computing/web/cookies.html\\\">accept cookies</a> in\");\
-document.write(\" order to use the UW NetID login page.</font></b></p>\");\
-document.write(\"<p>&nbsp;</p>\");\
+#define J_TEST_TEXT4 "    document.write(\"<P><B><font size=\\\"+1\\\" color=\\\"#FF0000\\\">This browser doesn't accept cookies!</font></B></P>\");
+    document.write(\"<p><b><font size=\\\"+1\\\">Your browser must <a href=\\\"http://www.washington.edu/computing/web/cookies.html\\\">accept cookies</a> in\");
+    document.write(\" order to use the UW NetID login page.</font></b></p>\");
+    document.write(\"<p>&nbsp;</p>\");
 "
 
-#define J_TEST_TEXT5 "}\
-\
-// -->\
-</SCRIPT>\
+#define J_TEST_TEXT5 "}
+
+// -->
+</SCRIPT>
 "
 
 #define NOTOK_NO_G_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P>\
@@ -207,7 +234,9 @@ document.write(\"<p>&nbsp;</p>\");\
 
 #define NOTOK_BAD_AGENT_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">This browser is either incompatible or has serious security flaws.</font></B></P>\
 \
-<p><b><font size=\"+1\">Please upgrade to the most recent version of either <A HREF=\"http://home.netscape.com/computing/download/index.html\">Netscape Navigator</A>, <A HREF=\"http://www.microsoft.com/windows/ie/default.htm\">Internet Explorer</A>, or <A HREF=\"http://www.opera.com/\">Opera</A>.  The browser you are using identifies itself as:<P><TT>$ENV{'HTTP_USER_AGENT'}</TT><P>\
+<p><b><font size=\"+1\">Please upgrade to the most recent version of either <A HREF=\"http://home.netscape.com/computing/download/index.html\">Netscape Navigator</A>, <A HREF=\"http://www.microsoft.com/windows/ie/default.htm\">Internet Explorer</A>, or <A HREF=\"http://www.opera.com/\">Opera</A>.  "
+
+#define NOTOK_BAD_AGENT_TEXT2 "<P>\
 \
 Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a> for further assistance.</font></b></p>\
 \
@@ -221,7 +250,7 @@ Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu<
 <p>&nbsp;</p>\
 "
 
-
-
-
+#define NOTOK_NEEDSSL_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \n\
+<P>I'm sorry this page is only accessible via a ssl protected connection.<BR>\n\
+"
 

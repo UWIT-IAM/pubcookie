@@ -1,5 +1,5 @@
 /*
-    $Id: securid_server.c,v 1.3 2000-01-14 19:11:15 willey Exp $
+    $Id: securid_server.c,v 1.4 2000-01-27 22:19:13 willey Exp $
      */
 
 #include <unistd.h>
@@ -105,7 +105,7 @@ int ro;                 /* true if read-only access needed */
 
   if (!sa_in.sin_port) {
     fprintf(stderr,"Unknown network service: %s\n",service);
-    log_error("eac_securid: Unknown network service: %s", service);
+    log_message("securid_server: getserver: Unknown network service: %s", service);
     return(-2);
   }
  
@@ -117,8 +117,8 @@ int ro;                 /* true if read-only access needed */
 
   if (do_dgram_prep) {
     if ((sock = socket(AF_INET,SOCK_DGRAM,0)) < 0) {
-      perror("socket");
-      exit(1);
+      perror("securid.server: getserver: socket");
+      return(-2);
     }
 #if !defined(_SEQUENT_) && !defined(__alpha__)
   } else {
@@ -141,8 +141,6 @@ int ro;                 /* true if read-only access needed */
 	char *cp;
 	if ( (cp = strchr(host->h_name,'.')) ) {
 	  *cp++ = '\0';
-/* what's with the extra arg? */
-/*	  sprintf(host_name,"%sb.u.washington.edu",host->h_name,cp); */
 	  sprintf(host_name,"%sb.u.washington.edu",host->h_name);
 	  host = gethostbyname(host_name);
 	}
@@ -169,7 +167,7 @@ int ro;                 /* true if read-only access needed */
       } else {
         if (i == 1) {
           fprintf(stderr,"%s: unknown host\n", host_name);
-          log_error("eac_securid: %s: unknown host", host_name);
+          log_message("securid.server: getserver: %s: unknown host", host_name);
           return(-2);
         }
         break;
@@ -181,8 +179,8 @@ int ro;                 /* true if read-only access needed */
       if (sendto(sock,(ro?"s\n":"p\n"),2,0,SA&sa_in,sizeof(sa_in)) != 2) {
  	if (errno != ENETUNREACH && errno != EHOSTUNREACH &&
                    errno != ECONNREFUSED) {
-          perror("sendto");
-          exit(1);
+          perror("securid.server: getserver: sendto");
+          return(-2);
 	}
       }
 
@@ -194,8 +192,8 @@ int ro;                 /* true if read-only access needed */
                                           service,s[0],s[1],s[2],s[3]);
       }
       if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket");
-        log_error("eac_securid: %s: socket: %m",service);
+        perror("securid.server: getserver: socket");
+        log_message("securid.server: getserver: %s: socket: %m",service);
       } else {
         struct sockaddr_in sin;
 
@@ -213,9 +211,9 @@ int ro;                 /* true if read-only access needed */
                 errno == ENODEV) {
               port--;
             } else {
-              log_error("eac_securid: bind %d: %m",port);
-              fprintf(stderr,"Port %d ",port);
-              perror("bind");
+              log_message("securid.server: bind %d: %m",port);
+              fprintf(stderr,"securid.server: getserver: Port %d ",port);
+              perror("securid.server: getserver: bind");
               return(-2);
             }
           } else {
@@ -227,11 +225,9 @@ int ro;                 /* true if read-only access needed */
         **  Do the actual connection.
         */
 
-log_error("eac_securid: ready to connect to service %s\n",service);
-
         if (connect(sock, (struct sockaddr *)&sa_in, sizeof (sa_in)) < 0) {
-          log_error("eac_securid: %s: connect: %m",service);
-          perror("connect");
+          log_message("securid_server: getserver: %s: connect: %m",service);
+          perror("securid.server: getserver: connect");
         } else {
           break;
         }
@@ -264,17 +260,17 @@ log_error("eac_securid: ready to connect to service %s\n",service);
     close(sock);
     if (logflag & 0x40) {
       unsigned char *s = (unsigned char *) &sa_in.sin_addr.s_addr;
-      fprintf(stderr,"Trying %s connect to %d.%d.%d.%d.\n",
+      fprintf(stderr,"securid.server: getserver: Trying %s connect to %d.%d.%d.%d.\n",
                                         service,s[0],s[1],s[2],s[3]);
     }
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      perror("socket");
-      log_error("eac_securid: %s: socket: %m",service);
+      perror("securid.server: getserver: socket");
+      log_error("securid.server: getserver: %s: socket: %m",service);
       return(-2);
     }
     if (connect(sock, (struct sockaddr *)&sa_in, sizeof (sa_in)) < 0) {
-      perror("connect");
-      log_error("eac_securid: %s: connect: %m",service);
+      perror("securid.server: getserver: connect");
+      log_error("securid.server: getserver: %s: connect: %m",service);
       return(-2);
     }
 
@@ -286,7 +282,7 @@ log_error("eac_securid: ready to connect to service %s\n",service);
 
 /*
 **  Attempt to connect to the specified host.  Return value is the
-**  file descriptor of the socket or -1 if unable to connect.
+**  file descriptor of the socket or -1 (or -2) if unable to connect.
 **
 **  This is the old entry without the ro flag
 */
