@@ -7,20 +7,37 @@ M - module changes
 L - library changes
 H - only .h files changed
 
-a4m1.25l2.2 (reebok1):  26May1999
+a5 (reebok2): 25Jun1999 rcs refernces: m1.28l2.4
+M  - support for POST and GET args
+M  - better support for Form/Multipart POST content
+
+a4m1.27l2.4 26May1999:
+M  - changes to the post page to the login server
+M  - changed base64_encodes in the module to ap_uuencodes
+L  - changes to accomodate changed des declarations in OpenSSL v0.9.3, these
+     are indeed undoing the type changes for OpenSSL v0.9.2b.  to accomodate
+     OpenSSL v0.9.2b i've added a define (OPENSSL_0_9_2B).  see the 
+     OpenSSL v0.9.3 CHANGES file for more info.
+Makefile - added aditional includes path for moved OpenSSL v0.9.3 include 
+           files, will someday change the file names in the pubcookie files.
+
+a4m1.26l2.3:  26May1999
+M  - some apache1.2 fixes and addition of main_rec/top_rec (fmf)
+
+a4m1.25l2.3 (reebok1):  26May1999
 M  - support for POST
 M  - added ap_add_version_component
 M  - change to using directory of uri instead of file system path of filename 
      for the default app_id.
 
-a4m1.24l2.2:  29Apr1999
+a4m1.24l2.3:  29Apr1999
 M  - start of packaging up POST content
 M  - added REDIRECT_IN_HEADER option and made the redirect to the login
      server to be in the body the default
 M  - added 'no cache' headers to redirect
 M  - changed to JimB style session cookie names
 
-a4m1.23l2.2:  29Apr1999
+a4m1.23l2.3:  29Apr1999
 H  - changed granting cookie timeout from 60 seconds to 20 
      (had been set up for testing on www.washington.edu)
 L  - Jim Blankenship WIN32 patches
