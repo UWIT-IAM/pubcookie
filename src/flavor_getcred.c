@@ -19,12 +19,17 @@
 # include <string.h>
 #endif
 
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif
+
 #include "pbc_config.h"
 #include "index.cgi.h"
 #include "flavor.h"
 #include "security.h"
 #include "verify.h"
 #include "pbc_logging.h"
+#include "libpubcookie.h"
 
 /* we inherit from login_flavor_basic */
 extern struct login_flavor login_flavor_basic;
