@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.149 2005-02-24 19:56:09 willey Exp $
+ * $Id: index.cgi.c,v 1.150 2005-02-24 23:26:38 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -226,9 +226,9 @@ int max_cgi_count = 0;
 security_context *context;      /* to hold all of the certs for a transaction */
 char **ok_user_agents = NULL;
 
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 /*      general utility thingies                                           */
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 
 /*
  * return the length of the passed file in bytes or 0 if we cant tell
@@ -1139,7 +1139,7 @@ char *decode_granting_request (pool * p, char *in, char **peerp)
 }
 
 
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                       /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 /*                                                                   */
 /*                                                                   */
 /* four cases for the main thingie                                   */
@@ -1170,7 +1170,7 @@ char *decode_granting_request (pool * p, char *in, char **peerp)
 /*         out: L & G cookies redirect (username comes from L cookie)*/
 /*                                                                   */
 /*                                                                   */
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                       /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 
 int vector_request (pool * p, const security_context * context,
                     login_rec * l, login_rec * c)
@@ -1962,9 +1962,9 @@ static void init_user_agent (pool * p)
 
 }
 
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 /*	main line                                                          */
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 
 int cgiMain_init ()
 {
@@ -2262,9 +2262,9 @@ char *check_l_cookie (pool * p, const security_context * context,
 }
 
 
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 /*	functions                                                          */
-/* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
+                                                            /* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* *//* */
 
 /* show a nice page when things don't go well */
 void notok (pool * p, notok_event event, char *reason)
@@ -2646,28 +2646,31 @@ void print_redirect_page (pool * p, const security_context * context,
 
     /* log redirect */
     /* truncate GET args for log AUDIT but give full args for DEBUG */
-    redirect_final_trunc = strdup(redirect_final);
-    if ( (ptr=strchr(redirect_final_trunc, '?')) != NULL ) {
-        if ( strlen(redirect_final_trunc) - (ptr-redirect_final_trunc) >= 3 )
-            strcpy(ptr+1, "...");
+    redirect_final_trunc = strdup (redirect_final);
+    if ((ptr = strchr (redirect_final_trunc, '?')) != NULL) {
+        if (strlen (redirect_final_trunc) - (ptr - redirect_final_trunc) >=
+            3)
+            strcpy (ptr + 1, "...");
 
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                 "%s Redirect user: %s redirect(full): %s reason: %s\n",
-                 l->first_kiss,
-                 (l->user == NULL ? "" : l->user),
-                 redirect_final,
-                 l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
+                          "%s Redirect user: %s redirect(full): %s reason: %s\n",
+                          l->first_kiss,
+                          (l->user == NULL ? "" : l->user),
+                          redirect_final,
+                          l->appsrv_err_string ==
+                          NULL ? "(null)" : l->appsrv_err_string);
     }
     pbc_log_activity (p, PBC_LOG_AUDIT,
-             "%s Redirect user: %s redirect%s: %s reason: %s\n",
-             l->first_kiss,
-             (l->user == NULL ? "" : l->user),
-             (ptr == NULL) ? "" : "(truncated)",
-             redirect_final_trunc,
-             l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
+                      "%s Redirect user: %s redirect%s: %s reason: %s\n",
+                      l->first_kiss,
+                      (l->user == NULL ? "" : l->user),
+                      (ptr == NULL) ? "" : "(truncated)",
+                      redirect_final_trunc,
+                      l->appsrv_err_string ==
+                      NULL ? "(null)" : l->appsrv_err_string);
 
-    if ( redirect_final_trunc != NULL )
-        pbc_free(p, redirect_final_trunc);
+    if (redirect_final_trunc != NULL)
+        pbc_free (p, redirect_final_trunc);
 
     /* Send local cookies */
     if (l->pinit == PBC_TRUE)
@@ -2699,9 +2702,11 @@ void print_redirect_page (pool * p, const security_context * context,
                         cookie_list[i].name, cookie_list[i].value);
         }
         clear_app_cookies (p);
-        print_html(p, "<noscript><p align=center>You do not have Javascript turned on.");
-        print_html(p, "<p align=center><input type=submit name=go value=\"Continue\">");
-        print_html(p, "</noscript>\n");
+        print_html (p,
+                    "<noscript><p align=center>You do not have Javascript turned on.");
+        print_html (p,
+                    "<p align=center><input type=submit name=go value=\"Continue\">");
+        print_html (p, "</noscript>\n");
         print_html (p, "</form></html>\n");
 
 

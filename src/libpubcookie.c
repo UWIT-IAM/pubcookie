@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.78 2005-02-24 19:56:09 willey Exp $
+ * $Id: libpubcookie.c,v 2.79 2005-02-24 23:26:38 willey Exp $
  */
 
 
@@ -1124,12 +1124,11 @@ char *escape_percs (pool * p, char *in)
 {
     char *out;
     char *ptr;
-    int i=0;
+    int i = 0;
 
     /* count the number of '%' */
-    for ( ptr=in; ptr=strchr(ptr+1, '%'); i++ )
-        ;
-    
+    for (ptr = in; ptr = strchr (ptr + 1, '%'); i++);
+
     if (!(out = malloc (strlen (in) + i))) {
         libpbc_abend (p, "out of memory");
     }
@@ -1137,7 +1136,7 @@ char *escape_percs (pool * p, char *in)
     ptr = out;
     while (*in) {
         *ptr = *in;
-        if ( *in == '%' )
+        if (*in == '%')
             *(++ptr) = '%';
         ptr++;
         in++;
@@ -1146,4 +1145,3 @@ char *escape_percs (pool * p, char *in)
     return (out);
 
 }
-

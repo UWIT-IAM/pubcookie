@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.168 2005-02-07 22:26:37 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.169 2005-02-24 23:26:38 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -1482,7 +1482,7 @@ static int pubcookie_user_hook (request_rec * r)
         return OK;
 
     /* pass if the request is for our post-reply */
-    if (!strcasecmp (r->unparsed_uri+1, scfg->post_reply_url))
+    if (!strcasecmp (r->unparsed_uri + 1, scfg->post_reply_url))
         return OK;
 
     /* if it's basic auth then it's not pubcookie */
@@ -2069,7 +2069,7 @@ static int pubcookie_authz_hook (request_rec * r)
         return OK;
 
     /* pass if the request is our post-reply */
-    if (!strcasecmp (r->unparsed_uri+1, scfg->post_reply_url))
+    if (!strcasecmp (r->unparsed_uri + 1, scfg->post_reply_url))
         return OK;
 
     /* a failed noprompt login is all we check for */
@@ -2774,7 +2774,8 @@ static const char *pubcookie_set_post_url (cmd_parms * cmd,
                                                        &pubcookie_module);
 
     scfg->post_reply_url = ap_pstrdup (cmd->pool, v);
-    if (*scfg->post_reply_url == '/') scfg->post_reply_url++;
+    if (*scfg->post_reply_url == '/')
+        scfg->post_reply_url++;
     return NULL;
 }
 
