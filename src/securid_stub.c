@@ -18,7 +18,7 @@
 #include <com_err.h>
 #include <krb5.h>
 /* securid */
-#include "securid_securid.h"
+#include "securid.h"
 /* pubcookie things */
 #include "pubcookie.h"
 #include "libpubcookie.h"
@@ -48,7 +48,7 @@ char **argv;
 //      printf ("\ti ->%d<- name ->%s<- prn ->%s<-\n", i, name, prn);
 
       ( i == 2 ) ?
-          securid(name,prn) ? printf("fail\n") : printf("ok\n")
+          securid(name,prn,0,SECURID_TYPE_NORM,SECURID_DO_SID) ? printf("fail\n") : printf("ok\n")
       :
           printf("fail\n");
       *prn='\0'; *name='\0';
@@ -71,18 +71,5 @@ void log_message(const char *format, ...)
 
 }
 
-void log_error(const char *format,...)
-{
-    va_list     args;
-    char        new_format[PBC_4K];
-    char        message[PBC_4K];
-
-    va_start(args, format);
-    snprintf(new_format, sizeof(new_format), "%s: %s", SYSERR_LOGINSRV_MESSAGE, format);
-    vsnprintf(message, sizeof(message), new_format, args);
-    log_message(message);
-    va_end(args);
-
-}
 
 
