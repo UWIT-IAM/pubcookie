@@ -4,7 +4,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile,v 1.49 2002-05-23 19:32:59 jteaton Exp $
+# $Id: Makefile,v 1.50 2002-06-13 17:15:56 jteaton Exp $
 
 include Makefile.settings
 
@@ -29,5 +29,11 @@ install: clean
 dist:
 	$(MAKE) -f Makefile.login dist
 	$(MAKE) -f Makefile.apxs dist
+
+tests:
+	$(MAKE) -f Makefile.login tests
+
+utils:
+	$(MAKE) -f Makefile.login utils
 
 # vim: set noet:
