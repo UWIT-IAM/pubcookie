@@ -336,7 +336,7 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
 
 # other site-specific config
 granting_cert_file: /usr/local/pubcookie/keys/pubcookie_granting.cert 
-login_uri: https://weblogin.example.edu
+login_uri: https://weblogin.example.edu/
 login_host: weblogin.example.edu
 enterprise_domain: .example.edu</pre></td>
                       </tr>
@@ -412,6 +412,7 @@ enterprise_domain: .example.edu</pre></td>
 # Pubcookie Configuration
 PubcookieAuthTypeNames EGNetID
 PubcookieInactiveExpire -1
+PubcookieLogin https://weblogin.example.edu/
 &lt;/IfDefine&gt;</pre></TD>
                         </TR>
                       </TABLE>
