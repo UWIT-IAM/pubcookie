@@ -7,7 +7,16 @@ M - module changes
 L - library changes
 H - only .h files changed
 
-a5 (reebok2): 25Jun1999 rcs refernces: m1.28l2.4
+a5 release1: 8Jul1999 rcs reference: m1.30l2.4
+M  - ammended the logic for identifing POST content or a POST request.
+M  - changed some text messages to the user (pbc_config.h).
+
+a5 m1.29: 28Jun1999:
+M  - apache1.x doesn't have ap_uuencode so we tried a different uuencode
+     (./patch_archive/a5rebook2_patch1_fmf)
+M  - but that uuencode it's right so apache1.2 is back to using base64
+
+a5 reebok2 25Jun1999 rcs refernces: m1.28l2.4
 M  - support for POST and GET args
 M  - better support for Form/Multipart POST content
 
@@ -24,7 +33,7 @@ Makefile - added aditional includes path for moved OpenSSL v0.9.3 include
 a4m1.26l2.3:  26May1999
 M  - some apache1.2 fixes and addition of main_rec/top_rec (fmf)
 
-a4m1.25l2.3 (reebok1):  26May1999
+a4 reebok1 26May1999 rcs refernces: m1.25l2.3
 M  - support for POST
 M  - added ap_add_version_component
 M  - change to using directory of uri instead of file system path of filename 
