@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.21 1999-03-05 02:24:19 willey Exp $
+    $Id: mod_pubcookie.c,v 1.22 1999-03-05 19:42:56 willey Exp $
  */
 
 #include "httpd.h"
@@ -297,13 +297,14 @@ static int is_pubcookie_auth(pubcookie_dir_rec *cfg) {
   }
 }
 
-/*                                                                            */
-static int pubcookie_check_version(unsigned char *b, unsigned char *a) {
+/* a is from the cookie                                                       */
+/* b is from the module                                                       */
+static int pubcookie_check_version(unsigned char *a, unsigned char *b) {
   
   if( a[0] == b[0] && a[1] == b[1] )
     return 1;
   if( a[0] == b[0] && a[1] != b[1] ) {
-    libpbc_debug("Minor version mismatch cookie: %s server: %s\n", a, b);
+    libpbc_debug("Minor version mismatch cookie: %s your version: %s\n", a, b);
     return 1;
   }
 
