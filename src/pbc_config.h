@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.14 1999-02-12 02:00:53 willey Exp $
+    $Id: pbc_config.h,v 1.15 1999-02-26 22:35:49 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -12,11 +12,16 @@
 /* 
  things that came from the module
  */
+
+/* the cookies; l, g, and s have the same format g request and pre s
+   are different internally
+ */
 #define PBC_L_COOKIENAME "pubcookie_l"
 #define PBC_G_COOKIENAME "pubcookie_g"
+#define PBC_G_REQ_COOKIENAME "pubcookie_g_req"
 #define PBC_S_COOKIENAME "pubcookie_s"
-#define PBC_TEST_COOKIENAME "pubcookie_test_cookie"
-#define PBC_TEST_COOKIECONTENTS "yes"
+#define PBC_PRE_S_COOKIENAME "pubcookie_p_res"
+
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_LOGIN_PAGE "https://weblogin.washington.edu/"
@@ -34,6 +39,20 @@
 #define PBC_SECURID_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
+
+/* 
+ for the GET line to the login server
+ this is used in the login script too
+ */
+#define PBC_GETVAR_APPSRVID "one"
+#define PBC_GETVAR_APPID "two"
+#define PBC_GETVAR_CREDS "three"
+#define PBC_GETVAR_VERSION "four"
+#define PBC_GETVAR_METHOD "five"
+#define PBC_GETVAR_HOST "six"
+#define PBC_GETVAR_URI "seven"
+#define PBC_GETVAR_ARGS "eight"
+#define PBC_GETVAR_FR "fr"
 
 /* 
  things that are used both places
