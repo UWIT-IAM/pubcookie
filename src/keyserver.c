@@ -1,23 +1,27 @@
 /*
-    Copyright 2002 Carnegie Mellon University
+
+    Copyright 1999-2002, University of Washington.  All rights reserved.
+    see doc/LICENSE.txt for copyright information
+
      ____        _                     _    _
     |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
     | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
     |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
     |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
 
-    Comments and suggestions:
-        Internal to U. of Washington: pubcookie@cac.washington.edu
-        External to U. of Washington: pubcookie-ext@cac.washington.edu
-    Pubcookie on the Web: http://www.pubcookie.org/
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More information: http://www.pubcookie.org/
+    Written by the Pubcookie Team
 
     a simple program for maintaining keys on the login server 
     
     by default, it should be invoked from inetd and acts vaguely like
     an HTTP server
+
  */
+
 /*
-    $Id: keyserver.c,v 2.22 2002-08-15 22:50:06 jjminer Exp $
+    $Id: keyserver.c,v 2.23 2002-08-20 20:14:09 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
