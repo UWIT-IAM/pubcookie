@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.80 $
+ * $Revision: 1.81 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -944,12 +944,16 @@ int vector_request(login_rec *l, login_rec *c)
         return PBC_FAIL;
     }
 
-    /* decode login cookie */
-    l->check_error = check_l_cookie(l, c);
-
     /* init_flavor should probably be called earlier on, but it
        works here for now */
-    fl->init_flavor();
+    if (fl->init_flavor() != 0) {
+        pbc_log_activity(PBC_LOG_ERROR,
+                         "init_flavor: %s not available", fl->name);
+        return PBC_FAIL;
+    }
+
+    /* decode login cookie */
+    l->check_error = check_l_cookie(l, c);
 
     /* call authn flavor to determine correct result */
     res = fl->process_request(l, c, &errstr);
@@ -1295,7 +1299,8 @@ int pinit(login_rec *l, login_rec *c)
 	/* find what the credential id is for that authtype */
 	l->creds_from_greq = l->creds = libpbc_get_credential_id(credname);
 	if (l->creds == PBC_CREDS_NONE) {
-	    /* xxx what are we suppose to do here? */
+	    /* what are we suppose to do here? i guess just losing is
+             reasonable and safe */
 	    pbc_log_activity(PBC_LOG_ERROR,
 			     "pinit: pinit_default_authtype not recognized");
 	    abort();
