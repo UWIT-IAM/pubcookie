@@ -1,0 +1,24 @@
+
+$Id: mod_pubcookie_dev_notes.txt,v 1.1 2002-08-06 17:06:59 willey Exp $
+
+
+logging:
+
+Logging should be done with ap_log_error or ap_log_rerror() calls,
+depending on whether you hav a request (r) or server (s) record handy.
+Also, ap_log_rerror() logs the client ip.
+
+example:
+
+ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|AP_LOG_DEBUG, r,
+    "pubcookie_user: has granting; current uri is: %s\n", r->uri);
+
+ap_log_error(APLOG_MARK, APLOG_NOERRNO|AP_LOG_DEBUG, s,
+    "pubcookie_user: has granting; current uri is: %s\n", r->uri);
+
+levels:
+
+ - AP_LOG_EMERG - things are really broken, can't go on, bail
+ - AP_LOG_INFO - normal logging of redirects and the like
+ - AP_LOG_DEBUG - super-debug or other really verbose crap
+
