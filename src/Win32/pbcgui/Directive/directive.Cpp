@@ -100,7 +100,6 @@ void CPBC_PropSheet::GetEffectiveValue(int i) {
 }
 
 void CPBC_PropSheet::Set_Delete_Button(int i) {
-	HWND hDelete         = GetDlgItem(hwndDlg, IDC_Delete);
 
 	if (!_wcsicmp((directive[i].defined_in.c_str() + 1),pwzRegPath)) {
 		EnableWindow(hDelete,TRUE);
@@ -114,8 +113,6 @@ void CPBC_PropSheet::ReadSelectedValue() {
 #	define DIRECTIVE_INIT
 #	include "pbc_directives.h"
 #	undef DIRECTIVE_INIT
-
-	HWND hProps	         = GetDlgItem(hwndDlg, IDC_PROPS);
 
 	for (int i=0;i<NUM_DIRECTIVES;i++) {
 		GetEffectiveValue(i);
@@ -139,14 +136,6 @@ void CPBC_PropSheet::ReadCurrentValues() {
 	}
 }
 
-void CPBC_PropSheet::SetupPropSheet() {
-
-		ReadCurrentValues();
-		PopulateComboBox(GetDlgItem(hwndDlg, IDC_PROPS));	
-		PopulatePage();
-
-	}
-
 void CPBC_PropSheet::WriteValues() {
 	wstring RegPath;
 
@@ -157,28 +146,22 @@ void CPBC_PropSheet::WriteValues() {
 	}
 
 	for (int i=0;i<NUM_DIRECTIVES;i++) {
-		if (wcsicmp(directive[i].value.c_str(),directive[i].new_value.c_str())) {
-			if (directive[i].type == D_BOUND_INT || directive[i].type == D_FREE_INT) {
-				WriteRegInt(RegPath.c_str(), directive[i].name.c_str(), directive[i].new_value.c_str());
-			} else {
-				WriteRegString(RegPath.c_str(), directive[i].name.c_str(), directive[i].new_value.c_str());
+		if (wcscmp(STR_PENDING_DELETION,directive[i].new_value.c_str())){
+			if (wcsicmp(directive[i].value.c_str(),directive[i].new_value.c_str())) {
+				if (directive[i].type == D_BOUND_INT || directive[i].type == D_FREE_INT) {
+					WriteRegInt(RegPath.c_str(), directive[i].name.c_str(), directive[i].new_value.c_str());
+				} else {
+					WriteRegString(RegPath.c_str(), directive[i].name.c_str(), directive[i].new_value.c_str());
+				}
+			}
+		} else { // Commit Delete
+			DeleteRegVal(pwzRegPath,directive[i].name.c_str());
+			if (!wcslen(pwzRegPath)) {  //Two places to delete root directory values
+				DeleteRegVal(_T(PBC_DEFAULT_KEY),directive[i].name.c_str());
 			}
 		}
 	}
 
-}
-
-void CPBC_PropSheet::DeleteValue() {
-	wchar_t value_name[BUFFSIZE];
-	HWND hProps	         = GetDlgItem(hwndDlg, IDC_PROPS);
-
-	DWORD index = SendMessage(hProps, CB_GETCURSEL, 0,0); 
-	LRESULT debug = SendMessage(hProps, CB_GETLBTEXT, (WPARAM)index, (LPARAM)value_name );
-
-	DeleteRegVal(pwzRegPath,value_name);
-	if (!wcslen(pwzRegPath)) {  //Two places to delete root directory values
-			DeleteRegVal(_T(PBC_DEFAULT_KEY),value_name);
-	}
 }
 
 HKEY CPBC_PropSheet::OpenPBCKey(LPCTSTR szKey, REGSAM samDesired) {

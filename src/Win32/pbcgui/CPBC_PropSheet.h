@@ -20,6 +20,7 @@ typedef wchar_t pool;
 #define STR_THIS_WEB_INSTANCE L"(This web instance)"
 #define STR_SERVER_DEFAULT    L"(Server Default)"
 #define STR_PROGRAM_DEFAULT   L"(Program Default)"
+#define STR_PENDING_DELETION  L"(Pending Removal)"
 
 #define debug_break() MessageBox(NULL,L"Break",L"Break",MB_OK);
 
@@ -91,6 +92,13 @@ private:
     pool   p[BUFFSIZE];
 	wstring defined_in;
 
+	HWND hValueBox;      
+	HWND hValueEdit;
+	HWND hInheritedFrom;
+	HWND hMoreInfo;
+	HWND hProps;	
+	HWND hDelete;
+
 	static BOOL CALLBACK DialogProc(HWND hwndDlg,  // handle to dialog box
         UINT uMsg,     // message
         WPARAM wParam, // first message parameter
@@ -106,7 +114,7 @@ private:
               const _TCHAR* szValueName,
               const _TCHAR* szValue);
     
-    void PopulateComboBox(HWND cb_handle);
+    void PopulateComboBox();
 	void WriteValues();
 	void GetEffectiveValue(int i);
 	void ReplaceSlashes(_TCHAR * buf);
@@ -114,7 +122,9 @@ private:
 	void DeleteRegVal(const _TCHAR* szKey, const _TCHAR* szValueName);
 	void DeleteValue();
 	void Set_Delete_Button(int i);
-	void CPBC_PropSheet::ReadSelectedValue();
+	void ReadSelectedValue();
+	void GetHandles();
+
 
     ///////////////////////////////
     // Private IDataObject support bits

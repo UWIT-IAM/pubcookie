@@ -249,24 +249,21 @@ void CPBC_PropSheet::ReadValAsString(LPTSTR key, int i, LPCTSTR defined_in_val) 
 	} 
 }
 
-void CPBC_PropSheet::PopulateComboBox(HWND cb_handle)
+void CPBC_PropSheet::PopulateComboBox()
 {
 
 	for (int i = 0; i <  NUM_DIRECTIVES; i++)
 	{	
-		LRESULT index = SendMessage(cb_handle, CB_ADDSTRING, 0, (LPARAM) (LPWSTR) directive[i].name.c_str());
-		LRESULT debug = SendMessage(cb_handle, CB_SETITEMDATA, (WPARAM)index, (LPARAM)i );
+		LRESULT index = SendMessage(hProps, CB_ADDSTRING, 0, (LPARAM) (LPWSTR) directive[i].name.c_str());
+		LRESULT debug = SendMessage(hProps, CB_SETITEMDATA, (WPARAM)index, (LPARAM)i );
 	}
 
-	LRESULT debug = SendMessage(cb_handle, CB_SETCURSEL, 0, 0);	// wparam = index, lparam = not used
+	LRESULT debug = SendMessage(hProps, CB_SETCURSEL, 0, 0);	// wparam = index, lparam = not used
 
 }
 
 BOOL CPBC_PropSheet::UpdateNewValue() {
 	wchar_t value[BUFFSIZE];
-	HWND hValueBox       = GetDlgItem(hwndDlg, IDC_ValueBox);
-	HWND hValueEdit      = GetDlgItem(hwndDlg, IDC_ValueEdit);
-	HWND hProps	         = GetDlgItem(hwndDlg, IDC_PROPS);
 
 	DWORD index = SendMessage(hProps, CB_GETCURSEL, 0,0); 
 	UINT i = SendMessage(hProps, CB_GETITEMDATA, (WPARAM)index, 0 );
@@ -287,12 +284,35 @@ BOOL CPBC_PropSheet::UpdateNewValue() {
 	}
 }
 
+void CPBC_PropSheet::DeleteValue() {
+
+	DWORD index = SendMessage(hProps, CB_GETCURSEL, 0,0); 
+	LRESULT i = SendMessage(hProps, CB_GETITEMDATA, (WPARAM)index, 0 );
+
+	directive[i].new_value = STR_PENDING_DELETION;
+	
+	PopulatePage();
+
+}
+void CPBC_PropSheet::GetHandles() {
+	hValueBox       = GetDlgItem(hwndDlg, IDC_ValueBox);
+	hValueEdit      = GetDlgItem(hwndDlg, IDC_ValueEdit);
+	hInheritedFrom  = GetDlgItem(hwndDlg, IDC_InheritedFrom);
+	hMoreInfo       = GetDlgItem(hwndDlg, IDC_MoreInfo);
+	hProps	        = GetDlgItem(hwndDlg, IDC_PROPS);
+	hDelete         = GetDlgItem(hwndDlg, IDC_Delete);
+}
+
+void CPBC_PropSheet::SetupPropSheet() {
+
+	GetHandles();
+	ReadCurrentValues();
+	PopulateComboBox();	
+	PopulatePage();
+
+}
+
 void CPBC_PropSheet::PopulatePage() {
-	HWND hValueBox       = GetDlgItem(hwndDlg, IDC_ValueBox);
-	HWND hValueEdit      = GetDlgItem(hwndDlg, IDC_ValueEdit);
-	HWND hInheritedFrom  = GetDlgItem(hwndDlg, IDC_InheritedFrom);
-	HWND hMoreInfo       = GetDlgItem(hwndDlg, IDC_MoreInfo);
-	HWND hProps	         = GetDlgItem(hwndDlg, IDC_PROPS);
 
 	DWORD index = SendMessage(hProps, CB_GETCURSEL, 0,0); 
 	LRESULT i = SendMessage(hProps, CB_GETITEMDATA, (WPARAM)index, 0 );
@@ -350,8 +370,6 @@ BOOL CALLBACK CPBC_PropSheet::DialogProc(
 				}
 				if (wParam == IDC_Delete) { 
 					pThis->DeleteValue();
-					pThis->ReadSelectedValue();
-					pThis->PopulatePage();
 					SendMessage(GetParent(hwndDlg), PSM_CHANGED, (WPARAM)hwndDlg, 0); //light apply
 				} else if (wParam == IDC_Refresh) {
 					pThis->ReadCurrentValues(); //refresh values
