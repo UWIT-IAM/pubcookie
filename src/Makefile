@@ -18,115 +18,162 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.30 2001-01-26 21:17:04 willey Exp $
+#   $Id: Makefile,v 1.31 2001-04-27 22:03:57 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-#   for convenience i make symlinks to the openssl and rsaref directorys
-#   the two openssl include directories compensate for a openssl
-#     file location shuffling.
-CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include -DUSE_SECURID -DAPACHE1_3
+CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include 
 # order is important here
-LDFLAGS=-L/usr/local/ssl/lib -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref 
+LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto
+# nfast stuff
+#LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto -L/opt/nfast/gcc/lib -lnfstub
 
 # hopefully you don't have to change anything below here
 ################################################################################
 
-GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
-ALLHEAD=${GEN_HEAD}
-SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
-MISC=README \
-     CHANGES \
-     Makefile \
-     Makefile.tmpl \
-     Makefile.apxs \
-     pubcookie_granting.cert
+GENHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
+MODULEHEAD=
+LOGINHEAD=index.cgi.h securid.h
 
-BASENAME=pubcookie
-#sed -e '/^#define PBC_VERSION/!d' -e '/^#define PBC_VERSION/s/^#define PBC_VERSION "\(a2\)".*$/\1/' pbc_version.h` \
+ALLHEAD=${GENHEAD} ${LOGINHEAD} ${MODULEHEAD}
 
-VERSION=a5release11
-DIR_NAME=$(BASENAME)-$(VERSION)
-TARFILE=$(BASENAME)-$(VERSION).tar
+GENERALSRC=libpubcookie.c \
+           base64.c
+
+MODULESRC=mod_pubcookie.c
+
+TESTSRC=dtest.c \
+        pbc_create.c \
+        test_localc_key.c \
+        what_is_my_ip.c \
+        pbc_verify.c \
+        candv.c
+
+LOGINSRC=index.cgi.c \
+	 index.cgi_krb.c \
+	 index.cgi_securid.c \
+	 make_crypted_bit.c \
+	 mkc_key_generic.c \
+	 mkc_key_local.c \
+	 securid.c
+
+ALLSRC=${GENERASRC} ${TESTSRC} ${LOGINSRC} ${MODULESRC}
+
+LOGINMISC=CHANGES.login \
+          Makefile.tmpl \
+          Makefile.apxs \
+	  INSTALL.login
+MODULEMISC=CHANGES.mod_pubcookie \
+           Makefile.index.cgi
+TESTMISC=Makefile
+MISCMISC=README \
+         LICENSE
 
 MAKEFILE=Makefile
-ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c
-ALLHEAD=${GEN_HEAD}
-
 TAR=tar
 RM=rm
 GZIP=gzip
 
-
-default:	candv dtest test_local_c_key base64.o
+default:	tar
 
 admin:	pbc_create pbc_verify base64.o
 
+test_apps:	candv dtest test_local_c_key speed_test
+
 all:	pbc_create pbc_verify candv dtest mkc_key_generic mkc_key_local make_crypted_bit test_local_c_key candv dtest test_local_c_key
 
-test_apps:	candv dtest test_local_c_key
 
-candv:	candv.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ candv.o libpubcookie.o base64.o $(LDFLAGS)
+speed_test:	speed_test.o libpubcookie.o base64.o
+	$(CC) ${CFLAGS} -o $@ speed_test.o libpubcookie.o base64.o $(LDFLGS)
+
+candv:		candv.o libpubcookie.o base64.o
+	$(CC) ${CFLAGS} -o $@ candv.o libpubcookie.o base64.o $(LDFLAGS)
 
 dtest:		dtest.o libpubcookie.o 
-		$(CC) ${CFLAGS} -o $@ dtest.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ dtest.o libpubcookie.o base64.o $(LDFLAGS)
 
 test_local_c_key:	test_local_c_key.o libpubcookie.o 
-		$(CC) ${CFLAGS} -o $@ test_local_c_key.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ test_local_c_key.o libpubcookie.o base64.o $(LDFLAGS)
 
 pbc_create:	pbc_create.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ pbc_create.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ pbc_create.o libpubcookie.o base64.o $(LDFLAGS)
 
 pbc_verify:	pbc_verify.o libpubcookie.o base64.o
-		$(CC) ${CFLAGS} -o $@ pbc_verify.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ pbc_verify.o libpubcookie.o base64.o $(LDFLAGS)
 
 t:		t.o libpubcookie.o 
-		$(CC) ${CFLAGS} -o $@ t.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ t.o libpubcookie.o base64.o $(LDFLAGS)
 
 mkc_key_generic:	mkc_key_generic.o libpubcookie.o 
-		$(CC) ${CFLAGS} -o $@ mkc_key_generic.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ mkc_key_generic.o libpubcookie.o base64.o $(LDFLAGS)
 
-mkc_key_local:	mkc_key_local.o libpubcookie.o 
-		$(CC) ${CFLAGS} -o $@ mkc_key_local.o libpubcookie.o base64.o $(LDFLAGS)
+mkc_key_local:		mkc_key_local.o libpubcookie.o 
+	$(CC) ${CFLAGS} -o $@ mkc_key_local.o libpubcookie.o base64.o $(LDFLAGS)
 
 make_crypted_bit:	make_crypted_bit.o libpubcookie.o 
-		$(CC) ${CFLAGS} -o $@ make_crypted_bit.o libpubcookie.o base64.o $(LDFLAGS)
+	$(CC) ${CFLAGS} -o $@ make_crypted_bit.o libpubcookie.o base64.o $(LDFLAGS)
+
+what_is_my_ip:		what_is_my_ip.o libpubcookie.o base64.o
+	$(CC) ${CFLAGS} -o $@ what_is_my_ip.o libpubcookie.o base64.o $(LDFLAGS)
 
 h2ph:
 	co -l *.ph; \
 	h2ph -d . *.h; \
 	ci -mauto_update -u *.ph
 
-tar:
-	rm -rf $(DIR_NAME); \
-	mkdir $(DIR_NAME); \
-	for i in $(SRC) $(GEN_HEAD) $(MISC) ;\
+moduletar:
+	VERSION=`awk '/PBC_PUBID/{print $$3}' pbc_version.h | sed 's/"//g'`; \
+	BASENAME=mod_pubcookie; \
+	DIR_NAME=$$BASENAME-$$VERSION; \
+	TARFILE=$$BASENAME-$${VERSION}.tar; \
+	rm -rf $$DIR_NAME; \
+	mkdir $$DIR_NAME; \
+	for i in ${GENERALSRC} $(MODULESRC) $(GENHEAD) ${MODULEHEAD} ${MODULEMISC} $(MISC) ;\
 	do \
-		cp $$i $(DIR_NAME); \
-		chmod 664 $(DIR_NAME)/$$i; \
+		cp $$i $$DIR_NAME; \
+		chmod 664 $$DIR_NAME/$$i; \
 	done; \
-	$(TAR) cf $(TARFILE) $(DIR_NAME); \
-	$(GZIP) -f $(TARFILE); \
-	$(RM) -rf $(DIR_NAME);
+	$(TAR) cvf $$TARFILE $$DIR_NAME; \
+	$(GZIP) -f $$TARFILE; \
+	$(RM) -rf $$DIR_NAME; \
+	echo Created $$TARFILE
 
-base64.o: base64.c ${GEN_HEAD} ${MAKEFILE}
-candv.o: candv.c ${GEN_HEAD} ${MAKEFILE}
-dtest.o: dtest.c ${GEN_HEAD} ${MAKEFILE}
-libpubcookie.o: libpubcookie.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
-make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
-mkc_key_generic.o: mkc_key_generic.c ${GEN_HEAD} ${MAKEFILE}
-mkc_key_local.o: mkc_key_local.c ${GEN_HEAD} ${MAKEFILE}
+logintar:
+	LVERSION=`awk '/PBC_LOGIN_VERSION/{print $$3}' pbc_version.h | sed 's/"//g'`; \
+	BASENAME=pubcookie_login; \
+	DIR_NAME=$$BASENAME-$$LVERSION; \
+	TARFILE=$$BASENAME-$${LVERSION}.tar; \
+	rm -rf $$DIR_NAME; \
+	mkdir $$DIR_NAME; \
+	for i in ${GENERALSRC} $(LOGINSRC) $(GENHEAD) ${LOGINEAD} ${LOGINMISC} $(MISC) ;\
+	do \
+		cp $$i $$DIR_NAME; \
+		chmod 664 $$DIR_NAME/$$i; \
+	done; \
+	$(TAR) cvf $$TARFILE $$DIR_NAME; \
+	$(GZIP) -f $$TARFILE; \
+	$(RM) -rf $$DIR_NAME; \
+	echo Created $$TARFILE
+
+base64.o: base64.c ${GENHEAD} ${MAKEFILE}
+candv.o: candv.c ${GENHEAD} ${MAKEFILE}
+dtest.o: dtest.c ${GENHEAD} ${MAKEFILE}
+libpubcookie.o: libpubcookie.c libpubcookie.h ${GENHEAD} ${MAKEFILE}
+make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GENHEAD} ${MAKEFILE}
+mkc_key_generic.o: mkc_key_generic.c ${GENHEAD} ${MAKEFILE}
+mkc_key_local.o: mkc_key_local.c ${GENHEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
-pbc_create.o: pbc_create.c ${GEN_HEAD} ${MAKEFILE}
-pbc_verify.o: pbc_verify.c ${GEN_HEAD} ${MAKEFILE}
-t.o: t.c ${GEN_HEAD} ${MAKEFILE}
-test_local_c_key.o: test_local_c_key.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
+pbc_create.o: pbc_create.c ${GENHEAD} ${MAKEFILE}
+pbc_verify.o: pbc_verify.c ${GENHEAD} ${MAKEFILE}
+t.o: t.c ${GENHEAD} ${MAKEFILE}
+test_local_c_key.o: test_local_c_key.c ${GENHEAD} ${MAKEFILE}
+what_is_my_ip.o: what_is_my_ip.c ${GENHEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so pbc_create pbc_verify t make_crypted_bit index.cgi 
+	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local
 
 # to purify candv (then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
+
