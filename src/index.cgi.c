@@ -1,6 +1,6 @@
 /*
 
-    Copyright 1999, University of Washington.  All rights reserved.
+    Copyright 1999-2001, University of Washington.  All rights reserved.
 
      ____        _                     _    _
     |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.18 2001-03-28 21:19:47 willey Exp $
+    $Id: index.cgi.c,v 1.19 2001-04-16 19:34:00 willey Exp $
  */
 
 
@@ -53,8 +53,6 @@
 #include "index.cgi.h"
 /* cgic */
 #include <cgic.h>
-/* meta-auth */
-#include <authsrv.h>
 
 #ifdef MAKE_MIRROR
 /* the mirror file is a mirror of what gets written out of the cgi */
@@ -435,13 +433,13 @@ char *get_domain_hostname()
     strncpy(host, getenv ("HTTP_HOST"), strlen(host));
 
     if( !host )
-        return ("weblogin.washington.edu");
+        return (PBC_LOGIN_HOST);
 
     /* if this is a test server use the test name */
     if ( !strncmp(host,"weblogintest",12) )
-        return ("weblogintest.cac.washington.edu");
+        return (PBC_LOGIN_TEST_HOST);
     else
-        return ("weblogin.washington.edu");
+        return (PBC_LOGIN_HOST);
 
 }
 
@@ -726,13 +724,10 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
 
     print_login_page_bottom();
 
-
 }
 
 char *check_login_uwnetid(const char *user, const char *pass)
 {
-    char	*res;
-
 #ifdef DEBUG
     fprintf(stderr, "check_login_uwnetid: hello\n");
 #endif 
@@ -752,17 +747,10 @@ char *check_login_uwnetid(const char *user, const char *pass)
         return(CHECK_LOGIN_RET_SUCCESS);
     }
     else {
-        /* now check the NDC passwd file */
-        if( (res=auth_ndcpasswd(user, pass)) == NULL ) {
 #ifdef DEBUG
-            fprintf(stderr, "check_login_uwnetid: auth_ndcpasswd say ok\n");
+        fprintf(stderr, "check_login_uwnetid: auth_kdc say fail\n");
 #endif
-            clear_error("uwnetid-fail", "uwnetid auth ok");
-            return(CHECK_LOGIN_RET_SUCCESS);
-        }
-        else {
-            return(CHECK_LOGIN_RET_FAIL);
-        }
+        return(CHECK_LOGIN_RET_FAIL);
     }
 
 }
@@ -1057,7 +1045,7 @@ void print_table_start()
 /*	################################### da copyright, it's ours!          */
 void print_copyright()
 {
-    print_out("<small>Copyright &#169; 2000 University of Washington</small>\n");
+    print_out("<small>Copyright &#169; 2001 University of Washington</small>\n");
 
 }
 
@@ -1151,21 +1139,7 @@ void print_login_page_centre()
 /*	################################### right hand side                   */
 void print_login_page_rhs()
 {
-    print_out("<td width=\"250\" valign=\"MIDDLE\">\n");
-    print_out("<p>\n");
-    print_out("<a href=\"https://uwnetid.washington.edu/newid/\">Need a UW NetID?</a>\n");
-    print_out("</p>\n");
-    print_out("<p>\n");
-    print_out("<a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html\">Forget your password?</a>\n");
-    print_out("</p>\n");
-    print_out("<dl>\n");
-    print_out("<dt>Have a question?</dt>\n");
-    print_out("<dd>\n");
-    print_out("  <a href=\"http://www.washington.edu/computing/uwnetid/\">Read About UW NetIDs</a><BR>\n");
-    print_out("  <a href=\"http://www.washington.edu/computing/help/\">Contact C&amp;C</a>\n");
-    print_out("</dd>\n");
-    print_out("</dl>\n");
-    print_out("</td>\n");
+    print_out("%s\n", LOGIN_PAGE_RHS_TEXT);
 
 }
 
@@ -1235,16 +1209,7 @@ void print_login_page_bottom()
 /*	################################### part expire_info                  */
 void print_login_page_expire_info()
 {
-
-    print_out("</tr>\n");
-    print_out("\n");
-    print_out("<tr>\n");
-    print_out("<td colspan=\"5\" align=\"center\">\n");
-    print_out("<p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>\n");
-    print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>\n");
-    print_out("<a href=\"http://www.washington.edu/computing/web/logout.html\">Completely exit your Web browser when you are finished.</a></p>\n");
-    print_out("</td>\n");
-    print_out("</tr>\n");
+    print_out("%s\n", LOGIN_PAGE_BOTTOM_TEXT);
 
 }
 
@@ -1621,6 +1586,8 @@ login_rec *get_query()
 
 } /* get-query */
 
+/* uses libpubcookie calls to check the cookie and load the login rec with  */
+/* cookie contents                                                          */
 login_rec *verify_login_cookie (char *cookie, login_rec *l)
 {
     md_context_plus     *ctx_plus;
