@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.57 2004-07-27 18:48:53 jteaton Exp $
+ * $Id: flavor_basic.c,v 1.58 2004-07-27 19:15:43 willey Exp $
  */
 
 
@@ -536,7 +536,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 
     /* login session lifetime message */
     if (!(ldur=get_kiosk_duration(p,l)))
-       ldur = libpbc_config_getint(p, "default_l_expire",DEFAULT_LOGIN_EXPIRE);
+       ldur = libpbc_config_getint(p, "default_l_expire", DEFAULT_LOGIN_EXPIRE);
     if (((ldurp=ldur/3600)*3600) == ldur) ldurtyp = "hour";
     else if (((ldurp=ldur/60)*60) == ldur) ldurtyp = "minute";
     else ldurp = ldur, ldurtyp = "second";
@@ -650,7 +650,7 @@ static login_result process_basic(pool *p, const security_context *context,
         /* Make sure response is timely */
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                "process_basic: create=%d\n", l->create_ts);
-        if (l->create_ts && (time(NULL) > (l->create_ts+ libpbc_config_getint(p, "form_expire_time", DEFAULT_FORM_EXPIRE_TIME) ))) {
+        if (l->create_ts && (time(NULL) > (l->create_ts+ libpbc_config_getint(p, "form_expire_time", PBC_DEFAULT_FORM_EXPIRE_TIME) ))) {
             *errstr = "The login form has expired.";
             rcode = FLB_FORM_EXPIRED;
         } else if (v->v(p, l->user, l->pass, NULL,
