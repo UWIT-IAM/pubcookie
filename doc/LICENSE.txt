@@ -1,46 +1,34 @@
 
- * Copyright (c) 2001 University of Washington.  All rights reserved.
+ * Copyright (c) 2001-2002 University of Washington. All rights reserved.
  *
- * This distribution consists of the Pubcookie software developed by the
- * University of Washington.
+ * This distribution consists of the Pubcookie software and documentation
+ * (the "Software").  Individual files in this distribution are copyright
+ * University of Washington unless stated otherwise in the files 
+ * themselves.  The University of Washington is the Licensor of the
+ * Software.
  *
- * This distribution also contains software developed by others:
- *
- *     Modified Kerberos code, Copyright 1995,1996,1997,1998 by the
- *     Massachusetts Institute of Technology. All Rights Reserved.
- *
- *     Modified CGIC code, Copyright 1996 by Thomas Boutell
- *
- * The following terms of use apply to the Pubcookie software (login
- * cgi, Apache module, ISAPI filter) developed by the University of
- * Washington.
- *
- * Redistribution and use of the Pubcookie software in source and binary
- * forms, with or without modification, are permitted provided that:
+ * Redistribution and use of the Software in source and binary forms, 
+ * with or without modification, are permitted provided that:
  *
  *   1. The above copyright notice and this permission notice appear in
  *      all copies and supporting documentation;
  *
- *   2. The name, identifiers, and trademarks of the University of 
- *      Washington, including without limitation "University of 
- *      Washington", "UW", and "Pubcookie", are not used in advertising 
- *      or publicity without the express prior written permission of the 
- *      University of Washington;
+ *   2. The names, identifiers, and trademarks of the Licensor, and of
+ *      any contributors to the Software, including the name of the
+ *      Software, are not used in advertising or publicity without the 
+ *      express prior written permission of the Licensor;
  *
- *   3. Recipients acknowledge that this distribution is made available 
+ *   3. Recipients acknowledge that this distribution is made available
  *      as a research courtesy, "as is", potentially with defects, without
- *      any obligation on the part of the University of Washington to
- *      provide support, services, or repair;
+ *      any obligation on the part of the Licensor to provide support, 
+ *      services, or repair;
  *
- * THE UNIVERSITY OF WASHINGTON DISCLAIMS ALL WARRANTIES, EXPRESS OR
- * IMPLIED, WITH REGARD TO THIS SOFTWARE, INCLUDING WITHOUT LIMITATION
- * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE, AND IN NO EVENT SHALL THE UNIVERSITY OF
- * WASHINGTON BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, TORT (INCLUDING
+ * THE LICENSOR DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, WITH REGARD
+ * TO THIS SOFTWARE, INCLUDING WITHOUT LIMITATION ALL IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND IN NO
+ * EVENT SHALL THE LICENSOR BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
+ * USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, TORT (INCLUDING
  * NEGLIGENCE) OR STRICT LIABILITY, ARISING OUT OF OR IN CONNECTION WITH
  * THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * 
-
-$Id: LICENSE.txt,v 1.4 2002-07-05 23:33:55 dors Exp $
+ *
