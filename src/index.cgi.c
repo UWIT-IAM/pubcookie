@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.87 $
+ * $Revision: 1.88 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2268,7 +2268,7 @@ int create_cookie(char *user_buf,
                   int pre_sess_tok,
                   time_t expire,
                   char *cookie,
-                  const char *peer,
+                  const char *host,
                   int max)
 {
     /* measured quantities */
@@ -2277,6 +2277,7 @@ int create_cookie(char *user_buf,
     unsigned char 	appid[PBC_APP_ID_LEN];
     /* local junk */
     char		*cookie_local = NULL;
+    char *peer, *p;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, "create_cookie: hello\n"); 
     
@@ -2293,12 +2294,25 @@ int create_cookie(char *user_buf,
 		       (int)expire);
 
     /* go get the cookie */
+
+    /* we need to chop the port number off of 'host', since we just key on
+       hostname and not hostname:port but they're passed together in
+       the greq */
+    peer = strdup(host);
+    p = strchr(peer, ':');
+    if (p) {
+        *p = '\0';
+    }
+
     cookie_local = (char *) libpbc_get_cookie_with_expire(user, type, creds, 
 		      pre_sess_tok, expire, appsrvid, appid, peer);
-    
-    strncpy (cookie, cookie_local, max);
 
+    free(peer);
+
+    /* copy the output to 'cookie' */
+    *cookie = '\0';
     if (cookie_local) {
+        strncpy (cookie, cookie_local, max);
 	/* dynamically allocated by libpbc_get_cookie_with_expire() */
 	free(cookie_local);
     }
