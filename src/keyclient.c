@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.27 2003-03-07 19:19:17 ryanc Exp $
+    $Id: keyclient.c,v 2.28 2003-03-24 21:28:14 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -84,7 +84,7 @@ typedef void pool;
 #include "snprintf.h"
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 
 #  ifdef __STDC__

@@ -21,7 +21,7 @@ typedef void pool;
 #endif /* HAVE_STRING_H */
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

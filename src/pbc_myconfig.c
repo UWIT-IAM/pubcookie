@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.21 2003-03-06 23:47:17 ryanc Exp $
+    $Id: pbc_myconfig.c,v 1.22 2003-03-24 21:28:14 jjminer Exp $
  */
 
 
@@ -74,9 +74,10 @@ typedef void pool;
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "snprintf.h"
+#include "pubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

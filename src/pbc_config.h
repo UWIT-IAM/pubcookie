@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.73 2003-03-07 19:19:17 ryanc Exp $
+    $Id: pbc_config.h,v 1.74 2003-03-24 21:28:14 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -50,7 +50,7 @@
 
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

@@ -72,7 +72,7 @@ typedef void pool;
 #include "pubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

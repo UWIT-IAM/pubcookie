@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: flavor_getcred.c,v 1.11 2003-03-05 22:38:47 willey Exp $
+    $Id: flavor_getcred.c,v 1.12 2003-03-24 21:28:14 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -70,7 +70,7 @@ typedef void pool;
 #include "libpubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: verify.c,v 1.14 2003-03-06 06:12:50 jjminer Exp $
+    $Id: verify.c,v 1.15 2003-03-24 21:28:14 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -44,7 +44,7 @@ typedef void pool;
 #include "verify.h"
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

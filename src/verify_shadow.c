@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: verify_shadow.c,v 1.9 2003-03-06 06:12:50 jjminer Exp $
+    $Id: verify_shadow.c,v 1.10 2003-03-24 21:28:14 jjminer Exp $
  */
 
 /**
@@ -57,7 +57,7 @@ typedef void pool;
 #endif /* HAVE_STRING_H */
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

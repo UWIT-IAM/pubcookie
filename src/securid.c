@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.10 2002-11-14 21:12:12 jjminer Exp $
+/* $Id: securid.c,v 1.11 2003-03-24 21:28:14 jjminer Exp $
 
    function: securid  
    args:     reason - points to a reason string
@@ -60,7 +60,7 @@
 #include "snprintf.h"
 
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# if (!defined(APACHE) && !defined(APACHE1_3))
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
