@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.57 2004-05-16 19:54:37 dors Exp $
+# $Id: Makefile.in,v 1.58 2004-06-16 17:26:30 fox Exp $
 
 @SET_MAKE@
 
@@ -47,7 +47,7 @@ CHMOD=@CHMOD@
 TEST=@TEST@
 
 LIBS=@LIBS@
-CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src
+CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src @CGIC_INC@
 CFLAGS=@CFLAGS@ $(CPPFLAGS)
 LDFLAGS=@LDFLAGS@ $(LIBS)
 LOGINLIBS=@LOGINLIBS@ @CGIC_LIB@

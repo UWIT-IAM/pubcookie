@@ -1,4 +1,4 @@
-#    $Id: Makefile.in,v 1.3 2004-04-08 21:09:06 fox Exp $
+#    $Id: Makefile.in,v 1.4 2004-06-16 17:26:30 fox Exp $
 
 #You may wish to add -DNO_UNISTD and -DNO_SYSTEM to CFLAGS if
 #your system lacks the /usr/include/unistd.h header file
@@ -16,7 +16,8 @@ LDFLAGS=@LDFLAGS@ $(LIBS)
 
 CC=@CC@
 AR=@AR@
-CGICLIBS=-L./ -lcgic $(LDFLAGS)
+RANLIB=@RANLIB@
+CGICLIBS=-L. -lcgic $(LDFLAGS)
 FORCE_RM=@RM@ -f
 
 all: libcgic.a cgictest capture
@@ -24,6 +25,7 @@ all: libcgic.a cgictest capture
 libcgic.a: cgic.o $(srcdir)/cgic.h
 	rm -f libcgic.a
 	$(AR) rc libcgic.a cgic.o
+	$(RANLIB) libcgic.a
 
 cgictest: cgictest.o libcgic.a 
 	$(CC) $(CFLAGS) cgictest.o -o cgictest ${CGICLIBS}

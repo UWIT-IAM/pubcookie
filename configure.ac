@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.61 $)
+AC_REVISION($Revision: 1.62 $)
 AC_INIT(Pubcookie, [3.1.1 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -143,6 +143,7 @@ AC_PATH_PROG(MAKE, make)
 AC_PATH_PROG(GMAKE, gmake)
 AC_PATH_PROG(PWD, pwd)
 AC_PATH_PROG(LS, ls)
+AC_PATH_PROG(RANLIB, ranlib)
 
 gnu_make=no
 
@@ -508,10 +509,12 @@ OLDLIBS=$LIBS
 
 if test "$enable_login" = yes; then
 
-    CPPFLAGS="$CPPFLAGS -I$srcdir/cgic/"
-    LDFLAGS="$LDFLAGS -L\$(builddir)/cgic/"
-
-AC_CHECK_HEADERS([cgic.h], AC_SUBST(CGIC_LIB, "-lcgic"))
+  OLDCPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$CPPFLAGS -I$srcdir/cgic"
+  AC_CHECK_HEADERS([cgic.h])
+  CPPFLAGS=$OLDCPPFLAGS
+  AC_SUBST(CGIC_INC, "-I$srcdir/cgic")
+  AC_SUBST(CGIC_LIB, "-L./cgic -lcgic")
 
 AC_ARG_ENABLE(krb5,
     AC_HELP_STRING([--enable-krb5],[Enable Kerberos 5 Verifier]),
