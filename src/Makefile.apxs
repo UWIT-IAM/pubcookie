@@ -19,15 +19,15 @@ LIBS=$(EXTRA_LDFLAGS) -L$(SSL_BASE)/lib -lssl -lcrypto
 all: mod_pubcookie.so
 
 MAKEFILE=Makefile.apxs
-GENERALHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
+GENERALHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h
 
-mod_pubcookie.so: mod_pubcookie.c libpubcookie.c ${GENERALHEAD} ${MAKEFILE}
-	$(APXS) -c $(CFLAGS) $(INCS) mod_pubcookie.c libpubcookie.c base64.c $(LIBS)
+mod_pubcookie.so: mod_pubcookie.c libpubcookie.c pbc_myconfig.c ${GENERALHEAD} ${MAKEFILE}
+	$(APXS) -c $(CFLAGS) $(INCS) mod_pubcookie.c libpubcookie.c pbc_myconfig.c base64.c $(LIBS)
 
 install: all
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
 
 clean:
-	-rm -f mod_pubcookie.o libpubcookie.o base64.o mod_pubcookie.so so_locations
+	-rm -f mod_pubcookie.o libpubcookie.o base64.o pbc_myconfig.o mod_pubcookie.so so_locations
 
 
