@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.148 2004-08-10 23:09:04 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.149 2004-08-11 20:59:21 fox Exp $
  */
 
 
@@ -1444,8 +1444,11 @@ static int pubcookie_user_hook(request_rec *r)
        ap_log_rerror(PC_LOG_DEBUG, r, "  .. user_hook: sub: %x, user=%s",
            mr, mr?mr->USER:"");
        if (mr && mr->USER && *mr->USER) {
+#ifdef APACHE2
+          /* AP2 keeps user in request rec, AP13 in the shared conn rec */
           /* r->AUTH_TYPE = ap_pstrdup(r->pool, mr->AUTH_TYPE); */
           r->USER = ap_pstrdup(r->pool, mr->USER);
+#endif
           return OK;
        }
        if (cfg->noprompt) {
