@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.143 2004-10-19 17:50:37 fox Exp $
+ * $Id: index.cgi.c,v 1.144 2004-12-21 21:49:30 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2017,7 +2017,23 @@ int cgiMain()
     /* check to see what cookies we have */
     /* pinit detected in here */
     /* pinit response detected in here */
-    if ((!l->relay_uri) && (cookie_test(p, context, l, c) == PBC_FAIL)) {
+
+    if (l->relay_uri) {
+       char *th = strdup(l->host);
+       char *thc;
+       if ((thc=strchr(th,':'))) *thc = '\0';
+       if (!libpbc_test_crypt_key(p, th)) {
+           ntmpl_print_html(p, TMPL_FNAME,
+               libpbc_config_getstring(p, "tmpl_login_unauth_grant",
+                                          "login_unauth_grant"),
+               NULL);
+            free(th);
+            pbc_log_activity(p, PBC_LOG_AUDIT,
+                 "Host: %s not authorized to access login server\n", l->host);
+            goto done;
+        }
+        free(th);
+    } else if (cookie_test(p, context, l, c) == PBC_FAIL) {
         goto done;
     }
 
