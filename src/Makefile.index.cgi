@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.10 2001-10-24 22:21:50 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.11 2001-11-14 00:27:17 willey Exp $
 #
 
 # your compiler here
@@ -40,8 +40,11 @@ EXTRA_LIB_DIRS=-L/opt/nfast/gcc/lib
 EXTRA_LIBS=-lkrb5 -lmgoapi -lnfstub 
 
 # choose your compile flags.
-# some options are: DEBUG MAKE_MIRROR 
-CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include
+# some options are: DEBUG - voluminious debug info
+#                   MAKE_MIRROR - mirrors everything sent to the browser
+#                   FORM_NOT_IN_TMPL - if your login form isn't in the template
+#                                      hopefully obsolete soon, only UWash need
+CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include -DFORM_NOT_IN_TMPL
 
 
 # a blast from the past:
