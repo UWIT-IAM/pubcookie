@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.30 2000-09-25 18:06:05 willey Exp $
+    $Id: pbc_config.h,v 1.31 2001-01-26 21:23:50 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -98,6 +98,8 @@ static const char *redirect_reason[] = {
 #define PBC_RR_WRONGAPPSRVID_CODE   9
 #define PBC_RR_WRONGVER_CODE        10
 #define PBC_RR_WRONGCREDS_CODE      11
+
+#define PBC_CLEAR_COOKIE "clear"
 
 /* this is the content of the redirect page's body if there is a POST */
 
