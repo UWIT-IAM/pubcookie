@@ -1,4 +1,4 @@
-/* src/config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/config.h.in.  Generated from ./configure.ac by autoheader.  */
 
 /* Define to 1 to enable dmalloc debugging */
 #undef ENABLE_DMALLOC
@@ -10,10 +10,10 @@
 #undef ENABLE_LDAP
 
 /* Define to 1 to support shadow verifiers */
-#undef ENABLE_UWSECURID
-
-/* Define to 1 to support shadow verifiers */
 #undef ENABLE_SHADOW
+
+/* Define to 1 to support U. Wash. SecurID verifiers */
+#undef ENABLE_UWSECURID
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -126,6 +126,9 @@
 /* Define to 1 if you have the `ldap50' library (-lldap50). */
 #undef HAVE_LIBLDAP50
 
+/* Define to 1 if you have the `mgoapi' library (-lmgoapi). */
+#undef HAVE_LIBMGOAPI
+
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
@@ -147,10 +150,6 @@
 /* Define to 1 if you have the `ssldap50' library (-lssldap50). */
 #undef HAVE_LIBSSLDAP50
 
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
-   to 0 otherwise. */
-#undef HAVE_MALLOC
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -159,6 +158,9 @@
 
 /* Define to 1 if you have the <mgoapi.h> header file. */
 #undef HAVE_MGOAPI_H
+
+/* Define to 1 if you have the <mgostuff.h> header file. */
+#undef HAVE_MGOSTUFF_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
@@ -196,9 +198,6 @@
 /* Define to 1 if you have the <rand.h> header file. */
 #undef HAVE_RAND_H
 
-/* Define to 1 if you have the <securid.h> header file. */
-#undef HAVE_SECURID_H
-
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
 
@@ -207,9 +206,6 @@
 
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
-
-/* Define to 1 if you have the <ssl.h> header file. */
-#undef HAVE_SSL_H
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
@@ -319,9 +315,6 @@
 /* Define to 1 if you have the <x509.h> header file. */
 #undef HAVE_X509_H
 
-/* Define to 1 if the Compiler is IBM xlc */
-#undef IBM_XLC
-
 /* set to 1 if using Heimdal Kerberos */
 #undef KRB5_HEIMDAL
 
@@ -346,7 +339,7 @@
 /* Define to 1 if openssl is in include/openssl */
 #undef OPENSSL_IN_DIR
 
-/* Define to 1 if openssl is directly in the include path. */
+/* Define to 1 if openssl is directly in include path. */
 #undef OPENSSL_NOT_IN_DIR
 
 /* Define to the address where bug reports for this package should be sent. */
@@ -391,9 +384,6 @@
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
-
-/* Define to rpl_malloc if the replacement function should be used. */
-#undef malloc
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
