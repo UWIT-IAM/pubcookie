@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.32 2003-04-19 21:25:48 jjminer Exp $
+# $Id: Makefile.in,v 1.33 2003-04-19 21:34:54 jjminer Exp $
 
 @SET_MAKE@
 
@@ -44,6 +44,7 @@ SED=@SED@
 TAR=@TAR@
 GZIP=@GZIP@
 CHMOD=@CHMOD@
+TEST=@TEST@
 
 LIBS=@LIBS@
 CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src
@@ -312,13 +313,13 @@ install: $(KEY_DIR) @install_login@ @install_apache@
 install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
-	-test ! -f $(TEMPLATE_DIR)/login && \
+	-@$(TEST) ! -f $(TEMPLATE_DIR)/login && \
 		$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
 	$(INSTALL_OTHER) $(LOGIN_IMAGES) $(TEMPLATE_DIR).default/images
-	-test ! -f $(LOGIN_IMG_DIR)/check.gif && \
+	-@$(TEST) ! -f $(LOGIN_IMG_DIR)/check.gif && \
 		$(INSTALL_OTHER) $(LOGIN_IMAGES) $(LOGIN_IMG_DIR)
 	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
-	-test "x$(CERT_DB_SOURCE)" != "x" && \
+	-@$(TEST) "x$(CERT_DB_SOURCE)" != "x" && \
 		$(INSTALL_OTHER) $(CERT_DB_SOURCE)/cert7.db $(CERT_DB_SOURCE)/key3.db \
 						 $(CERT_DB_DIR)
 
@@ -344,7 +345,7 @@ $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 $(TEMPLATE_DIR).default: $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR).default
 
-$(TEMPLATE_DIR).default/images: $(TEMPLATE_DIR).default/images
+$(TEMPLATE_DIR).default/images: $(TEMPLATE_DIR).default
 	$(INSTALL_DIR) $(TEMPLATE_DIR).default/images
 
 $(LIB_OBJ): $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h

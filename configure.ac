@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.32 $)
+AC_REVISION($Revision: 1.33 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -107,6 +107,7 @@ AC_PATH_PROG(GZIP, gzip, gzip)
 AC_PATH_PROG(MKDIR, mkdir, mkdir)
 AC_PATH_PROG(MV, mv, mv)
 AC_PATH_PROG(CHMOD, chmod, chmod)
+AC_PATH_PROG(TEST, test, test)
 
 
 if test "$enable_apache" = "yes"; then
