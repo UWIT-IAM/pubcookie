@@ -8,8 +8,9 @@ L - library changes
 H - only .h files changed
 O - other :)
 
-a5 release5 1Sep1999
-M  - stopped using apache's base64 functions
+a5 release5 1Sep1999 rcs references: m1.38 l2.7
+M  - stopped using apache's base64 functions in apache1.3
+M  - removed some duplicated code introduced in a5release4
 
 a5 release4 23Aug1999
 L  - accomodates all known versions of OpenSSL/SSLeay greater then 0.9.2b
