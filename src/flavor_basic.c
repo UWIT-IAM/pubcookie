@@ -14,6 +14,7 @@
 #include "verify.h"
 
 #include "pbc_config.h"
+#include "pbc_logging.h"
 
 static verifier *v = NULL;
 extern int debug;
