@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.68 2001-11-27 03:19:13 willey Exp $
+    $Id: mod_pubcookie.c,v 1.69 2001-12-06 23:49:37 willey Exp $
  */
 
 /* apache includes */
@@ -85,21 +85,21 @@ typedef struct {
 } pubcookie_dir_rec;
 
 void dump_server_rec(pubcookie_server_rec *scfg) {
-    libpbc_debug("super-debug: dump_server_rec:
-		g_certfile: %s
-		s_keyfile: %s
-		s_certfile: %s
-		crypt_keyfile: %s
-		session_sign_ctx_plus: %s
-		session_verf_ctx_plus: %s
-		granting_verf_ctx_plus: %s
-		c_stuff: %s
-		serial_g_seen: %d
-		serial_s_seen: %d
-		serial_s_sent: %d
-		dirdepth: %d
-		noblank: %d
-		login: %s
+    libpbc_debug("super-debug: dump_server_rec:\n\
+		g_certfile: %s\n\
+		s_keyfile: %s\n\
+		s_certfile: %s\n\
+		crypt_keyfile: %s\n\
+		session_sign_ctx_plus: %s\n\
+		session_verf_ctx_plus: %s\n\
+		granting_verf_ctx_plus: %s\n\
+		c_stuff: %s\n\
+		serial_g_seen: %d\n\
+		serial_s_seen: %d\n\
+		serial_s_sent: %d\n\
+		dirdepth: %d\n\
+		noblank: %d\n\
+		login: %s\n\
 		appsrvid: %s\n", 
   		(scfg->g_certfile == NULL ? "" : scfg->g_certfile),
   		(scfg->s_keyfile == NULL ? "" : scfg->s_keyfile),
@@ -120,18 +120,18 @@ void dump_server_rec(pubcookie_server_rec *scfg) {
 }
 
 void dump_dir_rec(pubcookie_dir_rec *cfg) {
-    libpbc_debug("super-debug: dump_dir_rec:
-		inact_exp: %d
-                hard_exp: %d
-                failed: %d
-                has_granting: %d
-                non_ssl_ok: %d
-		appid: %s
-                creds: %c
-		super_debug: %d
-                end_session: %d
-                force_reauth: %s
-                redir_reason_no: %d
+    libpbc_debug("super-debug: dump_dir_rec:\n\
+		inact_exp: %d\n\
+                hard_exp: %d\n\
+                failed: %d\n\
+                has_granting: %d\n\
+                non_ssl_ok: %d\n\
+		appid: %s\n\
+                creds: %c\n\
+		super_debug: %d\n\
+                end_session: %d\n\
+                force_reauth: %s\n\
+                redir_reason_no: %d\n\
                 session_reauth: %d\n",
   		cfg->inact_exp,
   		cfg->hard_exp,
