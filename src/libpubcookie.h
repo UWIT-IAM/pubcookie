@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.17 2002-06-05 16:52:29 greenfld Exp $
+    $Id: libpubcookie.h,v 1.18 2002-06-11 20:18:48 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -131,7 +131,7 @@ int libpbc_generate_crypt_key(const char *peer);
 
 /**
  * writes the key 'key' to disk for peer 'peer'
- * @param a pointer to the 56-bit DES key
+ * @param a pointer to the 2048-bit key
  * @param peer the certificate name of the peer
  * @return PBC_OK for success, PBC_FAIL for failure
  */
