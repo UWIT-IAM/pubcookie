@@ -7,6 +7,16 @@ L - library changes
 H - only .h files changed
 O - other (Makefile, Makefile.apxs, etc.)
 
+a5 1.77.2.2 6Jun2002 rcs references: module 1.77.2.2
+M  - added expire times to granting requests and pre-session cookies
+M  - Started removal of Apache1.2 code
+M  - Force the connection to SSL to keep connection encrypted for browsers
+     that send 'secure' cookies over non-ssl connections.
+M  - Short-term-logout support via more EndSession args
+
+a5 1.69 11Jan2002 rcs references: module 1.69
+M  - fixed escaping of eol chars in string constant.
+
 a5 1.68 26Nov2001 rcs references: module 1.68
 M  - moved super_debug from being server config to dir config
 M  - added new super_debugging to dump server and directory recs
