@@ -26,7 +26,7 @@
  */
 
 /*
- *  $Revision: 1.52 $
+ *  $Revision: 1.53 $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -50,33 +50,27 @@
 #define PBC_CONFIG (PBC_PATH "config")
 
 /* names of the login servers */
-#define PBC_CONFIGED
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
 #define PBC_LOGIN_URI (libpbc_config_getstring("login_uri", ""))
-#define PBC_LOGIN_TEST_HOST (libpbc_config_getstring("login_test_host", "weblogintest.cac.washington.edu"))
-#define PBC_LOGIN_PROD_TEST_HOST (libpbc_config_getstring("login_prod_test_host", "webloginprodtest.cac.washington.edu"))
-#define PBC_LOGIN_TEST_PAGE (libpbc_config_getstring("login_test_page", "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring("enterprise_domain", ".washington.edu"))
 
 /* lives only on application server */
-extern const char *PBC_S_CERTFILE;
+extern char PBC_S_CERTFILE[1024];
 /* lives only on application server */
-extern const char *PBC_S_KEYFILE;
+extern char PBC_S_KEYFILE[1024];
 
 /* lives everywhere (on application servers & login server) */
-extern const char *PBC_G_CERTFILE;
+extern char PBC_G_CERTFILE[1024];
 
 /* lives only on login server */
-extern const char *PBC_G_KEYFILE;
+extern char PBC_G_KEYFILE[1024];
 
 /* the login server builds it's key Filenames from the hostname     */
-#define PBC_KEY_DIR (PBC_PATH "keys/")
+#define PBC_KEY_DIR (libpbc_config_getstring("keydir", PBC_PATH "keys"))
 #define PBC_CRYPT_KEY_PREFIX "c_key"
 #define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login.cert"
 #define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login.key"
 #define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting.key"
-
-#define PBC_DEFAULT_AUTHTYPE "webiso-vanilla"
 
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
@@ -111,6 +105,8 @@ extern const char *PBC_G_KEYFILE;
 #define PBC_S_COOKIENAME "pubcookie_s"
 #define PBC_PRE_S_COOKIENAME "pubcookie_pre_s"
 #define PBC_FORM_MP_COOKIENAME "pubcookie_formmultipart"
+#define PBC_CRED_COOKIENAME "pubcookie_cred"
+#define PBC_CRED_TRANSFER_COOKIENAME "pubcookie_transcred"
 
 /* this apache module stuff should go into something like mod_pubcookie.h */
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
@@ -205,13 +201,14 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_GREQ_CREDS "creds_from_greq"
 /* added May 2002 */
 #define PBC_GETVAR_PINIT "pinit"
+/* added June 2002 leg */
+#define PBC_GETVAR_CRED_TARGET "cred_target"
 
 /* 
  things that are used both places (module and the library)
  */
 #define PBC_SIG_LEN 128
 #define PBC_CREDS_NONE    '0'
-#define PBC_CREDS_DEFAULT '1'
 
 #define PBC_COOKIE_TYPE_NONE  '0'
 #define PBC_COOKIE_TYPE_G     '1'
@@ -219,6 +216,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_COOKIE_TYPE_L     '3'
 #define PBC_COOKIE_TYPE_PRE_S '4'
 
+#define PBC_BASIC_CRED_ID '1'
+#define PBC_GETCRED_CRED_ID '2'
 
 /* macros to support older version of apache */
 
