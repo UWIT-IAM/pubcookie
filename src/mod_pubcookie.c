@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.76 2002-05-09 22:48:22 willey Exp $
+    $Id: mod_pubcookie.c,v 1.77 2002-05-18 02:08:47 willey Exp $
  */
 
 /* apache includes */
@@ -1753,52 +1753,63 @@ const char *pubcookie_set_inact_exp(cmd_parms *cmd, void *mconfig, char *v) {
     return NULL;
 }
 
-/*                                                                            */
+/**
+ *  handle the PubCookieHardExpire directive
+ *  does some range checking
+ */
 const char *pubcookie_set_hard_exp(cmd_parms *cmd, void *mconfig, char *v) {
     pubcookie_dir_rec   *cfg = (pubcookie_dir_rec *) mconfig;
     char                *err_string;
   
     if((cfg->hard_exp = atoi(v)) <= 0) {
-        return "PUBCOOKIE: Could not convert hard expire parameter to nonnegative integer.";
+        return("PUBCOOKIE: PubcookieHardExpire should be nonnegative integer.");
     }
     else if(cfg->hard_exp > PBC_MAX_HARD_EXPIRE ) {
-#ifdef APACHE1_2
-        ap_snprintf(err_string, PBC_1K-1, "PUBCOOKIE: Hard expire parameter greater then allowed maximium of %d, requested %d.", PBC_MAX_HARD_EXPIRE, cfg->hard_exp);
-#else
         err_string = ap_psprintf(cmd->pool, "PUBCOOKIE: Hard expire parameter greater then allowed maximium of %d, requested %d.", PBC_MAX_HARD_EXPIRE, cfg->hard_exp);
-#endif
         return(err_string);
     }
     else if(cfg->hard_exp < PBC_MIN_HARD_EXPIRE ) {
-#ifdef APACHE1_2
-        ap_snprintf(err_string, PBC_1K-1, "PUBCOOKIE: Hard expire parameter less then allowed minimum of %d, requested %d.", PBC_MIN_HARD_EXPIRE, cfg->hard_exp);
-#else
         err_string = ap_psprintf(cmd->pool, "PUBCOOKIE: Hard expire parameter less then allowed minimum of %d, requested %d.", PBC_MIN_HARD_EXPIRE, cfg->hard_exp);
-#endif
         return(err_string);
     }
 
     return NULL;
 }
 
-/*                                                                            */
+/**
+ *  handle the PubCookieLogin directive
+ *  we do a little checking to make sure the url is correctly formatted.
+ */
 const char *pubcookie_set_login(cmd_parms *cmd, void *mconfig, char *v) {
-    server_rec *s = cmd->server;
-    pubcookie_server_rec *scfg;
+    server_rec           *s = cmd->server;
+    uri_components 	 uptr;
+    char                 *err_string;
+    pubcookie_server_rec *scfg = (pubcookie_server_rec *)
+                                 ap_get_module_config(s->module_config,
+                                 &pubcookie_module);
+    
+    if( ap_parse_uri_components(cmd->pool, v, &uptr) != HTTP_OK ) {
+        err_string = ap_psprintf(cmd->pool, "PUBCOOKIE: PubCookieLogin not correctly formatted URL.");
+        return(err_string);
+    }
 
-#ifdef APACHE1_2
-    scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
-                                                   &pubcookie_module);
+#ifdef PORT80_TEST
+    if( uptr.scheme == NULL || strncmp(uptr.scheme, "http", 4) != 0 ) {
+        err_string = ap_psprintf(cmd->pool, "PUBCOOKIE: PubCookieLogin must start with http:// or https://");
+        return(err_string);
+    }
 #else
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
-                                                   &pubcookie_module);
+    /* force ssl */
+    if( uptr.scheme == NULL || strcmp(uptr.scheme, "https") != 0 ) {
+        uptr.scheme = ap_pstrdup(cmd->pool, "https");
+    }
 #endif
 
-#ifdef APACHE1_2
-    scfg->login = pstrdup(cmd->pool, v);
-#else
-    scfg->login = ap_pstrdup(cmd->pool, v);
-#endif
+    /* if the url has no path add a '/' */
+    if( uptr.path == NULL )
+        uptr.path = ap_pstrdup(cmd->pool, "/");
+    
+    scfg->login = ap_unparse_uri_components(cmd->pool, &uptr, 0);
 
     return NULL;
 }
