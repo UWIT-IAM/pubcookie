@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.67 $)
+AC_REVISION($Revision: 1.68 $)
 AC_INIT(Pubcookie, [3.1.2 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -243,10 +243,21 @@ if ! test "x$APXS" = "x"; then
 
   AC_MSG_RESULT([yes])
   AC_SUBST(APACHE_PREFIX, `$APXS -q PREFIX`)
-  AC_SUBST(APACHE_INSTALLBUILDDIR, `$APXS -q exp_installbuilddir`)
 
-  AC_MSG_CHECKING([Apache version])
-  APACHE_VERSION=
+ AC_MSG_CHECKING([Apache version])
+ APACHE_VERSION=
+ # maybe can just ask the server
+ httpd="`$APXS -q SBINDIR`/`$APXS -q TARGET`"
+ if test "x$httpd" != "x"; then
+     v=`$httpd -v|$SED -n -e 's/.*Apache\/\.*//p'`
+     case $v in
+       1.3.*) APACHE_VERSION="1_3"
+              ;;
+       2.*)   APACHE_VERSION="2"
+              ;;
+     esac
+ fi
+ if test "x$APACHE_VERSION" = "x"; then
   OCFLAGS=$CFLAGS
   APXS_INC=`$APXS -q INCLUDEDIR`
   CFLAGS="$CFLAGS -I$APXS_INC"
@@ -260,8 +271,7 @@ if ! test "x$APXS" = "x"; then
                 APACHE_RELEASE < 10400000 ) != 1 );
     }
     ],
-      [APACHE_VERSION="1_3"
-       APACHE_MOD_EXT="so"],
+      [APACHE_VERSION="1_3"]
     [ 
     ]
   )
@@ -275,16 +285,15 @@ if ! test "x$APXS" = "x"; then
           exit( *AP_SERVER_MAJORVERSION!='2');
       }
       ],
-        [APACHE_VERSION="2"
-         APACHE_MOD_EXT="la"],
+        [APACHE_VERSION="2"]
       [ 
         AC_MSG_ERROR([Apache version 1.3.x or 2.x is required!])
       ]
     )
   fi
+  fi
   AC_MSG_RESULT([$APACHE_VERSION])
   AC_SUBST(APACHE_VERSION, $APACHE_VERSION)
-  AC_SUBST(APACHE_MOD_EXT, $APACHE_MOD_EXT)
 
   CFLAGS=$OCFLAGS
 
@@ -940,13 +949,16 @@ if test "x$APXS" != "x";  then
   touch $apache_target/.deps
 
   if test "$APACHE_VERSION" = "2"; then
-     AC_SUBST( MOD_LIST, $MOD_LIST )
+     AC_SUBST(APACHE_INSTALLBUILDDIR, `$APXS -q exp_installbuilddir`)
+     AC_SUBST(APACHE_MOD_EXT, "la")
+     AC_SUBST(MOD_LIST, $MOD_LIST )
      cp Makefile.in.ap2 $apache_target/Makefile.in
      ln -sf $apache_src_ref/modules.mk $apache_target
   fi
 
   if test "$APACHE_VERSION" = "1_3"; then
 
+    AC_SUBST(APACHE_MOD_EXT, "so")
     AC_SUBST( MOD_OBJ, $obj )
     AC_SUBST( MOD_HDR, $pch )
      
