@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.44 2004-02-16 17:05:31 jteaton Exp $
+    $Id: libpubcookie.h,v 1.45 2004-02-17 23:06:38 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB

@@ -6,7 +6,7 @@
 /** @file base64.c
  * Base64 functions
  *
- * $Id: base64.c,v 1.19 2004-02-10 00:42:14 willey Exp $
+ * $Id: base64.c,v 1.20 2004-02-17 23:06:38 ryanc Exp $
  */
                                                                                 
 
@@ -15,8 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-#ifndef WIN32
-# if defined (APACHE1_3)
+#if defined (APACHE1_3)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -26,14 +25,14 @@
 #  include "util_script.h"
 # else
   typedef void pool;
-# endif
-#else /* WIN32 */
+#endif
+
+#ifdef WIN32
 # include <Windows.h>
 # include <httpfilt.h>
 # include "pbc_config.h"
 # include "pubcookie.h"
 # include "Win32/PubCookieFilter.h"
-  typedef pubcookie_dir_rec pool;
 #endif
 
 #ifdef HAVE_STRING_H

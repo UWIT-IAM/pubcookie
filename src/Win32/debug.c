@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.14 2004-02-10 00:42:16 willey Exp $
+//  $Id: debug.c,v 1.15 2004-02-17 23:06:38 ryanc Exp $
 //
 
 #include <windows.h>
@@ -18,19 +18,19 @@
 
 #include <pem.h>
 #include <httpfilt.h>
-#include "../pubcookie.h"
-#include "../pbc_config.h"
+typedef void pool;
+#include "pubcookie.h"
+#include "pbc_config.h"
 #include "PubCookieFilter.h"
-typedef pubcookie_dir_rec pool;
-#include "../libpubcookie.h"
-#include "../pbc_version.h"
-#include "../pbc_myconfig.h"
-#include "../pbc_configure.h"
+#include "libpubcookie.h"
+#include "pbc_version.h"
+#include "pbc_myconfig.h"
+#include "pbc_configure.h"
 #include "debug.h"
 
 #define BUFFSIZE 4096
 
-extern void filter_log_activity (pool *p, const char * source, int logging_level, const char * format, va_list args )
+extern void filter_log_activity (pubcookie_dir_rec *p, const char * source, int logging_level, const char * format, va_list args )
 {
 
     char      log[BUFFSIZE];
@@ -38,12 +38,12 @@ extern void filter_log_activity (pool *p, const char * source, int logging_level
 	PTSTR pszaStrings[1];
 	unsigned short errortype;
 	DWORD eventid=PBC_ERR_ID_SIMPLE;
-	pool *pp=NULL;
+	pubcookie_dir_rec *pp=NULL;
 
 	if (!p) {
 		syslog(LOG_INFO, "filter_log_activity(p,%s,%d,%s,...) called without an allocated pool",source,logging_level,format);
-		pp = (pool *)malloc(sizeof(pool));
-		bzero(pp,sizeof(pool));
+		pp = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec));
+		bzero(pp,sizeof(pubcookie_dir_rec));
 	}
 	else {
 		pp = p;
@@ -84,7 +84,7 @@ extern void filter_log_activity (pool *p, const char * source, int logging_level
 
 }
 
-void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list args )
+void pbc_vlog_activity(pubcookie_dir_rec *p, int logging_level, const char * format, va_list args )
 {
 	filter_log_activity (p, "Pubcookie", logging_level, format, args);
 }
@@ -92,11 +92,11 @@ void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list 
 /* Called whenever you don't have a pool yet available */
 extern void syslog(int whichlog, const char *message, ...) {
 
-	pool *p;
+	pubcookie_dir_rec *p;
 	va_list   args;
 
-	p = malloc(sizeof(pool)); 
-	bzero(p,sizeof(pool));
+	p = malloc(sizeof(pubcookie_dir_rec)); 
+	bzero(p,sizeof(pubcookie_dir_rec));
 
     va_start(args, message);
 
@@ -109,16 +109,16 @@ extern void syslog(int whichlog, const char *message, ...) {
 }
 
 /* Called from libpubcookie, we can't trust its pool pointer */
-extern void pbc_log_activity(pool *p, int logging_level, const char *message,...)
+extern void pbc_log_activity(pubcookie_dir_rec *p, int logging_level, const char *message,...)
 {
-	pool *pp; 
+	pubcookie_dir_rec *pp; 
     va_list   args;
 
 	if (p) {
 		pp=p;
 	} else {
-		pp = malloc(sizeof(pool)); 
-		bzero(pp,sizeof(pool));
+		pp = malloc(sizeof(pubcookie_dir_rec)); 
+		bzero(pp,sizeof(pubcookie_dir_rec));
 	}
     va_start(args, message);
 

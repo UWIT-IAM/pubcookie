@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.90 2004-02-16 17:05:31 jteaton Exp $
+    $Id: pbc_config.h,v 1.91 2004-02-17 23:06:38 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -49,18 +49,15 @@
 	#define PBC_LEGACY_DIR_NAMES (libpbc_config_getint(p, "LegacyDirNames", 1))
 	#define PBC_DEBUG_TRACE (libpbc_config_getint(p, "Debug_Trace", 0))
 	#define PBC_IGNORE_POLL (libpbc_config_getint(p, "Ignore_Poll", 0))
-	#define PBC_DEBUG_DIR (libpbc_config_getstring(p, "Debug_Dir", "\\LogFiles\\Pubcookie"))
 	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
 	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
 	#define PBC_FILTER_KEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
-	#define PBC_PUB_KEY "Software\\"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
-	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", "System\\CurrentControlSet\\Services\\PubcookieFilter"))
+	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", PBC_FILTER_KEY))
 	#define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
 	#define PBC_INSTANCE_KEY "_PBC_Web_Instances"
-	#define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
-                             and malloc to find/set the buffer size */
+	#define PBC_DEFAULT_KEY "default"
 #endif
 
 #define PBC_REFRESH_TIME 0

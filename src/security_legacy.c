@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.36 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: security_legacy.c,v 1.37 2004-02-17 23:06:38 ryanc Exp $
  */
 
 
@@ -15,8 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-#ifndef WIN32
-# if defined (APACHE1_3)
+#if defined (APACHE1_3)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -26,7 +25,6 @@
 #  include "util_script.h"
 # else
   typedef void pool;
-# endif
 #endif
 
 #ifdef HAVE_STDIO_H
@@ -79,7 +77,6 @@
 # include "pbc_config.h"
 # include "pubcookie.h"
 # include "Win32/PubCookieFilter.h"
-  typedef pubcookie_dir_rec pool;
 # include "pbc_logging.h"
 # include "libpubcookie.h"
 # include "strlcpy.h"
@@ -191,12 +188,7 @@ int security_init(pool *p, security_context **contextp)
     char *g_certfile;
     /* our crypt key */
     char *cryptkey = NULL;
-
-#ifdef WIN32
-	char SystemRootBuff[MAX_PATH+1];
-	char strbuff[MAX_REG_BUFF];
-#endif 
-
+	size_t cb_read;
     FILE *fp;
     security_context *context;
 
@@ -466,15 +458,15 @@ int security_init(pool *p, security_context **contextp)
         }
     }
 
-    fp = pbc_fopen(p, cryptkey, "r");
+    fp = pbc_fopen(p, cryptkey, "rb");
     if (!fp) {
         pbc_log_activity(p, PBC_LOG_ERROR, "security_init: couldn't read crypt key: pbc_fopen %s: %m", cryptkey);
         return -2;
     }
 
-    if( fread(context->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
+    if( cb_read = fread(context->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
         pbc_log_activity(p, PBC_LOG_ERROR,
-                         "can't read crypt key %s: short read", keyfile);
+			"can't read crypt key %s: short read: %d", cryptkey, cb_read);
         pbc_fclose(p, fp);
         return -2;
     }
@@ -509,15 +501,12 @@ const char *libpbc_get_cryptname(pool *p, const security_context *context)
  */
 static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
-#ifdef WIN32
-	char SystemRootBuff[MAX_PATH+1];
-#endif 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);
 
     if (buf[strlen(buf)-1] != '/') {
-        strlcat(buf, "/", 1024);
+        strlcat(buf, DIR_SEP, 1024);
     }
     strlcat(buf, peername, 1024);
     

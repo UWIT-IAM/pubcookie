@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.67 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: libpubcookie.c,v 2.68 2004-02-17 23:06:38 ryanc Exp $
  */
 
 
@@ -59,8 +59,7 @@
 #  include <netdb.h>
 # endif /* HAVE_NETDB_H */
 
-#ifndef WIN32
-# if defined (APACHE1_3)
+#if defined (APACHE1_3)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -70,7 +69,6 @@
 #  include "util_script.h"
 # else
   typedef void pool;
-# endif
 #endif
 
 #ifdef OPENSSL_IN_DIR
@@ -95,7 +93,6 @@
 # include "pbc_config.h"
 # include "pubcookie.h"
 # include "Win32/PubCookieFilter.h"
-  typedef pubcookie_dir_rec pool;
   typedef  int pid_t;  /* win32 process ID */
 #else
 # include "pubcookie.h"
@@ -737,7 +734,7 @@ unsigned char *libpbc_get_cookie_with_expire(pool *p,
 /*                                                                            */
 /*  deal with unbundling a cookie                                             */
 /*                                                                            */
-pbc_cookie_data *libpbc_unbundle_cookie(pool *p, const security_context *context, char *in, const char *peer, char use_granting)
+pbc_cookie_data *libpbc_unbundle_cookie(pool *p, const security_context *context, char *in, const char *peer, const char use_granting)
 {
     pbc_cookie_data	*cookie_data;
     char *plain;

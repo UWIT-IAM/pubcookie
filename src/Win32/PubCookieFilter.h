@@ -4,12 +4,14 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.27 2004-02-10 00:42:16 willey Exp $
+//  $Id: PubCookieFilter.h,v 1.28 2004-02-17 23:06:38 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
 
 #define MAX_INSTANCE_ID 25
+#define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
+                             and malloc to find/set the buffer size */
 
 typedef struct {
 	char			remote_host[MAX_PATH];
@@ -48,6 +50,7 @@ typedef struct {
 	char			server_hostname[MAX_PATH];
 	char			instance_id[MAX_INSTANCE_ID+1];
 	TCHAR			strbuff[MAX_REG_BUFF];  //temporary buffer for libpbc_config_getstring calls
+	security_context      *sectext;
 
 } pubcookie_dir_rec;
 
@@ -96,8 +99,6 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 // used to redirect from http->https
 #define PBC_BAD_PORT 9
 #define PBC_LOGOUT_REDIR 10
-
-#define PBC_DEFAULT_KEY "default"
 
 //AUTH Types = Cred Types
 #define AUTH_NONE '0'

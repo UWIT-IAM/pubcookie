@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.41 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: pbc_myconfig.c,v 1.42 2004-02-17 23:06:38 ryanc Exp $
  */
 
 
@@ -15,8 +15,7 @@
 # include "pbc_path.h"
 #endif
 
-#ifndef WIN32
-# if defined (APACHE1_3)
+#if defined (APACHE1_3)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -26,8 +25,7 @@
 #  include "util_script.h"
 # else
    typedef void pool;
-# endif /* APACHE1_3 */
-#endif /* WIN32 */
+#endif /* APACHE1_3 */
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -409,8 +407,6 @@ int main(int argc, char *argv[])
 #include "pbc_config.h"
 #include "Win32/PubCookieFilter.h" 
 
-typedef pubcookie_dir_rec pool;
-
 #include "Win32/debug.h"
 #include "pbc_configure.h"
 #include "snprintf.h"
@@ -418,7 +414,7 @@ typedef pubcookie_dir_rec pool;
 #include "pbc_logging.h"
 
 
-static void fatal(pool *p, const LPTSTR s, int ex)
+static void fatal(pubcookie_dir_rec *p, const LPTSTR s, int ex)
 {
 	syslog(LOG_ERR, "fatal error: %s\n", s);
     exit(ex);
@@ -438,27 +434,27 @@ LPTSTR libpbc_myconfig_copystring(LPTSTR outputstring, LPCTSTR inputstring, int 
 
 /* This will return either p->strbuff or NULL.  p->strbuff will contain 
    the found value or def, unless def is NULL. */
-LPTSTR get_reg_value(pool *p, LPCTSTR key, LPDWORD size, LPCTSTR def) {
+LPTSTR get_reg_value(pubcookie_dir_rec *p, LPCTSTR key, LPDWORD size, LPCTSTR def) {
 
 	char keyBuff[PBC_1K];
 	LPTSTR value;
 	HKEY hKey;
 
-	/* first look in web key */
-	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);
-	StringCchCat (keyBuff, PBC_1K, "\\");
-	StringCchCat (keyBuff, PBC_1K, PBC_INSTANCE_KEY);
-	if (strlen(p->instance_id) > 0) {
+	/* first look in web instance key */
+	if (strlen(p->instance_id)) {
+		StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);
+		StringCchCat (keyBuff, PBC_1K, "\\");
+		StringCchCat (keyBuff, PBC_1K, PBC_INSTANCE_KEY);
 		StringCchCat (keyBuff, PBC_1K, "\\");
 		StringCchCat (keyBuff, PBC_1K, p->instance_id);
-	}
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyBuff,0,KEY_READ,&hKey) == ERROR_SUCCESS) {
-		if (RegQueryValueEx(hKey, key, NULL, NULL, (LPBYTE)p->strbuff, size) == ERROR_SUCCESS) {
-			/* if we find the value here, we're done */
+		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyBuff,0,KEY_READ,&hKey) == ERROR_SUCCESS) {
+			if (RegQueryValueEx(hKey, key, NULL, NULL, (LPBYTE)p->strbuff, size) == ERROR_SUCCESS) {
+				/* if we find the value here, we're done */
+				RegCloseKey(hKey);
+				return p->strbuff;  
+			}
 			RegCloseKey(hKey);
-			return p->strbuff;  
 		}
-		RegCloseKey(hKey);
 	}
 
 	/* then look for config. settings in main pubcookie service key */
@@ -483,7 +479,7 @@ LPTSTR get_reg_value(pool *p, LPCTSTR key, LPDWORD size, LPCTSTR def) {
 /* Note that p must have been allocated by the calling process */
 /* Note that functions in pbc_myconfig should not call libpbc_getstring or libpbc_getint
    as there is only one static buffer defined for p. This includes syslog()*/
-LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def)
+LPTSTR libpbc_myconfig_getstring(pubcookie_dir_rec *p, LPCTSTR key, LPCTSTR def)
 {
 	DWORD dsize;
 
@@ -498,7 +494,7 @@ LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def)
 }
 
 
-int libpbc_myconfig_getint(pool *p, LPCTSTR key, int def)
+int libpbc_myconfig_getint(pubcookie_dir_rec *p, LPCTSTR key, int def)
 {
     DWORD dsize;
 	LPSTR value;
@@ -515,30 +511,30 @@ int libpbc_myconfig_getint(pool *p, LPCTSTR key, int def)
 	value = get_reg_value(p, key, &dsize, "NONE");
 
 	if (_tcsncmp("NONE",value,4)) {
-		return (int)*value; /* sizeof(int) = sizeof(DWORD) only on 32-bit systems */
+		return *(int *)value; /* sizeof(int) = sizeof(DWORD) only on 32-bit systems */
 	} else {
 		return def;
 	}
 }
 
-int libpbc_myconfig_getswitch(pool *p, LPCTSTR key, int def)
+int libpbc_myconfig_getswitch(pubcookie_dir_rec *p, LPCTSTR key, int def)
 {
 	/* Unimplemented */
 	return def;
 }
 
-LPTSTR *libpbc_myconfig_getlist(pool *p, LPCTSTR key)
+LPTSTR *libpbc_myconfig_getlist(pubcookie_dir_rec *p, LPCTSTR key)
 {
 	/* Unimplemented */
 	return NULL;
 }
 
-int libpbc_myconfig_init(pool *p, LPCTSTR alt_config, LPCTSTR ident)
+int libpbc_myconfig_init(pubcookie_dir_rec *p, LPCTSTR alt_config, LPCTSTR ident)
 {
 		return TRUE;
 }
 
-LPTSTR AddSystemRoot(pool *p, LPCTSTR subdir) 
+LPTSTR AddSystemRoot(pubcookie_dir_rec *p, LPCTSTR subdir) 
 {
 	if (!p) fatal(p, "AddSystemRoot called without an allocated pool",3);
 

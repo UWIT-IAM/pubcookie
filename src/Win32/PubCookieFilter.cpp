@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.26 2004-02-10 00:42:16 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.27 2004-02-17 23:06:38 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -14,25 +14,27 @@
 #include <direct.h>       // For mkdir
 #include <time.h>
 #include <process.h>
-// #include <shfolder.h>  // For System Path, in Platform SDK
 #include <httpfilt.h>
+
+typedef void pool;
 
 extern "C" 
 {
 #include <pem.h>
-#include "../pbc_config.h"
-#include "../pubcookie.h"
+#include "pubcookie.h"
+#include "pbc_config.h"
+#include "libpubcookie.h"
 #include "PubCookieFilter.h"
-typedef pubcookie_dir_rec pool;
-#include "../libpubcookie.h"
-#include "../pbc_version.h"
-#include "../pbc_myconfig.h"
-#include "../pbc_configure.h"
+#include "pbc_version.h"
+#include "pbc_myconfig.h"
+#include "pbc_configure.h"
 #include "debug.h"
 }
 #define HDRSIZE 56
 
-VOID filterlog(pool *p, int loglevel, const char *format, ...) {
+security_context *global_context;  //TODO:  Allow different context for each virutal server
+
+VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
 	char source[HDRSIZE];
 
 	va_list   args;
@@ -50,7 +52,7 @@ VOID filterlog(pool *p, int loglevel, const char *format, ...) {
     va_end(args);
 }
 
-bool logsource_exists(pool *p, const char *source) {
+bool logsource_exists(pubcookie_dir_rec *p, const char *source) {
 
 	HKEY hKey;
 	UCHAR *DataBuff;
@@ -128,7 +130,7 @@ bool SetRegString (HKEY hKey, LPCTSTR value, LPCTSTR setstr)
 	
 }
 
-VOID create_source(pool *p, const char *source) {
+VOID create_source(pubcookie_dir_rec *p, const char *source) {
 	char keybuff[MAX_REG_BUFF];
 	HKEY hKey;
 	UCHAR *dataBuff;
@@ -197,7 +199,7 @@ int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
 
         filterlog(p, LOG_ERR,	"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", p->uri);
     else
-		cookie_data = libpbc_unbundle_cookie(p, cookie, p->server_hostname, false);
+		cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false);
 
     if( cookie_data == NULL ) {
         filterlog(p, LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", p->uri);
@@ -275,10 +277,10 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 BOOL Pubcookie_Init () 
 {
 	int rslt;
-	pool *p=NULL;
+	pubcookie_dir_rec *p=NULL;
 
-	p = (pool *)malloc(sizeof(pool));
-	bzero(p,sizeof(pool));
+	p = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec));
+	bzero(p,sizeof(pubcookie_dir_rec));
 
 	// Need TCPIP for gethostname stuff
 	   
@@ -295,10 +297,10 @@ BOOL Pubcookie_Init ()
 	}
 
 	// Initialize Pubcookie Stuff
-
-	if (!libpbc_pubcookie_init(p)) {
+	if (!libpbc_pubcookie_init(p,&global_context)) {  //TODO:  separate security contexts for each virtual server
 		return FALSE;
 	}
+
 	free(p);
     return TRUE;
 
@@ -483,6 +485,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		PBC_GETVAR_PRE_SESS_TOK,
 		  pre_sess_tok);
 
+	filterlog(p, LOG_DEBUG,"Granting Request:\n%s",g_req_contents); 
 
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents));
@@ -492,6 +495,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	/* make the pre-session cookie */
     pre_s = libpbc_get_cookie(  
 		p,
+		p->sectext,
 		(unsigned char *) "presesuser",
 		PBC_COOKIE_TYPE_PRE_S, 
 		PBC_CREDS_NONE, 
@@ -731,9 +735,11 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 		dwRead = sizeof (p->Enterprise_Domain);
 		RegQueryValueEx (hKey, "Enterprise_Domain",
 			NULL, NULL, (LPBYTE) p->Enterprise_Domain, &dwRead);
+
 		dwRead = sizeof (p->Error_Page);
 		RegQueryValueEx (hKey, "Error_Page",
 			NULL, NULL, (LPBYTE) p->Error_Page, &dwRead);
+
 		dwRead = sizeof (p->Set_Server_Values);
 		RegQueryValueEx (hKey, "SetHeaderValues",
 			NULL, NULL, (LPBYTE) &p->Set_Server_Values, &dwRead);
@@ -1095,7 +1101,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}
 		else {
 
-			if( ! (cookie_data = libpbc_unbundle_cookie(p, cookie, p->server_hostname, false)) ) {
+			if( ! (cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false)) ) {
 				filterlog(p, LOG_ERR,"[Pubcookie_User] Can't unbundle Session cookie for URL %s; remote_host: %s",
 					p->uri, p->remote_host);
 				p->failed = PBC_BAD_SESSION_CERT;
@@ -1171,7 +1177,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}*/ 		/* PBC_X_STRING doesn't seem to be used any longer */
 
 
-		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, p->server_hostname, true)) ) {
+		if( !(cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, true)) ) {
 			filterlog(p, LOG_ERR,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
 				p->uri, p->remote_host);
 			p->failed = PBC_BAD_GRANTING_CERT;
@@ -1330,11 +1336,12 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 		if (p->inact_exp > 0 || first_time_in_session) {
 			
 			if( !first_time_in_session ) {
-				cookie = libpbc_update_lastts(p, p->cookie_data, p->server_hostname, 0);
+				cookie = libpbc_update_lastts(p, p->sectext, p->cookie_data, p->server_hostname, 0);
 				filterlog(p, LOG_INFO,"  Setting session cookie last timestamp to: %ld\n",p->cookie_data->broken.last_ts);
 			}
 			else {
 				cookie = libpbc_get_cookie(p,
+					p->sectext,
 					(unsigned char *)p->user, 
 					PBC_COOKIE_TYPE_S,
 					p->AuthType,
@@ -1420,7 +1427,6 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 {
-
 	// The version of the web server this is running on
 	syslog(LOG_INFO, "\nPBC_GetFilterVersion: Web Server is version is %d.%d\n",
 				HIWORD( pVer->dwServerFilterVersion ),
@@ -1431,9 +1437,10 @@ BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 
 	// The description
 	strcpy( pVer->lpszFilterDesc, Pubcookie_Version );
-	
-	syslog(LOG_INFO,"[GetFilterVersion] %s",Pubcookie_Version);
 
+	syslog(LOG_INFO,"[GetFilterVersion] %s",Pubcookie_Version);
+	
+	// Register for notifications
 	pVer->dwFlags = Notify_Flags;
 
 	return TRUE;
@@ -1488,6 +1495,8 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 	
 	memset(p,0,sizeof(pubcookie_dir_rec));
+
+	p->sectext= global_context;  //TODO: Generate new context here
 
 	// IBM Network Dispatcher probes web sites with a URL of "/" and command of HEAD
 	// bail quickly if this is the case
@@ -2000,7 +2009,7 @@ DllMain(
     {
     case DLL_PROCESS_ATTACH:
 		{
-			// Initialize Pubcookie Stuff - and Set Debut Trace Flags
+			// Initialize Pubcookie Stuff - and Set Debug Trace Flags
 			fReturn = Pubcookie_Init ();
 		
 			if ( !fReturn )

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.8 2004-02-10 00:42:16 willey Exp $
+  $Id: winkeyclient.c,v 1.9 2004-02-17 23:06:38 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -353,7 +353,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     Status = VerifyServerCertificate(pRemoteCertContext,
                                      keyhost,
                                      0);
-    if(Status)
+
+	if(Status)
     {
         Messagef("Error authenticating server credentials.  Check to make sure that your server has a certificate that is trusted by your machine.\n");
 
