@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.47 2002-05-08 19:31:12 ryanc Exp $
+    $Id: pbc_config.h,v 1.48 2002-05-09 23:17:20 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -120,8 +120,10 @@
 #define PBC_PRE_S_COOKIENAME "pubcookie_pre_s"
 #define PBC_FORM_MP_COOKIENAME "pubcookie_formmultipart"
 
+/* this apache module stuff should go into something like mod_pubcookie.h */
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
+#define PBC_END_SESSION_REDIR_HANDLER "pubcookie-end-session-redir-handler"
 
 /* why is this user being sent back, well the redirect reason will tell ya */
 static const char *redirect_reason[] = {
@@ -163,12 +165,15 @@ static const char *redirect_reason[] = {
 #define PBC_END_SESSION_REDIR_MASK    2
 #define PBC_END_SESSION_CLEAR_L_MASK  4
 
-#define LOGOUT_ACTION_NOTHING 0
-#define LOGOUT_ACTION_CLEAR_L 1
+#define LOGOUT_ACTION_UNSET          -1
+#define LOGOUT_ACTION_NOTHING        0
+#define LOGOUT_ACTION_CLEAR_L        1
+#define LOGOUT_ACTION_CLEAR_L_NO_APP 2
 
 #define PBC_SESSION_REAUTH 1
 #define PBC_SUPER_DEBUG 1
 #define PBC_CLEAR_COOKIE "clear"
+#define PBC_SET "set"
 
 #define EARLIEST_EVER "Fri, 11-Jan-1990 00:00:01 GMT"
 
@@ -225,8 +230,15 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_REPLY "reply"            /* tags a reply from the form */
 /* new in oct 2001 */
 #define PBC_GETVAR_DURATION "duration" 
-/* new in March 2003 to support short term logout */
+/* new in March 2002 to support short term logout */
 #define PBC_GETVAR_LOGOUT_ACTION "logout_action"
+/* added previously but only now as defines March 2002 */
+#define PBC_GETVAR_FIRST_KISS "first_kiss"
+#define PBC_GETVAR_NEXT_SECURID "next_securid"
+#define PBC_GETVAR_USER "user"
+#define PBC_GETVAR_PASS "pass"
+#define PBC_GETVAR_PASS2 "pass2"
+#define PBC_GETVAR_GREQ_CREDS "creds_from_greq"
 
 
 /* 
@@ -245,14 +257,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 /* macros to support older version of apache */
 
-#ifdef APACHE1_2
-#define pbc_malloc(x) palloc(p, x)
-#define pbc_free(x) libpbc_void(x)
-#define pbc_strdup(x) pstrdup(p, x)
-#define pbc_strndup(s, n) pstrdup(p, s, n)
-#define pbc_fopen(x, y) pfopen(p, x, y)
-#define pbc_fclose(x) pfclose(p, x)
-#elif APACHE1_3
+#ifdef APACHE1_3
 #define pbc_malloc(x) ap_palloc(p, x)
 #define pbc_free(x) libpbc_void(x)
 #define pbc_strdup(x) ap_pstrdup(p, x)
@@ -287,12 +292,16 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 /* p is the memory pool in apache */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
-#define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) libpbc_gen_granting_req_p(p, a,b,c,d,e,f,g,h,i,j,k,l)
-#define libpbc_get_cookie(a,b,c,d,e,f,g,h) libpbc_get_cookie_p(p, a,b,c,d,e,f,g,h)
-#define libpbc_unbundle_cookie(a,b,c)  libpbc_unbundle_cookie_p(p, a,b,c)
-#define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_p(p, a,b,c)
+#define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) \
+		libpbc_gen_granting_req_p(p, a,b,c,d,e,f,g,h,i,j,k,l)
+#define libpbc_get_cookie(a,b,c,d,e,f,g,h) \
+		libpbc_get_cookie_p(p, a,b,c,d,e,f,g,h)
+#define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h,i) \
+		libpbc_get_cookie_with_expire_p(p, a,b,c,d,e,f,g,h,i)
+#define libpbc_unbundle_cookie(a,b,c)      libpbc_unbundle_cookie_p(p, a,b,c)
+#define libpbc_update_lastts(a,b,c)        libpbc_update_lastts_p(p, a,b,c)
 #define libpbc_sign_init(a) 		   libpbc_sign_init_p(p, a)
-#define libpbc_verify_init(a) 	   libpbc_verify_init_p(p, a)
+#define libpbc_verify_init(a) 	   	   libpbc_verify_init_p(p, a)
 #define libpbc_pubcookie_init() 	   libpbc_pubcookie_init_p(p)
 #define libpbc_alloc_init(a) 		   libpbc_alloc_init_p(p, a)
 #define libpbc_gethostip() 		   libpbc_gethostip_p(p)
@@ -304,14 +313,18 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_init_md_context_plus() 	   libpbc_init_md_context_plus_p(p)
 #define libpbc_get_crypt_key(a,b) 	   libpbc_get_crypt_key_p(p, a,b)
 #define libpbc_sign_cookie(a,b) 	   libpbc_sign_cookie_p(p, a,b)
-#define libpbc_sign_bundle_cookie(a,b,c) 	   libpbc_sign_bundle_cookie_p(p, a,b,c)
-#define libpbc_stringify_cookie_data(a) 	   libpbc_stringify_cookie_data_p(p, a)
+#define libpbc_sign_bundle_cookie(a,b,c)   libpbc_sign_bundle_cookie_p(p, a,b,c)
+#define libpbc_stringify_cookie_data(a)    libpbc_stringify_cookie_data_p(p, a)
 #define libpbc_free_md_context_plus(a)     libpbc_free_md_context_plus_p(p, a)
 #define libpbc_free_crypt(a)               libpbc_free_crypt_p(p, a)
 
 #else
-#define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) libpbc_gen_granting_req_np(a,b,c,d,e,f,g,h,i,j,k)
-#define libpbc_get_cookie(a,b,c,d,e,f,g,h) libpbc_get_cookie_np(a,b,c,d,e,f,g,h)
+#define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) \
+		libpbc_gen_granting_req_np(a,b,c,d,e,f,g,h,i,j,k)
+#define libpbc_get_cookie(a,b,c,d,e,f,g,h) \
+		libpbc_get_cookie_np(a,b,c,d,e,f,g,h)
+#define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h,i) \
+		libpbc_get_cookie_with_expire_np(a,b,c,d,e,f,g,h,i)
 #define libpbc_unbundle_cookie(a,b,c)    libpbc_unbundle_cookie_np(a,b,c)
 #define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_np(a,b,c)
 #define libpbc_sign_init(a) 		 libpbc_sign_init_np(a)
