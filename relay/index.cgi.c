@@ -5,19 +5,19 @@
 #include <signal.h>
 #include <string.h>
 
+typedef void pool;
+
 #ifdef WIN32
 # include <Windows.h>
 # include <httpfilt.h>
 # include "pbc_config.h"
 # include "pubcookie.h"
 # include "PubCookieFilter.h"
-  typedef pubcookie_dir_rec pool;
+pubcookie_dir_rec *p = NULL;
 #else
 #include "pbc_config.h"
-typedef void pool;
-#endif
-
 pool *p = NULL;
+#endif
 
 #include "pbc_configure.h"
 
@@ -34,7 +34,7 @@ static void get_template(WebTemplate W, char *name,  char *file)
 {
    char *buf;
    char *e;
-   int pl = strlen(PBC_TEMPLATES_PATH) + strlen(file);
+   int pl = (int)strlen(PBC_TEMPLATES_PATH) + (int)strlen(file);
  
    buf = (char*) malloc(pl+2);
    strcpy(buf, PBC_TEMPLATES_PATH);
@@ -115,7 +115,6 @@ void relay_granting_reply(WebTemplate W, char *grpl)
    if ((post=WebTemplate_get_arg(W, PBC_GETVAR_POST_STUFF)) && *post) {
       char *a, *v;
       char *p;
-      int na;
       int needclick = 0;
       do {
          if (a=strchr(post, '&')) *a++ = '\0';
@@ -186,8 +185,9 @@ main()
   int ishttps;
 
 # ifdef WIN32
-  p = (pool *)malloc(sizeof(pool));
-  memset(p,0,sizeof(pool));
+  p = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec));
+  memset(p,0,sizeof(pubcookie_dir_rec));
+  strncpy(p->instance_id,PBC_RELAY_WEB_KEY,MAX_INSTANCE_ID);
 # endif
 
   WebTemplate_set_comments(W, "#", NULL);
@@ -200,18 +200,29 @@ main()
   libpbc_config_init(p, NULL, "relay");
 
   relay_domain = WebTemplate_get_arg(W, "domain");
-  if (!relay_domain) relay_domain = (char*)PBC_ENTRPRS_DOMAIN;
+  if (!relay_domain) { 
+	  relay_domain = (char*)PBC_ENTRPRS_DOMAIN;
+#ifdef WIN32
+      relay_domain = strdup(relay_domain);  /* Windows needs a copy since the pbc_myconfig buffer will be reused */
+#endif
+  }
 
   login_uri = (char*)PBC_RELAY_LOGIN_URI;
   if (!*login_uri) login_uri = (char*)PBC_LOGIN_URI;
-
+#ifdef WIN32
+  login_uri = strdup(login_uri);  /* Windows needs a copy since the pbc_myconfig buffer will be reused */
+#endif
   /* figure out relay uri */
 
   if (getenv("HTTPS")) ishttps = 1;
   else ishttps = 0;
 
   if (!(host=getenv("HTTP_HOST"))) host = "nohost";
+#ifdef WIN32
+  if (!(uri=getenv("SCRIPT_NAME"))) uri = "/";
+#else
   if (!(uri=getenv("REQUEST_URI"))) uri = "/";
+#endif
   if ((port=getenv("SERVER_PORT")) && strcmp(port,ishttps?"443":"80")) {
      uport = (char*) malloc(2+strlen(port));
      sprintf(uport,":%s", port);
