@@ -1,5 +1,25 @@
 
-/* Copyright 1999, University of Washington.  All rights reserved. */
+/*
+
+    Copyright 1999-2001, University of Washington.  All rights reserved.
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More info: http://www.washington.edu/computing/pubcookie/
+    Written by the Pubcookie Team
+
+ */
+
+/*
+    $Id: make_crypted_bit.c,v 1.6 2001-12-06 23:32:53 willey Exp $
+ */
+
 
 #include <string.h>
 #include <time.h>
@@ -51,7 +71,7 @@ int main(int argc, char **argv) {
 
     bzero(in, 1024);
     bzero(intermediate, 1024);
-    strcpy(in, "9043ddkljso2lkx90%lknxlwio2kxcvo;iw90dflkwekjvs98xcv,");
+    strcpy(in, "Maybe this plaintext is another world's ciphertext.");
 
     fprintf(stderr, "in is %s\n", in);
     if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) )
