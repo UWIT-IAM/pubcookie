@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.46 2004-04-09 16:56:30 fox Exp $
+ * $Id: keyclient.c,v 2.47 2004-04-28 23:26:57 willey Exp $
  */
 
 
@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
     security_context *context = NULL;
 #endif
     char *gcert = NULL;
+    const char *cluster = libpbc_config_getstring(p, "login_host", "");
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
@@ -412,7 +413,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "str == NULL???\n");
         exit(1);
     }
-    if (strcasecmp(cp, keyhost)) {
+    if (strcasecmp(cp, keyhost) && strcasecmp(cp, cluster)) {
         fprintf(stderr, "certificate presented isn't the key server: %s != %s\n",
                 cp, keyhost);
         exit(1);
