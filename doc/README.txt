@@ -1,4 +1,11 @@
 
-Nothing more recent then pubcookie.txt to report.
+Pubcookie documentation lives at:
 
-16Dec1998 steve
+http://www.washington.edu/cluster/pubcookie/
+
+Installation specific docs live at:
+
+http://www.washington.edu/cluster/pubcookie/installa.htm
+
+
+12Jan1999 steve
