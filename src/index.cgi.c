@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.82 $
+ * $Revision: 1.83 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -123,13 +123,13 @@
 /* of course it is overwritten each time this runs                 */
 FILE *mirror;
 
+/* 'htmlout' stores the HTML text the CGI generates until it exits */
 FILE *htmlout;
+/* 'headerout' stores the HTTP headers the CGI generates */
 FILE *headerout;
 
 /* do we want debugging? */
 int debug;
-
-crypt_stuff         *c_stuff = NULL;
 
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 /*      general utility thingies                                           */
@@ -189,6 +189,7 @@ static char *get_file_template(const char *fname)
   }
 
   template[len]=0;
+  fclose(tmpl_file);
   return template;
 }
 
@@ -202,7 +203,6 @@ static void buf_template_vprintf(const char *fname, char *dst, size_t n,
   vsnprintf(dst, n, template, ap);
   free(template);
 }
-
 
 /**
  * print_html saves HTML to be printed at exit, after HTTP headers
