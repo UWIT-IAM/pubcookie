@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.28 2002-09-26 23:45:38 ryanc Exp $
+    $Id: libpubcookie.h,v 1.29 2002-10-01 19:21:11 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -90,9 +90,7 @@ unsigned char *libpbc_update_lastts_p(ap_pool *, pbc_cookie_data *,
 void libpbc_pubcookie_init_p(ap_pool *);
 unsigned char *libpbc_alloc_init_p(ap_pool *, int);
 unsigned char *libpbc_gethostip_p(ap_pool *);
-crypt_stuff *libpbc_init_crypt_p(ap_pool *, char *);
 void libpbc_free_md_context_plus_p(ap_pool *, md_context_plus *);
-void libpbc_free_crypt_p(ap_pool *, crypt_stuff *);
 
 /**
  * generates a random key for peer and writes it to the disk
@@ -136,9 +134,7 @@ md_context_plus *libpbc_sign_init_np(char *);
 void libpbc_pubcookie_init_np();
 unsigned char *libpbc_alloc_init_np(int);
 unsigned char *libpbc_gethostip_np();
-crypt_stuff *libpbc_init_crypt_np(char *);
 void libpbc_free_md_context_plus_np(md_context_plus *);
-void libpbc_free_crypt_np(crypt_stuff *);
 int libpbc_random_int();
 unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data); 
 
@@ -169,14 +165,6 @@ void libpbc_augment_rand_state(unsigned char *, int);
 char *libpbc_mod_crypt_key(char *, unsigned char *);
 
 
-int libpbc_encrypt_cookie(unsigned char *, 
-	                  unsigned char *, 
-                          crypt_stuff *, 
-                          long);
-int libpbc_decrypt_cookie(unsigned char *, 
-	                  unsigned char *, 
-                          crypt_stuff *,
-	     	          long);
 int libpbc_base64_encode(unsigned char *, unsigned char *, int );
 int libpbc_base64_decode(unsigned char *, unsigned char *, int *);
 int libpbc_check_version(pbc_cookie_data *);

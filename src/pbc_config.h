@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.65 2002-09-27 17:45:11 greenfld Exp $
+    $Id: pbc_config.h,v 1.66 2002-10-01 19:21:23 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -294,7 +294,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_sign_bundle_cookie(a,b)   libpbc_sign_bundle_cookie_p(p, a,b)
 #define libpbc_stringify_cookie_data(a)    libpbc_stringify_cookie_data_p(p, a)
 #define libpbc_free_md_context_plus(a)     libpbc_free_md_context_plus_p(p, a)
-#define libpbc_free_crypt(a)               libpbc_free_crypt_p(p, a)
 #define libpbc_generate_crypt_key(a)       libpbc_generate_crypt_key_p(p, a)
 #define libpbc_set_crypt_key(a,b)          libpbc_set_crypt_key_p(p,a,b)
 
@@ -322,7 +321,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_sign_bundle_cookie(a,b) libpbc_sign_bundle_cookie_np(a,b)
 #define libpbc_stringify_cookie_data(a)  libpbc_stringify_cookie_data_np(a)
 #define libpbc_free_md_context_plus(a)   libpbc_free_md_context_plus_np(a)
-#define libpbc_free_crypt(a)             libpbc_free_crypt_np(a)
 #define libpbc_generate_crypt_key(a)     libpbc_generate_crypt_key_np(a)
 #define libpbc_set_crypt_key(a,b)        libpbc_set_crypt_key_np(a,b)
 
