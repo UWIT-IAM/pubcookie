@@ -9,8 +9,25 @@
 
 <h1>Pubcookie login cgi</h1>
 
+<p><i>Included on this page:</i></p>
 
-<h2>Introduction</h2>
+<ul>
+<li><a href="#intro">Introduction</a></li>
+<li><a href="#implementation">Implementation</a></li>
+<li><a href="#authsvcs">Authentication Services</a></li>
+<li><a href="#apacheconfig">Apache Configuration</a></li>
+<li><a href="#build">Build the Pubcookie login server</a></$
+<li><a href="#runtime">Run-time Configuration</a></li>
+<li><a href="#localization">Localization</a></li>
+<li><a href="#moreconfig">More Configuration</a></li>
+<li><a href="#keymgt">Key Management</a></li>
+<li><a href="#upgrading">Upgrading</a></li>  
+<li><a href="#advconfig">Advanced Configuration</a></li>
+<li><a href="#security">Security Considerations</a></li>
+<li><a href="#oldtools">Old Debugging Tools</a></li>
+</ul>
+
+<h4><a href="intro">Introduction</a></h2>
 
 <p>
 The Pubcookie login server has two primary functions: to authenticate
@@ -22,7 +39,7 @@ on a previous visit to the login server.  Example code to interface to an
 authentication system is provided.
 </p>
 
-<h2>Implementation</h2>
+<h4><a href="implementation">Implementation</a></h4>
 
 <p>
 The Pubcookie login server uses a CGI program to handle all HTTP
@@ -42,7 +59,7 @@ Apache web server software. Other web server software which supports CGI
 and SSL should also work, but this supposition has not been tested.
 </p>
 
-<h2>Authentication services</h2>
+<h4><a href="authsvcs">Authentication services</a></h4>
 
 <p>
 The login cgi has a very simple interface for talking to backend
@@ -75,9 +92,9 @@ configuration</a>).  Some verifiers will allow or require further
 customization; see the section referring to that verifier.
 </p>
 
-<h2>Apache Configuration</h2>
+<h4><a href="apacheconfig">Apache Configuration</a></h4>
 
-<h3>Choosing the location of your login page</h3>
+<h5>Choosing the location of your login page</h5>
 
 <p>
 Depending on your installation environment you may choose to install the
@@ -85,7 +102,7 @@ login server in a number of configurations.  Two general models are
 presented here with any necessary Apache configuration directives.
 </p>
 
-<h4>Specifying the login URL as a directory</h4>
+<h5>Specifying the login URL as a directory</h5>
 
 <p>
 For a clean looking login URL you can install the login server to be the
@@ -119,7 +136,7 @@ DirectoryIndex index.html index.cgi
 <p>If this is the configuration you choose, make sure there isn't an
 index.html file in the same directory as the index.cgi binary.</p>
 
-<h4>Explicit specification of login CGI</h4>
+<h5>Explicit specification of login CGI</h5>
 
 <p>
 The login CGI is not name dependant and can be deployed as index.cgi,
@@ -145,7 +162,7 @@ applications may override what login server they refer to with the
 PubCookieLogin directive in their apache configuration file, but this
 isn't recommended.)</p>
 
-<h3>Apache configuration directive you might have to tweak</h3>
+<h5>Apache configuration directive you might have to tweak</h5>
 
 <p>
 Apache needs to know how to identify and handle cgi scripts.  Some
@@ -157,7 +174,7 @@ commented out.</p>
 AddHandler cgi-script .cgi
 </pre>
 
-<h2>Build the Pubcookie login server</h2>
+<h4><a href="build">Build the Pubcookie login server</a></h4>
 
 <p>
 This has been made easier with autoconf. (Thanks Jon Miner, University 
@@ -185,7 +202,7 @@ options and adjust accordingly:
 $ ./configure --help
 </pre>
 
-<h2><a name="runtime">Run-time configuration</a></h2>
+<h4><a name="runtime">Run-time configuration</a></h4>
 
 <p>
 Most configuration of the login server can be done at run-time via
@@ -255,7 +272,7 @@ those certificates named via their OpenSSL hashes. At least one of
 
 <p>See <a href="config.html">config.html</a> for a full list of attributes.</p>
 
-<h2>Localization</h2>
+<h4><a name="localization">Localization</a></h4>
 
 <p>
 The design of the login cgi preceded consideration of external use of
@@ -275,7 +292,7 @@ them) is supplied for your amusement in
 respectively.
 </p>
 
-<h2>More configuration: User agent blocking via ok_browsers file</h2>
+<h4><a name="moreconfig">More configuration: User agent blocking via ok_browsers file</a></h4>
 
 <p>
 The <tt>{PUBCOOKIE_DIR}/ok_browsers</tt> file contains a list of acceptable
@@ -294,14 +311,14 @@ claim to be Mozilla that covers the only two browsers known to work
 with Pubcookie. Proceed according to your own policy.
 </p>
 
-<h2><a name="keymgt">Key management</a></h2>
+<h4><a name="keymgt">Key management</a></h4>
 
 <p>
 <tt>{PUBCOOKIE_DIR}/keys</tt> is the location of the keystore that the login
 cgi uses.  The login cgi makes use of several different keys.
 </p>
 
-<h3>Generate or reuse keypairs for the login server</h3>
+<h5>Generate or reuse keypairs for the login server</h5>
 
 <p>
 The pubcookie_login key and certificate are used to secure the "login
@@ -312,7 +329,7 @@ rather than generating a new keypair. The login cgi will automatically
 do so if you set <tt>ssl_cert_file</tt> and <tt>ssl_key_file</tt>
 correctly.</p>
 
-<h3>Generate granting keypair for authentication assertions</h3>
+<h5>Generate granting keypair for authentication assertions</h5>
 
 <p>
 Next, the pubcookie_granting keypair is needed to secure authentication
@@ -332,7 +349,7 @@ $ openssl req -new -x509 -nodes \
 need to set the <tt>granting_cert_file</tt> and
 <tt>granting_key_file</tt> attributes.</p>
 
-<h3>Configure keyserver on the login server</h3>
+<h5>Configure keyserver on the login server</h5>
 
 <p>
 <tt>keyserver</tt> is a program that maintains DES keys.
@@ -376,7 +393,7 @@ service keyserver
 
 <p>After adding this line (or file), restart <tt>inetd</tt>.</p>
 
-<h3>Generate a DES key for the login server with keyclient</h3>
+<h5>Generate a DES key for the login server with keyclient</h5>
 
 <p>
 Now run keyclient to generate a DES key for the login server:</p>
@@ -389,7 +406,7 @@ Now run keyclient to generate a DES key for the login server:</p>
 the login server to use to provide confidentiality for the login
 cookies.</p>
 
-<h3>Generating DES keys for the application servers with keyclient</h3>
+<h5>Generating DES keys for the application servers with keyclient</h5>
 
 <p>
 Generating DES keys for the application servers is just as easy as
@@ -404,9 +421,9 @@ server's config file.</p>
 Remember that the application server will also need a correct 'config'
 file.</p>
 
-<h2>Upgrading</h2>
+<h4><a href="upgrading">Upgrading</a></h4>
 
-<h3>Upgrading from pre-3.0 pubcookie</h3>
+<h5>Upgrading from pre-3.0 pubcookie</h5>
 
 <ul>
 <li>Maintaining DES key compatibility from hashed IP addresses
@@ -438,12 +455,11 @@ href="#keymgt">Key management</a> section above.</p></li>
 
 </ul>
 
-<h2>Advanced configuration</h2>
+<h4><a name="advconfig">Advanced configuration</a></h4>
 
-<h3>Redundant login servers</h3>
+<h5>Redundant login servers</h5>
 
-
-<h3>Redundant application hosts</h3>
+<h5>Redundant application hosts</h5>
 
 <p>
 Sites frequently want several hosts configured identically to provide
@@ -463,21 +479,20 @@ a <tt>webmail.example.edu</tt> DES key. Use <tt>keyclient -d</tt> on
 all other webmail machines (<tt>webmail2.example.edu</tt>, etc.) to
 download an identical application key to the remaining servers.</p>
 
-<h2>Security considerations</h2>
+<h4><a href="security">Security considerations</a></h4>
 
-<h3>Login server security</h3>
+<h5>Login server security</h5>
 
 don't run anything else on it: anyone who can add content
 to the login server can steal all cookies
 
-<h3>Application server security</h3>
+<h5>Application server security</h5>
 
+<h5>Handling secrets</h5>
 
-<h3>Handling secrets</h3>
+<h5>Other stuff</h5>
 
-<h2>Other stuff</h2>
-
-<h3>Old Tools That Might Be Handy for Debugging</h3>
+<h4><a href="oldtools">Old Tools That Might Be Handy for Debugging</a></h4>
 
 <p>
 <tt>pbc_create</tt> creates a pubcookie cookie, convenient for
@@ -519,26 +534,17 @@ create_ts: 1006986719
 last_ts: 1006986719
 </pre>
 
-<h2>Copyright information</h2>
-
+<hr>
+<p>
+Copyright 1999-2002, University of Washington.  All rights reserved.<br>
+See doc/LICENSE.txt for terms of use.
+</p>
 <pre>
-    Copyright 1999-2002, University of Washington.  All rights reserved.
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-    Created by the Pubcookie Team
-
-    Comments and suggestions: pubcookie-dev@u.washington.edu
-    Pubcookie on the Web: http://www.pubcookie.org/
-
-    this is installation documentation for the login sever
-
-    $Id: install-login.html,v 1.2 2002-09-11 18:28:33 greenfld Exp $
+$Id: install-login.html,v 1.3 2002-10-02 21:41:00 dors Exp $
 </pre>
-
 </body>
 
 </html>
+
+
+
