@@ -1,3 +1,67 @@
+*) Restrict use of POST login method to same app server host. This
+   prevents a spoof of the granting-reply location in a man-in-the-middle
+   attack. 
+
+*) Fixed login cgi crash with alwaystrue verifier when userid is null. 
+
+*) Added support for custom per-application login messages to login cgi. 
+   Uses optional custom_login_message_dir and custom_login_file_prefix 
+   config file variables. 
+
+*) Added keyserver options to allow keyclient to authenticate using
+   wildcard certs and to support subject alt names. 
+
+*) Added keyserver option to allow keyclient certificates that are signed
+   by untrusted CAs to cache a public key certificate on the keyserver. 
+   This allows them to get crypt keys using an otherwise untrusted cert. 
+ 
+*) Added keyclient parameter "-U cert_file" to upload a public key
+   certificate to the keyserver. This can only be done from a trusted
+   client, i.e. in the "keyserver_client_list" list. 
+
+*) Added another check (using httpd) to configure script for determining
+   Apache version. 
+
+*) Added POST login method to ISAPI filter/extension. That is, the filter
+   is now also an extension, with the old relay functions incorporated
+   into the extension. The filter calls the extension directly by virtual
+   filename, which must be set up in IIS; the installer will do this. 
+ 
+*) Fixed credential passing in new POST login method. 
+
+*) Moved more static HTML from source to login templates. New templates:
+   notok, notok_badagent, notok_form_multipart, notok_generic,
+   notok_need_ssl. Removed templates: notok_part1, notok_part2. 
+
+*) Fixed login cgi crash due during pinit due to fprintf null value.
+   Original bug report made by Christian on pubcookie-users list. 
+
+*) Fixed login cgi crash due to missing sub-template file.
+
+*) Added POST login method to the Apache module for messaging between
+   application server and login server. This feature allows
+   cross-dns-domain logins without the (obsoleted) relay cgi. New server
+   directives are PubcookieLoginMethod and PubcookiePostURL. 
+
+*) Modified Apache module to redirect in the 'check-user' hook rather than
+   using the current 'type-check' and 'handler' methods. This improves 
+   compatibility with other modules that introduce their own handlers. 
+
+*) Modified Apache module to use the request_config record for dynamic 
+   info associated with a request. It was using the per_dir_config record. 
+
+*) Apache module now reports authorization failure on unauthenticated
+   subrequests. We accept that in subrequests we can't do redirects.
+
+*) Added the variable substitution for the form_expire_time variable to
+   the form_expired template. Users who time out will see how long they
+   have to authenticate.
+
+*) Fixed filter to not truncate Instance_id to 8 characters. New limit is
+   64. 
+
+*) Added version string to login server templates as HTML comment.
+
 Changes with 3.1.1:
 
 *) Fixed redirect back to apps that had sent POST arguments. 
