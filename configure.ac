@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.13 $)
+AC_REVISION($Revision: 1.14 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta3], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -361,6 +361,7 @@ AC_ARG_ENABLE(shadow,
 
 if test "$enable_shadow" = "yes"; then
     AC_CHECK_HEADERS([shadow.h crypt.h])
+    AC_CHECK_LIB(crypt, crypt)
 fi
 
 fi # End of stuff we skip if we're not enabling the login server.
