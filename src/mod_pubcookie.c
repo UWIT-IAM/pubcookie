@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.29 1999-06-29 01:39:49 willey Exp $
+    $Id: mod_pubcookie.c,v 1.30 1999-07-08 22:49:48 willey Exp $
  */
 
 /* apache includes */
@@ -106,6 +106,11 @@ int put_out_post(request_rec *r) {
                 }
                 break;
             }
+#ifdef VERON_TESTING
+            /* willey ssw NDC debug veron */
+            /* special debugging to checkout what's happening on veron.u */
+            libpbc_debug("here is the body: %s\n", argsbuffer);
+#endif
         }
 
         ap_kill_timeout(r);
@@ -382,8 +387,8 @@ static int auth_failed(request_rec *r) {
     refresh_e = os_escape_path(r->pool, refresh, 0);
 
 #ifdef REDIRECT_IN_HEADER
-    if ( !(tenc || lenp) )
-        table_add(r->headers_out, "Refresh", refresh); */
+    if ( !(tenc || lenp) || r->method_number != M_POST )
+        table_add(r->headers_out, "Refresh", refresh);
 #endif
     send_http_header(r);
 #else              
@@ -402,11 +407,21 @@ static int auth_failed(request_rec *r) {
     ap_send_http_header(r);
 #endif
 
+#ifdef VERON_TESTING
+    /* willey ssw NDC debug veron */
+    /* special debugging to checkout what's happening on veron.u */
+    libpbc_debug("is this a POST? tenc: %s lenp: %d uri: %s method: %s\n", 
+	    ( tenc ? tenc : ""), 
+	    lenp,
+	    mr->uri,
+	    r->method);
+#endif
+
     /* now send a body */
     if ( tenc && !strcmp(tenc,"multipart/form-data") ) {
         put_out_post(r);
     }
-    else if ( tenc || lenp ) {
+    else if ( tenc || lenp || r->method_number == M_POST ) {
 #ifdef APACHE1_2
         rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
         rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
@@ -1216,8 +1231,10 @@ command_rec pubcookie_commands[] = {
   {"ForceReauth", pubcookie_force_reauth, NULL, OR_OPTIONS, TAKE1,
    "Force the reauthentication loop through the login server"},
  */
+/* maybe for future exploration
   {"PubCookieNoSSLOK", pubcookie_set_no_ssl_ok, NULL, OR_OPTIONS, TAKE1,
    "Allow session to go non-ssl."},
+ */
   {NULL}
 };
 
