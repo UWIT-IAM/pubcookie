@@ -1,8 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<html
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-    <meta http-equiv="Refresh" content="%delay%;URL=%url%">
     <title>
       WebISO Secure Login
     </title>
@@ -14,12 +13,6 @@
     span.c1 {font-family: Geneva, Arial, Helvetica; font-size: 80%}
     span.c2 {font-family: Geneva, Arial, Helvetica; font-size: 144%}
     </style>
-
-    <script type="text/javascript" language="javascript">
-      <!-- to hide script from old browsers
-      window.location.replace("%url%");
-      // -->
-    </script>
   </head>
   <body>
     <span class="c0">
@@ -28,32 +21,54 @@
           <tr>
             <td bgcolor="#AAAAAA"></td>
             <td bgcolor="#AAAAAA" align="right">
-              <!--
               <img alt="Carnegie Mellon Secure Web" src="/images/unitmark.gif" width="179" height="44">
-              -->
-              Carnegie Mellon Secure Web
             </td>
           </tr>
           <tr>
             <td bgcolor="#DDDDDD" valign="bottom" align="center">
-              <!--
               <img alt="Carnegie Mellon Seal" src="/images/seal.gif" width="180" height="179">
-               -->
-              Carnegie Mellon
             </td>
             <td bgcolor="#DDDDDD" align="left">
-              <strong><span class="c2">WebISO Secure Login</span></strong>
+              <strong><span class="c2">WebISO Status</span></strong>
               <span class="c1">[<a href="https://www.cmu.edu/computing/webiso/" target="_blank">about</a>]</span>
               <br>
               <br>
 
-              You should be automatically redirected back to your original page.
-              If you are not automatically redirected, please click <a href="%url%">here</a>.
-               
-            <br>
+            <table border=0 width="100%" cellspacing="0" cellpadding="0"
+               bgcolor="#DDDDDD">
+            <tr>
+            <td bgcolor="#DDDDDD" align="left">
+               You are logged in as <B>%user%</B>.
+               <br>
+               <br>
+               Time remaining for this session:
+               <br>
+               %remaining%
+               <br>
+               <br>
             </td>
-          </tr>
-        </table>
+            </tr>
+            <tr>
+            <td bgcolor="#DDDDDD" align="left">
+    Now that you have identified yourself to the <STRONG>WebISO</STRONG>
+    service, you can log in to other WebISO protected web sites
+    without having to re-enter your password.
+               <br>
+               <br>
+            </td>
+            </tr>
+            <tr>
+            <td bgcolor="#DDDDDD" align="left">
+    To log out of the  <STRONG>WebISO</STRONG> service, go to
+    <a href="/logout.cgi">https://webiso.andrew.cmu.edu/logout.cgi</a>.
+               <br>
+             </td>
+             </tr>
+            </table>
+           <br>
+          </td>
+        </tr>
+      </table>
     </span>
   </body>
 </html>
