@@ -25,6 +25,8 @@
 			<li>
 				<a href="#vhosts">Virtual Host Configuration</a>
 			<li>
+				<a href="#relay">Cross-Domain Relay Configuration</a>
+			<li>
 				<a href="#upgrade">Upgrading</a></li>
 		</ul>
 		<h4><a name="overview">Overview</a></h4>
@@ -104,7 +106,8 @@
 					with your site's Pubcookie login server (e.g. <i>weblogin.example.edu</i>) or if
                                         your enterprise domain is in a country code top-level domain (e.g.
                                         <i>example.ca</i>) you will have to install and use the Pubcookie relay cgi to
-                                        authenticate across DNS domains.</p>
+                                        authenticate across DNS domains. Review the <a href="#relay">relay configuration</a>
+                                        section now to prepare for this case.</p>
 			<LI>
 				<P>An SSL enabled web site. All intended users should be able to reach your website 
 					via HTTPS at your registered DNS name without errors.</P>
@@ -118,21 +121,22 @@
 			administrator privileges. The installer needs to create folders and files in 
 			the <tt>System32\Inetsrv</tt> folder as well as to stop and start system 
 			services.</p>
-		<p>In a typical installation, the&nbsp;installer will:</p>
+		<p>A typical installation has several stages:</p>
 		<ol>
 			<li>
-				<p>allow you to install Pubcookie, or to modify, repair, or remove Pubcookie if it 
+				<p>The installer first allows you to decide to install Pubcookie, or to modify, repair, or remove Pubcookie if it 
 					is already installed.</p>
 			<li>
-				<p>collect site information. Here you'll be able to specify your server name, 
+				<p>During installation, the Site Information screen collects site information. Here you'll be able to specify your server name, 
 					Pubcookie login server and keyserver locations, enterprise domain, and 
 					authentication types.&nbsp; Make sure that your server&nbsp;name matches the 
 					certificate you installed when you set up SSL for your web site.&nbsp;</p>
 			<LI>
-				<P>select the ISAPI Filter and basic test Webapp for installation.You may change 
-					the installation directory and change installed components.</P>
+				<P>The Custom Setup screen lets you select the ISAPI Filter and basic test Webapp for installation. You may change 
+					the installation directory and change installed components. (If you need to use the Pubcookie 
+                                        relay, select it to be installed; it is unselected by default.)</P>
 			<li>
-				<p>do the install. Here the installer will add the Pubcookie filter to the IIS root 
+				<p>The installer is now ready to do the install. Click the Install button. The installer will add the Pubcookie filter to the IIS root 
 					filter list and restart IIS services. It will aslo use your server name to 
 					locate your SSL key pair from the&nbsp;Personal Certificate store and use them, 
 					along with your installed Certificate Authority certificates, to negotiate a 
@@ -160,6 +164,17 @@
 		<P>where <tt>&lt;hostname&gt;</tt> is replaced with your virtial host name.
 			Since Pubcookie uses SSL encryption, you will need to have SSL access properly 
 			set up for each virtual host.</P>
+		<h4><a name="relay">Cross-Domain Relay Configuration</a></h4>
+                <p>If you select the Relay for installation, the installer adds it to your default website.
+                        Look for the <tt>PBC_RELAY</tt> folder in your web root folder.
+                        To use the relay cgi, use the IIS Service Manager to modify the the Login_URI for
+                        the resource that needs to use it. For example, to configure the example WebApp to
+                        use the relay, find, select, and open the properties for the WebApp folder. On the Pubcookie 
+                        Directives tab, set the "Login_URI" directive to point to the relay on your server, e.g.
+                        <i>https://example-app.org/pbc_relay/index.cgi</i>. Now when you request the WebApp,
+                        you'll be redirected to the relay; the relay will pick up the actual location of your
+                        login server and get you there and back again.</p>
+                        
 		<h4><a name="upgrade">Upgrading</a></h4>
 		<p>For the cleanest upgrade from an earlier version of Pubcookie, remove previous 
 			versions before installing the current one.</p>
