@@ -22,6 +22,7 @@
 #include "libpubcookie.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"
+#include "snprintf.h"
 
 #ifdef NEED_SYSLOG_NAMES
 

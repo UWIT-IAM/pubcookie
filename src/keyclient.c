@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.23 2002-10-23 16:35:25 jjminer Exp $
+    $Id: keyclient.c,v 2.24 2002-11-01 22:22:41 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -79,6 +79,7 @@
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
 #include "strlcpy.h"
+#include "snprintf.h"
 
 #ifdef WIN32
    char *SystemRoot;

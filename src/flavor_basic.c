@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.24 2002-10-18 22:16:31 jjminer Exp $
+    $Id: flavor_basic.c,v 1.25 2002-11-01 22:22:41 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -47,6 +47,7 @@
 # include <assert.h>
 #endif /* HAVE_ASSERT_H */
 
+#include "snprintf.h"
 #include "flavor.h"
 #include "verify.h"
 #include "security.h"

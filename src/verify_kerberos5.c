@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.16 $
+ * $Revision: 1.17 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -22,6 +22,7 @@
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"
+#include "snprintf.h"
 
 #ifdef ENABLE_KRB5
 

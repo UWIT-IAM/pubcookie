@@ -74,6 +74,7 @@
 #include "pbc_config.h"
 #include "pbc_version.h"
 #include "index.cgi.h"
+#include "snprintf.h"
 
 /* cgic */
 #ifdef HAVE_CGIC_H

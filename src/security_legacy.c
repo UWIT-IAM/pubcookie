@@ -54,6 +54,7 @@
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
 #include "strlcpy.h"
+#include "snprintf.h"
 
 #include "security.h"
 #include "pubcookie.h"

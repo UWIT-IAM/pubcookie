@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.12 2002-10-18 22:16:31 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.13 2002-11-01 22:22:41 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,6 +41,7 @@
 /* login cgi includes */
 #include "index.cgi.h"
 #include "pbc_myconfig.h"
+#include "snprintf.h"
 
 /* Error logging! */
 #include "pbc_logging.h"

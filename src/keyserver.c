@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: keyserver.c,v 2.25 2002-10-23 16:35:25 jjminer Exp $
+    $Id: keyserver.c,v 2.26 2002-11-01 22:22:41 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -80,6 +80,7 @@
 # endif /* HAVE_CGIC_H */
 #endif /* ifndef KEYSERVER_CGIC */
 
+#include "snprintf.h"
 #include "pbc_config.h"
 #include "pbc_logging.h"
 #include "libpubcookie.h"

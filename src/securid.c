@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.8 2002-08-15 22:50:06 jjminer Exp $
+/* $Id: securid.c,v 1.9 2002-11-01 22:22:41 jjminer Exp $
 
    function: securid  
    args:     reason - points to a reason string
@@ -56,6 +56,8 @@
 #ifdef HAVE_SECURID_H
 # include <securid.h>
 #endif /* HAVE_SECURID_H */
+
+#include "snprintf.h"
 
 #define SECURID_TRUE 1
 

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.16 2002-09-27 17:46:30 greenfld Exp $
+    $Id: pbc_myconfig.c,v 1.17 2002-11-01 22:22:41 jjminer Exp $
  */
 
 
@@ -61,6 +61,7 @@
 
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
+#include "snprintf.h"
 
 extern int errno;
 
