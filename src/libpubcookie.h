@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.25 2002-08-06 16:00:12 greenfld Exp $
+    $Id: libpubcookie.h,v 1.26 2002-08-23 04:14:44 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -198,5 +198,23 @@ enum {
 extern const char *redirect_reason[12];
 
 int capture_cmd_output(char **cmd, char *out, int len);
+
+#ifdef WIN32
+#  define R_OK 4
+#  define W_OK 2
+#  define F_OK 0
+
+#  define strcasecmp(a,b) _stricmp(a,b)
+#  define bcopy(s, d, siz)        memcpy((d), (s), (siz))
+#  define bzero(d, siz)   memset((d), '\0', (siz))
+void syslog(int whichlog, const char *message,...);
+void pbc_log_activity(int logging_level, const char *message,...); 
+//int snprintf( char *buffer, size_t count, const char *format, ... ); /* Windows version is broken */
+#define snprintf _snprintf
+#define LOG_ERR 0
+#define LOG_DEBUG 1
+
+#endif
+
 
 #endif /* !PUBCOOKIE_LIB */

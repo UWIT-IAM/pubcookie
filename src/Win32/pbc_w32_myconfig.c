@@ -1,4 +1,5 @@
 // Windows implementation of ../pbc_myconfig.c
+// Windows registry functions added by
 // Ryan Campbell
 
 
@@ -42,6 +43,7 @@ const char *libpbc_config_getstring(const char *key, const char *def)
     return def;
 }
 
+
 int libpbc_config_getint(const char *key, int def)
 {
     const char *val = libpbc_config_getstring(key, (char *)0);
@@ -58,19 +60,19 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 	int rslt;
 	HKEY hKey;
 	char keyBuff[1024];
-	DWORD dwkey,dwdata;
+	DWORD dwkey,dwdata,type;
     int alloced = 0;
-	char dataBuff[2048];
+	char dataBuff[2048],fmtstr[34];
 
 	nconfiglist = 0;
-	strcpy (keyBuff,PUBKEY);  //config. settings in main pubcookie key
+	strcpy (keyBuff,PUBKEY);  //config. settings in main pubcookie service key
 
 	if (rslt = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
 		return TRUE;  //It's OK if the key doesn't exist yet
 	}
 
-	DebugMsg((DEST,"Config. Values:\n"));
+	DebugMsg((DEST,"Config. Values:\n"));  //Won't work if Debug_Trace is off
 
 	while (1) {
 		if (nconfiglist == alloced) {
@@ -85,7 +87,7 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 		
 		dwkey =sizeof(keyBuff);
 		dwdata=sizeof(dataBuff);
-		if (RegEnumValue(hKey,nconfiglist,keyBuff,&dwkey,NULL,NULL,dataBuff,&dwdata) == ERROR_SUCCESS) {
+		if (RegEnumValue(hKey,nconfiglist,keyBuff,&dwkey,NULL,&type,dataBuff,&dwdata) == ERROR_SUCCESS) {
 			
 			
 			configlist[nconfiglist].key = strdup(keyBuff);
@@ -93,13 +95,34 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 				RegCloseKey (hKey);
 				return FALSE;
 			}
-			configlist[nconfiglist].value = strdup(dataBuff);
-			if (!configlist[nconfiglist].value) {
-				RegCloseKey (hKey);
-				return FALSE;
+			
+			switch (type) {
+
+			case REG_SZ:
+				
+				configlist[nconfiglist].value = strdup(dataBuff);
+				if (!configlist[nconfiglist].value) {
+					RegCloseKey (hKey);
+					return FALSE;
+				}
+				DebugMsg((DEST,"                %-20s= %s\n",configlist[nconfiglist].key,configlist[nconfiglist].value));
+				break;
+				
+			case REG_DWORD: //store DWORD as string for function spec. compatability
+				
+				configlist[nconfiglist].value = strdup(itoa((DWORD)dataBuff,fmtstr,10));
+				if (!configlist[nconfiglist].value) {
+					RegCloseKey (hKey);
+					return FALSE;
+				}
+				DebugMsg((DEST,"                %-20s= %d\n",configlist[nconfiglist].key,(DWORD)dataBuff));
+				break;
+				
+			default:
+				break;
+
 			}
 
-			DebugMsg((DEST,"                %-20s= %s\n",configlist[nconfiglist].key,configlist[nconfiglist].value));
 
 			nconfiglist++;
 			

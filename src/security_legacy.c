@@ -45,6 +45,14 @@
 # include <assert.h>
 #endif /* HAVE_ASSERT_H */
 
+#ifdef WIN32
+# include <io.h>
+# include <assert.h>
+# define DIR_SEP "\\"
+#else
+# define DIR_SEP "/"
+#endif
+
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
@@ -105,13 +113,13 @@ static char *extract_cn(char *s)
     return p;
 }
 
-/* find the keys that we'll be using.
-   
-   for the keys for ourselves, look for stuff in this order:
+
+/* find the keys that we'll be using, look for stuff in this order:
    . the SSL key/certificate
    . the pubcookie_session.{key,cert}
    . the pubcookie_login.{key,cert}.[hostname]
    . (generate them ourselves?)
+   
 
    for the granting key/certificate:
    . check "granting_key_file", "granting_cert_file"
@@ -120,10 +128,10 @@ static char *extract_cn(char *s)
 */
 int security_init(void)
 {
+
     /* our private session keypair */
     char *keyfile = NULL;
     char *certfile = NULL;
-    
     /* the granting key & certificate */
     char *g_keyfile;
     char *g_certfile;
@@ -147,11 +155,11 @@ int security_init(void)
     if (!keyfile && !certfile) {
 	/* fall back to the pubcookie_session files */
 	keyfile = malloc(1024);
-	snprintf(keyfile, 1024, "%s/%s", PBC_KEY_DIR,
+	snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_session.key");
 
 	certfile = malloc(1024);
-	snprintf(certfile, 1024, "%s/%s", PBC_KEY_DIR,
+	snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_session.cert");
 
 	if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
@@ -165,12 +173,12 @@ int security_init(void)
 
     if (!keyfile && !certfile) {
 	/* try the pubcookie_login files */
-	keyfile = malloc(1024);
-	snprintf(keyfile, 1024, "%s/%s", PBC_KEY_DIR,
+	keyfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+	snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_login.key");
 
-	certfile = malloc(1024);
-	snprintf(certfile, 1024, "%s/%s", PBC_KEY_DIR,
+	certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+	snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_login.cert");
 
 	if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
@@ -196,18 +204,18 @@ int security_init(void)
     g_keyfile = mystrdup(libpbc_config_getstring("granting_key_file", NULL));
     g_certfile = mystrdup(libpbc_config_getstring("granting_cert_file", NULL));
 
+
     if (!g_keyfile) {
-	g_keyfile = malloc(1024);
-	snprintf(g_keyfile, 1024, "%s/%s", PBC_KEY_DIR,
+	g_keyfile = malloc(1025); /* Windows snprintf broken  8/21/02 RJC */
+	snprintf(g_keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_granting.key");
-      
-    }
-    if (!g_certfile) {
-	g_certfile = malloc(1024);
-	snprintf(g_certfile, 1024, "%s/%s", PBC_KEY_DIR,
-		 "pubcookie_granting.cert");
     }
 
+    if (!g_certfile) {
+	g_certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+	snprintf(g_certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
+		 "pubcookie_granting.cert");
+    }
     /* test g_keyfile */
     if (access(g_keyfile, R_OK | F_OK)) {
         /* this is only a problem for login servers */
@@ -222,12 +230,16 @@ int security_init(void)
     }
 
     /* now read them into memory */
+	
     /* session key */
+
     fp = fopen(keyfile, "r");
+
     if (!fp) {
 	syslog(LOG_ERR, "couldn't read keyfile: fopen %s: %m", keyfile);
 	return -1;
     }
+
     sess_key = (EVP_PKEY *) PEM_ASN1_read((char *(*)())d2i_PrivateKey, 
 					  PEM_STRING_EVP_PKEY,
 					  fp, NULL, NULL, NULL);
@@ -278,17 +290,16 @@ int security_init(void)
 	    fclose(fp);
 	} else {
 	    syslog(LOG_ERR, "couldn't read granting keyfile: fopen %s: %m", 
-		   keyfile);
+		   g_keyfile);  /* Bugfix 8/21/02 RJC */
 	    /* fatal, since we were configured for it */
 	    exit(1);
 	}
     }
-
     /* granting cert */
     fp = fopen(g_certfile, "r");
     if (!fp) {
 	syslog(LOG_ERR, "couldn't read granting certfile: fopen %s: %m", 
-	       certfile);
+	       g_certfile); /* Bugfix 8/21/02 RJC */
 	return -1;
     }
     g_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
@@ -615,8 +626,9 @@ int libpbc_rd_safe(const char *peer, const char *buf, const int len,
 
     if (!r) {
 	/* xxx log openssl error */
-	syslog(LOG_ERR, "couldn't verify signature for %s", 
-	       peer ? peer : "(self)");
+		ERR_load_crypto_strings();
+		syslog(LOG_ERR, "couldn't verify signature for %s OpenSSL error: %s", 
+	       peer ? peer : "(self)", ERR_error_string(ERR_get_error(),NULL));
     }
 
     return !r;

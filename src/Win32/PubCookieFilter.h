@@ -1,17 +1,15 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 2.7"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 2.8.0.1"
 
 
 char Instance[3];
-char SystemRoot[MAX_PATH];
+char *SystemRoot;
 char Trace_Date[64];
 char Debug_Dir[MAX_PATH];
-// Default Debug Trace directory in %SystemRoot%
-#define DEBUG_DIR	"\\system32\\LogFiles\\PubcookieFilter"
 
 int  Ignore_Poll;     // Set to "1" to ignore Network Dispatcher "/" polls
-char Web_Login[MAX_PATH];  // default is https://weblogin.washington.edu/
-char Enterprise_Domain[MAX_PATH];  // default is ".washington.edu"
+//char Web_Login[MAX_PATH];  // default is https://weblogin.washington.edu/
+//char Enterprise_Domain[MAX_PATH];  // default is ".washington.edu"
 char Error_Page[MAX_PATH]; // Redirect user to this page on fatal errors
 
 typedef struct {
@@ -19,21 +17,21 @@ typedef struct {
 	char				*s_keyfile;
 	char				*s_certfile;
 	char				*crypt_keyfile;
-	md_context_plus		*session_sign_ctx_plus;
-	md_context_plus		*session_verf_ctx_plus;
-	md_context_plus		*granting_verf_ctx_plus;
-	crypt_stuff			*c_stuff;
+//	md_context_plus		*session_sign_ctx_plus;
+//	md_context_plus		*session_verf_ctx_plus;
+//	md_context_plus		*granting_verf_ctx_plus;
+//	crypt_stuff			*c_stuff;
 	int					serial_s_sent;
 	char				server_hostname[MAX_PATH];
-	char				NTUserId[SF_MAX_USERNAME];
-	char				Password[SF_MAX_PASSWORD];
-	int					inact_exp;
-	int					hard_exp;
-	char				force_reauth[4];
-	char				AuthType;
-	DWORD				session_reauth;
-	char				logout_dir[MAX_PATH];
-	char				logout_redir_dir[MAX_PATH];
+//	char				NTUserId[SF_MAX_USERNAME];
+//	char				Password[SF_MAX_PASSWORD];
+//	int					inact_exp;
+//	int					hard_exp;
+//	char				force_reauth[4];
+//	char				AuthType;
+//	DWORD				session_reauth;
+//	char				logout_dir[MAX_PATH];
+//	char				logout_redir_dir[MAX_PATH];
 
 } pubcookie_server_rec;
 
@@ -46,9 +44,7 @@ typedef struct {
 	char		pszUser[SF_MAX_USERNAME];
 	char		pszPassword[SF_MAX_PASSWORD];
 	char		appid[PBC_APP_ID_LEN];
-//	char		path_id[PBC_app_id_LEN];
 	char		s_cookiename[64];
-	char		creds;
 	char		force_reauth[4];
 	char		AuthType;
 	char		default_url[1024];
@@ -56,15 +52,16 @@ typedef struct {
 	char		user[PBC_USER_LEN];
 	char		appsrvid[PBC_APPSRV_ID_LEN];
 	char		appsrv_port[6];
-	char		uri[2048];		              // *** size ??
+	char		uri[1024];		              // *** size ??
 	char		args[4096];                   // ***
 	char		method[8];		              // ***
 	char		handler;
 	DWORD		session_reauth;
-	DWORD		logout;  //todo needs to be moved out
-	char		logout_dir[MAX_PATH];
-	DWORD		logout_redir;  //todo needs to be moved out
-	char		logout_redir_dir[MAX_PATH];
+	DWORD		logout_action;
+	char		Error_Page[MAX_PATH];
+	char		Enterprise_Domain[1024];
+	char		Web_Login[1024];
+
 
 } pubcookie_dir_rec;
 
@@ -111,6 +108,7 @@ unsigned int Max_Bytes_Recvd;
 		OutputDebugMsg(buff);			\
 	}
 
+
 #define DebugFlush						\
 	{									\
 	if ( debugFile )					\
@@ -119,17 +117,17 @@ unsigned int Max_Bytes_Recvd;
 extern VOID OutputDebugMsg (char *buff);
 extern int Debug_Trace;
 extern FILE *debugFile;
+void vlog_activity( int logging_level, const char * format, va_list args );
+
 
 #define PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter\\"
 #define WINKEY "System\\CurrentControlSet\\Control\\Windows"
-#define PBC_Header_Appid  "Pubcookie-Appid:"
-#define PBC_Header_User   "Pubcookie-User:"
-#define PBC_Header_Creds  "Pubcookie-Creds:"
-#define PBC_Header_Server "Pubcookie-Server:"
+#define PBC_Header_Appid   "Pubcookie-Appid:"
+#define PBC_Header_User    "Pubcookie-User:"
+#define PBC_Header_Creds   "Pubcookie-Creds:"
+#define PBC_Header_Server  "Pubcookie-Server:"
+#define PBC_Header_Version "Pubcookie-Filter-Version:"
 
-#define PBC_CREDS_CRED1 '1'
-#define PBC_CREDS_CRED2 '2'
-#define PBC_CREDS_CRED3 '3'
 // Define COOKIE_PATH to include a path of /<application name> in the session
 // cookie. This implies that the first node of all URLs are case sensative since
 // browsers will only return cookies if the URL matches the path exactly.
@@ -147,9 +145,19 @@ extern FILE *debugFile;
 #define PBC_BAD_SERVERID 8
 // used to redirect from http->https
 #define PBC_BAD_PORT 9
+#define PBC_LOGOUT_REDIR 10
 
-#define PUBLIC (libpbc_config_getstring("PUBLIC_name", "PUBLIC")) 
-#define NETID (libpbc_config_getstring("NETID_name", "UWNETID"))
-#define SECURID (libpbc_config_getstring("SECURID_name", "SECURID"))
-#define LOGOUT (libpbc_config_getstring("LOGOUT_name", "LOGOUT"))
-#define LOGOUT_REDIR (libpbc_config_getstring("LOGOUT_REDIR_name", "LOGOUT_REDIR"))
+#define PBC_DEFAULT_KEY "default"
+
+//AUTH Types = Cred Types
+#define AUTH_NONE '0'
+#define AUTH_NETID '1'
+#define AUTH_SECURID '3'
+
+
+//LOGOUT Types
+
+#define LOGOUT_NONE 0
+#define LOGOUT_LOCAL 1  //NOTE: overrides AuthType to PUBLIC
+#define LOGOUT_REDIRECT 2
+#define LOGOUT_REDIRECT_CLEAR_LOGIN 3

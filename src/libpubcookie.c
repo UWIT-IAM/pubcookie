@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.38 2002-08-15 22:50:06 jjminer Exp $
+    $Id: libpubcookie.c,v 2.39 2002-08-23 04:14:44 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,6 +41,8 @@
 # include <windows.h>
 typedef  int pid_t;  /* win32 process ID */
 # include <process.h>  /* getpid */
+#include  <io.h>
+#include  <stdio.h>
 
 #else /* WIN32 */
 
@@ -365,7 +367,6 @@ void libpbc_pubcookie_init_np()
     pid_t		pid;
 
     /*  libpbc_debug("libpbc_pubcookie_init\n"); */
-
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
@@ -374,6 +375,7 @@ void libpbc_pubcookie_init_np()
         syslog(LOG_ERR, "security_init failed");
         exit(1);
     }
+
 }
 
 /* a local malloc and init                                                    */
@@ -1144,7 +1146,7 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
     cookie_data = libpbc_init_cookie_data();
     libpbc_populate_cookie_data(cookie_data, user, type, creds, pre_sess_token, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
-    pbc_free(cookie_data);
+	pbc_free(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, peer);
     pbc_free(cookie_string);
 
@@ -1169,6 +1171,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in,
     unsigned char buf[PBC_4K];
 
     /* libpbc_debug("libpbc_unbundle_cookie: hello\n"); */
+
 
     memset(buf, 0, sizeof(buf));
 

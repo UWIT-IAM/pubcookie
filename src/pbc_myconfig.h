@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.h,v 1.5 2002-08-20 20:11:45 greenfld Exp $
+    $Id: pbc_myconfig.h,v 1.6 2002-08-23 04:14:44 ryanc Exp $
  */
 
 #ifndef INCLUDED_PBC_MYCONF_H
@@ -69,6 +69,10 @@ extern int libpbc_config_getswitch(const char *key, int def);
  * @return a NULL terminated array of NUL terminated strings.
  * the array must be free() when the caller is done */
 extern char **libpbc_config_getlist(const char *key);
+
+#ifdef WIN32
+  const char *AddSystemRoot(const char *subdir); 
+#endif
 
 #endif /* INCLUDED_PBC_MYCONF_H */
 

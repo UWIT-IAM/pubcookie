@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.62 2002-08-06 15:59:02 greenfld Exp $
+    $Id: pbc_config.h,v 1.63 2002-08-23 04:14:44 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -59,19 +59,29 @@
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring("enterprise_domain", ".washington.edu"))
 
 #if defined (WIN32)
-	#define PUBLIC (libpbc_config_getstring("PUBLIC_name", "PUBLIC")) 
-	#define NETID (libpbc_config_getstring("NETID_name", "UWNETID"))
-	#define SECURID (libpbc_config_getstring("SECURID_name", "SECURID"))
-	#define DEFAULT_APP_NAME (libpbc_config_getstring("DEFAULT_APP_name", "defaultapp"))
-	#define LEGACY_DIR_NAMES (libpbc_config_getint("LegacyDirNames", 1))
-	#define DEBUG_TRACE (libpbc_config_getint("Debug_Trace", 0))
-	#define IGNORE_POLL (libpbc_config_getint("Ignore_Poll", 0))
-	#define DEBUG_DIR (libpbc_config_getstring("Debug_Dir", "\\LogFiles\\PubcookieFilter"))
-	#define SYSTEM_ROOT (libpbc_config_getstring("System_Root","")) /*blank for Windows System*/
+	#define PBC_PUBLIC_NAME (libpbc_config_getstring("PUBLIC_dir_name", "PUBLIC")) 
+	#define PBC_NETID_NAME (libpbc_config_getstring("NETID_dir_name", "UWNETID"))
+	#define PBC_SECURID_NAME (libpbc_config_getstring("SECURID_dir_name", "SECURID"))
+	#define PBC_DEFAULT_APP_NAME (libpbc_config_getstring("DEFAULT_APP_name", "defaultapp"))
+	#define PBC_LEGACY_DIR_NAMES (libpbc_config_getint("LegacyDirNames", 1))
+	#define PBC_DEBUG_TRACE (libpbc_config_getint("Debug_Trace", 0))
+	#define PBC_IGNORE_POLL (libpbc_config_getint("Ignore_Poll", 0))
+	#define PBC_DEBUG_DIR (libpbc_config_getstring("Debug_Dir", "\\LogFiles\\PubcookieFilter"))
+	#define PBC_SYSTEM_ROOT (libpbc_config_getstring("System_Root","")) /*blank for Windows System*/
+	#define PBC_AUTHTYPE0 (libpbc_config_getstring("AuthTypeName0", "NONE")) 
+	#define PBC_AUTHTYPE1 (libpbc_config_getstring("AuthTypeName1", "UWNETID"))
+	#define PBC_AUTHTYPE2 (libpbc_config_getstring("AuthTypeName2", "SECURID"))
+	#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
+	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter\\"
+
 #endif
 
 /* the login server builds it's key Filenames from the hostname     */
-#define PBC_KEY_DIR (libpbc_config_getstring("keydir", PBC_PATH "keys"))
+#if defined (WIN32)
+#  define PBC_KEY_DIR (AddSystemRoot("\\inetsrv\\pubcookie\\keys"))
+#else 
+#  define PBC_KEY_DIR (libpbc_config_getstring("keydir", PBC_PATH "keys"))
+#endif
 
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
