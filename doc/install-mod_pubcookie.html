@@ -808,7 +808,7 @@ PubcookieEndSession clearLogin
 
 <h4><a name="relay">Cross-Domain Relay Configuration</a></h4>
 
-<p>Pubcookie 3.1.0 adds the ability to authenticate across DNS domains
+<p>Pubcookie 3.1 adds the ability to authenticate across DNS domains
 using a separate, standalone <i>relay cgi</i> that you install on your
 application server. Note: This feature requires a version 3.1.0 or later
 Pubcookie login server.</p>
@@ -833,9 +833,9 @@ C library in its subdirectory:</p></li>
 <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
 <TR> 
 <TD><pre>$ cd relay
-$ wget http://staff.washington.edu/fox/webtpl/webtpl-1.4.tar.gz
-$ tar zxf webtpl-1.4.tar.gz
-$ cd webtpl-1.4
+$ wget http://staff.washington.edu/fox/webtpl/webtpl-1.5.tar.gz
+$ tar zxf webtpl-1.5.tar.gz
+$ cd webtpl-1.5
 $ ./configure
 $ make
 $ make install
@@ -846,9 +846,9 @@ $ make install
 <p>Note: <tt>/usr/local</tt> is the default installation prefix
 for the webtpl library; this results in new libs and headers in 
 /usr/local/lib and /usr/local/include, respectively. (On some 
-systems (e.g. linux) you may have to add <tt>/usr/local/lib</tt> 
+systems, e.g. linux, you may have to add <tt>/usr/local/lib</tt> 
 to <tt>/etc/ld.so.conf</tt> and run <tt>ldconfig</tt> to 
-reconfigure the dynamic linker to pick up this shared library.)</p>
+reconfigure the dynamic linker to pick up this new shared library.)</p>
 
 <li><p>Change back to the relay directory to build and install the 
 relay cgi:</p></li>
@@ -863,11 +863,13 @@ make install</pre></TD>
 </TR>
 </TABLE></p>
 
-<p>Note: the <tt>configure</tt> script should pick up the locations
-of your pubcookie source directory (i.e. the current parent) and
-webtpl library without adding configuration options. Use the
+<p>Use the
 <tt>--prefix</tt> option to define where the relay cgi and its
 templates are installed in your DocumentRoot.</p>
+
+<p>Note: the <tt>configure</tt> script should pick up the locations
+of your pubcookie source directory (i.e. the current parent) and
+webtpl library without adding further configuration options.</p> 
 
 <li><p>Add relay configuration variables to the
 <tt>/usr/local/pubcookie/config</tt> file:</p></li>
@@ -882,29 +884,41 @@ templates are installed in your DocumentRoot.</p>
 </TR>
 </TABLE></p>
 
-<li><p>Now, when you configure the module, specify the relay cgi
-as your login server with your enterprise domain as a query string 
-argument:</p></li>
+<p>The <tt>relay_login_uri</tt> variable defines the location of the Pubcookie login server
+used by the relay. This should be set to the real location of your site's login cgi.</p>
+
+<li><p>Now, when you <a href="#config">configure the module</a>, specify the relay 
+as your login server. For example, if your application server is <i>remote.site.org</i>
+and you've installed the relay as <tt>pcrelay</tt> at the root of your website, then you'd
+use this as your login server location:</p></li>
 
 <p> 
 <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
 <TR> 
-<TD><pre>PubcookieLogin https://appserver.example.edu/pcrelay/?domain=.example.edu </pre></TD>
+<TD><pre>PubcookieLogin https://remote.site.org/pcrelay/?domain=.site.org</pre></TD>
 </TR>
 </TABLE></p>
 
-<p>The module will redirect users to the relay; the relay will
+<p>Now the module will redirect users to the relay first. Then the relay will
 handle getting them to the remote login server and back again.</p>
 
 <p>Note: The relay accepts the <tt>domain</tt> argument to allow a single
-relay to serve multiple domains. In its absense, the relay will fall back
-to reading the <tt>enterprise_domain</tt> variable.</p>
+relay to serve multiple servers and mulitiple domains. In the typical case
+it can be set to the enterprise domain you would have used if the login server 
+had been in the same domain as your application server (i.e., <i>.site.org</i> in 
+the example above). If your application server is in a country code top-level 
+domain (e.g., <i>site.subdomain.example.ca</i>) then it must be adjusted; you can use
+the immediate subdomain (i.e., <tt>domain=.subdomain.example.ca</tt>) or if 
+the resource and relay reside on the same server, use the server name itself 
+(i.e., <tt>domain=site.subdomain.example.ca</tt>). If no <tt>domain</tt> argument 
+is specified, the relay falls back to reading the <tt>enterprise_domain</tt> 
+config file variable.</p>
 
 </ol>
 
 <h4><a name="vhosts">Virtual Host Configuration</a></h4>
 
-<p>Virtual host support is new in Pubcookie 3.1.0. One approach 
+<p>Virtual host support is new in Pubcookie 3.1. One approach 
 to configuration is to use your main server config to set up
 defaults, as described in the <a href="#config">Configuration</a> section
 above. Then override directives as needed for each virtual host.</p>
