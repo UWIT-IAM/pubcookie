@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.13 1999-01-14 07:41:22 willey Exp $
+# $Id: Makefile,v 1.14 1999-01-27 03:34:14 willey Exp $
 #
 
 CC=gcc
@@ -38,6 +38,11 @@ dtest:		dtest.o libpubcookie.o
 
 test_local_c_key:	test_local_c_key.o libpubcookie.o 
 		$(CC) ${CFLAGS} -o $@ test_local_c_key.o libpubcookie.o base64.o $(LDFLAGS)
+
+h2ph:
+	co -l *.ph; \
+	h2ph -d . *.h; \
+	ci -mauto_update -u *.ph
 
 tar:
 	rm -rf $(NAME); \
