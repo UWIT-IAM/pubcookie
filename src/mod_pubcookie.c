@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.45 2000-04-07 18:35:20 willey Exp $
+    $Id: mod_pubcookie.c,v 1.46 2000-04-07 21:02:24 willey Exp $
  */
 
 /* apache includes */
@@ -211,7 +211,39 @@ unsigned char *app_id(request_rec *r)
     if( cfg->app_id )
         return(cfg->app_id);
     else
+#ifdef APACHE1_2
+    {
+	char *uri = pstrdup (r->pool, rmain->unparsed_uri);
+	char *c = uri;
+	/* go past the scheme */
+	while (*c && *c != ':' && *c != '/' && *c != '?' && *c != '#')
+	    ++c;
+	if (*c == '?' || *c == '#') {
+	    /* we didn't find a scheme, but did find query or frag - done */
+	    *c = '\0';
+	} else if (*c == '/') {
+	    /* no scheme, look for query or frag */
+	    while (*c && *c != '?' && *c != '#')
+		++c;
+	    *c = '\0';
+	} else if (*c && *c++ == ':' && *c++ == '/' && *c++ == '/') {
+	    /* looks like a scheme, go past site */
+	    while (*c && *c != '/' && *c != '?' && *c != '#')
+		++c;
+	    if (*c == '/') {
+		/* found the site, chop it and the scheme off */
+		uri = c;
+		/* now look for query or frag */
+		while (*c && *c != '?' && *c != '#')
+		    ++c;
+		*c = '\0';
+	    }
+	}
+        return get_app_path(r, uri);
+    }
+#else
         return get_app_path(r, rmain->parsed_uri.path);
+#endif
 
 }
 
