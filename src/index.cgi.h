@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.11 2001-10-17 02:04:06 willey Exp $
+    $Id: index.cgi.h,v 1.12 2001-10-17 03:32:47 willey Exp $
  */
 
 typedef struct {
@@ -101,6 +101,8 @@ char ride_free_zone(login_rec *, login_rec *);
 #define THIS_CGI "cindex.cgi"
 #define REFRESH "0"
 #define EXPIRE_LOGIN 60 * 60 * 8
+
+#define TMPL_FNAME "/usr/local/pubcookie/login_templates/"
 
 /* why print login page ? */
 #define LOGIN_REASON_AUTH_FAIL   "bad auth"
