@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.33 2003-07-10 19:06:40 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.34 2003-09-24 00:46:55 willey Exp $
  */
 
 
@@ -57,7 +57,6 @@ typedef void pool;
 # define EX_OSERR 71
 #endif /* HAVE_SYSEXITS_H */
 
-#include "pbc_logging.h"
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -72,6 +71,7 @@ typedef void pool;
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_configure.h"
+#include "pbc_logging.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
