@@ -26,7 +26,7 @@
  */
 
 /*
- *  $Revision: 1.53 $
+    $Id: pbc_config.h,v 1.54 2002-06-25 23:53:03 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -40,7 +40,7 @@
 
 #ifndef PBC_PATH
 #  if defined (WIN32)
-#    define PBC_PATH "\\System32\\inetsrv\\pubcookie\\"
+#    define PBC_PATH "\\inetsrv\\pubcookie\\"
 #  else 
 #    define PBC_PATH "/usr/www/pubcookie/"
 #  endif
@@ -53,6 +53,26 @@
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
 #define PBC_LOGIN_URI (libpbc_config_getstring("login_uri", ""))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring("enterprise_domain", ".washington.edu"))
+
+#if defined (WIN32)
+	#define PUBLIC (libpbc_config_getstring("PUBLIC_name", "PUBLIC")) 
+	#define NETID (libpbc_config_getstring("NETID_name", "UWNETID"))
+	#define SECURID (libpbc_config_getstring("SECURID_name", "SECURID"))
+	#define DEFAULT_APP_NAME (libpbc_config_getstring("DEFAULT_APP_name", "defaultapp"))
+	#define LEGACY_DIR_NAMES (libpbc_config_getint("LegacyDirNames", 1))
+	#define DEBUG_TRACE (libpbc_config_getint("Debug_Trace", 0))
+	#define IGNORE_POLL (libpbc_config_getint("Ignore_Poll", 0))
+	#define DEBUG_DIR (libpbc_config_getstring("Debug_Dir", "\\LogFiles\\PubcookieFilter"))
+	#define SYSTEM_ROOT (libpbc_config_getstring("System_Root","")) /*blank for Windows System*/
+#endif
+
+/* keys */
+#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
+#define PBC_MASTER_CRYPT_KEYFILE (PBC_PATH "m_key")
+/* lives only on login servers */
+#define PBC_L_CERTFILE (PBC_PATH "pubcookie_login.cert")
+/* lives only on login server */
+#define PBC_L_KEYFILE (PBC_PATH "pubcookie_login.key")
 
 /* lives only on application server */
 extern char PBC_S_CERTFILE[1024];
@@ -112,6 +132,9 @@ extern char PBC_G_KEYFILE[1024];
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_END_SESSION_REDIR_HANDLER "pubcookie-end-session-redir-handler"
+
+#define PBC_G_REQ_EXP (10 * 60)    /* shrug?  ten minutes? */
+#define PBC_PRE_S_EXP (10 * 60)    /* shrug?  ten minutes? */
 
 /* set in apache config to clear session cookie and redirect to weblogin */
 #define PBC_END_SESSION_ARG_REDIR   "redirect"
@@ -199,8 +222,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_PASS "pass"
 #define PBC_GETVAR_PASS2 "pass2"
 #define PBC_GETVAR_GREQ_CREDS "creds_from_greq"
-/* added May 2002 */
-#define PBC_GETVAR_PINIT "pinit"
 /* added June 2002 leg */
 #define PBC_GETVAR_CRED_TARGET "cred_target"
 
