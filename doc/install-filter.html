@@ -165,15 +165,26 @@
 			Since Pubcookie uses SSL encryption, you will need to have SSL access properly 
 			set up for each virtual host.</P>
 		<h4><a name="relay">Cross-Domain Relay Configuration</a></h4>
-                <p>If you select the Relay for installation, the installer adds it to your default website.
-                        Look for the <tt>PBC_RELAY</tt> folder in your web root folder.
-                        To use the relay cgi, use the IIS Service Manager to modify the the Login_URI for
-                        the resource that needs to use it. For example, to configure the example WebApp to
-                        use the relay, find, select, and open the properties for the WebApp folder. On the Pubcookie 
-                        Directives tab, set the "Login_URI" directive to point to the relay on your server, e.g.
-                        <i>https://example-app.org/pbc_relay/index.cgi</i>. Now when you request the WebApp,
-                        you'll be redirected to the relay; the relay will pick up the actual location of your
-                        login server and get you there and back again.</p>
+                <p>To install the optional Pubcookie relay for cross-DNS-domain authentication, select the
+                        Relay component from the installer's Custom Setup screen. If selected, the installer 
+                        adds it to your default website. Look for the <tt>PBC_RELAY</tt> folder in your web root 
+                        folder; it contains the
+                        relay cgi executable itself and some necessary templates. The relay cgi will pick up
+                        you default configuration settings and should be ready for use after installation.</p>
+                <p>To configure a web resource that needs to use the relay, use the IIS Service Manager to modify the the 
+                        Login_URI directive to point to the relay rather than the real login server URL, which is presumably 
+                        across DNS domains and therefore can't be used directly.  For example, to configure the example WebApp
+                        to use the relay, find, select, and open the properties for the WebApp folder. On the Pubcookie
+                        Directives tab, set the "Login_URI" directive to point to the relay cgi on your application server.
+                        For example, if your application server is <i>remote.site.org</i> and your login server is
+                        <i>weblogin.example.edu</i>, then use <tt>https://remote.site.org/pbc_relay/index.cgi?domain=remote.site.org</tt> 
+                        for the "Login_URI". When you request the WebApp, you'll be redirected to the relay; the relay will 
+                        pick up the actual location of your login server from your default configuration settings (set during
+                        installation) and get you there and back again.</p>
+                <p>Note: The relay accepts the <tt>domain</tt> argument to allow a single relay to serve multiple 
+                        servers and multiple domains, but in the simple case where the resource and relay reside on the
+                        same host, this argument is simply the server domain. In its absense, the relay will fall back to 
+                        reading the <tt>enterprise_domain</tt> directive.</p>
                         
 		<h4><a name="upgrade">Upgrading</a></h4>
 		<p>For the cleanest upgrade from an earlier version of Pubcookie, remove previous 
