@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.30 1999-07-08 22:49:48 willey Exp $
+    $Id: mod_pubcookie.c,v 1.31 1999-07-22 22:47:45 willey Exp $
  */
 
 /* apache includes */
@@ -285,6 +285,7 @@ static int auth_failed(request_rec *r) {
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
 #endif
+    char		 *host = NULL;
     char		 *args;
     char		 *refresh_e;
     pubcookie_server_rec *scfg;
@@ -325,6 +326,25 @@ static int auth_failed(request_rec *r) {
 
     r->content_type = "text/html";
 
+    /* if there is a non-standard port number just tack it onto the hostname  */
+    /* the login server just passes it through and the redirect works         */
+    if ( r->server->port != 80 )
+        if ( r->server->port != 443 )
+#ifdef APACHE1_2
+            ap_snprintf(host, PBC_1K-1, "%s:%d", r->server->server_hostname, 
+		             r->server->port);
+#else
+	    host = ap_psprintf(r->pool, "%s:%d", r->server->server_hostname, 
+		             r->server->port);
+#endif
+
+    if ( ! host ) 
+#ifdef APACHE1_2
+        host = pstrdub(r->pool, r->server->server_hostname);
+#else
+        host = ap_pstrdup(r->pool, r->server->server_hostname);
+#endif
+
     /* make the granting request */
     ap_snprintf(g_req_contents, PBC_1K-1, 
 	  "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s", 
@@ -339,7 +359,7 @@ static int auth_failed(request_rec *r) {
 	  PBC_GETVAR_METHOD, 
 	  r->method, 
 	  PBC_GETVAR_HOST, 
-	  r->server->server_hostname, 
+	  host,
 	  PBC_GETVAR_URI, 
 	  mr->uri,
 	  PBC_GETVAR_ARGS, 
@@ -784,7 +804,7 @@ static int pubcookie_user(request_rec *r) {
 
   if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
-      libpbc_debug("pubcookie_user: no cookies yet, must authenticate\n");
+      libpbc_debug("pubcookie_user: no g or s cookie, looking for: %s uri was: %s\n", sess_cookie_name, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
@@ -802,11 +822,12 @@ static int pubcookie_user(request_rec *r) {
 #endif
 
       if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, cfg->hard_exp) ) {
-        libpbc_debug("session cookie hard expired for user: %s cookie timestamp %d timeout: %d now: %d\n", 
+        libpbc_debug("session cookie hard expired for user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
 		(*cookie_data).broken.user, 
 		(*cookie_data).broken.create_ts, 
 		cfg->hard_exp,
-		time(NULL));
+		time(NULL),
+                r->uri);
         cfg->failed = PBC_BAD_AUTH;
         return OK;
       }
@@ -814,11 +835,12 @@ static int pubcookie_user(request_rec *r) {
 
       if( cfg->inact_exp != -1 &&
 	  ! pubcookie_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp) ) {
-        libpbc_debug("session cookie inact expired for user: %s cookie timestamp %d timeout: %d now: %d\n", 
+        libpbc_debug("session cookie inact expired for user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
 		(*cookie_data).broken.user, 
 		(*cookie_data).broken.create_ts, 
 		cfg->inact_exp, 
-		time(NULL));
+		time(NULL),
+                r->uri);
         cfg->failed = PBC_BAD_AUTH;
         return OK;
       }
@@ -839,7 +861,7 @@ static int pubcookie_user(request_rec *r) {
 
     if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
 	      scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
-      libpbc_debug("pubcookie_user: can't unbundle granting cookie %s\n", r->uri);
+      libpbc_debug("pubcookie_user: can't unbundle granting cookie, uri: %s\n", r->uri);
       libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
       cfg->failed = PBC_BAD_AUTH;
       return OK;
@@ -852,7 +874,7 @@ static int pubcookie_user(request_rec *r) {
 #endif
 
     if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
-      libpbc_debug("granting cookie expired for user: %s create is: %ld\n", (*cookie_data).broken.user, (*cookie_data).broken.create_ts);
+      libpbc_debug("granting cookie expired for user: %s create is: %ld uri: %s\n", (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
@@ -862,26 +884,26 @@ static int pubcookie_user(request_rec *r) {
   /* check app_id */
   if( strncasecmp(genr_app_id(r, cfg), (*cookie_data).broken.app_id, sizeof((*cookie_data).broken.app_id)-1) != 0 ) {
     cfg->failed = PBC_BAD_AUTH;
-    libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s\n", genr_app_id(r, cfg), (*cookie_data).broken.app_id);
+    libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s uri: %s\n", genr_app_id(r, cfg), (*cookie_data).broken.app_id, r->uri);
     return OK;
   }
 
   /* make sure this cookie is for this server */
   if( strncasecmp(scfg->appsrv_id, (*cookie_data).broken.appsrv_id, sizeof((*cookie_data).broken.appsrv_id)-1) != 0 ) {
     cfg->failed = PBC_BAD_AUTH;
-    libpbc_debug("pubcookie_user: wrong app server id; directory: %s cookie: %s\n", scfg->appsrv_id, (*cookie_data).broken.appsrv_id);
+    libpbc_debug("pubcookie_user: wrong app server id; directory: %s cookie: %s uri: %s\n", scfg->appsrv_id, (*cookie_data).broken.appsrv_id, r->uri);
     return OK;
   }
 
   if( !pubcookie_check_version((*cookie_data).broken.version, (unsigned char *) PBC_VERSION)){
     cfg->failed = PBC_BAD_AUTH;
-    libpbc_debug("pubcookie_user: wrong version id; module: %d cookie: %d\n", PBC_VERSION, (*cookie_data).broken.version);
+    libpbc_debug("pubcookie_user: wrong version id; module: %d cookie: %d uri: %s\n", PBC_VERSION, (*cookie_data).broken.version);
     return OK;
   }
 
   /* cfg->creds are the creds bits that we're requiring */
   if( !(cfg->creds & (*cookie_data).broken.creds) ) {
-    libpbc_debug("pubcookie_user: wrong creds; required: %c cookie had: %c\n", cfg->creds, (*cookie_data).broken.creds);
+    libpbc_debug("pubcookie_user: wrong creds; required: %c cookie had: %c uri: %s\n", cfg->creds, (*cookie_data).broken.creds, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
@@ -988,11 +1010,7 @@ static int pubcookie_typer(request_rec *r) {
               make_session_cookie_name(r->pool, genr_app_id(r, cfg)),
               cookie, 
               r->server->server_hostname,
-#ifdef NO_JIMB_SESSION_NAMES
               "/");
-#else
-              get_app_path(r->pool, rmain->unparsed_uri, r->filename));
-#endif
 
       table_add(r->headers_out, "Set-Cookie", new_cookie);
 #else
@@ -1000,11 +1018,7 @@ static int pubcookie_typer(request_rec *r) {
               make_session_cookie_name(r->pool, genr_app_id(r, cfg)),
               cookie, 
               r->server->server_hostname,
-#ifdef NO_JIMB_SESSION_NAMES
               "/");
-#else
-              get_app_path(r->pool, rmain->unparsed_uri, r->filename));
-#endif
 
       ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 #endif
