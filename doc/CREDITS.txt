@@ -1,0 +1,13 @@
+Credits:
+
+The following organizations and individuals are recognized for their 
+efforts and contributions toward improving Pubcookie.
+
+Contributor                 Activity
+-----------                 --------
+Thomas Boutell              Original CGIC library
+Massachusetts Institute     Original Kerberos library
+  of Technology
+Carnegie Mellon University  Login cgi improvements
+University of Hawaii        LDAP authentication example
+
