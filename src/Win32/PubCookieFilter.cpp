@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.31 2004-04-14 21:06:36 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.32 2004-05-13 22:45:36 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -964,6 +964,95 @@ void Add_Header_Values(HTTP_FILTER_CONTEXT* pFC,
 
 }  /* Add_Header_Values */
 
+bool MakeSecContext(pubcookie_dir_rec *p)
+{
+
+    /* the granting certificate */
+    char *g_certfile;
+    /* our crypt key */
+    char *cryptkeyfile = NULL;
+	size_t cb_read;
+    FILE *fp;
+
+	p->sectext = (security_context *)pbc_malloc(p, sizeof(security_context));
+
+	p->sectext->sess_key  = default_context->sess_key;
+	p->sectext->sess_cert = default_context->sess_cert;
+	p->sectext->sess_pub = default_context->sess_pub;
+	p->sectext->myname = p->server_hostname;
+
+    g_certfile = strdup(libpbc_config_getstring(p, "granting_cert_file", NULL));
+
+    if (!g_certfile) {
+        g_certfile = (char *)pbc_malloc(p, 1025); 
+        snprintf(g_certfile, 1024, "%s\\%s", PBC_KEY_DIR,
+                 "pubcookie_granting.cert");
+    }
+
+    /* test g_certfile; it's a fatal error if this isn't found */
+    if (access(g_certfile, R_OK | F_OK)) {
+        filterlog(p, LOG_ERR, 
+                         "security_context: couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
+        return false;
+    }
+
+    /* granting cert */
+    fp = pbc_fopen(p, g_certfile, "r");
+    if (!fp) {
+	filterlog(p, LOG_ERR, 
+                         "security_context: couldn't read granting certfile: pbc_fopen %s", 
+                         g_certfile); 
+	return false;
+    }
+    p->sectext->g_cert = (X509 *) PEM_read_X509(fp, NULL, NULL, NULL);
+    if (!p->sectext->g_cert) {
+	filterlog(p, LOG_ERR, 
+                         "security_context: couldn't parse granting certificate: %s", g_certfile);
+	return false;
+    }
+    p->sectext->g_pub = X509_extract_key(p->sectext->g_cert);
+
+    pbc_fclose(p, fp);
+
+    /* our crypt key */
+    cryptkeyfile = (char *)libpbc_config_getstring(p, "crypt_key", NULL);
+    if (cryptkeyfile) {
+        if (access(cryptkeyfile, R_OK | F_OK) == -1) {
+            filterlog(p, LOG_ERR, "security_context: can't access crypt key file %s, will try standard location", cryptkeyfile);
+            pbc_free(p, cryptkeyfile);
+            cryptkeyfile = NULL;
+        }
+    }
+    if (!cryptkeyfile) {
+        cryptkeyfile = (char *)pbc_malloc(p, 1024);
+        make_crypt_keyfile(p, p->sectext->myname, cryptkeyfile);
+        if (access(cryptkeyfile, R_OK | F_OK) == -1) {
+            filterlog(p, LOG_ERR, "security_context: can't access crypt key file %s (try setting crypt_key)", cryptkeyfile);
+            free(cryptkeyfile);
+            return false;
+        }
+    }
+
+    fp = pbc_fopen(p, cryptkeyfile, "rb");
+    if (!fp) {
+        filterlog(p, LOG_ERR, "security_context: couldn't read crypt key: pbc_fopen %s: %m", cryptkeyfile);
+        return false;
+    }
+
+    if( cb_read = fread(p->sectext->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
+        filterlog(p, LOG_ERR,
+			"can't read crypt key %s: short read: %d", cryptkeyfile, cb_read);
+        pbc_fclose(p, fp);
+        return false;
+    }
+
+    pbc_fclose(p, fp);
+    if (g_certfile != NULL)
+        pbc_free(p, g_certfile);
+    
+    return true;
+}
+
 
 int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 					HTTP_FILTER_PREPROC_HEADERS* pHeaderInfo)
@@ -1096,6 +1185,13 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			Add_Header_Values   (pFC,pHeaderInfo);
 		}
 		return DECLINED;
+	}
+
+	// Fill in security context
+	if (!MakeSecContext(p)) {
+		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error creating security context");
+		p->failed = PBC_BAD_GRANTING_CERT;
+		return OK;
 	}
 
 	// Can't see cookies unless we are SSL. Redirect to https if needed.
@@ -1435,6 +1531,9 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 	} else if (p->failed == PBC_BAD_GRANTING_CERT) {
 		p->handler = PBC_BAD_GRANTING_CERT;
 		return OK;
+	} else if (p->failed == PBC_BAD_CRYPT_KEY) {
+		p->handler = PBC_BAD_CRYPT_KEY;
+		return OK;
 	} else if (p->failed == PBC_BAD_SESSION_CERT) {
 		p->handler = PBC_BAD_SESSION_CERT;
 		return OK;
@@ -1524,95 +1623,6 @@ static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
     }
     strlcat(buf, peername, 1024);
 
-}
-
-bool MakeSecContext(pubcookie_dir_rec *p)
-{
-
-    /* the granting certificate */
-    char *g_certfile;
-    /* our crypt key */
-    char *cryptkeyfile = NULL;
-	size_t cb_read;
-    FILE *fp;
-
-	p->sectext = (security_context *)pbc_malloc(p, sizeof(security_context));
-
-	p->sectext->sess_key  = default_context->sess_key;
-	p->sectext->sess_cert = default_context->sess_cert;
-	p->sectext->sess_pub = default_context->sess_pub;
-	p->sectext->myname = p->server_hostname;
-
-    g_certfile = strdup(libpbc_config_getstring(p, "granting_cert_file", NULL));
-
-    if (!g_certfile) {
-        g_certfile = (char *)pbc_malloc(p, 1025); 
-        snprintf(g_certfile, 1024, "%s\\%s", PBC_KEY_DIR,
-                 "pubcookie_granting.cert");
-    }
-
-    /* test g_certfile; it's a fatal error if this isn't found */
-    if (access(g_certfile, R_OK | F_OK)) {
-        filterlog(p, LOG_ERR, 
-                         "security_context: couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
-        return false;
-    }
-
-    /* granting cert */
-    fp = pbc_fopen(p, g_certfile, "r");
-    if (!fp) {
-	filterlog(p, LOG_ERR, 
-                         "security_context: couldn't read granting certfile: pbc_fopen %s", 
-                         g_certfile); 
-	return false;
-    }
-    p->sectext->g_cert = (X509 *) PEM_read_X509(fp, NULL, NULL, NULL);
-    if (!p->sectext->g_cert) {
-	filterlog(p, LOG_ERR, 
-                         "security_context: couldn't parse granting certificate: %s", g_certfile);
-	return false;
-    }
-    p->sectext->g_pub = X509_extract_key(p->sectext->g_cert);
-
-    pbc_fclose(p, fp);
-
-    /* our crypt key */
-    cryptkeyfile = (char *)libpbc_config_getstring(p, "crypt_key", NULL);
-    if (cryptkeyfile) {
-        if (access(cryptkeyfile, R_OK | F_OK) == -1) {
-            filterlog(p, LOG_ERR, "security_context: can't access crypt key file %s, will try standard location", cryptkeyfile);
-            pbc_free(p, cryptkeyfile);
-            cryptkeyfile = NULL;
-        }
-    }
-    if (!cryptkeyfile) {
-        cryptkeyfile = (char *)pbc_malloc(p, 1024);
-        make_crypt_keyfile(p, p->sectext->myname, cryptkeyfile);
-        if (access(cryptkeyfile, R_OK | F_OK) == -1) {
-            filterlog(p, LOG_ERR, "security_context: can't access crypt key file %s (try setting crypt_key)", cryptkeyfile);
-            free(cryptkeyfile);
-            return false;
-        }
-    }
-
-    fp = pbc_fopen(p, cryptkeyfile, "rb");
-    if (!fp) {
-        filterlog(p, LOG_ERR, "security_context: couldn't read crypt key: pbc_fopen %s: %m", cryptkeyfile);
-        return false;
-    }
-
-    if( cb_read = fread(p->sectext->cryptkey, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
-        filterlog(p, LOG_ERR,
-			"can't read crypt key %s: short read: %d", cryptkeyfile, cb_read);
-        pbc_fclose(p, fp);
-        return false;
-    }
-
-    pbc_fclose(p, fp);
-    if (g_certfile != NULL)
-        pbc_free(p, g_certfile);
-    
-    return true;
 }
 
 
@@ -1752,12 +1762,6 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 
 	filterlog(p, LOG_INFO, LogBuff);
 	
-	// Fill in security context
-	if (!MakeSecContext(p)) {
-		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error creating security context");
-		return SF_STATUS_REQ_ERROR;
-	}
-
    // Begin Pubcookie logic
 
 	if ( Pubcookie_User(pFC,pHeaderInfo) == OK ) 
@@ -1778,6 +1782,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 				case PBC_BAD_VERSION:
 				case PBC_BAD_SERVERID:
 				case PBC_GRANTING_TIMEOUT:
+				case PBC_BAD_CRYPT_KEY:
 					Bad_User(pFC);
 					return_rslt = SF_STATUS_REQ_FINISHED;
 					break;

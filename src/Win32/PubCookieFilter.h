@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.30 2004-04-14 21:06:36 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.31 2004-05-13 22:45:36 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
@@ -101,6 +101,7 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 #define PBC_BAD_PORT 9
 #define PBC_LOGOUT_REDIR 10
 #define PBC_GRANTING_TIMEOUT 11
+#define PBC_BAD_CRYPT_KEY 12
 
 //AUTH Types = Cred Types
 #define AUTH_NONE '0'

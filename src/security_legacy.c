@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.41 2004-04-22 18:44:31 willey Exp $
+ * $Id: security_legacy.c,v 1.42 2004-05-13 22:45:36 ryanc Exp $
  */
 
 
@@ -211,7 +211,9 @@ int security_init(pool *p, security_context **contextp)
     char *g_certfile;
     /* our crypt key */
     char *cryptkey = NULL;
+#ifndef WIN32
 	size_t cb_read;
+#endif
     FILE *fp;
     security_context *context;
 
@@ -462,6 +464,7 @@ int security_init(pool *p, security_context **contextp)
     pbc_fclose(p, fp);
 
     /* xxx CA file / CA dir ? */
+#ifndef WIN32 /*Windows only uses security_init for it's default context, which does not have or need a crypt key*/
     /* our crypt key */
     cryptkey = (char *)libpbc_config_getstring(p, "crypt_key", NULL);
     if (cryptkey) {
@@ -493,6 +496,7 @@ int security_init(pool *p, security_context **contextp)
         pbc_fclose(p, fp);
         return -2;
     }
+#endif /* WIN32 */
 
 
 
