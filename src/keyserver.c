@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.9 2002-06-25 14:41:18 jteaton Exp $
+    $Id: keyserver.c,v 2.10 2002-06-25 19:54:05 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -107,23 +107,28 @@ enum optype {
 /**
  * iterate through the 'login_servers' configuration variable, contacting
  * each one and setting my copy of peer's key on it
+ * @param name of the client key to push
+ * @return the number of login servers we failed to set the key on
+ * (thus 0 is success)
  */
-void pushkey(const char *peer)
+int pushkey(const char *peer)
 {
     char **lservers = libpbc_config_getlist("login_servers");
-    char hostname[1024];
+    char *hostname;
     char *lservername, *p;
     int x;
     int res;
+    int fail = 0;
 
     if (!lservers) {
         /* only me here */
         return;
     }
 
-    if (gethostname(hostname, sizeof(hostname)) < 0) {
-	syslog(LOG_ERR, "gethostname(): %m");
-	perror("gethostname");
+    hostname = get_my_hostname();
+    if (!hostname) {
+	syslog(LOG_ERR, "get_my_hostname() failed? %m");
+	perror("get_my_hostname");
 	exit(1);
     }
 
@@ -178,9 +183,14 @@ void pushkey(const char *peer)
         wait(&res);
         syslog(LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
                WEXITSTATUS(res) == 0 ? "done" : "error");
+	if (WEXITSTATUS(res) != 0) {
+	    fail++;
+	}
     }
 
     free(lservers);
+
+    return fail;
 }
 
 /**
