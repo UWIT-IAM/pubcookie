@@ -1,14 +1,14 @@
 /*
-    $Id: libpubcookie.h,v 1.4 1998-07-24 23:14:00 willey Exp $
+    $Id: libpubcookie.h,v 1.5 1998-10-14 19:34:19 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
 #define PUBCOOKIE_LIB
 
 
-#ifdef APACHE1_2
+#if defined (APACHE1_2) || defined (APACHE1_3)
 
-unsigned char *libpbc_get_cookie_p(pool *, char *, 
+unsigned char *libpbc_get_cookie_p(ap_pool *, char *, 
 	                         unsigned char, 
 				 unsigned char, 
 				 unsigned char *, 

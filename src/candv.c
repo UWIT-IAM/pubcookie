@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.3 1998-07-24 23:14:00 willey Exp $
+    $Id: candv.c,v 1.4 1998-10-14 19:34:19 willey Exp $
  */
 
 #include <stdio.h>
@@ -38,9 +38,9 @@ int main(int argc, char **argv) {
     c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
     s_ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
 
-    cookie = libpbc_get_cookie(user, type, creds, appsrv_id, app_id, s_ctx_plus, c_stuff);
-
     v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
+
+    cookie = libpbc_get_cookie(user, type, creds, appsrv_id, app_id, s_ctx_plus, c_stuff);
 
     printf("please wait while take a quick nap\n");
     sleep(2);
@@ -64,6 +64,26 @@ int main(int argc, char **argv) {
 	printf("this sucks\n");
     } 
 
+    cookie = libpbc_get_cookie(user, type, creds, appsrv_id, app_id, s_ctx_plus, c_stuff);
+
+    printf("please wait while take a quick nap\n");
+    sleep(2);
+
+    cookie_data = libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff);
+
+    if( cookie_data ) {
+	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
+	printf("version is:\t>%s<\n", (*cookie_data2).broken.version);
+	printf("type is:\t>%c<\n", (*cookie_data2).broken.type);
+	printf("cred is:\t>%c<\n", (*cookie_data2).broken.creds);
+	printf("appsrv_id is:\t>%s<\n", (*cookie_data2).broken.appsrv_id);
+	printf("app_id is:\t>%s<\n", (*cookie_data2).broken.app_id);
+	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.create_ts));
+	printf("last is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.last_ts));
+    } 
+    else {
+	printf("this sucks\n");
+    } 
     exit(0);
 }
     

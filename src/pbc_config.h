@@ -1,9 +1,13 @@
 /*
-    $Id: pbc_config.h,v 1.6 1998-07-31 21:08:13 willey Exp $
+    $Id: pbc_config.h,v 1.7 1998-10-14 19:34:19 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
 #define PUBCOOKIE_CONFIG
+
+#if defined (APACHE1_2) || defined (APACHE1_3)
+#define APACHE
+#endif
 
 /* 
  things that came from the module
@@ -64,6 +68,12 @@
 #define pbc_strndup(s, n) pstrdup(p, s, n)
 #define pbc_fopen(x, y) pfopen(p, x, y)
 #define pbc_fclose(x) pfclose(p, x)
+#elif APACHE1_3
+#define pbc_malloc(x) ap_palloc(p, x)
+#define pbc_strdup(x) ap_pstrdup(p, x)
+#define pbc_strndup(s, n) ap_pstrdup(p, s, n)
+#define pbc_fopen(x, y) ap_pfopen(p, x, y)
+#define pbc_fclose(x) ap_pfclose(p, x)
 #endif
 
 #ifndef pbc_malloc
@@ -82,7 +92,7 @@
 #define pbc_fclose(x) fclose(x)
 #endif
 
-#ifdef APACHE1_2
+#if defined (APACHE1_2) || defined (APACHE1_3)
 #define libpbc_get_cookie(a,b,c,d,e,f,g) libpbc_get_cookie_p(p, a,b,c,d,e,f,g)
 #define libpbc_unbundle_cookie(a,b,c)  libpbc_unbundle_cookie_p(p, a,b,c)
 #define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_p(p, a,b,c)

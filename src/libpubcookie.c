@@ -1,8 +1,8 @@
 /*
-    $Id: libpubcookie.c,v 1.10 1998-07-31 21:08:13 willey Exp $
+    $Id: libpubcookie.c,v 1.11 1998-10-14 19:34:19 willey Exp $
  */
 
-#ifdef APACHE1_2  /* i'm not sure which of these are needed */
+#if defined (APACHE1_2) || defined (APACHE1_3)
 #include "httpd.h"
 #include "http_config.h"
 #include "http_core.h"
@@ -93,7 +93,7 @@ void libpbc_augment_rand_state(unsigned char *array, int len)
 }
 
 /* keep 'em guessing                                                          */
-#ifdef APACHE1_2
+#ifdef APACHE
 void libpbc_rand_malloc_p(pool *p)
 #else
 void libpbc_rand_malloc_np()
@@ -115,7 +115,7 @@ void libpbc_rand_malloc_np()
 /*                                                                            */
 /* any general startup stuff goes here                                        */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 void libpbc_pubcookie_init_p(pool *p)
 #else
 void libpbc_pubcookie_init_np()
@@ -135,7 +135,7 @@ void libpbc_pubcookie_init_np()
 /*                                                                            */
 /*   since i can't find a hook in apache for this there is nothing here, yet  */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 void libpbc_pubcookie_exit_p(pool *p)
 #else
 void libpbc_pubcookie_exit_np()
@@ -145,7 +145,7 @@ void libpbc_pubcookie_exit_np()
 }
 
 /* a local malloc and init                                                    */
-#ifdef APACHE1_2
+#ifdef APACHE
 char *libpbc_alloc_init_p(pool *p, int len)
 #else
 char *libpbc_alloc_init_np(int len)
@@ -163,7 +163,7 @@ char *libpbc_alloc_init_np(int len)
 
 /* read and store a private key                                               */
 /*    no return value b/c it's fail out or succeed onward                     */
-#ifdef APACHE1_2
+#ifdef APACHE
 void libpbc_get_private_key_p(pool *p, md_context_plus *ctx_plus, char *keyfile)
 #else
 void libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
@@ -190,7 +190,7 @@ void libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
 
 /* read, decode,  and store a public key                                      */
 /*    no return value b/c it's fail out or succeed onward                     */
-#ifdef APACHE1_2
+#ifdef APACHE
 void libpbc_get_public_key_p(pool *p, md_context_plus *ctx_plus, char *certfile)
 #else
 void libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
@@ -218,7 +218,7 @@ void libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
 }
 
 /* mallocs a pbc_cookie_data struct                                           */
-#ifdef APACHE1_2
+#ifdef APACHE
 pbc_cookie_data *libpbc_init_cookie_data_p(pool *p)
 #else
 pbc_cookie_data *libpbc_init_cookie_data_np()
@@ -232,7 +232,7 @@ pbc_cookie_data *libpbc_init_cookie_data_np()
 }
 
 /* init md_context_plus structure                                             */
-#ifdef APACHE1_2
+#ifdef APACHE
 md_context_plus *libpbc_init_md_context_plus_p(pool *p)
 #else
 md_context_plus *libpbc_init_md_context_plus_np()
@@ -284,7 +284,7 @@ md_context_plus *libpbc_init_md_context_plus_np()
 }
 
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 unsigned char *libpbc_gethostip_p(pool *p)
 #else
 unsigned char *libpbc_gethostip_np()
@@ -318,7 +318,7 @@ char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
 }
 
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 void libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *keyfile)
 #else
 void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
@@ -344,7 +344,7 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 }
 
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 crypt_stuff *libpbc_init_crypt_p(pool *p, char *keyfile)
 #else
 crypt_stuff *libpbc_init_crypt_np(char *keyfile)
@@ -360,7 +360,7 @@ crypt_stuff *libpbc_init_crypt_np(char *keyfile)
 }
 
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 unsigned char *libpbc_sign_cookie_p(pool *p, unsigned char *cookie_string, md_context_plus *ctx_plus)
 #else
 unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_plus *ctx_plus)
@@ -411,7 +411,7 @@ pbc_cookie_data *libpbc_destringify_cookie_data(pbc_cookie_data *cookie_data)
 }
 
 /* make a cookie_data struct a string                                         */
-#ifdef APACHE1_2
+#ifdef APACHE
 unsigned char *libpbc_stringify_cookie_data_p(pool *p, pbc_cookie_data *cookie_data) 
 #else
 unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data) 
@@ -455,7 +455,8 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 {
     int				c = 0, i = 0;
     int				tries = 5;
-    int				index1, index2;
+    int				index1 = 0; 
+    int				index2;
     des_cblock			key;
     des_cblock			ivec;
     static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
@@ -543,7 +544,7 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 }
 
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 unsigned char *libpbc_sign_bundle_cookie_p(pool *p, 
 	                  unsigned char *cookie_string,
 			  md_context_plus *ctx_plus,
@@ -584,7 +585,7 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
 /*                                                                            */
 /* get public key and initialize verify context                               */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 md_context_plus *libpbc_verify_init_p(pool *p, char *certfile) 
 #else
 md_context_plus *libpbc_verify_init_np(char *certfile) 
@@ -602,7 +603,7 @@ md_context_plus *libpbc_verify_init_np(char *certfile)
 /*                                                                            */
 /* get private key and initialize context                                     */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 md_context_plus *libpbc_sign_init_p(pool *p, char *keyfile) 
 #else
 md_context_plus *libpbc_sign_init_np(char *keyfile) 
@@ -619,7 +620,7 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 /*                                                                            */
 /* builds, signs and returns cookie                                           */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 unsigned char *libpbc_get_cookie_p(pool *p, char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
@@ -655,7 +656,7 @@ unsigned char *libpbc_get_cookie_np(char *user,
 /*                                                                            */
 /*  deal with unbundling a cookie                                             */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 pbc_cookie_data *libpbc_unbundle_cookie_p(pool *p, char *in, md_context_plus *ctx_plus, crypt_stuff *c_stuff) 
 #else
 pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, crypt_stuff *c_stuff) 
@@ -687,18 +688,15 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     cookie_data = libpbc_init_cookie_data();
     memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
 
-
-#ifndef PBC_VERIFY_OFF
     if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
-#endif
         cookie_data = libpbc_destringify_cookie_data(cookie_data);
+	libpbc_debug("libpbc_unbundle_cookie_p: sig verify passwd\n");
         return cookie_data;
-#ifndef PBC_VERIFY_OFF
     }
     else {
+	libpbc_debug("libpbc_unbundle_cookie_p: sig verify failed\n");
         return NULL;
     }
-#endif
 }
     
 /*                                                                            */
@@ -707,7 +705,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
 /* takes a cookie_data structure, updates the time, signs and packages up     */
 /* the cookie to be sent back into the world                                  */
 /*                                                                            */
-#ifdef APACHE1_2
+#ifdef APACHE
 unsigned char *libpbc_update_lastts_p(pool *p, pbc_cookie_data *cookie_data, md_context_plus *ctx_plus, crypt_stuff *c_stuff)
 #else
 unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_plus *ctx_plus, crypt_stuff *c_stuff)
