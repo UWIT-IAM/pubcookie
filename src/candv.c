@@ -1,8 +1,20 @@
 /*
-    $Id: candv.c,v 1.10 1999-08-11 23:00:14 willey Exp $
+    $Id: candv.c,v 1.11 2000-09-25 17:58:31 willey Exp $
  */
 
-/* Copyright 1999, University of Washington.  All rights reserved. */
+/*                                                                            */
+/* Copyright 2000, University of Washington.  All rights reserved.            */
+/*                                                                            */
+/* Not for further distribution without written permission of the             */
+/* University of Washington.                                                  */
+/*                                                                            */
+/* We confirm that we have given you permission to use this software on the   */
+/* condition that you assume all risks when you do so and agree to indemnify, */
+/* defend, and hold harmless the University of Washington from any and all    */
+/* claims or damages that might arise through your activity related to this   */
+/* software.                                                                  */
+/*                                                                            */
+
 
 #include <stdio.h>
 #include <stdlib.h>
