@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.90 2002-08-01 00:17:58 willey Exp $
+    $Id: mod_pubcookie.c,v 1.91 2002-08-02 00:52:44 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -119,8 +119,9 @@ typedef struct {
     int cred_transfer_len;
 } pubcookie_dir_rec;
 
-void dump_server_rec(pubcookie_server_rec *scfg) {
-    libpbc_debug("super-debug: dump_server_rec:\n\
+void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+               "dump_server_rec:\n\
 		g_certfile: %s\n\
 		s_keyfile: %s\n\
 		s_certfile: %s\n\
@@ -135,7 +136,7 @@ void dump_server_rec(pubcookie_server_rec *scfg) {
 		noblank: %d\n\
 		login: %s\n\
 		appsrvid: %s\n\
-		authtype_names: %s\n", 
+		authtype_names: %s", 
   		(scfg->g_certfile == NULL ? "" : scfg->g_certfile),
   		(scfg->s_keyfile == NULL ? "" : scfg->s_keyfile),
   		(scfg->s_certfile == NULL ? "" : scfg->s_certfile),
@@ -154,8 +155,9 @@ void dump_server_rec(pubcookie_server_rec *scfg) {
 
 }
 
-void dump_dir_rec(pubcookie_dir_rec *cfg) {
-    libpbc_debug("super-debug: dump_dir_rec:\n\
+void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+               "dump_dir_rec:\n\
 		inact_exp: %d\n\
                 hard_exp: %d\n\
                 failed: %d\n\
@@ -166,7 +168,7 @@ void dump_dir_rec(pubcookie_dir_rec *cfg) {
 		super_debug: %d\n\
                 end_session: %s\n\
                 redir_reason_no: %d\n\
-                session_reauth: %d\n",
+                session_reauth: %d",
   		cfg->inact_exp,
   		cfg->hard_exp,
   		cfg->failed,
@@ -404,8 +406,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
 
     new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
 			     make_session_cookie_name(r->pool, 
-                                                      PBC_S_COOKIENAME, 
-                                                      appid(r)),
+                             PBC_S_COOKIENAME, 
+                             appid(r)),
 			     cookie, 
 			     "/",
                              secure);
@@ -559,8 +561,8 @@ static int do_end_session_redirect_handler(request_rec *r) {
                                          &pubcookie_module);
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, 					 &pubcookie_module);
 
-    if(cfg->super_debug)
-        libpbc_debug("super-debug: do_end_session_redirect_handler: hello\n");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+        "do_end_session_redirect_handler: hello");
       
     r->content_type = "text/html";
     clear_granting_cookie(r);
@@ -700,8 +702,8 @@ static int auth_failed(request_rec *r) {
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
 
-    if( cfg->super_debug )
-        libpbc_debug("super-debug: auth_failed: hello\n");
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+        "auth_failed: hello");
 
     /* reset these dippy flags */
     cfg->failed = 0;
@@ -710,10 +712,12 @@ static int auth_failed(request_rec *r) {
     if ( r->args ) {
         args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
         libpbc_base64_encode( (unsigned char *) r->args, (unsigned char *) args, strlen(r->args));
-        if( cfg->super_debug ) {
-            libpbc_debug("super-debug: GET args before encoding length %d, string: %s\n", strlen(r->args), r->args);
-            libpbc_debug("super-debug: GET args after encoding length %d, string: %s\n", strlen(args), args);
-        }
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+            "GET args before encoding length %d, string: %s", 
+            strlen(r->args), r->args);
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+            "GET args after encoding length %d, string: %s", 
+            strlen(args), args);
     }
     else
         args = ap_pstrdup(r->pool, "");
@@ -775,17 +779,16 @@ static int auth_failed(request_rec *r) {
           misc_flag);
 
     if (cfg->addl_requests) {
-	if (cfg->super_debug) {
-	    libpbc_debug("auth_failed(): adding %s\n",
-			 cfg->addl_requests);
-	}
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+	    "auth_failed(): adding %s", cfg->addl_requests);
 
 	g_req_contents = ap_pstrcat(r->pool, g_req_contents, 
 				    cfg->addl_requests, NULL);
     }
 
-    if( cfg->super_debug )
-        libpbc_debug("super-debug: g_req before encoding length %d, string: %s\n", strlen(g_req_contents), g_req_contents);
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+        "g_req before encoding length %d, string: %s", 
+        strlen(g_req_contents), g_req_contents);
 
     /* setup the client pull */
     ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, scfg->login);
@@ -814,15 +817,14 @@ static int auth_failed(request_rec *r) {
 
     /* create whole g req cookie */
     ap_snprintf(g_req_cookie, PBC_4K-1, 
-                "%s=%s; domain=%s; path=/; expires=%s;%s",
+                "%s=%s; domain=%s; path=/;%s",
                 PBC_G_REQ_COOKIENAME, 
                 e_g_req_contents,
                 PBC_ENTRPRS_DOMAIN,
-                ap_gm_timestr_822(r->pool, time(NULL) + PBC_G_REQ_EXP),
                 secure);
     
-    if( cfg->super_debug )
-        libpbc_debug("super-debug: g_req length %d cookie: %s\n", strlen(g_req_cookie), g_req_cookie);
+    ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+        "g_req length %d cookie: %s", strlen(g_req_cookie), g_req_cookie);
 
     /* make the pre-session cookie */
     pre_s = (char *) libpbc_get_cookie_p(r->pool, 
@@ -834,15 +836,21 @@ static int auth_failed(request_rec *r) {
                                    appid(r), 
 				   NULL);
 		
-      pre_s_cookie = ap_psprintf(r->pool, 
-                     "%s=%s; path=%s; expires=%s;%s", 
-              PBC_PRE_S_COOKIENAME,
-              pre_s, 
-              "/",
-              ap_gm_timestr_822(r->pool, time(NULL) + PBC_PRE_S_EXP),
-                                 secure);
+{
+pbc_cookie_data     *cookie_data = NULL;
+pool *p = r->pool;
+cookie_data = libpbc_unbundle_cookie(pre_s, NULL);
+fprintf(stderr, "BARNEY: serial: %d\n", (*cookie_data).broken.serial);
+}
 
-      ap_table_add(r->headers_out, "Set-Cookie", pre_s_cookie);
+    pre_s_cookie = ap_psprintf(r->pool, 
+              			"%s=%s; path=%s;%s", 
+              			PBC_PRE_S_COOKIENAME,
+              			pre_s, 
+              			"/",
+              			secure);
+
+    ap_table_add(r->headers_out, "Set-Cookie", pre_s_cookie);
 
     /* load and send the header */
     ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
@@ -860,8 +868,8 @@ static int auth_failed(request_rec *r) {
                     PBC_ENTRPRS_DOMAIN,
                     secure);
         ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
-        if( cfg->super_debug )
-            libpbc_debug("super-debug: auth_failed: setting Form/Multipart cookie\n");
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
+            "auth_failed: setting Form/Multipart cookie");
     }
 
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
@@ -1165,7 +1173,7 @@ int get_pre_s_from_cookie(request_rec *r)
       		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
 		r->uri);
     else
-        cookie_data = libpbc_unbundle_cookie(cookie, ap_get_server_name(r));
+        cookie_data = libpbc_unbundle_cookie(cookie, NULL);
 
     if( cookie_data == NULL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
@@ -1201,9 +1209,8 @@ static int pubcookie_user(request_rec *r) {
   scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                             &pubcookie_module);
 
-  if( cfg->super_debug )
-    libpbc_debug("super-debug: pubcookie_user: hello, uri: %s auth_type: %s\n", 
-			r->uri, ap_auth_type(r));
+  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+      "pubcookie_user: hello, uri: %s auth_type: %s", r->uri, ap_auth_type(r));
 
   /* get defaults for unset args */
   pubcookie_dir_defaults(cfg);
@@ -1217,26 +1224,23 @@ static int pubcookie_user(request_rec *r) {
   if( (cfg->creds = pubcookie_auth_type(r)) == PBC_CREDS_NONE )
     return DECLINED;
   
-  if( cfg->super_debug )
-    libpbc_debug("super-debug: pubcookie_user: going to check uri: %s creds: %c\n", r->uri, cfg->creds);
+  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+    "pubcookie_user: going to check uri: %s creds: %c", r->uri, cfg->creds);
 
   /* maybe dump the directory and server recs */
-  if( cfg->super_debug ) {
-    dump_server_rec(scfg);
-    dump_dir_rec(cfg);
-  }
+  dump_server_rec(r, scfg);
+  dump_dir_rec(r, cfg);
 
   sess_cookie_name = make_session_cookie_name(p, PBC_S_COOKIENAME, appid(r));
 
   /* force SSL */
   if (ap_hook_call("ap::mod_ssl::var_lookup", &isssl, p, r->server, 
                  r->connection, r, "HTTPS") && isssl && strcmp (isssl, "on")) {
-    if( cfg->super_debug )
-      libpbc_debug("pubcookie_user: Not SSL; uri: %s appid: %s\n", 
-                   r->uri, appid(r));
-      cfg->failed = PBC_BAD_AUTH;
-      cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
-      return OK;
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+      		"Not SSL; uri: %s appid: %s", r->uri, appid(r));
+    cfg->failed = PBC_BAD_AUTH;
+    cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
+    return OK;
   }
 
   /* before we check if they hav a valid S or G cookie see if it's a logout */
@@ -1244,8 +1248,8 @@ static int pubcookie_user(request_rec *r) {
       return OK;
   }
 
-  if( cfg->super_debug )
-    libpbc_debug("super-debug: pubcookie_user: about to look for some cookies; current uri: %s\n", r->uri);
+  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+    "pubcookie_user: about to look for some cookies; current uri: %s", r->uri);
 
   /* check if the granting cookie's appid matches.  if not, then act as
      if we don't have one.  This helps if there are any old g cookies */
@@ -1267,8 +1271,9 @@ static int pubcookie_user(request_rec *r) {
                                     sizeof(cookie_data->broken.appid)-1) != 0 ){
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
 
-      if( cfg->super_debug )
-        libpbc_debug("pubcookie_user: No G or S cookie; uri: %s appid: %s sess_cookie_name: %s\n", r->uri, appid(r), sess_cookie_name);
+      ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+        	"No G or S cookie; uri: %s appid: %s sess_cookie_name: %s", 
+		r->uri, appid(r), sess_cookie_name);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
       return OK;
@@ -1323,7 +1328,7 @@ static int pubcookie_user(request_rec *r) {
     clear_pre_session_cookie(r);
 
     ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
-	"pubcookie_user: has granting; current uri is: %s\n", r->uri);
+	"pubcookie_user: has granting; current uri is: %s", r->uri);
 
     /* check pre_session cookie */
     pre_sess_from_cookie = get_pre_s_from_cookie(r);
@@ -1331,7 +1336,7 @@ static int pubcookie_user(request_rec *r) {
       ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
       	"pubcookie_user, pre session tokens mismatched, uri: %s", r->uri);
       ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
-      	"pubcookie_user, pre session from G: %d PRE_S: %s, uri: %s", 
+      	"pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s", 
 	  (*cookie_data).broken.serial, pre_sess_from_cookie, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_BADPRES_CODE;
@@ -1341,8 +1346,8 @@ static int pubcookie_user(request_rec *r) {
     /* the granting cookie gets blanked too early and another login */
     /* server loop is required, this just speeds up that loop */
     if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
-      if( cfg->super_debug )
-          libpbc_debug("super-debug: pubcookie_user: in the 'speed up that loop' logic; current uri is: %s\n", r->uri);
+      ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+          "pubcookie_user: 'speed up that loop' logic; uri is: %s\n", r->uri);
 
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_DUMMYLP_CODE;
@@ -1470,8 +1475,8 @@ static int pubcookie_user(request_rec *r) {
       }
   }
 
-  if( cfg->super_debug )
-    libpbc_debug("super-debug: pubcookie_user: everything is o'tay; current uri is: %s\n", r->uri);
+  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+      "pubcookie_user: everything is o'tay; current uri is: %s", r->uri);
 
   return OK;
 
@@ -1479,37 +1484,38 @@ static int pubcookie_user(request_rec *r) {
 
 /*                                                                            */
 int pubcookie_authz(request_rec *r) {
-  pubcookie_dir_rec *cfg;
-  pubcookie_server_rec *scfg;
+    pubcookie_dir_rec *cfg;
+    pubcookie_server_rec *scfg;
 
-  cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
+    cfg=(pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
                                            &pubcookie_module);
-  scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
+    scfg=(pubcookie_server_rec *)ap_get_module_config(r->server->module_config,
                                             &pubcookie_module);
 
-  if( !is_pubcookie_auth(cfg) ) 
+    if( !is_pubcookie_auth(cfg) ) 
+        return DECLINED;
+
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+    		"pubcookie_authz: hello");
+
+    if(cfg->failed) {         /* pubcookie_user has failed so pass to typer */
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+      		"pubcookie_authz: failed: %d", cfg->failed);
+        return OK;
+    }
+
+    /* if it's a pubcookie logout don't do any authz, skip to pubcookie_typer */
+    if( check_end_session(r) & PBC_END_SESSION_MASK ) { 
+        ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+      		"pubcookie_authz: is a logout so no authz");
+        return OK;
+    }
+
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
+    		"pubcookie_authz: say declined");
+
+    /* declined means that other authorization modules will be applied */
     return DECLINED;
-
-  if (cfg->super_debug)
-    libpbc_debug("super-debug: pubcookie_authz: hello\n");
-
-  if(cfg->failed) {             /* pubcookie_user has failed so pass to typer */
-    if (cfg->super_debug)
-      libpbc_debug("super-debug: pubcookie_authz: failed: %d\n", cfg->failed);
-    return OK;
-  }
-
-  /* if it's a pubcookie logout don't do any authz, skip to pubcookie_typer */
-  if( check_end_session(r) & PBC_END_SESSION_MASK ) { 
-      libpbc_debug("super-debug: pubcookie_authz: is a logout so no authz\n");
-      return OK;
-  }
-
-  if (cfg->super_debug)
-    libpbc_debug("super-debug: pubcookie_authz: say declined\n");
-
-  /* declined means that other authorization modules will be applied */
-  return DECLINED;
 
 }
 
@@ -1529,10 +1535,8 @@ static int pubcookie_typer(request_rec *r) {
   scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                             &pubcookie_module);
 
-  if (cfg->super_debug) {
-    libpbc_debug("super-debug: pubcookie_typer: hello\n");
-    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG,r,"in typer, creds=0x%x",(int)cfg->creds);
-  }
+  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
+		"in typer, creds=0x%x",(int)cfg->creds);
 
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
@@ -1543,8 +1547,8 @@ static int pubcookie_typer(request_rec *r) {
   }
 
   if( cfg->has_granting ) {
-    if (cfg->super_debug)
-      libpbc_debug("super-debug: pubcookie_typer: coming in with granting\n");
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
+      		"pubcookie_typer: coming in with granting");
     first_time_in_session = 1;
     cfg->has_granting = 0;
   }
@@ -1555,8 +1559,8 @@ static int pubcookie_typer(request_rec *r) {
    */
 
   if(!cfg->failed) {
-    if (cfg->super_debug)
-      libpbc_debug("super-debug: pubcookie_typer: no failure\n");
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
+      			"pubcookie_typer: no failure");
 
     if( check_end_session(r) & PBC_END_SESSION_REDIR_MASK ) { 
       r->handler = PBC_END_SESSION_REDIR_HANDLER;
@@ -1570,18 +1574,18 @@ static int pubcookie_typer(request_rec *r) {
     }
     return DECLINED;
   } else if(cfg->failed == PBC_BAD_AUTH) {
-    if (cfg->super_debug)
-      libpbc_debug("super-debug: pubcookie_typer: bad auth\n");
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
+      			"pubcookie_typer: bad auth");
     r->handler = PBC_AUTH_FAILED_HANDLER;
     return OK;
   } else if (cfg->failed == PBC_BAD_USER) {
-    if (cfg->super_debug)
-      libpbc_debug("super-debug: pubcookie_typer: bad user\n");
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
+      			"pubcookie_typer: bad user");
     r->handler = PBC_BAD_USER_HANDLER;
     return OK;
   } else {
-    if (cfg->super_debug)
-      libpbc_debug("super-debug: pubcookie_typer: unknown failure\n");
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
+      			"pubcookie_typer: unknown failure");
     return DECLINED;
   }
 

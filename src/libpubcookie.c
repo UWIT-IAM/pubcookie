@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.33 2002-08-01 00:17:58 willey Exp $
+    $Id: libpubcookie.c,v 2.34 2002-08-02 00:52:44 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1404,7 +1404,7 @@ int libpbc_random_int()
     int i;
     unsigned long err;
 
-    if( RAND_bytes((char *)i, sizeof(int)) != 0 ) {
+    if( RAND_bytes((char *)i, sizeof(int)) == 0 ) {
         while( (err=ERR_get_error()) )
             pbc_log_activity(PBC_LOG_ERROR, 
             		"OpenSSL error getting random bytes: %lu", err);
