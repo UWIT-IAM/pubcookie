@@ -35,7 +35,6 @@ The WAS login server distribution contains the following files:
 	index.cgi.c
 	index.cgi.h
 	index.cgi_krb.c
-	index.cgi_securid.c
 	libpubcookie.c
 	libpubcookie.h
 	make_crypted_bit.c
@@ -44,7 +43,5 @@ The WAS login server distribution contains the following files:
 	pbc_config.h
 	pbc_version.h
 	pubcookie.h
-	securid.c
-	securid.h
 
 24Mar2001 steve

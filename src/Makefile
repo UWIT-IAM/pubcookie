@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.31 2001-04-27 22:03:57 willey Exp $
+#   $Id: Makefile,v 1.32 2001-05-03 22:50:17 willey Exp $
 #
 
 # your compiler here
@@ -35,7 +35,7 @@ LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto
 
 GENHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 MODULEHEAD=
-LOGINHEAD=index.cgi.h securid.h
+LOGINHEAD=index.cgi.h 
 
 ALLHEAD=${GENHEAD} ${LOGINHEAD} ${MODULEHEAD}
 
@@ -53,20 +53,18 @@ TESTSRC=dtest.c \
 
 LOGINSRC=index.cgi.c \
 	 index.cgi_krb.c \
-	 index.cgi_securid.c \
 	 make_crypted_bit.c \
 	 mkc_key_generic.c \
 	 mkc_key_local.c \
-	 securid.c
 
 ALLSRC=${GENERASRC} ${TESTSRC} ${LOGINSRC} ${MODULESRC}
 
-LOGINMISC=CHANGES.login \
-          Makefile.tmpl \
-          Makefile.apxs \
-	  INSTALL.login
 MODULEMISC=CHANGES.mod_pubcookie \
-           Makefile.index.cgi
+           Makefile.tmpl \
+           Makefile.apxs 
+LOGINMISC=CHANGES.login \
+          Makefile.index.cgi \
+	  INSTALL.login
 TESTMISC=Makefile
 MISCMISC=README \
          LICENSE
