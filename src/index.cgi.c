@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.13 2000-09-08 16:27:54 willey Exp $
+    $Id: index.cgi.c,v 1.14 2000-09-08 19:18:36 willey Exp $
  */
 
 
@@ -1000,7 +1000,7 @@ void print_table_start()
 /*	################################### da copyright, it's ours!          */
 void print_copyright()
 {
-    print_out("<address>&#169; 2000 University of Washington</address>\n");
+    print_out("<small>Copyright &#169; 2000 University of Washington</small>\n");
 
 }
 
@@ -1094,25 +1094,19 @@ void print_login_page_centre()
 /*	################################### right hand side                   */
 void print_login_page_rhs()
 {
-
     print_out("<td width=\"250\" valign=\"MIDDLE\">\n");
-    print_out("<dl>\n");
-    print_out("<dt>Need a UW NetID?</dt>\n");
-    print_out("<dd><a href=\"https://accounts.washington.edu/new/new\">Students</a></dd>\n");
-    print_out("<dd><a href=\"https://accounts.washington.edu/new/new?type=staff\">Faculty or staff</a></dd>\n");
-    print_out("</dl>\n");
-    print_out("<dl>\n");
-    print_out("<dt>Forget your password?</dt>\n");
-    print_out("<dd><a href=\"https://accounts.washington.edu/renew/renew\">Students</a></dd>\n");
-    print_out("<dd><a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html#FAC\">Faculty or staff</a></dd>\n");
-    print_out("</dl>\n");
+    print_out("<p>\n");
+    print_out("<a href=\"http://www.washington.edu/computing/uwnetid/create/\">Need a UW NetID?</a>\n");
+    print_out("</p>\n");
+    print_out("<p>\n");
+    print_out("<a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html\">Forget your password?</a>\n");
+    print_out("</p>\n");
     print_out("<dl>\n");
     print_out("<dt>Have a question?</dt>\n");
-    print_out("<dd><a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a></dd>\n");
-    print_out("</dl>\n");
-    print_out("<dl>\n");
-    print_out("<dt>Want to know more?</dt>\n");
-    print_out("<dd><a href=\"http://www.washington.edu/computing/uwnetid/\">About UW NetIDs</a></dd>\n");
+    print_out("<dd>\n");
+    print_out("  <a href=\"http://www.washington.edu/computing/uwnetid/\">Read About UW NetIDs</a><BR>\n");
+    print_out("  <a href=\"http://www.washington.edu/computing/help/\">Contact C&amp;C</a>\n");
+    print_out("</dd>\n");
     print_out("</dl>\n");
     print_out("</td>\n");
 
@@ -1188,7 +1182,8 @@ void print_login_page_expire_info()
     print_out("<tr>\n");
     print_out("<td colspan=\"5\" align=\"center\">\n");
     print_out("<p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>\n");
-    print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use! Close all Web browser windows and Web-enabled applications when you are finished.</p>\n");
+    print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>\n");
+    print_out("Close all Web browser windows and Web-enabled applications when you are finished.</p>\n");
     print_out("</td>\n");
     print_out("</tr>\n");
 
