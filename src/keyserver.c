@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.3 2002-06-07 17:51:00 greenfld Exp $
+    $Id: keyserver.c,v 2.4 2002-06-07 18:16:05 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -254,6 +254,8 @@ void usage(void)
     printf("  -p (default)       : expect keyfile in PEM\n");
     printf("  -C <cert file>     : CA cert to use for client verification\n");
     printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
+    printf("\n");
+    printf("All options override the values in the configuration file.\n");
 }
 
 static int verify_callback(int ok, X509_STORE_CTX * ctx)
@@ -301,7 +303,13 @@ int main(int argc, char *argv[])
     X509 *client_cert;
     int r;
 
-    while ((c = getopt(argc, argv, "apc:ndh:C:D:")) != -1) {
+    libpbc_config_init(NULL, "keyclient");
+    keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
+    certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
+    cafile = libpbc_config_getstring("ssl_ca_file", NULL);
+    cadir = libpbc_config_getstring("ssl_ca_path", NULL);
+
+    while ((c = getopt(argc, argv, "apc:k:C:D:")) != -1) {
 	switch (c) {
 	case 'a':
 	    filetype = SSL_FILETYPE_ASN1;

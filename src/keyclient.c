@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.2 2002-06-07 17:59:51 greenfld Exp $
+    $Id: keyclient.c,v 2.3 2002-06-07 18:16:04 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -55,6 +55,8 @@ static void usage(void)
     printf("  -p (default)       : expect keyfile in PEM\n");
     printf("  -h <hostname>      : pretend to be <hostname> (dangerous!)\n");
     printf("  -L <hostname>      : connect to loginhost <hostname>\n");
+    printf("  -C <cert file>     : CA cert to use for client verification\n");
+    printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
 
     exit(1);
 }
@@ -90,6 +92,8 @@ int main(int argc, char *argv[])
     libpbc_config_init(NULL, "keyclient");
     keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
+    cafile = libpbc_config_getstring("ssl_ca_file", NULL);
+    cadir = libpbc_config_getstring("ssl_ca_path", NULL);
 
     if (gethostname(hostname, sizeof(hostname)) < 0) {
 	perror("gethostname");
@@ -97,7 +101,7 @@ int main(int argc, char *argv[])
     }
 
     newkeyp = 1;
-    while ((c = getopt(argc, argv, "apc:nudh:")) != -1) {
+    while ((c = getopt(argc, argv, "apc:k:C:D:nudh:L:")) != -1) {
 	switch (c) {
 	case 'a':
 	    filetype = SSL_FILETYPE_ASN1;
@@ -142,15 +146,15 @@ int main(int argc, char *argv[])
 	    newkeyp = -1;
 	    break;
 
+	case 'h':
+	    strlcpy(hostname, optarg, sizeof hostname);
+	    break;
+	    
 	case 'L':
 	    /* connect to the specified login server */
 	    keyhost = strdup(optarg);
 	    break;
 
-	case 'h':
-	    strlcpy(hostname, optarg, sizeof hostname);
-	    break;
-	    
 	case '?':
 	default:
 	    usage();
@@ -179,6 +183,8 @@ int main(int argc, char *argv[])
 	ERR_print_errors_fp(stderr);
 	exit(1);
     }
+
+    /* xxx verify that 'certfile' is a certificate for 'hostname' */
 
     ssl = SSL_new(ctx);
     if (!ssl) {
