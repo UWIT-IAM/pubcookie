@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.12 2001-10-17 03:32:47 willey Exp $
+    $Id: index.cgi.h,v 1.13 2001-10-18 21:35:14 willey Exp $
  */
 
 typedef struct {
@@ -49,6 +49,7 @@ typedef struct {
     int		serial;
     int		next_securid;
     int		session_reauth;
+    int		duration;
     char	*first_kiss;
     char	reply;
 } login_rec;
