@@ -1,34 +1,7 @@
+This is the Pubcookie relay directory. 
 
-This is the pubcookie relay.  
+Refer to the Pubcookie "Apache Module Installation Guide" 
+(and its "Cross-Domain Relay Configuration" section) for 
+Pubcookie relay setup and use instructions:
 
-Build & install:
- 
-  (build the pubcookie login server first)
-  (then, e.g.)
-
-  $ ./configure --prefix=/usr/local/apache/htodcs/PCRELAY 
-  $ make
-  $ make install
-
-(You will need the webtpl library,
- see:  http://staff.washington.edu/fox/webtpl)
-
-
-Run;
-
-
-  Configure your remote applications to use the relay uri as a login server.
-
-  Pubcookie (/usr/local/pubcookie/config) variables:
-
-    login_uri:  <uri of the real login server>
-    login_host: <host of the real login server>
-
-    relay_template_path: <path th your relay's template directory>
-                          -- usually: (prefix)/templates --
-    relay_uri:  <uri of your relay>
-
-
-
-
-
+http://pubcookie.org/docs/install-mod_pubcookie.html
