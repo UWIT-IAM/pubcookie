@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.13 2002-09-18 21:58:07 ryanc Exp $
+    $Id: pbc_myconfig.c,v 1.14 2002-09-26 23:43:11 jjminer Exp $
  */
 
 
@@ -44,6 +44,9 @@
 #endif /* HAVE_CTYPE_H */
 
 #ifdef HAVE_SYSLOG_H
+#  ifndef NEED_SYSLOG_NAMES
+#   define SYSLOG_NAMES 1
+#  endif /* ! NEED_SYSLOG_NAMES */
 # include <syslog.h>
 #endif /* HAVE_SYSLOG_H */
 

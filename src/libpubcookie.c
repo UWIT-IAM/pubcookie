@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.41 2002-09-26 17:50:35 greenfld Exp $
+    $Id: libpubcookie.c,v 2.42 2002-09-26 23:43:11 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,6 +59,9 @@ typedef  int pid_t;  /* win32 process ID */
 # endif /* HAVE_STDARG_H */
 
 # ifdef HAVE_SYSLOG_H
+#  ifndef NEED_SYSLOG_NAMES
+#   define SYSLOG_NAMES 1
+#  endif /* ! NEED_SYSLOG_NAMES */
 #  include <syslog.h>
 # endif /* HAVE_SYSLOG_H */
 

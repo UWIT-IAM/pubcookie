@@ -27,6 +27,12 @@
 # define LOG_FAC(fac) fac
 #endif /* NEED_LOG_FAC */
 
+#ifdef HAVE_SYSLOG_H
+# ifndef NEED_SYSLOG_NAMES
+#  define SYSLOG_NAMES 1
+# endif /* NEED_SYSLOG_NAMES */
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
 
 /**
  *Initializes the logging system.  Optional.

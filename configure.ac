@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.9 $)
+AC_REVISION($Revision: 1.10 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -118,23 +118,43 @@ AC_CHECK_HEADER([syslog.h],
     AC_DEFINE(HAVE_SYSLOG_H, 1,
               [Define to 1 if you have the <syslog.h> header file.])
     AC_MSG_CHECKING([for LOG_AUTHPRIV in syslog.h])
-    AC_TRY_LINK([#include <syslog.h>], [ printf( "%d", LOG_AUTHPRIV ); ],
+    AC_TRY_LINK([
+                 #include <stdio.h>
+                 #include <syslog.h>
+                ], [ printf( "%d", LOG_AUTHPRIV ); ],
                    [AC_MSG_RESULT(found) ],
                    [AC_MSG_RESULT(not found)
                     AC_DEFINE(NEED_LOG_AUTHPRIV, 1,
                               [Define to LOG_AUTH if your system doesn't define LOG_AUTHPRIV])])
     AC_MSG_CHECKING([for LOG_MAKEPRI in syslog.h])
-    AC_TRY_LINK([#include <syslog.h>], [ printf( "%d", LOG_MAKEPRI(1,2) ); ],
+    AC_TRY_LINK([
+                 #include <stdio.h>
+                 #include <syslog.h>
+                ], [ printf( "%d", LOG_MAKEPRI(1,2) ); ],
                    [AC_MSG_RESULT(found) ],
                    [AC_MSG_RESULT(not found)
                     AC_DEFINE(NEED_LOG_MAKEPRI, 1,
                               [Define to 1 if your system doesn't define LOG_MAKEPRI])])
     AC_MSG_CHECKING([for LOG_FAC in syslog.h])
-    AC_TRY_LINK([#include <syslog.h>], [ printf( "%d", LOG_FAC(1) ); ],
+    AC_TRY_LINK([
+                 #include <stdio.h>
+                 #include <syslog.h>
+                ], [ printf( "%d", LOG_FAC(1) ); ],
                    [AC_MSG_RESULT(found) ],
                    [AC_MSG_RESULT(not found)
                     AC_DEFINE(NEED_LOG_FAC, 1,
                               [Define to 1 if your system doesn't define LOG_FAC])])
+    AC_MSG_CHECKING([for facilitynames in syslog.h])
+    AC_TRY_LINK([
+                 #include <stdio.h>
+                 #define SYSLOG_NAMES 1
+                 #include <syslog.h>
+                ], 
+                [ printf( "%p", facilitynames ); ],
+                   [AC_MSG_RESULT(found) ],
+                   [AC_MSG_RESULT(not found)
+                    AC_DEFINE(NEED_SYSLOG_NAMES, 1,
+                              [Define to 1 if your system doesn't have SYSLOG_NAMES])])
     )
 
 AC_MSG_CHECKING([audit log facility])
