@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.24 2000-01-28 01:36:14 willey Exp $
+#   $Id: Makefile,v 1.25 2000-03-03 01:51:17 willey Exp $
 #
 
 # your compiler here
@@ -29,7 +29,7 @@ CC=gcc
 #     file location shuffling.
 CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include -DUSE_SECURID
 # order is important here
-LDFLAGS=-L./openssl -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref 
+LDFLAGS=-L/usr/local/ssl/lib -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref 
 
 # hopefully you don't have to change anything below here
 ################################################################################
@@ -47,7 +47,7 @@ MISC=README \
 BASENAME=pubcookie
 #sed -e '/^#define PBC_VERSION/!d' -e '/^#define PBC_VERSION/s/^#define PBC_VERSION "\(a2\)".*$/\1/' pbc_version.h` \
 
-VERSION=a5release7
+VERSION=a5release8
 DIR_NAME=$(BASENAME)-$(VERSION)
 TARFILE=$(BASENAME)-$(VERSION).tar
 
