@@ -19,7 +19,7 @@
      * Frank Fugimoto     University of Washington
      * Scott Fullerton    University of Wisconsin
      * Larry Greenfield   Carnegie Mellon University
-     * Maurizio Marini    Milan, Italy
+     * Maurizio Marini    Cost Srl, Milan, Italy
      * Jon Miner          University of Wisconsin
      * RL "Bob" Morgan    University of Washington
      * Ryan Muldoon       University of Wisconsin
