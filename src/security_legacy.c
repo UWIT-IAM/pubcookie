@@ -144,7 +144,7 @@ int security_init(void)
 	certfile = NULL;
     }
 
-    if (!keyfile || !certfile) {
+    if (!keyfile && !certfile) {
 	/* fall back to the pubcookie_session files */
 	keyfile = malloc(1024);
 	snprintf(keyfile, 1024, "%s/%s", PBC_KEY_DIR,
@@ -163,7 +163,7 @@ int security_init(void)
 	}
     }
 
-    if (!keyfile || !certfile) {
+    if (!keyfile && !certfile) {
 	/* try the pubcookie_login files */
 	keyfile = malloc(1024);
 	snprintf(keyfile, 1024, "%s/%s", PBC_KEY_DIR,
@@ -210,13 +210,14 @@ int security_init(void)
 
     /* test g_keyfile */
     if (access(g_keyfile, R_OK | F_OK)) {
+        /* this is only a problem for login servers */
 	syslog(LOG_DEBUG, "couldn't find granting keyfile (try setting granting_key_file?)");
 	g_keyfile = NULL;
     }
 
     /* test g_certfile; it's a fatal error if this isn't found */
     if (access(g_certfile, R_OK | F_OK)) {
-	syslog(LOG_ERR, "couldn't find granting certile (try setting granting_cert_file?): tried %s", g_certfile);
+	syslog(LOG_ERR, "couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
 	return -1;
     }
 
