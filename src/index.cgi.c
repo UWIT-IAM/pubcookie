@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.14 2000-09-08 19:18:36 willey Exp $
+    $Id: index.cgi.c,v 1.15 2000-09-11 23:09:35 willey Exp $
  */
 
 
@@ -1073,7 +1073,7 @@ void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
 /*	################################### more, left hand side of big table */
 void print_login_page_lhs2(login_rec *l)
 {
-    print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Login\">");
+    print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Log in\">");
     print_out("</strong>\n");
     print_login_page_hidden_stuff(l);
     print_out("</form>\n");
