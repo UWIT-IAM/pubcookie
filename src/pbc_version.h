@@ -19,14 +19,14 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.28 2001-10-18 01:44:09 willey Exp $
+    $Id: pbc_version.h,v 1.29 2001-10-27 18:09:16 willey Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
 #define PUBCOOKIE_VERSION
 
 #define PBC_VERSION "a5"
-#define PBC_PUBID "1.64"
+#define PBC_PUBID "1.65"
 #define PBC_LOGIN_VERSION "1.24"
 
 #endif /* !PUBCOOKIE_VERSION */
