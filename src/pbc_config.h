@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.11 1999-01-07 00:13:17 willey Exp $
+    $Id: pbc_config.h,v 1.12 1999-01-09 00:10:35 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -19,6 +19,7 @@
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_LOGIN_PAGE "https://pcookiel1.cac.washington.edu/login/"
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
+#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
 #define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
 #define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
 #define PBC_MAX_HARD_EXPIRE 12 * 60 * 60

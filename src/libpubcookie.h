@@ -1,14 +1,15 @@
 /*
-    $Id: libpubcookie.h,v 1.6 1998-12-18 16:03:49 willey Exp $
+    $Id: libpubcookie.h,v 1.7 1999-01-09 00:10:35 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
 #define PUBCOOKIE_LIB
 
 
-#if defined (APACHE1_2) || defined (APACHE1_3)
+#ifdef APACHE1_2
 
-unsigned char *libpbc_get_cookie_p(ap_pool *, char *, 
+
+unsigned char *libpbc_get_cookie_p(pool *, unsigned char *, 
 	                         unsigned char, 
 				 unsigned char, 
 				 int,
@@ -26,13 +27,38 @@ md_context_plus *libpbc_sign_init_p(pool *, char *);
 md_context_plus *libpbc_verify_init_p(pool *, char *);
 void libpbc_pubcookie_init_p(pool *);
 void libpbc_pubcookie_exit_p(pool *);
-char *libpbc_alloc_init_p(pool *, int);
+unsigned char *libpbc_alloc_init_p(pool *, int);
 unsigned char *libpbc_gethostip_p(pool *);
 crypt_stuff *libpbc_init_crypt_p(pool *, char *);
 
 #else
+#ifdef APACHE1_3
 
-unsigned char *libpbc_get_cookie_np(char *, 
+unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
+	                         unsigned char, 
+				 unsigned char, 
+				 int,
+				 unsigned char *, 
+				 unsigned char *, 
+				 md_context_plus *, 
+				 crypt_stuff *);
+pbc_cookie_data *libpbc_unbundle_cookie_p(ap_pool *, char *, 
+	                                md_context_plus *, 
+					crypt_stuff *);
+unsigned char *libpbc_update_lastts_p(ap_pool *, pbc_cookie_data *,
+                                    md_context_plus *, 
+                                    crypt_stuff *);
+md_context_plus *libpbc_sign_init_p(ap_pool *, char *);
+md_context_plus *libpbc_verify_init_p(ap_pool *, char *);
+void libpbc_pubcookie_init_p(ap_pool *);
+void libpbc_pubcookie_exit_p(ap_pool *);
+unsigned char *libpbc_alloc_init_p(ap_pool *, int);
+unsigned char *libpbc_gethostip_p(ap_pool *);
+crypt_stuff *libpbc_init_crypt_p(ap_pool *, char *);
+
+#else
+
+unsigned char *libpbc_get_cookie_np(unsigned char *, 
 	                         unsigned char, 
 				 unsigned char, 
 				 int,
@@ -55,6 +81,7 @@ unsigned char *libpbc_gethostip_np();
 crypt_stuff *libpbc_init_crypt_np(char *);
 
 #endif 
+#endif
 
 char *libpbc_time_string(time_t);
 void *libpbc_abend(const char *,...);

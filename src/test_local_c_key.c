@@ -1,25 +1,79 @@
-#include <string.h>
-#include <time.h>
+#include <netdb.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
 #include <pem.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
+#include "pbc_version.h"
 
-int *main() {
+void usage(const char *progname) {
+    printf("%s [-c crypted_file] [-k key_file] [-h]\n\n", progname);
+    printf("\t crypted_file:       crypted stuff to be decrypted, should not be necessary since the binary will already have it.\n");
+    printf("\t key_file:  default is %s\n\n", PBC_CRYPT_KEYFILE);
+    exit (1);
+}
+
+int main(int argc, char **argv) {
     crypt_stuff		*c1_stuff;
     unsigned char	in[PBC_1K];
     unsigned char	intermediate[PBC_1K];
     unsigned char	out[PBC_1K];
-
-    c1_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+    FILE		*cfp;
+    int 		c, barfarg = 0;
+    char		*key_file = NULL;
+    char		*crypted_file = NULL;
+    static unsigned char c_bits[]={
+        0x7e,0x8e,0x69,0x0d,0x49,0x87,0x14,0xec,
+        0xad,0xf3,0xdb,0x1b,0xc2,0x9e,0x50,0xb4,
+        0xd3,0xab,0x2d,0x78,0x51,0xd6,0x1a,0x4d,
+        0x98,0xad,0xf6,0x30,0x62,0x1f,0xac,0x1a,
+        0x43,0x89,0xe3,0x96,0x19,0x32,0xf3,0xb1,
+        0xd7,0xd5,0xa1,0x23,0x2e,0x51,0xc2,0x26,
+        0xb8,0x7b,0x61,0xe3,0x54,0x44,0xee,
+    };
 
     bzero(in, 1024);
     bzero(out, 1024);
     bzero(intermediate, 1024);
-    strcpy(in, "fasdfasdfsadfak2eiojslkdjf2io3erjlskdfjsdalkj asdfdf");
+    strcpy(in, "9043ddkljso2lkx90%lknxlwio2kxcvo;iw90dflkwekjvs98xcv,");
 
-    fread(intermediate, sizeof(char), PBC_1K, stdin);
+    optarg = NULL;
+    while (!barfarg && ((c = getopt(argc, argv, "ha:o:i:")) != -1)) {
+	switch (c) {
+	case 'h' :
+	    usage(argv[0]);
+	    break;
+	case 'c' :
+	    crypted_file = strdup(optarg);
+	    break;
+	case 'k' :
+	    key_file = strdup(optarg);
+	    break;
+	default :
+	    barfarg++;
+	    usage(argv[0]);
+	}
+    }
+
+    if ( key_file )
+        c1_stuff = libpbc_init_crypt(key_file);
+    else
+        c1_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+
+    if ( crypted_file ) {
+        if( ! (cfp = pbc_fopen(crypted_file, "w")) )
+            libpbc_abend("cannot open the crypted file %s\n", crypted_file);
+        fread(intermediate, sizeof(char), PBC_1K, cfp);
+    } else {
+	memcpy(intermediate, c_bits, PBC_1K);
+    }
 
     if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen(in)) )
         exit(0);
@@ -33,3 +87,34 @@ int *main() {
     exit(1);
 
 }
+//int main(int argc, char **argv) {
+    //unsigned char 	*key_buf;
+    //unsigned long int   addr;
+    //unsigned char       *addr_s;
+    //FILE		*ofp;
+    //char		*out_file = NULL;
+    //char		*in_file = NULL;
+    //char		*ip = NULL;
+//
+    //if ( ! ip ) {
+        //printf("\nMust specifiy IP\n");
+	//usage(argv[0]);
+    //}
+//
+    //key_buf = (unsigned char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
+    //addr_s = (unsigned char *)libpbc_alloc_init(sizeof(addr));
+//
+    //if( fread(key_buf, sizeof(char), PBC_DES_KEY_BUF, ifp) != PBC_DES_KEY_BUF)
+        //libpbc_abend("make localized crypt key: Failed read\n");
+//
+    //addr = inet_addr(ip);
+    //memcpy(addr_s, &addr, sizeof(addr));
+//
+    //key_buf = libpbc_mod_crypt_key(key_buf, addr_s);
+   // 
+    //if( fwrite(key_buf, sizeof(char), PBC_DES_KEY_BUF, ofp) != PBC_DES_KEY_BUF)
+	//libpbc_abend("libpbc_crypt_key: Failed write\n");
+//
+    //exit(0);
+////
+//}

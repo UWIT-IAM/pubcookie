@@ -15,7 +15,7 @@ int *main() {
 
     bzero(in, 1024);
     bzero(intermediate, 1024);
-    strcpy(in, "fasdfasdfsadfak2eiojslkdjf2io3erjlskdfjsdalkj asdfdf");
+    strcpy(in, "9043ddkljso2lkx90%lknxlwio2kxcvo;iw90dflkwekjvs98xcv,");
 
     fprintf(stderr, "in is %s\n", in);
     if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) )

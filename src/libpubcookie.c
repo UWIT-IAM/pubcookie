@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.14 1999-01-06 05:16:34 willey Exp $
+    $Id: libpubcookie.c,v 1.15 1999-01-09 00:10:35 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -147,12 +147,12 @@ void libpbc_pubcookie_exit_np()
 
 /* a local malloc and init                                                    */
 #ifdef APACHE
-char *libpbc_alloc_init_p(pool *p, int len)
+unsigned char *libpbc_alloc_init_p(pool *p, int len)
 #else
-char *libpbc_alloc_init_np(int len)
+unsigned char *libpbc_alloc_init_np(int len)
 #endif
 {
-    char	*pointer;
+    unsigned char	*pointer;
 
     libpbc_rand_malloc();
     if( (pointer = pbc_malloc(len)) ) 
@@ -293,13 +293,13 @@ unsigned char *libpbc_gethostip_np()
 {
     struct hostent      *h;
     unsigned char       *addr;
-    struct utsname	myname;
+    struct utsname      myname;
 
-    if ( uname(&myname) < 0 ) 
+    if ( uname(&myname) < 0 )
 	libpbc_abend("problem doing uname lookup\n");
 
-    if ( (h = gethostbyname(myname.nodename)) == NULL )
-        libpbc_abend("%s: host unknown.\n", myname.nodename);
+    if ( (h = gethostbyname(myname.nodename)) == NULL ) 
+       	libpbc_abend("%s: host unknown.\n", myname.nodename);
 
     addr = libpbc_alloc_init(h->h_length);
     memcpy(addr, h->h_addr_list[0], h->h_length);
@@ -334,7 +334,7 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
     if( ! (fp = pbc_fopen(keyfile, "r")) )
-	libpbc_abend("libpbc_crypt_key: Failed open: %s\n", keyfile);
+        libpbc_abend("libpbc_crypt_key: Failed open: %s\n", keyfile);
     
     if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF)
         libpbc_abend("libpbc_crypt_key: Failed read: %s\n", keyfile);
@@ -392,6 +392,7 @@ int libpbc_verify_sig(unsigned char *sig, unsigned char *cookie_string, md_conte
     res = EVP_VerifyFinal(ctx_plus->ctx, sig, PBC_SIG_LEN, ctx_plus->public_key);
 
     return res;
+
 }
 
 unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, unsigned len)
@@ -477,18 +478,18 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     /* find a random index into the char key array and make a key shedule */
     des_check_key = 1;
-    memset(&key, 0, sizeof(key));
-    while ( des_key_sched(&key, ks) != 0 && --tries ) {
+    memset(key, 0, sizeof(key));
+    while ( des_key_sched((des_cblock *) key, ks) != 0 && --tries ) {
         index1=libpbc_get_crypt_index();
 	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-        des_set_odd_parity(&key);
+        des_set_odd_parity((des_cblock *) key);
     }
     if ( ! tries ) {
        libpbc_debug("libpbc_encrypt_cookie: Coudn't find a good key\n");
        return 0;
     }
 
-    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
+    des_cfb64_encrypt(in, out, len, ks, (des_cblock *) ivec, &i, DES_ENCRYPT);
     libpbc_augment_rand_state(ivec, sizeof(ivec));
 
     /* stick the indices on the end of the train */
@@ -519,20 +520,20 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     /* use the supplied index into the char key array and make a key shedule */
     memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-    des_set_odd_parity(&key);
-    if ( des_key_sched(&key, ks) ) {
+    des_set_odd_parity((des_cblock *) key);
+    if ( des_key_sched((des_cblock *) key, ks) ) {
        libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
        return 0;
     }
 
-    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
+    des_cfb64_encrypt(in, out, len, ks, (des_cblock *) ivec, &i, DES_DECRYPT);
 
     return 1;
 
 }
 
 void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
-	                  char *user, 
+	                  unsigned char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
@@ -570,8 +571,8 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
     unsigned char		buf[PBC_4K];
     unsigned char		buf2[PBC_4K];
 
-    memset(&buf, 0, sizeof(buf));
-    memset(&buf2, 0, sizeof(buf2));
+    memset(buf, 0, sizeof(buf));
+    memset(buf2, 0, sizeof(buf2));
 
     if ( ! (sig = libpbc_sign_cookie(cookie_string, ctx_plus)) ) {
         libpbc_debug("libpbc_sign_bundle_cookie: Cookie signing failed\n");
@@ -628,7 +629,7 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 /* builds, signs and returns cookie                                           */
 /*                                                                            */
 #ifdef APACHE
-unsigned char *libpbc_get_cookie_p(pool *p, char *user, 
+unsigned char *libpbc_get_cookie_p(pool *p, unsigned char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
@@ -637,7 +638,7 @@ unsigned char *libpbc_get_cookie_p(pool *p, char *user,
 			  md_context_plus *ctx_plus,
 			  crypt_stuff *c_stuff) 
 #else
-unsigned char *libpbc_get_cookie_np(char *user, 
+unsigned char *libpbc_get_cookie_np(unsigned char *user, 
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
@@ -676,8 +677,8 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     unsigned char	buf[PBC_4K];
     unsigned char	buf2[PBC_4K];
 
-    memset(&buf, 0, sizeof(buf));
-    memset(&buf2, 0, sizeof(buf2));
+    memset(buf, 0, sizeof(buf));
+    memset(buf2, 0, sizeof(buf2));
 
     if ( strlen(in) < PBC_SIG_LEN || strlen(in) > PBC_4K ) {
 	libpbc_debug("libpbc_unbundle_cookie: malformed cookie %s\n", in);
