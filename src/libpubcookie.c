@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.43 2002-09-27 16:18:57 jjminer Exp $
+    $Id: libpubcookie.c,v 2.44 2002-09-27 17:44:56 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -57,10 +57,6 @@ typedef  int pid_t;  /* win32 process ID */
 # ifdef HAVE_STDARG_H
 #  include <stdarg.h>
 # endif /* HAVE_STDARG_H */
-
-# ifdef HAVE_SYSLOG_H
-#  include <syslog.h>
-# endif /* HAVE_SYSLOG_H */
 
 # ifdef HAVE_TIME_H
 #  include <time.h>
@@ -372,7 +368,7 @@ void libpbc_pubcookie_init_np()
     libpbc_augment_rand_state(buf, sizeof(pid));
 
     if (security_init()) {
-        syslog(LOG_ERR, "security_init failed");
+        pbc_log_activity(PBC_LOG_ERROR, "security_init failed");
         exit(1);
     }
 

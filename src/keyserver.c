@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: keyserver.c,v 2.23 2002-08-20 20:14:09 greenfld Exp $
+    $Id: keyserver.c,v 2.24 2002-09-27 17:44:38 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -40,10 +40,6 @@
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
-
-#ifdef HAVE_SYSLOG_H
-# include <syslog.h>
-#endif /* HAVE_SYSLOG_H */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -85,6 +81,7 @@
 #endif /* ifndef KEYSERVER_CGIC */
 
 #include "pbc_config.h"
+#include "pbc_logging.h"
 #include "libpubcookie.h"
 
 int debug = 0;
@@ -101,7 +98,8 @@ static void logerrstr(const char *func)
     unsigned long r;
 
     while ((r = ERR_get_error())) {
-	syslog(LOG_LOCAL1 | LOG_ERR, "%s: %s", func, ERR_error_string(r, NULL));
+	pbc_log_activity(PBC_LOG_ERROR, "%s: %s", 
+                         func, ERR_error_string(r, NULL));
     }
 }
 
@@ -117,7 +115,7 @@ void myprintf(const char *format, ...)
     va_end(args);
 
     if (debug) {
-       syslog( LOG_LOCAL1|LOG_INFO, "Sending: \"%s\"\n", buf );
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "Sending: \"%s\"", buf );
     }
 
     if (SSL_write(ssl, buf, strlen(buf)) < 0) {
@@ -172,7 +170,7 @@ int pushkey(const char *peer)
 
     hostname = get_my_hostname();
     if (!hostname) {
-        syslog(LOG_LOCAL1 | LOG_ERR, "get_my_hostname() failed? %m");
+        pbc_log_activity(PBC_LOG_ERROR, "get_my_hostname() failed? %m");
         perror("get_my_hostname");
         exit(1);
     }
@@ -201,11 +199,12 @@ int pushkey(const char *peer)
 
         free(lservername);
 
-        syslog(LOG_LOCAL1 | LOG_INFO, "setting %s's key on %s", peer, lservers[x]);
+        pbc_log_activity(PBC_LOG_AUDIT, 
+                         "setting %s's key on %s", peer, lservers[x]);
 
         res = fork();
         if (res < 0) {
-            syslog(LOG_LOCAL1 | LOG_ERR, "fork(): %m");
+            pbc_log_activity(PBC_LOG_ERROR, "fork(): %m");
             perror("fork");
             exit(1);
         }
@@ -231,17 +230,18 @@ int pushkey(const char *peer)
             cmd[n] = NULL;
 
             res = execv(keyclient, (char **const) cmd);
-            syslog(LOG_ERR, "execl(): %m");
+            pbc_log_activity(PBC_LOG_ERROR, "execl(): %m");
             for (n=0; cmd[n]!=NULL; n++){
-               syslog(LOG_ERR, "%d %s", n, cmd[n]);
+                pbc_log_activity(PBC_LOG_ERROR, "%d %s", n, cmd[n]);
             }
             exit(2);
         }
 
         /* parent */
         wait(&res);
-        syslog(LOG_LOCAL1 | LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
-               WEXITSTATUS(res) == 0 ? "done" : "error");
+        pbc_log_activity(PBC_LOG_AUDIT, 
+                         "setting %s's key on %s: %s", peer, lservers[x], 
+                         WEXITSTATUS(res) == 0 ? "done" : "error");
         if (WEXITSTATUS(res) != 0) {
             fail++;
         }
@@ -273,12 +273,13 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 /* 'peer' has asked us to generate a new key */
                 assert(newkey == NULL);
 
-                syslog(LOG_LOCAL1|LOG_INFO, "generating a new key for %s",
-                       peer);
+                pbc_log_activity(PBC_LOG_AUDIT, "generating a new key for %s",
+                                 peer);
 
                 if (libpbc_generate_crypt_key(peer) < 0) {
                     myprintf("NO generate_new_key() failed\r\n");
-                    syslog(LOG_LOCAL1 | LOG_ERR, "generate_new_key() failed");
+                    pbc_log_activity(PBC_LOG_ERROR, 
+                                     "generate_new_key() failed");
 
                     return(1);
                 }
@@ -299,7 +300,8 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
                 /* verify that 'peer' is a fellow login server */
                 if (strcasecmp(peer, PBC_LOGIN_HOST)) {
-                    syslog(LOG_LOCAL1 | LOG_ERR, "%s attempted to set a key!\n", peer);
+                    pbc_log_activity(PBC_LOG_ERROR,
+                                     "%s attempted to set a key!", peer);
                     myprintf("NO you are not authorized to set keys\r\n");
                     return (1);
                 }
@@ -338,14 +340,15 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
                 free(thekey);
 
-                syslog(LOG_INFO, "%s set key for %s!\n", peer, thepeer);
+                pbc_log_activity(PBC_LOG_AUDIT, 
+                                 "%s set key for %s!", peer, thepeer);
                 myprintf("OK key set\r\n");
                 break;
             }
 
         case FETCHKEY:
 
-            syslog( LOG_LOCAL1|LOG_INFO, "Fetching a key..\n" );
+            pbc_log_activity(PBC_LOG_AUDIT, "Fetching a key..");
 
             /* noop; we always return the new key */
             assert(newkey == NULL);
@@ -353,7 +356,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
         case NOOP:
 
-            syslog( LOG_LOCAL1|LOG_INFO, "Noop..\n" );
+            pbc_log_activity(PBC_LOG_AUDIT, "Noop..");
            /* noop;  just for completeness */
            break;
     }
@@ -393,19 +396,20 @@ static int verify_callback(int ok, X509_STORE_CTX * ctx)
     X509   *err_cert;
     int     err;
 
-    syslog(LOG_LOCAL1 | LOG_DEBUG, "verifying peer certificate... ok=%d", ok);
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
+                     "verifying peer certificate... ok=%d", ok);
 
     err_cert = X509_STORE_CTX_get_current_cert(ctx);
     err = X509_STORE_CTX_get_error(ctx);
 
     if (!ok) {
-	syslog(LOG_LOCAL1 | LOG_ERR, "verify error:num=%d:%s", err,
-	       X509_verify_cert_error_string(err));
+	pbc_log_activity(PBC_LOG_ERROR, "verify error:num=%d:%s", err,
+                         X509_verify_cert_error_string(err));
 
 	/* we want to ignore any key usage problems but no other faults */
 	switch (ctx->error) {
 	case X509_V_ERR_INVALID_PURPOSE:
-	    syslog(LOG_LOCAL1 | LOG_ERR, "invalid purpose; ignoring error!");
+	    pbc_log_activity(PBC_LOG_ERROR, "invalid purpose; ignoring error!");
 	    ok = 1;
 	    break;
 	    
@@ -535,13 +539,13 @@ int main(int argc, char *argv[])
     /* check certificate */
     client_cert = SSL_get_peer_certificate (ssl);
     if (client_cert == NULL) {
-	syslog(LOG_LOCAL1 | LOG_ERR, "client_cert == NULL???");
+	pbc_log_activity(PBC_LOG_ERROR, "client_cert == NULL???");
 	exit(1);
     }
 
     peer = X509_NAME_oneline (X509_get_subject_name (client_cert),0,0);
     if (peer == NULL) {
-	syslog(LOG_LOCAL1 | LOG_ERR, "peer == NULL???");
+	pbc_log_activity(PBC_LOG_ERROR, "peer == NULL???");
 	exit(1);
     }
     if (strstr(peer, "CN=")) {
@@ -551,11 +555,11 @@ int main(int argc, char *argv[])
     if( strstr(peer, "/Email=") ) {
         *(strstr(peer, "/Email=")) = '\0';
     }
-    syslog(LOG_LOCAL1 | LOG_INFO, "peer identified as %s\n", peer);
+    pbc_log_activity(PBC_LOG_AUDIT, "peer identified as %s\n", peer);
 
     /* read HTTP query */
     if (SSL_read(ssl, buf, sizeof(buf)) <= 0) {
-	syslog(LOG_LOCAL1 | LOG_ERR, "SSL_read() failed");
+	pbc_log_activity(PBC_LOG_ERROR, "SSL_read() failed");
 	ERR_print_errors_fp(stderr);
 	exit(1);
     }
@@ -591,7 +595,7 @@ int main(int argc, char *argv[])
     }
 
     if (op == NOOP) {
-	syslog(LOG_LOCAL1 | LOG_ERR, "peer didn't specify an operation");
+	pbc_log_activity(PBC_LOG_ERROR, "peer didn't specify an operation");
 	exit(1);
     }
 
