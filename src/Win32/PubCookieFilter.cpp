@@ -24,36 +24,9 @@ extern "C"
 #include "../pbc_version.h"
 #include "../pbc_myconfig.h"
 #include "PubCookieFilter.h"
+#include "debug.h"
 }
 
-
-
-FILE *debugFile=NULL;
-int Debug_Trace = 0;
-
-BOOL Open_Debug_Trace ();
-
-extern VOID OutputDebugMsg (char *buff)
-{			
-	time_t ltime;
-	struct tm *today;
-	char Todays_Date [64];
-
-	// For debugger if used
-	OutputDebugString(buff);
-
-	if ( debugFile ) {
-		// Open new trace file if this is a new day
-		time(&ltime);
-		today = localtime(&ltime);
-		strftime(Todays_Date,64,"%Y%m%d\0",today);
-		if (strcmp (Todays_Date,Trace_Date) != 0)
-			Open_Debug_Trace ();
-
-		fprintf(debugFile,"%s",buff);
-		fflush(debugFile);
-	}
-}
 
 
 VOID ReportPFEvent(PTSTR string1,PTSTR string2,PTSTR string3,PTSTR string4,
@@ -84,50 +57,6 @@ VOID ReportPFEvent(PTSTR string1,PTSTR string2,PTSTR string3,PTSTR string4,
 }
 
 
-extern void syslog(int whichlog, const char *message, ...) {
-
-    va_list   args;
-
-    va_start(args, message);
-
-    vlog_activity( whichlog, message, args );
-
-    va_end(args);
-
-}
-extern void pbc_log_activity(int logging_level, const char *message,...)
-{
-    va_list   args;
-
-    va_start(args, message);
-
-    vlog_activity( logging_level, message, args );
-
-    va_end(args);
-}
-
-void vlog_activity( int logging_level, const char * format, va_list args )
-{
-    char      log[PBC_4K];
-	HANDLE hEvent;
-	PTSTR pszaStrings[1];
-
-        
-//  if (logging_level <= (libpbc_config_getint("logging_level", logging_level)))    {
-		
-        _vsnprintf(log, sizeof(log)-1, format, args);
-		pszaStrings[0] = log;
-        hEvent = RegisterEventSource(NULL,"W3SVC");
-		if (hEvent) 
-		{
-			ReportEvent(hEvent, EVENTLOG_ERROR_TYPE, NULL, (DWORD)8675309, NULL, (WORD)1, NULL,                  
-                (const char **)pszaStrings, NULL);                   
-			DeregisterEventSource(hEvent);
-		}
-		
-		
-//  }
-}
 
 /**
  * get a random int used to bind the granting cookie and pre-session
@@ -171,78 +100,33 @@ int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
 
 }
 
-VOID Close_Debug_Trace ()
+
+VOID Close_Pubcookie_Debug_Trace ()
 {
 	time_t ltime;
-
-	DebugMsg((DEST,"Close_Debug_Trace\n"));  //debug
-	if ( debugFile ) {
-
-		time(&ltime);
-		DebugMsg(( DEST, "\n  %s\n\n", ctime(&ltime)));
-		DebugMsg(( DEST, "  PubcookieFilter Stats:\n"));
-		DebugMsg(( DEST, "    Total_Requests     = %d\n",Total_Requests));
-		DebugMsg(( DEST, "    Max_Url_Length     = %d\n",Max_Url_Length));
-		DebugMsg(( DEST, "    Max_Query_String   = %d\n",Max_Query_String));
-		DebugMsg(( DEST, "    Max_Content_Length = %d\n",Max_Content_Length));
-		DebugMsg(( DEST, "    Max_Cookie_Size    = %d\n",Max_Cookie_Size));
-		DebugMsg(( DEST, "    Max_Bytes_Sent     = %d\n",Max_Bytes_Sent));
-		DebugMsg(( DEST, "    Max_Bytes_Recvd    = %d\n",Max_Bytes_Recvd));
-
-		fclose(debugFile);
-
-		debugFile = NULL;
-
-		Total_Requests     = 0;
-		Max_Url_Length     = 0;
-		Max_Query_String   = 0;
-		Max_Content_Length = 0;
-		Max_Cookie_Size    = 0;
-		Max_Bytes_Sent     = 0;
-		Max_Bytes_Recvd    = 0;
-	}
-}
-
-BOOL Open_Debug_Trace ()
-{
-    char szName[256], szBuff[1024];
-	time_t ltime;
-	struct tm *today;
-
-	DebugMsg((DEST,"Open_Debug_Trace\n"));  //debug
-
-
+	
 	time(&ltime);
-	today = localtime(&ltime);
-	strftime(Trace_Date,64,"%Y%m%d\0",today);
-	sprintf(szBuff,"%s%s",Debug_Dir,Instance);
-	sprintf(szName,"%s%s\\%s.log",Debug_Dir,Instance,Trace_Date);
-//	sprintf(szName,"%s%d.log",DEBUG_FILE,HIWORD(hinstDll));
-
-	// Directory must exist else open will fail
-
-	mkdir(szBuff);
-
-	// output stats if file already open
-
-	Close_Debug_Trace ();
-
-	debugFile = fopen(szName, "a");
-
-	if ( !debugFile ) {
-		sprintf(szBuff,"[Open_Debug_Trace] Failed to open trace file %s",szName);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-			"","",EVENTLOG_ERROR_TYPE,3);
-	}
-		
-	DebugMsg((DEST, "\n**********************************************************************\n %s\n\n Opening Debug File %s\n\n",
-		ctime(&ltime),szName));
-
-	if ( debugFile ) 
-		return TRUE;
-	else
-		return FALSE;
+	DebugMsg(( DEST, "\n  %s\n\n", ctime(&ltime)));
+	DebugMsg(( DEST, "  PubcookieFilter Stats:\n"));
+	DebugMsg(( DEST, "    Total_Requests     = %d\n",Total_Requests));
+	DebugMsg(( DEST, "    Max_Url_Length     = %d\n",Max_Url_Length));
+	DebugMsg(( DEST, "    Max_Query_String   = %d\n",Max_Query_String));
+	DebugMsg(( DEST, "    Max_Content_Length = %d\n",Max_Content_Length));
+	DebugMsg(( DEST, "    Max_Cookie_Size    = %d\n",Max_Cookie_Size));
+	DebugMsg(( DEST, "    Max_Bytes_Sent     = %d\n",Max_Bytes_Sent));
+	DebugMsg(( DEST, "    Max_Bytes_Recvd    = %d\n",Max_Bytes_Recvd));
+	
+	Total_Requests     = 0;
+	Max_Url_Length     = 0;
+	Max_Query_String   = 0;
+	Max_Content_Length = 0;
+	Max_Cookie_Size    = 0;
+	Max_Bytes_Sent     = 0;
+	Max_Bytes_Recvd    = 0;
+	
+	Close_Debug_Trace();
 }
+
 
 VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_domain, char* cookie_path, bool secure)
 {
@@ -299,7 +183,7 @@ BOOL Reset_Defaults ()
 	Ignore_Poll = PBC_IGNORE_POLL;
 
 	if (debugFile) {
-		Close_Debug_Trace ();
+		Close_Pubcookie_Debug_Trace ();
 	}
 	if (Debug_Trace) {
 		Open_Debug_Trace ();
@@ -2106,7 +1990,7 @@ BOOL WINAPI TerminateFilter (DWORD dwFlags)
 
 	libpbc_free_md_context_plus(scfg.granting_verf_ctx_plus);
 */
-	Close_Debug_Trace ();
+	Close_Pubcookie_Debug_Trace ();
 
 	DeleteCriticalSection(&Ctx_Plus_CS); 
 
