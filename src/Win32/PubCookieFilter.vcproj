@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="PubCookieFilter"
 	SccProjectName="&quot;$/PubCookieFilter&quot;, XXBAAAAA"
 	SccLocalPath=".">
@@ -68,7 +68,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
@@ -131,19 +137,21 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-			<File
-				RelativePath=".\PubCookieFilter.cpp">
-			</File>
-			<File
-				RelativePath=".\PubCookieFilter.def">
-			</File>
 			<File
 				RelativePath="..\base64.c">
 			</File>
@@ -160,6 +168,12 @@
 				RelativePath="..\pbc_myconfig.c">
 			</File>
 			<File
+				RelativePath=".\PubCookieFilter.cpp">
+			</File>
+			<File
+				RelativePath=".\PubCookieFilter.def">
+			</File>
+			<File
 				RelativePath="..\security_legacy.c">
 			</File>
 			<File
@@ -169,9 +183,6 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
-			<File
-				RelativePath=".\PubCookieFilter.h">
-			</File>
 			<File
 				RelativePath=".\debug.h">
 			</File>
@@ -192,6 +203,9 @@
 			</File>
 			<File
 				RelativePath="..\pubcookie.h">
+			</File>
+			<File
+				RelativePath=".\PubCookieFilter.h">
 			</File>
 			<File
 				RelativePath="..\security.h">

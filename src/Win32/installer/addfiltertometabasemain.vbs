@@ -27,7 +27,7 @@ If Err = 0 Then
        Set Pubcookie3 = GetObject("IIS://Localhost/W3SVC/Filters/Pubcookie3")
     End If
     If Err = 0 Then
-       Pubcookie3.FilterPath = session.Property("INSTALLDIR") & "PubCookieFilter-3.1.0.dll"
+       Pubcookie3.FilterPath = session.Property("INSTALLDIR") & "PubCookieFilter.dll"
        Pubcookie3.FilterDescription = "Pubcookie Filter V3"
 	End If
 
