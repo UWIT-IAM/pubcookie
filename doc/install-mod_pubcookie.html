@@ -24,12 +24,12 @@
                     <li><a href="#ssl">Confirm SSL Support</a></li>
                     <li><a href="#build">Build &amp; Install</a></li>
                     <li><a href="#keyclient">Run Keyclient</a></li>
-                    <li><a href="#config">Add Configuration (httpd.conf)</a></li>
+                    <li><a href="#config">Configuration (httpd.conf)</a></li>
                     <li><a href="#start">Start Apache</a></li>
                     <li><a href="#test">Test Pubcookie Authentication</a></li>
                     <li><a href="#logout">Logout Configuration</a></li>
                     <li><a href="#relay">Cross-Domain Relay Configuration</a></li>
-                    <li><a href="#vhosts">Virtual Server Configuration</a></li>
+                    <li><a href="#vhosts">Virtual Host Configuration</a></li>
                     <li><a href="#debug">Troubleshooting</a></li>
                     <li><a href="#A">Appendix A: How to Enable SSL</a></li>
                     <li><a href="#B">Appendix B: Configuration For Abbreviated Domain Names</a></li>
@@ -193,7 +193,7 @@ $ make install</pre></TD>
                         files are installed and found.</p></li>
  
                       <li>
-                      <p>The <tt>configure</tt> script will detect your version of Apache based
+                      <p>The <tt>configure</tt> script will detect your version of Apache (1.3 vs 2.0) based
                         on <tt>apxs</tt> as found on your system. Use <tt>--with-apxs</tt> when you have
                         more than one copy or version of Apache installed on your system.</p></li>
 
@@ -202,9 +202,10 @@ $ make install</pre></TD>
                         you have more than one version of OpenSSL installed on your system.</p></li>
 
                       <li>
-                      <p>Running <tt>make install</tt> copies the DSO to Apache's modules (libexec) 
-                        directory and adds inactive <tt>LoadModule</tt> and <tt>AddModule</tt> directives 
-                        to your httpd.conf file.</p></li>
+                      <p>Running <tt>make install</tt> uses <tt>apxs</tt> (Apache 1.3) or <tt>libtool</tt> (Apache 
+                        2.0) to copy the DSO to Apache's modules (libexec) directory. With Apache 1.3, it also adds
+                        inactive <tt>LoadModule</tt> and <tt>AddModule</tt> directives to your httpd.conf
+                        file.</p></li>
                       </ul>
 
                       <p><b>To compile the module statically:</b><br /> The <tt>configure</tt> script can also
@@ -416,7 +417,7 @@ $ keyclient -G keys/pubcookie_granting.cert</pre></TD>
                     the <a href="mod_pubcookie-directives.html#PubcookieGrantingCertFile">PubcookieGrantingCertFile</a>
                     directive in httpd.conf.</p>
 
-                  <h4><a name="config"></a>Add Configuration (httpd.conf)</h4>
+                  <h4><a name="config"></a>Configuration (httpd.conf)</h4>
 
                   <p>Configuring the module begins with your main Apache server configuration 
                     httpd.conf file.  This section describes what you need to add to this file.</p>
@@ -432,12 +433,15 @@ $ keyclient -G keys/pubcookie_granting.cert</pre></TD>
                       </TABLE>
                       </p>
                     <li> 
-                      <p>(DSO method only) The installation process uses Apache's <a 
-                        href="http://httpd.apache.org/docs-2.0/programs/apxs.html"><tt>apxs</tt></a> tool to 
-                        install <tt>mod_pubcookie.so</tt> into Apache's modules (libexec) directory. It also
+                      <p>(For DSO method only.) When working with the module as a DSO, the installation process
+                        uses <tt>apxs</tt></a> (Apache 1.3) or <tt>libtool</tt> (Apache 2.0) to install the module
+                        into Apache's modules (libexec) directory. Now the module needs a little configuration
+                        based on your version of Apache.</p>
+                      <p><b>Apache 1.3: LoadModule &amp; AddModule</b><br>
+                        With Apache 1.3, installation also
                         adds new, but initially inactive, LoadModule and AddModule directives to your httpd.conf file.
                         Find these directives. Make sure they landed in the right location.
-                        Then uncomment them to activate them. For example:</p>
+                        And uncomment them to activate them. For example:</p>
                       <p> 
                           <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                             <TR> 
@@ -460,6 +464,17 @@ AddModule mod_pubcookie.c
                          directive, all Pubcookie run-time directives must 
                          also be placed with an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block 
                          directive.</p>
+
+                      <p><b>Apache 2.0: LoadModule</b><br>
+                        With Apache 2.0, add a <a href="http://httpd.apache.org/docs-2.0/mod/mod_so.html#loadmodule">LoadModule</a> 
+                        directive to your server config wherever it makes sense to do so. The AddModule directive
+                        no longer exists in Apache 2.0, so don't add one of those.</p>
+                      <p> 
+                          <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                            <TR> 
+                              <TD> <pre>LoadModule pubcookie_module   modules/mod_pubcookie.so</pre></TD>
+                            </TR>
+                          </TABLE></p>
                     <li> 
                       <p>Add a new section in httpd.conf for configuring the module:</p>
                       <p> 
@@ -493,8 +508,8 @@ PubcookieInactiveExpire -1
                       <p>Notes:</p>
                       <ul>
                       <li>
-                        <p>Each directive above is recommended, although they're not all required to 
-                        start Apache. [fixme: can we be more specific?]</p>
+                        <p>Those are the recommended server config directives. They're not all required to
+                        initialize the module. But it's a good exercise to configure them explicitly.</p>
                       </li>
                       <li>
                         <p><a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
@@ -521,7 +536,7 @@ PubcookieInactiveExpire -1
                       <p>Permissions. If you initially start Apache as root and use the
                         <a href="http://httpd.apache.org/docs-2.0/mod/mpm_common.html#user">User</a>
                         directive to switch to a non-root user, the module's supporting files
-                        can be readable only by root. If you start Apache as a non-root user,
+                        can be made readable only by root. If you start Apache as a non-root user,
                         then that user must be able to read the supporting file.</p>
                       </li>
                       <li>
@@ -778,22 +793,32 @@ PubcookieEndSession clearLogin
 
 <p>TBD</p>
 
-<h4><a name="vhosts">Virtual Server Configuration</a></h4>
+<h4><a name="vhosts">Virtual Host Configuration</a></h4>
 
-<p>TBD</p>
+<p>Virtual host support is new in Pubcookie 3.1.0. One approach 
+to configuration is to use your main server config to set up
+defaults, as described in the <a href="#config">Configuration</a> section
+above. Then override directives as needed for each virtual host.</p>
+
+<p>For example, you should use a separate session keypair for each 
+virtual host, so you will most likely define new 
+<a 
+href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKeyFile</a>
+and <a href="mod_pubcookie-directives.html#PubcookieSessionCertFile">PubcookieSessionCertFile</a>
+directives for each virtual host. It may be acceptable to use defaults
+for all other module settings.</p>
 
 <h4><a name="debug">Troubleshooting</a></h4>
 
 <p>To troubleshoot problems with keyclient, review the error messages
-it produces [fixme: to stderr or to syslog?] and if need be ask your
-keyserver administrator to review syslog for error messages
-corresponding with your keyclient connections.</p>
+it produces. If need be, ask your keyserver administrator to review 
+syslog for keyserver error messages corresponding with your keyclient 
+connections.</p>
 
-<p>To troubleshoot problems with the module, look in your Apache
-server's error_log. If need be, edit your Apache httpd.conf file and
-adjust <a href="http://httpd.apache.org/docs-2.0/mod/core.html#loglevel">LogLevel</a>
-to the <tt>debug</tt> mode (requires server restart) to get additional
-information.</p>
+<p>To troubleshoot problems with the module, first look in the Apache
+error_log. If need be you can log additional debug statements by
+setting the <a href="http://httpd.apache.org/docs-2.0/mod/core.html#loglevel">LogLevel</a>
+to <tt>debug</tt> in your httpd.conf file.</p>
 
 <h4><a name="A">Appendix A: How to Enable SSL</a></h4>
 
