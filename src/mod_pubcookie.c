@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.104 2002-10-01 18:50:06 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.105 2002-10-03 16:20:54 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1136,9 +1136,9 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
 
     scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
 
-    scfg->login = (nscfg->login == NULL) ? 
+    scfg->login = (nscfg->login != NULL) ? 
 		nscfg->login : pscfg->login;
-    scfg->appsrvid = (nscfg->appsrvid == NULL) ? 
+    scfg->appsrvid = (nscfg->appsrvid != NULL) ? 
 		nscfg->appsrvid : pscfg->appsrvid;
     scfg->dirdepth = nscfg->dirdepth ? 
 		nscfg->dirdepth : pscfg->dirdepth;
