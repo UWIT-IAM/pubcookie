@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.39 2005-02-07 22:30:30 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.40 2005-02-09 04:53:47 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -537,7 +537,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents)); //to avoid illegal cookie characters
 
-	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, p->Enterprise_Domain);
+	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, p->appsrvid);
 
 	/* make the pre-session cookie ; sign it*/
     pre_s = libpbc_get_cookie(  
@@ -556,6 +556,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	
 	Add_No_Cache(pFC);
 
+	// Redirect to local Pubcookie extension
 	snprintf(szTemp,1024,"/%s?login_uri=%s&domain=%s",PBC_POST_NAME,p->Login_URI,p->Enterprise_Domain);
 	//snprintf(szTemp,1024,p->Login_URI);
 	return (Redirect(pFC,szTemp));
@@ -1540,7 +1541,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 	if (p->has_granting ) {
 
 		/* clear granting and presession cookies */
-		Clear_Cookie(pFC,PBC_G_COOKIENAME,p->Enterprise_Domain,"/",TRUE);
+		Clear_Cookie(pFC,PBC_G_COOKIENAME,p->appsrvid,"/",TRUE);
 		Clear_Cookie(pFC,PBC_PRE_S_COOKIENAME,p->appsrvid,"/",TRUE);
 
 		first_time_in_session = 1;
@@ -2267,7 +2268,7 @@ void relay_granting_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p,
    sprintf(httpheader, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\r\nContent-type: text/html\r\n\r\n", 
 			PBC_G_REQ_COOKIENAME,
 			PBC_CLEAR_COOKIE,
-			p->Enterprise_Domain, 
+			p->appsrvid, 
 			EARLIEST_EVER);
 
    SendHttpHeaders(pECB, "200 OK", httpheader);
@@ -2404,7 +2405,7 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    sprintf(httpheader, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\r\nContent-type: text/html\r\n\r\n", 
 			PBC_G_REQ_COOKIENAME,
 			PBC_CLEAR_COOKIE,
-			p->Enterprise_Domain, 
+			p->appsrvid, 
 			EARLIEST_EVER);
 
    SendHttpHeaders(pECB, "200 OK", httpheader);
