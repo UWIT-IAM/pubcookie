@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.20 2002-08-24 00:10:17 ryanc Exp $
+    $Id: keyclient.c,v 2.21 2002-09-18 21:58:07 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -332,7 +332,11 @@ int main(int argc, char *argv[])
         exit(1);
     }
     memcpy(&sa.sin_addr, h->h_addr, h->h_length);
+#ifdef WIN32
+    sa.sin_port = htons((unsigned short)keyport);
+#else
     sa.sin_port = htons(keyport);
+#endif
 
     if (connect(sd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
         perror("connect");

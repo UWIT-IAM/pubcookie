@@ -129,6 +129,47 @@ void vlog_activity( int logging_level, const char * format, va_list args )
 //  }
 }
 
+/**
+ * get a random int used to bind the granting cookie and pre-session
+ * @returns random int or -1 for error
+ * but, what do we do about that error?
+ */
+int get_pre_s_token() {
+    int i;
+    
+    if( (i = libpbc_random_int()) == -1 ) {
+        syslog(LOG_ERR,	"get_pre_s_token: OpenSSL error");
+    }
+
+		DebugMsg(( DEST, "get_pre_s_token: token is %d", i));
+    return(i);
+
+}
+
+
+int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
+{
+    pubcookie_dir_rec   *dcfg;
+    pbc_cookie_data     *cookie_data = NULL;
+    char 		*cookie = NULL;
+
+	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
+
+    if( (cookie = Get_Cookie(pFC, PBC_PRE_S_COOKIENAME)) == NULL )
+
+        syslog(LOG_ERR,	"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", dcfg->uri);
+    else
+        cookie_data = libpbc_unbundle_cookie(cookie, NULL);
+
+    if( cookie_data == NULL ) {
+        syslog(LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", dcfg->uri);
+	dcfg->failed = PBC_BAD_AUTH;
+	return -1;
+    }
+ 
+    return((*cookie_data).broken.pre_sess_token);
+
+}
 
 VOID Close_Debug_Trace ()
 {
@@ -203,22 +244,29 @@ BOOL Open_Debug_Trace ()
 		return FALSE;
 }
 
-VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_domain, char* cookie_path)
+VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_domain, char* cookie_path, bool secure)
 {
 
 	char new_cookie[START_COOKIE_SIZE];
+	char secure_string[16];
 
-	DebugMsg((DEST,"Clear_Cookie\n"));  //debug
+	if (secure) {
+		strncpy (secure_string,"; secure",15);
+	}
+	else {
+		strncpy (secure_string,"",15);
+	}
 
-
-	sprintf(new_cookie, "Set-Cookie: %s=clear; domain=%s; path=%s; expires=%s; secure\r\n", 
-			cookie_name, 
+	sprintf(new_cookie, "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\r\n", 
+			cookie_name,
+			PBC_CLEAR_COOKIE,
 			cookie_domain, 
 			cookie_path,
-			"Fri, 01-Jan-1970 00:00:01 GMT");
+			EARLIEST_EVER,
+			secure_string);
 
 	
-		DebugMsg((DEST,"  AddResponseHeaders2= \n%s",new_cookie));
+		DebugMsg((DEST,"  AddResponseHeaders= \n%s",new_cookie));
 	
 		pFC->AddResponseHeaders(pFC,new_cookie,0);
 
@@ -384,51 +432,6 @@ BOOL Pubcookie_Init ()
 	// May need to search through aliases if we have local hosts file
 	strncpy((char *)scfg.server_hostname, hp->h_name, PBC_APPSRV_ID_LEN);
 
-/*    strcpy(szName,SystemRoot); 
-	strcat(szName,PBC_CRYPT_KEYFILE);
-	scfg.c_stuff                = libpbc_init_crypt (szName);
-
-	if ( !scfg.c_stuff ) {
-		sprintf(szBuff,"[Pubcookie_Init] Libpbc_init_crypt failed Keyfile = %s",
-				szName);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
-		return FALSE;
-	}
-
-	strcpy(szName,SystemRoot);  strcat(szName,PBC_S_KEYFILE);
-    scfg.session_sign_ctx_plus  = libpbc_sign_init  (szName);
-
-	if ( !scfg.session_sign_ctx_plus ) {
-		sprintf(szBuff,"[Pubcookie_Init] Libpbc_sign_init failed Keyfile = %s",
-				szName);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
-		return FALSE;
-	}
-
-	strcpy(szName,SystemRoot);  strcat(szName,PBC_S_CERTFILE);
-	scfg.session_verf_ctx_plus  = libpbc_verify_init(szName);
-
-	if ( !scfg.session_verf_ctx_plus ) {
-		sprintf(szBuff,"[Pubcookie_Init] Libpbc_verify_init failed Certfile = %s",
-				szName);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
-		return FALSE;
-	}
-
-	strcpy(szName,SystemRoot);  strcat(szName,PBC_G_CERTFILE);
-	scfg.granting_verf_ctx_plus = libpbc_verify_init(szName);
-
-	if ( !scfg.granting_verf_ctx_plus ) {
-		sprintf(szBuff,"[Pubcookie_Init] Libpbc_verify_init failed Certfile = %s",
-				szName);
-		ReportPFEvent("[PubcookieFilter]",szBuff,
-               "","",EVENTLOG_ERROR_TYPE,3);
-		return FALSE;
-	}
-	*/
 
 	return TRUE;
 
@@ -509,14 +512,46 @@ int Hide_Cookies (HTTP_FILTER_CONTEXT* pFC,
 } /* Hide_Cookies */
 
 
+
+void Add_No_Cache(HTTP_FILTER_CONTEXT* pFC)
+{
+	char			szHeaders[PBC_1K];
+
+	sprintf(szHeaders, 
+			"Cache-Control: no-cache\r\n"
+			"Pragma: no-cache\r\n"
+			"Expires: %s\r\n", EARLIEST_EVER);
+			
+		  
+	pFC->AddResponseHeaders(pFC,szHeaders,0);
+
+}
+void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_contents)
+{
+	char			szHeaders[PBC_1K];
+
+
+
+	DebugMsg((DEST,"  Adding cookie %s=%s\n",cookie_name,cookie_contents));
+
+	sprintf(szHeaders, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\n",
+		cookie_name, 
+		cookie_contents,
+		PBC_ENTRPRS_DOMAIN);
+
+	pFC->AddResponseHeaders(pFC,szHeaders,0);
+
+}
+
 int Auth_Failed (HTTP_FILTER_CONTEXT* pFC) 
 {
-	char 			new_cookie[START_COOKIE_SIZE];
 	char 			args[PBC_4K];
 	char 			g_req_contents[PBC_4K];
 	char 			e_g_req_contents[PBC_4K];
-	char			szHeaders[PBC_1K];
-	char			szTemp[1024];
+	char			szTemp[PBC_1K];
+    char            *pre_s;
+	int				pre_sess_tok;
+
 	pubcookie_dir_rec* dcfg;
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
@@ -546,10 +581,16 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		strcat(szTemp,":");
 		strcat(szTemp,dcfg->appsrv_port);
 	}
+    if( (pre_sess_tok=get_pre_s_token()) == -1 ) {
+		syslog(LOG_ERR,"Security Warning:  Unable to randomize pre-session cookie!");
+        return(OK);
+    }
 
+  
+	
 	/* make the granting request */
 	sprintf(g_req_contents, 
-		"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%1d", 
+		"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%d", 
 		PBC_GETVAR_APPSRVID,
 		  scfg.server_hostname,   // Need full domain name 
 		PBC_GETVAR_APPID,
@@ -559,43 +600,37 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		PBC_GETVAR_VERSION, 
 		  PBC_VERSION, 
 		PBC_GETVAR_METHOD, 
-	      dcfg->method, 
+		  dcfg->method, 
 		PBC_GETVAR_HOST, 
 		  szTemp,
 		PBC_GETVAR_URI, 
 		  dcfg->uri,
 		PBC_GETVAR_ARGS, 
 		  args,
-		PBC_GETVAR_FR,
-		  dcfg->force_reauth,
 		PBC_GETVAR_SESSION_REAUTH,
-		  dcfg->session_reauth); 
+		  dcfg->session_reauth,
+		PBC_GETVAR_PRE_SESS_TOK,
+		  pre_sess_tok);
 
-	DebugMsg((DEST,"  granting request= %s\n",g_req_contents));
 
 	libpbc_base64_encode((unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents));
 
-	sprintf(new_cookie, "%s=%s; domain=%s; path=/; secure",
-		PBC_G_REQ_COOKIENAME, 
-		e_g_req_contents,
-		PBC_ENTRPRS_DOMAIN);
+	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents);
 
-	DebugMsg((DEST,"  new_cookie= %s\n",new_cookie));
-
-	if ( strlen(dcfg->force_reauth) > 0 )
-		dcfg->force_reauth[0] = NULL;
-
-
-	sprintf(szHeaders, "Set-Cookie: %s\r\n"
-					   "Cache-Control: no-cache\r\n"
-                       "Pragma: no-cache\r\n"
-					   "Expires: Fri, 01-Jan-1970 00:00:01 GMT\r\n",
-		new_cookie);
-
-	DebugMsg((DEST,"  AddResponseHeaders AuthFailed= \n%s",szHeaders));
-
-	pFC->AddResponseHeaders(pFC,szHeaders,0);
+	/* make the pre-session cookie */
+    pre_s = (char *) libpbc_get_cookie( 
+		(unsigned char *) "presesuser",
+		PBC_COOKIE_TYPE_PRE_S, 
+		PBC_CREDS_NONE, 
+		pre_sess_tok,
+		(unsigned char *)scfg.server_hostname, 
+		(unsigned char *)dcfg->appid,
+		NULL);
+	
+    Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s);
+	
+	Add_No_Cache(pFC);
 
 	return (Redirect(pFC,dcfg->Web_Login));
 
@@ -998,6 +1033,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	char *pachUrl;
 	char *ptr;
 	pubcookie_dir_rec* dcfg;
+	int pre_sess_from_cookie;
 
 	DebugMsg((DEST,"User"));  //debug
 
@@ -1092,22 +1128,12 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 #endif
 		//  If we're logging out, clear the cookie.
 		
-		Clear_Cookie(pFC,dcfg->s_cookiename,dcfg->appsrvid,szBuff); 
-		DebugMsg((DEST,"   Cleared Session Cookie....\n"));
+		Clear_Cookie(pFC,dcfg->s_cookiename,dcfg->appsrvid,szBuff,FALSE); 
 		
 		if (dcfg->logout_action == LOGOUT_REDIRECT || dcfg->logout_action == LOGOUT_REDIRECT_CLEAR_LOGIN) {
 			
 			DebugMsg((DEST,"  Logout Redirect....\n"));
 			
-			/*					sprintf(szBuff, 
-			"Cache-Control: no-cache\r\n"
-			"Pragma: no-cache\r\n"
-			"Expires: Fri, 01-Jan-1970 00:00:01 GMT\r\n");
-			
-			  DebugMsg((DEST,"  AddResponseHeaders Logout Redirect: \n%s",szBuff));
-			  
-				pFC->AddResponseHeaders(pFC,szBuff,0);
-			*/
 			sprintf(szBuff, "%s?%s=%d&%s=%s&%s=%s",
 //			sprintf(szBuff, "https://%s/%s?%s=%d&%s=%s&%s=%s",
 //				PBC_LOGIN_HOST,
@@ -1240,6 +1266,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 		dcfg->has_granting = 1;
 
+
 		/* the granting cookie gets blanked too early and another login */
 		/* server loop is required, this just speeds up that loop */
 		if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
@@ -1257,6 +1284,18 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			pbc_free(cookie);
 			return OK;
 		}
+
+		/* check pre_session cookie */
+		pre_sess_from_cookie = get_pre_s_from_cookie(pFC);
+		if( (*cookie_data).broken.pre_sess_token != pre_sess_from_cookie ) {
+			DebugMsg((DEST,"pubcookie_user, pre session tokens mismatched, uri: %s", dcfg->uri));
+			DebugMsg((DEST,"pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s", 
+				(*cookie_data).broken.pre_sess_token, pre_sess_from_cookie, dcfg->uri));
+			dcfg->failed = PBC_BAD_AUTH;
+			return OK;
+		}
+
+
 
 		pbc_free(cookie);
 
@@ -1394,8 +1433,9 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 	if (dcfg->has_granting ) {
 
-		/* clear granting cookie */
-		Clear_Cookie(pFC,PBC_G_COOKIENAME,dcfg->Enterprise_Domain,"/");
+		/* clear granting and presession cookies */
+		Clear_Cookie(pFC,PBC_G_COOKIENAME,dcfg->Enterprise_Domain,"/",TRUE);
+		Clear_Cookie(pFC,PBC_PRE_S_COOKIENAME,dcfg->Enterprise_Domain,"/",TRUE);
 
 		first_time_in_session = 1;
 		dcfg->has_granting = 0;

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.12 2002-09-04 19:53:55 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.13 2002-09-18 21:58:07 ryanc Exp $
  */
 
 
@@ -338,8 +338,7 @@ const char *libpbc_config_getstring(const char *key, const char *def)
     int opt;
     
     for (opt = 0; opt < nconfiglist; opt++) {
-        if (*key == configlist[opt].key[0] &&
-            !strcmp(key, configlist[opt].key))
+        if (!stricmp(key, configlist[opt].key))
 	    return configlist[opt].value;
     }
     return def;

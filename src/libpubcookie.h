@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.26 2002-08-23 04:14:44 ryanc Exp $
+    $Id: libpubcookie.h,v 1.27 2002-09-18 21:58:07 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -139,6 +139,8 @@ unsigned char *libpbc_gethostip_np();
 crypt_stuff *libpbc_init_crypt_np(char *);
 void libpbc_free_md_context_plus_np(md_context_plus *);
 void libpbc_free_crypt_np(crypt_stuff *);
+int libpbc_random_int();
+
 
 /**
  * generates a random key for peer and writes it to the disk

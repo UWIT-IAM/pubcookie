@@ -1,5 +1,5 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 2.8.0.1"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 2.9.1.1"
 
 
 char Instance[3];
@@ -118,6 +118,8 @@ extern VOID OutputDebugMsg (char *buff);
 extern int Debug_Trace;
 extern FILE *debugFile;
 void vlog_activity( int logging_level, const char * format, va_list args );
+char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
+
 
 
 #define PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter\\"
