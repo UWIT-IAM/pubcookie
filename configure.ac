@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.38 $)
+AC_REVISION($Revision: 1.39 $)
 AC_INIT(Pubcookie, [3.0.0 pre-rc2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -182,18 +182,50 @@ AC_ARG_WITH(apxs,
 
   if test "x$APXS" = "x"; then
       AC_MSG_ERROR( "apxs is required for building mod_pubcookie!" )
-  else
-      AC_MSG_CHECKING( [if $APXS works] )
-      $APXS -q CFLAGS >/dev/null 2>&1
-      if test "$?" != "0"; then
-          AC_MSG_RESULT([no])
-          AC_MSG_RESULT([Here is the output from $APXS:])
-          $APXS -q CFLAGS
-          AC_MSG_ERROR([Please correct this error and try again.])
-      else
-          AC_MSG_RESULT([yes])
-      fi
   fi
+  AC_MSG_CHECKING( [if $APXS works] )
+  $APXS -q CFLAGS >/dev/null 2>&1
+  if test "$?" != "0"; then
+      AC_MSG_RESULT([no])
+      AC_MSG_RESULT([Here is the output from $APXS:])
+      $APXS -q CFLAGS
+      AC_MSG_ERROR([Please correct this error and try again.])
+  fi
+
+  AC_MSG_RESULT([yes])
+
+  AC_MSG_CHECKING([Apache version])
+  OCFLAGS=$CFLAGS
+  APXS_INC=`$APXS -q INCLUDEDIR`
+  CFLAGS="$CFLAGS -I$APXS_INC"
+  AC_TRY_RUN( [ 
+    #include <stdlib.h>
+    #include <httpd.h>
+
+    #ifndef APACHE_RELEASE
+    # define APACHE_RELEASE 0
+    #endif
+
+    #ifndef SERVER_REVISION
+    # ifdef AP_SERVER_BASEREVISION
+    #  define SERVER_REVISION AP_SERVER_BASEREVISION
+    # else
+    #  define SERVER_REVISION "0"
+    # endif
+    #endif
+
+    int main() {
+        printf( "%s\n", SERVER_REVISION );
+        exit( ( APACHE_RELEASE > 10300000 &&
+                APACHE_RELEASE < 10400000 ) != 1 );
+    }
+    ],
+    [true],
+    [ 
+      AC_MSG_ERROR([Apache version 1.3.x is required!])
+    ]
+  )
+  CFLAGS=$OCFLAGS
 
 fi # If they disabled apache, don't look for apxs.
 
