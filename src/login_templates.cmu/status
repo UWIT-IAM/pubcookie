@@ -38,7 +38,7 @@
                bgcolor="#DDDDDD">
             <tr>
             <td bgcolor="#DDDDDD" align="left">
-               You are logged in as <B>%user%</B>.
+               You are logged in as <B>%contents%</B>.
                <br>
                <br>
                Time remaining for this session:
