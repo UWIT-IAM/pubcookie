@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.62 2004-08-18 00:46:27 willey Exp $
+    $Id: pbc_version.h,v 1.63 2004-12-06 03:07:49 dors Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
@@ -22,8 +22,8 @@
  */
 
 #define PBC_VERSION_MAJOR "3"
-#define PBC_VERSION_MINOR "1"
-#define PBC_VERSION_PATCH "2"
+#define PBC_VERSION_MINOR "2"
+#define PBC_VERSION_PATCH "0"
 
 /* beta or final, so the code knows what it is, should it care. */
 #define PBC_VERSION_RELEASE "beta"
@@ -35,6 +35,6 @@
  * configure should probably set this.
  */
 
-#define PBC_VERSION_STRING "3.1.2 pre-beta1"
+#define PBC_VERSION_STRING "3.2.0 beta1"
 
 #endif /* !PUBCOOKIE_VERSION */
