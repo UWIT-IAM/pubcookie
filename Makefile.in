@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.61 2004-08-23 21:59:42 willey Exp $
+# $Id: Makefile.in,v 1.62 2004-11-23 22:09:43 fox Exp $
 
 @SET_MAKE@
 
@@ -644,7 +644,6 @@ dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)/src
 	$(MKDIR) $(DISTNAME)/doc
 	$(MKDIR) $(DISTNAME)/cgic
-	$(MKDIR) $(DISTNAME)/relay
 	-$(RECURSIVE_CP) $(srcdir)/src/contrib $(DISTNAME)/src
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic/images
@@ -658,7 +657,6 @@ dist: a_ver l_ver
 	$(CP) $(MOD_SRC) $(MOD_HEAD) $(DISTNAME)/src
 	$(CP) $(INDEX_HEAD) $(LIB_HEAD) $(DISTNAME)/src
 	$(CP) $(CGIC_FILES) $(DISTNAME)/cgic
-	-$(RECURSIVE_CP) $(srcdir)/relay $(DISTNAME)
 	$(CP) $(srcdir)/src/snprintf.c $(DISTNAME)/src
 	$(CP) $(srcdir)/mod_pubcookie.exp $(DISTNAME)
 	$(MKDIR) $(DISTNAME)/src/Win32

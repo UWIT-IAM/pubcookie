@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.69 $)
+AC_REVISION($Revision: 1.70 $)
 AC_INIT(Pubcookie, [3.1.2 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -829,6 +829,15 @@ if test "$enable_shadow" = "yes"; then
     AC_CHECK_HEADERS([shadow.h crypt.h])
     AC_CHECK_LIB(crypt, crypt)
 fi
+
+# See if we are to enable the unsafe relay
+AC_ARG_ENABLE(unsafe-relay,
+    AC_HELP_STRING([--unsafe-relay],[Enable unsafe relay. (Compatibility)]),
+[ case "${enableval}" in
+   yes)
+    CFLAGS="$CFLAGS -DALLOW_RELAY"
+    ;;
+  esac ])
 
 fi # End of enabling the login server.
 
