@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.49 2000-09-25 19:24:15 willey Exp $
+    $Id: mod_pubcookie.c,v 1.50 2001-01-26 17:21:56 fmf Exp $
  */
 
 /* apache includes */
@@ -433,9 +433,9 @@ static int auth_failed(request_rec *r) {
     /* deal with GET args */
     if ( r->args ) {
 #ifdef APACHE1_2
-        args = palloc (r->pool, (strlen (r->args) + 3) / 3 * 4);
+        args = pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
 #else
-        args = ap_palloc (r->pool, (strlen (r->args) + 3) / 3 * 4);
+        args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
 #endif
         base64_encode(r->args, args, strlen(r->args));
         if( scfg->super_debug ) {
