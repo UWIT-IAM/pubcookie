@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    libpbc_config_init("vtest");
+    libpbc_config_init(NULL, "vtest");
 
     v = get_verifier(argv[1]);
     if (!v) {
