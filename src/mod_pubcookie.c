@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.56 2001-05-29 20:49:48 willey Exp $
+    $Id: mod_pubcookie.c,v 1.57 2001-08-10 16:58:23 willey Exp $
  */
 
 /* apache includes */
@@ -1220,7 +1220,7 @@ static int pubcookie_user(request_rec *r) {
 #endif
 
     if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
-      libpbc_debug("pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s\n", time(NULL)-(*cookie_data).broken.create_ts, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
+      libpbc_debug("pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s\n", time(NULL)-(*cookie_data).broken.create_ts-PBC_GRANTING_EXPIRE, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_GEXP_CODE;
       return OK;
