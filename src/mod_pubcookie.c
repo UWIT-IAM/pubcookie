@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.161 2004-11-25 01:08:42 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.162 2004-12-09 21:35:58 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -162,12 +162,14 @@ void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
 		noblank: %d\n\
 		login: %s\n\
 		appsrvid: %s\n\
-		authtype_names: %s", 
+		authtype_names: %s\n
+		use_post: %d\n", 
 		scfg->dirdepth, 
 		scfg->noblank, 
   		(scfg->login == NULL ? "" : scfg->login),
   		(scfg->appsrvid == NULL ? "" : (char *)scfg->appsrvid),
-  		(scfg->authtype_names == NULL ? "" : (char *)scfg->authtype_names));
+  		(scfg->authtype_names == NULL ? "" : (char *)scfg->authtype_names),
+		scfg->use_post);
 
 }
 
@@ -555,13 +557,23 @@ static void set_session_cookie(request_rec *r, pubcookie_server_rec *scfg,
 void clear_granting_cookie(request_rec *r) {
     char   *new_cookie;
     pool *p = r->pool;
+    pubcookie_server_rec *scfg;
+ 
+    scfg = (pubcookie_server_rec *) ap_get_module_config(
+		r->server->module_config, &pubcookie_module);
 
-    new_cookie = ap_psprintf(p, 
-                 "%s=; domain=%s; path=/; expires=%s;%s", 
-       PBC_G_COOKIENAME, 
-       PBC_ENTRPRS_DOMAIN,
-       EARLIEST_EVER, secure_cookie);
+    if ( scfg->use_post ) 
+        new_cookie = ap_psprintf(p, "%s=; path=/; expires=%s;%s", 
+           PBC_G_COOKIENAME, 
+           EARLIEST_EVER, secure_cookie);
+    else
+        new_cookie = ap_psprintf(p, "%s=; domain=%s; path=/; expires=%s;%s", 
+           PBC_G_COOKIENAME, 
+           PBC_ENTRPRS_DOMAIN,
+           EARLIEST_EVER, secure_cookie);
 
+    ap_log_rerror(PC_LOG_DEBUG, r, "clear_granting_cookie: setting cookie: %s",
+		new_cookie);
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 }
 
@@ -1868,10 +1880,10 @@ int pubcookie_user(request_rec *r, pubcookie_server_rec *scfg,
         /* decrypt cookie. if credtrans is set, then it's from login server
          to me. otherwise it's from me to me. */
         if (!res && libpbc_rd_priv(p, scfg->sectext, cred_from_trans ? 
-                                      ap_get_server_name(r) : NULL, 
-									cred_from_trans ? 1 : 0,
-                                   blob, bloblen, 
-                                   &plain, &plainlen)) {
+				ap_get_server_name(r) : NULL, 
+				cred_from_trans ? 1 : 0,
+				blob, bloblen, 
+                                &plain, &plainlen)) {
             ap_log_rerror(PC_LOG_ERR, r, 
                           "credtrans: libpbc_rd_priv() failed");
             res = -1;
@@ -2924,10 +2936,9 @@ static int login_reply_handler(request_rec *r)
     creply = ap_table_get(args, PBC_CRED_TRANSFER_COOKIENAME);
 
     /* Build the redirection */ 
-
-    gr_cookie = ap_psprintf(p, "%s=%s; domain=%s; path=/;%s",
+ 
+    gr_cookie = ap_psprintf(p, "%s=%s; path=/;%s",
        PBC_G_COOKIENAME, greply, 
-       ap_get_server_name(r),
        secure_cookie);
     ap_table_add(r->headers_out, "Set-Cookie", gr_cookie);
 
