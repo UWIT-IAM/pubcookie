@@ -108,6 +108,10 @@ SOURCE=..\libpubcookie.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\pbc_configure.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\pbc_myconfig.c
 # End Source File
 # Begin Source File

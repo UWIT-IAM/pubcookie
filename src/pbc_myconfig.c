@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.24 2003-04-14 13:30:51 jteaton Exp $
+    $Id: pbc_myconfig.c,v 1.25 2003-04-14 23:54:51 ryanc Exp $
  */
 
 
@@ -65,6 +65,8 @@ typedef void pool;
 
 #ifdef HAVE_SYSEXITS_H
 # include <sysexits.h>
+#else
+# define EX_OSERR 71
 #endif /* HAVE_SYSEXITS_H */
 
 #ifdef HAVE_UNISTD_H
@@ -84,8 +86,6 @@ typedef void pool;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-extern int errno;
-
 struct configlist {
     char *key;
     char *value;
@@ -96,6 +96,10 @@ static int nconfiglist;
 
 static void myconfig_read(pool *p, const char *alt_config);
 static void fatal(pool *p, const char *s, int ex);
+
+#ifdef WIN32
+# include "Win32/debug.h"
+#endif
 
 #ifndef WIN32
 
@@ -149,6 +153,21 @@ const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
     }
     return def;
 }
+
+#else /*WIN32*/
+
+const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
+{
+    int opt;
+    
+    for (opt = 0; opt < nconfiglist; opt++) {
+        if (!stricmp(key, configlist[opt].key))
+	    return configlist[opt].value;
+    }
+    return def;
+}
+
+#endif
 
 /* output must be free'd.  (no subpointers should be free'd.) */
 char **libpbc_myconfig_getlist(pool *p, const char *key)
@@ -219,6 +238,8 @@ int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
 
     return def;
 }
+
+#ifndef WIN32
 
 #define CONFIGLISTGROWSIZE 30 /* 100 */
 static void myconfig_read(pool *p, const char *alt_config)
@@ -305,6 +326,16 @@ static void fatal(pool *p, const char *s, int ex)
     exit(ex);
 }
 
+#else  /*WIN32*/
+
+static void fatal(pool *p, const char *s, int ex)
+{
+    fprintf(stderr, "fatal error: %s\n", s);
+	syslog(LOG_ERR, "fatal error: %s\n", s);
+    exit(ex);
+}
+#endif
+
 #ifdef TEST_MYCONFIG
 /* a short test program for pbc_myconfig */
 
@@ -339,7 +370,7 @@ int main(int argc, char *argv[])
 }
 #endif
 
-#else /*WIN32*/
+#ifdef WIN32
 
 /* Windows registry functions added by Ryan Campbell */
 
@@ -356,31 +387,6 @@ int main(int argc, char *argv[])
 #include <../debug.h>
 
 #define CONFIGLISTGROWSIZE 50
-
-
-
-
-const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
-{
-    int opt;
-    
-    for (opt = 0; opt < nconfiglist; opt++) {
-        if (!stricmp(key, configlist[opt].key))
-	    return configlist[opt].value;
-    }
-    return def;
-}
-
-
-int libpbc_myconfig_getint(pool *p, const char *key, int def)
-{
-    const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
-    
-    if (!val) return def;
-    if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
-        return def;
-    return atoi(val);
-}
 
 
 int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)

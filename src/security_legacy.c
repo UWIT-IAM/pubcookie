@@ -233,13 +233,13 @@ int security_init(pool *p)
 
 
     if (!g_keyfile) {
-        g_keyfile = pbc_malloc(p, 1025); /* Windows snprintf broken  8/21/02 RJC */
+        g_keyfile = pbc_malloc(p, 1025);
         snprintf(g_keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_granting.key");
     }
 
     if (!g_certfile) {
-        g_certfile = pbc_malloc(p, 1025); /* Windows snprintf broken 8/21/02 RJC */
+        g_certfile = pbc_malloc(p, 1025); 
         snprintf(g_certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_granting.cert");
     }

@@ -25,6 +25,7 @@ typedef void pool;
 #include "../pbc_config.h"
 #include "../pbc_version.h"
 #include "../pbc_myconfig.h"
+#include "../pbc_configure.h"
 #include "PubCookieFilter.h"
 #include "debug.h"
 }
@@ -167,21 +168,13 @@ VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_doma
 
 BOOL Reset_Defaults () 
 {
-	char szBuff[MAX_PATH];
-
-	if (!libpbc_config_init(p,"","")) {
-		ReportPFEvent("[PubcookieFilter]","[Pubcookie_Config_Init] Out of memory.",
-		"","",EVENTLOG_ERROR_TYPE,3);
-
- 		return FALSE; 
-	} 
+	libpbc_config_init(p,"","");
 
 	if (strlen(PBC_SYSTEM_ROOT) > 0) {
 		strcpy(SystemRoot,PBC_SYSTEM_ROOT);
 	}
 	else {
-		GetEnvironmentVariable ("windir",szBuff,MAX_PATH);
-		sprintf(SystemRoot,"%s\\system32",szBuff);
+		GetSystemDirectory(SystemRoot,MAX_PATH);
 	}
 	
 	Debug_Trace = PBC_DEBUG_TRACE;
@@ -803,7 +796,8 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	
     // Then Look in default key
 	
-	strcpy (key, PUBKEY);
+	strcpy (key, PBC_WEB_VAR_LOCATION);
+	strcat (key,"\\");
 	strcat (key, PBC_DEFAULT_KEY);
 
 	Read_Reg_Values (key, dcfg);
@@ -811,7 +805,8 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 
 	// Then first node (current appid)
 
-	strcpy (key, PUBKEY);
+	strcpy (key, PBC_WEB_VAR_LOCATION);
+	strcat (key,"\\");
 	strcat (key, dcfg->appid);
 
 	Read_Reg_Values (key, dcfg);
@@ -1880,7 +1875,6 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 {
 	char szBuff[1024];
 	DWORD dwBuffSize,dwReserved=NULL;
-	char *pszNewClient;
 	pubcookie_dir_rec* dcfg;
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 

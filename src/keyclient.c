@@ -13,13 +13,13 @@
     More information: http://www.pubcookie.org/
     Written by the Pubcookie Team
 
-    a simple program for downloading DES keys from the login server
+    a simple program for downloading DES keys from the key management server
     it acts vaguely like an HTTP client
 
  */
 
 /*
-    $Id: keyclient.c,v 2.29 2003-04-14 13:30:51 jteaton Exp $
+    $Id: keyclient.c,v 2.30 2003-04-14 23:54:51 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -117,7 +117,7 @@ static void usage(void)
     printf("  -u                 : upload the local copy of the key\n");
     printf("  -a                 : expect keyfile in ASN.1\n");
     printf("  -p (default)       : expect keyfile in PEM\n");
-    printf("  -h <hostname>      : pretend to be <hostname> (dangerous!)\n");
+    printf("  -H <hostname>      : pretend to be <hostname> (dangerous!)\n");
     printf("  -K <URI>           : base URL of key management server\n");  
     printf("  -C <cert file>     : CA cert to use for client verification\n");
     printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
@@ -435,8 +435,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    if (SSL_write(ssl, buf, strlen(buf)) < 0) {
-        fprintf(stderr, "SSL_write failed:\n");
+	r = SSL_write(ssl, buf, strlen(buf));
+    if (r < 0) {
+        fprintf(stderr, "SSL_write failed. Return code: %d\n",SSL_get_error(ssl,r));
         ERR_print_errors_fp(stderr);
         exit(1);
     }

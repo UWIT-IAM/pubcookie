@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.76 2003-04-14 13:30:51 jteaton Exp $
+    $Id: pbc_config.h,v 1.77 2003-04-14 23:54:51 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -70,13 +70,14 @@
 	#define PBC_DEBUG_TRACE (libpbc_config_getint(p, "Debug_Trace", 0))
 	#define PBC_IGNORE_POLL (libpbc_config_getint(p, "Ignore_Poll", 0))
 	#define PBC_DEBUG_DIR (libpbc_config_getstring(p, "Debug_Dir", "\\LogFiles\\Pubcookie"))
-	#define PBC_SYSTEM_ROOT (libpbc_config_getstring(p, "System_Root","")) /*blank for Windows System*/
+	#define PBC_SYSTEM_ROOT (libpbc_config_getstring(p, "System_Root","")) /*null causes a Windows API call to locate*/
 	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
 	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
 	#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
 	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
+	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", "System\\CurrentControlSet\\Services\\PubcookieFilter"))
 #endif
 
 #define PBC_REFRESH_TIME 0

@@ -99,7 +99,6 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 
 
 
-#define PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter\\"
 #define WINKEY "System\\CurrentControlSet\\Control\\Windows"
 #define PBC_Header_Appid   "Pubcookie-Appid:"
 #define PBC_Header_User    "Pubcookie-User:"
