@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.45 $)
+AC_REVISION($Revision: 1.46 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -744,9 +744,7 @@ SNPRINTF_C="\$(srcdir)/src/snprintf.c"
 AC_SUBST( SNPRINTF_0, $SNPRINTF_O )
 AC_SUBST( SNPRINTF_C, $SNPRINTF_C )
 
-# autoconf 2.57 doesn't seem to support this
-# might turn it back on later
-#AM_MAINTAINER_MODE
+AM_MAINTAINER_MODE
 
 AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
