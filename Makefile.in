@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.22 2002-11-18 23:53:18 jjminer Exp $
+# $Id: Makefile.in,v 1.23 2002-11-23 22:41:23 jjminer Exp $
 
 @SET_MAKE@
 
@@ -219,7 +219,7 @@ $(srcdir)/configure: $(srcdir)/configure.ac
 $(srcdir)/src/config.h.in: $(srcdir)/stamp-h.in
 $(srcdir)/stamp-h.in: $(srcdir)/configure.ac
 	cd $(srcdir) && autoheader $(srcdir)/configure.ac
-	echo timestamp > $(srcdir)/stamp-h.in
+	date > $(srcdir)/stamp-h.in
 
 $(builddir)/src/config.h: $(builddir)/stamp-h
 $(builddir)/src/pbc_path.h: $(builddir)/stamp-h
