@@ -5,12 +5,12 @@ if (!defined &PUBCOOKIE_CONFIG) {
     }
     eval 'sub PBC_L_COOKIENAME () {"pubcookie_l";}' unless defined(&PBC_L_COOKIENAME);
     eval 'sub PBC_G_COOKIENAME () {"pubcookie_g";}' unless defined(&PBC_G_COOKIENAME);
+    eval 'sub PBC_G_REQ_COOKIENAME () {"pubcookie_g_req";}' unless defined(&PBC_G_REQ_COOKIENAME);
     eval 'sub PBC_S_COOKIENAME () {"pubcookie_s";}' unless defined(&PBC_S_COOKIENAME);
-    eval 'sub PBC_TEST_COOKIENAME () {"pubcookie_test_cookie";}' unless defined(&PBC_TEST_COOKIENAME);
-    eval 'sub PBC_TEST_COOKIECONTENTS () {"yes";}' unless defined(&PBC_TEST_COOKIECONTENTS);
+    eval 'sub PBC_PRE_S_COOKIENAME () {"pubcookie_p_res";}' unless defined(&PBC_PRE_S_COOKIENAME);
     eval 'sub PBC_AUTH_FAILED_HANDLER () {"pubcookie-failed-handler";}' unless defined(&PBC_AUTH_FAILED_HANDLER);
     eval 'sub PBC_BAD_USER_HANDLER () {"pubcookie-bad-user";}' unless defined(&PBC_BAD_USER_HANDLER);
-    eval 'sub PBC_LOGIN_PAGE () {"https://pcookiel1.cac.washington.edu/login/";}' unless defined(&PBC_LOGIN_PAGE);
+    eval 'sub PBC_LOGIN_PAGE () {"https://weblogin.washington.edu/";}' unless defined(&PBC_LOGIN_PAGE);
     eval 'sub PBC_CRYPT_KEYFILE () {"/usr/local/pubcookie/c_key";}' unless defined(&PBC_CRYPT_KEYFILE);
     eval 'sub PBC_MASTER_CRYPT_KEYFILE () {"/usr/local/pubcookie/m_key";}' unless defined(&PBC_MASTER_CRYPT_KEYFILE);
     eval 'sub PBC_DEFAULT_INACT_EXPIRE () {30* 60;}' unless defined(&PBC_DEFAULT_INACT_EXPIRE);
@@ -25,6 +25,15 @@ if (!defined &PUBCOOKIE_CONFIG) {
     eval 'sub PBC_SECURID_AUTHTYPE () {"securid";}' unless defined(&PBC_SECURID_AUTHTYPE);
     eval 'sub PBC_REFRESH_TIME () {0;}' unless defined(&PBC_REFRESH_TIME);
     eval 'sub PBC_ENTRPRS_DOMAIN () {".washington.edu";}' unless defined(&PBC_ENTRPRS_DOMAIN);
+    eval 'sub PBC_GETVAR_APPSRVID () {"one";}' unless defined(&PBC_GETVAR_APPSRVID);
+    eval 'sub PBC_GETVAR_APPID () {"two";}' unless defined(&PBC_GETVAR_APPID);
+    eval 'sub PBC_GETVAR_CREDS () {"three";}' unless defined(&PBC_GETVAR_CREDS);
+    eval 'sub PBC_GETVAR_VERSION () {"four";}' unless defined(&PBC_GETVAR_VERSION);
+    eval 'sub PBC_GETVAR_METHOD () {"five";}' unless defined(&PBC_GETVAR_METHOD);
+    eval 'sub PBC_GETVAR_HOST () {"six";}' unless defined(&PBC_GETVAR_HOST);
+    eval 'sub PBC_GETVAR_URI () {"seven";}' unless defined(&PBC_GETVAR_URI);
+    eval 'sub PBC_GETVAR_ARGS () {"eight";}' unless defined(&PBC_GETVAR_ARGS);
+    eval 'sub PBC_GETVAR_FR () {"fr";}' unless defined(&PBC_GETVAR_FR);
     eval 'sub PBC_SIG_LEN () {128;}' unless defined(&PBC_SIG_LEN);
     eval 'sub PBC_CREDS_NONE () {ord(\'0\');}' unless defined(&PBC_CREDS_NONE);
     eval 'sub PBC_CREDS_UWNETID () {ord(\'1\');}' unless defined(&PBC_CREDS_UWNETID);
