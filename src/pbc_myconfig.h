@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.h
  * header file for Runtime configuration
  *
- * $Id: pbc_myconfig.h,v 1.16 2004-01-23 05:00:26 ryanc Exp $
+ * $Id: pbc_myconfig.h,v 1.17 2004-01-27 23:06:33 ryanc Exp $
  */
 
 
@@ -36,7 +36,7 @@ extern int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ide
  * @return the value of the option or def if it isn't found.  the
  * string belongs to the config library---it should not be changed or
  * free().  */
-extern LPCTSTR libpbc_myconfig_getstring(pool *p, LPTSTR strbuff, LPCTSTR key, LPCTSTR def);
+extern const char *libpbc_myconfig_getstring(pool *p, char *strbuff, const char *key, const char *def);
 
 /**
  * return an int variable identified by key
