@@ -1,3 +1,5 @@
+Changes with 3.2.0 Beta 1:
+
 *) Added Karl Schricker's patch to shadow verifier to make shadow password
    file location configurable.
 
@@ -12,12 +14,12 @@
 
 *) Fixed login cgi crash with alwaystrue verifier when userid is null. 
 
-*) Added support for custom per-application login messages to login cgi. 
-   Uses optional custom_login_message_dir and custom_login_file_prefix 
-   config file variables. 
+*) Added support for custom per-application login messages to login cgi
+   and login template. Introduces optional custom_login_message_dir and 
+   custom_login_file_prefix config file variables. 
 
 *) Added keyserver options to allow keyclient to authenticate using
-   wildcard certs and to support subject alt names. 
+   wildcard certs and to support Subject Alt Names. 
 
 *) Added keyserver option to allow keyclient certificates that are signed
    by untrusted CAs to cache a public key certificate on the keyserver. 

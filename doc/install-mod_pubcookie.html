@@ -51,25 +51,34 @@
                   for instructions on deploying a Pubcookie login server.</p>
 
                   <h4><a name="new"></a>What's New</h4>
-                  <p>Significant improvements since version 3.0.0:</p>
+                  <p>Significant improvements and changes included in Pubcookie 3.2.0 Beta 1:</p>
                   <ul>
-                    <li>Apache 2.0 support</li>
-                    <li><a href="#vhosts">Virtual host support</a></li> 
-                    <li><a href="#relay">Cross-DNS-domain relay</a></li> 
-                    <li>New <a href="mod_pubcookie-directives.html#PubcookieOnDemand">PubcookieOnDemand</a> directive</li> 
-                    <li>New <a href="mod_pubcookie-directives.html#PubcookieNoPrompt">PubcookieNoPrompt</a> directive</li> 
-                    <li>Enhanced <a href="mod_pubcookie-directives.html#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a> with grace time</li> 
-                    <li>New, improved <tt>configure</tt> script; new <tt>--with-apxs</tt> and <tt>--with-apache-src</tt> options</li>
-                    <li>New <tt>keyclient -G</tt> option to download "granting" certificate</li>
-                    <li>Improved OpenSSL compatibility</li>
-                    <li>Revised, improved documentation</li>
+                    <li>Added POST-based messaging between Apache module and login server. This method is compatible with 3.1 
+                        login servers and introduces two new directives:
+                         <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> and
+                         <a href="mod_pubcookie-directives.html#PubcookiePostURL">PubcookiePostURL</a>. This feature
+                         obsoletes the 3.1 relay cgi.</li>
+                    <li>Added keyclient support for wild card certificates and Subject Alt Names (3.2.0 keyserver required).</li>
+                    <li>Cleaner request handling and improved compatibility with other Apache modules</li>
+                    <li>Exempted <tt>/favicon.ico</tt> location for browser compatibility issues</li>
+                    <li>Removed obsolete relay cgi component. See above.</li>
                   </ul>
-                  <p>Note: some new features require a Pubcookie 3.1.0 or higher login server.</p>
+                  <p>See <tt>doc/CHANGES.txt</tt> for bug fixes and other improvements.</p> 
+
                   <h4><a name="upgrading"></a>Upgrading</h4>
-                  <p>Servers running version 3.0.0 should be easy to upgrade and can reuse their
-                  existing configuration, granting certificate, and symmetric key.</p>
-                  <p>Servers running earlier versions may need to be more careful and will need
+                  <p>Apache servers running version 3.0.0, 3.1.0, or 3.1.1 of the module should be easy to upgrade 
+                  to the 3.2.0 release. Just build and install the new module and keyclient. You can reuse your existing configuration, 
+                  granting certificate, and symmetric key.</p>
+
+                  <p>Apache servers running earlier versions of the module (e.g. 1.77) may have to update their Apache configuration and will need
                   to obtain a new symmetric key from their local keyserver.</p>
+
+                  <p><b>Compatibility note on third-party relays:</b> Use of third-part relays (i.e., those
+                  not on the same host as the application) is deprecated in version 3.2.0 and may not be
+                  supported by your site's deployment of the 3.2.0 login server. Application servers using
+                  the 3.1 relay cgi are <strong>strongly encouraged</strong> to upgrade to version 3.2.0
+                  and use its POST-based messaging instead of the relay cgi.</p>
+
                   <h4><a name="pre">Prerequisites</a></h4>
                   <p>The module relies on additional infrastructure at your site.
                   Here are some general prerequisites that,  if fulfilled, will lead
@@ -127,8 +136,8 @@
                       (e.g. <i>.example.edu</i>) with
                       your site's Pubcookie login server (e.g. <i>weblogin.example.edu</i>)
                       or if your enterprise DNS domain is in a country code top-level domain
-                      (e.g. <i>example.ca</i>) then you may have to build and use the Pubcookie relay 
-                      cgi to authenticate across DNS domains.</p></li>
+                      (e.g. <i>example.ca</i>) then you should use POST-based messaging configured by the
+                      <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a>.</p></li>
                   </ul>
 
                   <!-- build and install sections -->
@@ -528,6 +537,10 @@ PubcookieInactiveExpire -1
                         initialize the module. But it's a good exercise to configure them explicitly.</p>
                       </li>
                       <li>
+                        <p>Add a <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> 
+                        directive to control the messaging method (classic cookie-based or POST-based).</p>
+                      </li>
+                      <li>
                         <p><a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
                         defines the authentication types that the module enables as additional arguments to 
                         the <a href="mod_pubcookie-directives.html#AuthType">AuthType</a> directive. (<tt>EGNetID</tt>
@@ -812,119 +825,13 @@ PubcookieEndSession clearLogin
 
 <h4><a name="relay">Cross-Domain Relay Configuration</a></h4>
 
-<p>Pubcookie 3.1 adds the ability to authenticate across DNS domains
-using a separate, standalone <i>relay cgi</i> that you install on your
-application server. Note: This feature requires a version 3.1.0 or later
-Pubcookie login server.</p>
+<p>Cross-dns-domain scenarios have been greatly simplified in Pubcookie 3.2.0
+with the addition of POST-based messaging. Just set 
+<a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> 
+to <tt>POST</tt> to avoid the traditional cross-dns-domain constraits.</p>
 
-<p>The relay cgi uses HTTP <tt>POST</tt> to transfer the 
-Pubcookie authentication request and assertion to and from the remote
-Pubcookie login server. You configure the module to use the relay cgi
-as your login server, and you configure the relay cgi with the location
-of the remote login server. Here are the steps:</p>
-
-<ol>
-
-<li><p>The relay cgi relies on the module having already been built
-so build and install the module as you would normally, but stop short 
-of the usual configuration stage.</p></li>
-
-<li><p>Change to the <tt>relay</tt> subdirectory and build 
-and install the <a href="http://staff.washington.edu/fox/webtpl/"><tt>WebTemplate</tt></a>
-C library in its subdirectory:</p></li>
-
-<p> 
-<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
-<TR> 
-<TD><pre>$ cd relay
-$ wget http://staff.washington.edu/fox/webtpl/webtpl-1.5.tar.gz
-$ tar zxf webtpl-1.5.tar.gz
-$ cd webtpl-1.5
-$ ./configure
-$ make
-$ make install
-</pre></TD>
-</TR>
-</TABLE></p>
-
-<p>Note: <tt>/usr/local</tt> is the default installation prefix
-for the webtpl library; this results in new libs and headers in 
-/usr/local/lib and /usr/local/include, respectively. (On some 
-systems, e.g. linux, you may have to add <tt>/usr/local/lib</tt> 
-to <tt>/etc/ld.so.conf</tt> and run <tt>ldconfig</tt> to 
-reconfigure the dynamic linker to pick up this new shared library.)</p>
-
-<li><p>Change back to the relay directory to build and install the 
-relay cgi:</p></li>
-
-<p> 
-<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
-<TR> 
-<TD><pre>cd ..
-./configure --prefix=/var/www/html/pcrelay
-make
-make install</pre></TD>
-</TR>
-</TABLE></p>
-
-<p>Use the
-<tt>--prefix</tt> option to define where the relay cgi and its
-templates are installed in your DocumentRoot.</p>
-
-<p>Note: the <tt>configure</tt> script should pick up the locations
-of your pubcookie source directory (i.e. the current parent) and
-webtpl library without adding further configuration options.</p> 
-
-<li><p>Add relay configuration variables to the
-<tt>/usr/local/pubcookie/config</tt> file:</p></li>
-
-<p> 
-<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
-<TR> 
-<TD><pre># pubcookie relay config
-<a href="config.html#relay_login_uri">relay_login_uri</a>: https://login.example.edu/
-<a href="config.html#relay_template_path">relay_template_path</a>: /var/www/html/pcrelay/templates/
-</pre></TD>
-</TR>
-</TABLE></p>
-
-<p>The <tt>relay_login_uri</tt> variable defines the location of the Pubcookie login server
-used by the relay. This should be set to the real location of your site's login cgi.</p>
-
-<li><p>Now, when you <a href="#config">configure the module</a>, specify the relay 
-as your login server and use a localized enterprise domain. For example, if your application 
-server is <i>remote.site.org</i> and you've installed the relay as <tt>pcrelay</tt> at the 
-root of your website, then, along with all the other usual directives, you'd define these
-directives like this:</p></li>
-
-<p> 
-<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
-<TR> 
-<TD><pre>PubcookieLogin https://remote.site.org/pcrelay/?domain=.site.org
-PubcookieDomain .site.org</pre></TD>
-</TR>
-</TABLE></p>
-
-<p>Now the module will redirect users to the relay first. Then the relay will
-handle getting them to the remote login server and back again.</p>
-
-<p>Note: The relay accepts the <tt>domain</tt> argument to allow a single
-relay to serve multiple servers and mulitiple domains. It should match your
-<a href="mod_pubcookie-directives.html#PubcookieDomain">PubcookieDomain</a> value
-because the relay and the module need it to synchronize their cookie scoping.  
-In the typical case
-it can be set to the enterprise domain you would have used if the login server 
-had been in the same domain as your application server (i.e., <i>.site.org</i> in 
-the example above). If your application server is in a country code top-level 
-domain (e.g., <i>site.subdomain.example.ca</i>) then it must be adjusted; you can use
-the immediate subdomain (i.e., <tt>domain=.subdomain.example.ca</tt>) or if 
-the resource and relay reside on the same server, use the server name itself 
-(i.e., <tt>domain=site.subdomain.example.ca</tt>). If no <tt>domain</tt> argument 
-is specified, the relay falls back to reading the <tt>enterprise_domain</tt> 
-config file variable, which, if used, should match your PubcookieDomain value
-too.</p>
-
-</ol>
+<p>Note: the 3.1. relay cgi has been obsoleted by POST-based messaging. It is no longer
+supported in the distribution and its use is now deprecated.</p>
 
 <h4><a name="vhosts">Virtual Host Configuration</a></h4>
 

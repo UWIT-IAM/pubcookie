@@ -25,7 +25,9 @@ version of this document</a> is always the most up-to-date version.
   <td class="bggray" valign="top">
 
   <li><a href="#overview">Overview</a></li>
-  <li><a href="#components">Components</a></li>
+  <li><a href="#new">What's New</a></li>
+  <li><a href="#upgrading">Upgrading &amp; Compatibility</a></li>  
+  <li><a href="#components">System Components</a></li>
   <li><a href="#flavors">Basic Login Flavor</a></li>
   <li><a href="#authtype">Authentication Types</a></li>
   <li><a href="#integration">Verifiers &amp; Authentication Services</a></li>
@@ -53,7 +55,6 @@ version of this document</a> is always the most up-to-date version.
   <li><a href="#ldap">LDAP Verifier Configuration</a></li>
   <li><a href="#clusters">Redundant Login Server Configuration</a></li>
   <li><a href="#fastcgi">FastCGI Configuration</a></li>  
-  <li><a href="#upgrading">Upgrading</a></li>  
   <li><a href="#apps">Supporting Application Servers</a></li>
   <li><a href="#apacheconfig">Appendix A: Apache Configuration</a></li>
   <li><a href="#security">Appendix B: Permissions &amp; Security</a></li>
@@ -74,7 +75,52 @@ or <a href="install-filter.html">ISAPI filter guide</a> for instructions on
 deploying a Pubcookie application server which authenticates using your
 local login server.</p>
 
-<h4><a name="components">Components</a></h4>
+<h4><a name="new"></a>What's New</h4>
+
+<p>Significant improvements and changes to the login server components included in 
+Pubcookie 3.2.0 Beta 1:</p>
+
+<ul>
+<li>Added support for <a href="#loginmsgs">custom per-application login messages</a></li>
+<li>Added keyserver support to allow keyclient authentication by wildcard
+    certificates and Subject Alt Names</li>
+<li>Added keyserver support to allow keyclient certificates signed by
+    untrusted CAs to cache a public key on the keyserver and use it in
+    server authentication</li>
+<li>Added keyclient <tt>-U &lt;certfile&gt;</tt> option for admins to upload a 
+    public key certificate to the keyserver</li> 
+<li>Added version string to login server template as HTML comment</li>
+<li>Improved POST-based messaging between application servers and login server</li>
+<li>Deprecated the use of third-party relay cgi</li>
+</ul>
+
+<p>See <tt>doc/CHANGES.txt</tt> for bug fixes and other improvements.</p>
+
+<h4><a name="upgrading">Upgrading &amp; Compatibility</a></h4>
+
+<p>Sites using previous versions of the login server (3.0.0-3.1.1) can 
+safely upgrade without modifying current site configuration. You can
+build and install from the distribution (i.e., run <tt>configure</tt>,
+<tt>make</tt>, and <tt>make install</tt>) without worrying that it
+will overwrite your current <tt>config</tt> file or login templates.</p>
+
+<p>Sites should compare their configurations with the new 
+<tt>config.login.sample</tt> file and look in <tt>login_templates.default</tt>
+for templates changes. Version 3.2.0 addes several new templates (<tt>notok</tt>, 
+<tt>notok_badagent</tt>, <tt>notok_form_multipart</tt>, <tt>notok_generic</tt>,
+and <tt>notok_need_ssl</tt>); and two templates have been removed 
+(<tt>notok_part1</tt>, <tt>notok_part2</tt>).</p>
+
+<p><b>Compatibility note on third-party relays:</b> 
+The 3.2 login cgi deprecates the use of relays hosted on third-party servers.
+New POST-based messaging support allows use across DNS domains without the use 
+of a separate relay cgi. To continue to support third-party cgi-based 
+relays, <strong>YOU MUST USE</strong> the <tt>--enable-unsafe-relay</tt> 
+configure option while building the login cgi. Rather than doing that, 
+you're encouraged to upgrade application servers using third-party relays
+to use POST-based messaging provided by the version 3.2.0 modules.</p>
+
+<h4><a name="components">System Components</a></h4>
 
 <p>
 The Pubcookie login server really consists of two separate components
@@ -841,14 +887,6 @@ FastCgiConfig \
        -minProcesses 1 \
        -startDelay 10</pre>
 
-<h4><a name="upgrading">Upgrading</a></h4>
-
-<p>Servers running version 3.0.0 of the login server can build
-and install things without overwriting the current <tt>config</tt>
-file or templates. Compare your configuration with the new 
-<tt>config.login.sample</tt> and look in <tt>login_templates.default</tt>
-for new templates to install.</p>
-
 <h4><a name="apps">Supporting Application Servers</a></h4>
 
 <p>To support application servers, other system administrators
@@ -962,7 +1000,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.30 2004-12-05 16:45:13 dors Exp $
+$Id: install-login.html,v 1.31 2004-12-06 00:17:09 dors Exp $
 </pre>
 </body>
 
