@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.26 2003-04-15 17:26:09 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.27 2003-04-16 20:45:07 ryanc Exp $
  */
 
 
@@ -387,8 +387,8 @@ int main(int argc, char *argv[])
 #include <time.h>
 #include <pem.h>
 #include <httpfilt.h>
+#include "Win32/debug.h"
 
-#include <../debug.h>
 
 #define CONFIGLISTGROWSIZE 50
 

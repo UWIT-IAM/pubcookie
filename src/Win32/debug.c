@@ -6,15 +6,25 @@
 #include <stdio.h>
 #include <time.h>
 #include <direct.h>
-#include "debug.h"
 
 typedef void pool;
+
+
+#include <pem.h>
+#include "../pubcookie.h"
+#include "../libpubcookie.h"
+#include "../pbc_config.h"
+#include "../pbc_version.h"
+#include "../pbc_myconfig.h"
+#include "../pbc_configure.h"
+#include "debug.h"
 
 char Trace_Date[64];
 char Instance[64];
 char Debug_Dir[MAX_PATH];
 FILE *debugFile=NULL;
 int Debug_Trace = 0;
+pool *p=NULL;
 
 
 void pbc_vlog_activity( int logging_level, const char * format, va_list args )
@@ -24,7 +34,7 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 	PTSTR pszaStrings[1];
 
         
-//  if (logging_level <= (libpbc_config_getint("logging_level", logging_level)))    {
+    if (logging_level <= (libpbc_config_getint(p,"logging_level", Debug_Trace)))    {
 		
         _vsnprintf(log, sizeof(log)-1, format, args);
 		pszaStrings[0] = log;
@@ -37,7 +47,7 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 		}
 		
 		
-//  }
+  }
 }
 
 extern void syslog(int whichlog, const char *message, ...) {
