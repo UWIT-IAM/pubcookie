@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.55 $)
+AC_REVISION($Revision: 1.56 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -862,10 +862,13 @@ if test "$enable_apache" = "yes";  then
    if ! test -d $apache_target; then
       mkdir $apache_target
    fi
+   if ! test -d $apache_target; then
+      AC_MSG_ERROR([Could not create the module directory])
+   fi
 
 # get a list of components from the modules.mk file
 pc=
-for f in `sed -n -e '
+for f in `$SED -n -e '
 /\\\\$/{ 
   s/\\\\$//
   H
@@ -886,9 +889,10 @@ do
   pc="$pc $f"
 done
 # get a list of includes from the src dir
+# pch="config.h pbc_path.h"  # these built by configure
 pch=
 cd src
-for f in `$LS *.h`
+for f in `$LS *.h *.h.in | $SED 's/.in$//'`
 do
 #  echo "   $f"
   pch="$pch $f"
