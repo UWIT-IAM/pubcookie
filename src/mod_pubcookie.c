@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.115 2003-04-19 17:16:52 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.116 2003-05-01 20:09:03 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2029,9 +2029,9 @@ const char *set_authtype_names(cmd_parms *cmd, void *mconfig, char *args) {
 
 /*                                                                            */
 command_rec pubcookie_commands[] = {
-    {"PubCookieInactiveExpire", pubcookie_set_inact_exp, NULL, OR_OPTIONS, TAKE1,
+    {"PubCookieInactiveExpire", pubcookie_set_inact_exp, NULL, OR_AUTHCFG, TAKE1,
      "Set the inactivity expire time for PubCookies."},
-    {"PubCookieHardExpire", pubcookie_set_hard_exp, NULL, OR_OPTIONS, TAKE1,
+    {"PubCookieHardExpire", pubcookie_set_hard_exp, NULL, OR_AUTHCFG, TAKE1,
      "Set the hard expire time for PubCookies."},
     {"PubCookieLogin", pubcookie_set_login, NULL, RSRC_CONF, TAKE1,
      "Set the login page for PubCookies."},
@@ -2061,18 +2061,18 @@ command_rec pubcookie_commands[] = {
     {"PubCookieDirDepthforAppID", pubcookie_set_dirdepth, NULL, RSRC_CONF, TAKE1,
      "Specify the Directory Depth for generating default AppIDs."},
 
-    {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_OPTIONS, FLAG,
+    {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_AUTHCFG, FLAG,
      "Force reauthentication for new sessions and session timeouts"},
-    {"PubcookieEndSession", set_end_session, NULL, OR_OPTIONS, RAW_ARGS,
+    {"PubcookieEndSession", set_end_session, NULL, OR_AUTHCFG, RAW_ARGS,
      "End application session and possibly login session"},
-    {"PubCookieAddlRequest", pubcookie_add_request, NULL, OR_OPTIONS, ITERATE,
+    {"PubCookieAddlRequest", pubcookie_add_request, NULL, OR_AUTHCFG, ITERATE,
      "Send the following options to the login server along with authentication requests"},
 
-    {"PubCookieSuperDebug", set_super_debug, NULL, OR_OPTIONS, FLAG,
+    {"PubCookieSuperDebug", set_super_debug, NULL, OR_AUTHCFG, FLAG,
      "Deprecated, do not use"},
 
 /* maybe for future exploration
-    {"PubCookieNoSSLOK", pubcookie_set_no_ssl_ok, NULL, OR_OPTIONS, TAKE1,
+    {"PubCookieNoSSLOK", pubcookie_set_no_ssl_ok, NULL, OR_AUTHCFG, TAKE1,
      "Allow session to go non-ssl."},
 */
     {NULL}
