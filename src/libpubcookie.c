@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.30 2002-06-28 19:58:47 greenfld Exp $
+    $Id: libpubcookie.c,v 2.31 2002-07-02 18:39:43 jjminer Exp $
  */
 
 #if defined (APACHE1_3)
@@ -54,6 +54,7 @@ typedef  int pid_t;  /* win32 process ID */
 #include <des.h>
 #include <rand.h>
 #include <err.h>
+
 /* pubcookie lib stuff */
 #include "pubcookie.h"
 #include "libpubcookie.h"
@@ -329,7 +330,7 @@ void libpbc_pubcookie_init_np()
     pid_t		pid;
     const char *ptr;
 
-/*  libpbc_debug("libpbc_pubcookie_init\n"); */
+    /*  libpbc_debug("libpbc_pubcookie_init\n"); */
 
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
@@ -341,58 +342,58 @@ void libpbc_pubcookie_init_np()
     /* if we can use the SSL keys, do so; otherwise, use the login files */
     ptr = libpbc_config_getstring("ssl_cert_file", NULL);
     if (ptr && !access(ptr, R_OK | F_OK)) {
-	strlcpy(PBC_L_CERTFILE, ptr, sizeof PBC_L_CERTFILE);
+        strlcpy(PBC_L_CERTFILE, ptr, sizeof PBC_L_CERTFILE);
     } else {
-	snprintf(PBC_L_CERTFILE, sizeof(PBC_L_CERTFILE),
-		 "%s/%s", PBC_KEY_DIR, "pubcookie_login.cert");
+        snprintf(PBC_L_CERTFILE, sizeof(PBC_L_CERTFILE),
+                 "%s/%s", PBC_KEY_DIR, "pubcookie_login.cert");
     }
 
     ptr = libpbc_config_getstring("ssl_key_file", NULL);
     if (ptr && !access(ptr, R_OK | F_OK)) {
-	strlcpy(PBC_L_KEYFILE, ptr, sizeof PBC_L_KEYFILE);
+        strlcpy(PBC_L_KEYFILE, ptr, sizeof PBC_L_KEYFILE);
     } else {
-	snprintf(PBC_L_KEYFILE, sizeof(PBC_L_KEYFILE),
-		 "%s/%s", PBC_KEY_DIR, "pubcookie_login.key");
+        snprintf(PBC_L_KEYFILE, sizeof(PBC_L_KEYFILE),
+                 "%s/%s", PBC_KEY_DIR, "pubcookie_login.key");
     }
 
-    
+
     /* session keys */
     /* if we can use the SSL keys, do so; otherwise, use the session files */
     ptr = libpbc_config_getstring("ssl_cert_file", NULL);
     if (ptr && !access(ptr, R_OK | F_OK)) {
-	strlcpy(PBC_S_CERTFILE, ptr, sizeof PBC_S_CERTFILE);
+        strlcpy(PBC_S_CERTFILE, ptr, sizeof PBC_S_CERTFILE);
     } else {
-	snprintf(PBC_S_CERTFILE, sizeof(PBC_S_CERTFILE),
-		 "%s/%s", PBC_KEY_DIR, "pubcookie_session.cert");
+        snprintf(PBC_S_CERTFILE, sizeof(PBC_S_CERTFILE),
+                 "%s/%s", PBC_KEY_DIR, "pubcookie_session.cert");
     }
 
     ptr = libpbc_config_getstring("ssl_key_file", NULL);
     if (ptr && !access(ptr, R_OK | F_OK)) {
-	strlcpy(PBC_S_KEYFILE, ptr, sizeof PBC_S_KEYFILE);
+        strlcpy(PBC_S_KEYFILE, ptr, sizeof PBC_S_KEYFILE);
     } else {
-	snprintf(PBC_S_KEYFILE, sizeof(PBC_S_KEYFILE),
-		 "%s/%s", PBC_KEY_DIR, "pubcookie_session.key");
+        snprintf(PBC_S_KEYFILE, sizeof(PBC_S_KEYFILE),
+                 "%s/%s", PBC_KEY_DIR, "pubcookie_session.key");
     }
 
     /* granting keys */
     ptr = libpbc_config_getstring("granting_cert_file", NULL);
     if (ptr) {
-	strlcpy(PBC_G_CERTFILE, ptr, sizeof(PBC_G_CERTFILE));
+        strlcpy(PBC_G_CERTFILE, ptr, sizeof(PBC_G_CERTFILE));
     } else {
-	snprintf(PBC_G_CERTFILE, sizeof(PBC_G_CERTFILE),
-		 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.cert");
+        snprintf(PBC_G_CERTFILE, sizeof(PBC_G_CERTFILE),
+                 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.cert");
     }
     ptr = libpbc_config_getstring("granting_key_file", NULL);
     if (ptr) {
-	strlcpy(PBC_G_KEYFILE, ptr, sizeof(PBC_G_KEYFILE));
+        strlcpy(PBC_G_KEYFILE, ptr, sizeof(PBC_G_KEYFILE));
     } else {
-	snprintf(PBC_G_KEYFILE, sizeof(PBC_G_KEYFILE),
-		 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.key");
+        snprintf(PBC_G_KEYFILE, sizeof(PBC_G_KEYFILE),
+                 "%s/%s", PBC_KEY_DIR, "pubcookie_granting.key");
     }
 
     if (security_init()) {
-	syslog(LOG_ERR, "security_init failed");
-	exit(1);
+        syslog(LOG_ERR, "security_init failed");
+        exit(1);
     }
 }
 
@@ -675,7 +676,7 @@ int libpbc_generate_crypt_key_np(const char *peer)
 
     make_crypt_keyfile(peer, keyfile);
     if (!(f = pbc_fopen(keyfile, "w"))) {
-	return PBC_FAIL;
+        return PBC_FAIL;
     }
     fwrite(buf, sizeof(char), PBC_DES_KEY_BUF, f);
     fclose(f);
@@ -1079,8 +1080,8 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
     char *out;
     int outlen;
 
-    if (libpbc_mk_priv(peer, cookie_string, sizeof(pbc_cookie_data), 
-		       &out, &outlen)) {
+    if (libpbc_mk_priv(peer, (const char *) cookie_string, sizeof(pbc_cookie_data), 
+                       &out, &outlen)) {
 	libpbc_debug("libpbc_sign_bundle_cookie: libpbc_mk_priv failed");
 	return NULL;
     }
@@ -1092,7 +1093,7 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
 	return NULL;
     }
 
-    libpbc_base64_encode(out, cookie, outlen);
+    libpbc_base64_encode( (unsigned char *) out, cookie, outlen);
     free(out);
 
     return cookie;
@@ -1239,44 +1240,44 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in,
     int plainlen;
     int outlen;
     unsigned char buf[PBC_4K];
-    
+
     /* libpbc_debug("libpbc_unbundle_cookie: hello\n"); */
 
     memset(buf, 0, sizeof(buf));
 
     if ( strlen(in) < PBC_SIG_LEN || strlen(in) > PBC_4K ) {
-	libpbc_debug("libpbc_unbundle_cookie: malformed cookie %s\n", in);
-	return 0;
+        libpbc_debug("libpbc_unbundle_cookie: malformed cookie %s\n", in);
+        return 0;
     }
 
     if( ! libpbc_base64_decode((unsigned char *)in, buf, &outlen) ) {
         libpbc_debug("libpbc_unbundle_cookie: could not base64 decode cookie.\n");
-	return 0;
+        return 0;
     }
 
-    if (libpbc_rd_priv(peer, buf, outlen, &plain, &plainlen)) {
-	libpbc_debug("libpbc_unbundle_cookie: libpbc_rd_priv() failed\n");
-	return 0;
+    if (libpbc_rd_priv(peer, (const char *) buf, outlen, &plain, &plainlen)) {
+        libpbc_debug("libpbc_unbundle_cookie: libpbc_rd_priv() failed\n");
+        return 0;
     }
 
     if (plainlen != sizeof(pbc_cookie_data)) {
-	libpbc_debug("libpbc_unbundle_cookie: cookie wrong size: %d != %d\n",
-		     plainlen, sizeof(pbc_cookie_data) + PBC_SIG_LEN);
-	return 0;
+        libpbc_debug("libpbc_unbundle_cookie: cookie wrong size: %d != %d\n",
+                     plainlen, sizeof(pbc_cookie_data) + PBC_SIG_LEN);
+        return 0;
     }
 
     /* copy it into a pbc_cookie_data struct */
     cookie_data = (pbc_cookie_data *) malloc(sizeof(pbc_cookie_data));
     if (!cookie_data) {
-	libpbc_debug("libpbc_unbundle_cookie: malloc() failed");
-	free(plain);
-	return 0;
+        libpbc_debug("libpbc_unbundle_cookie: malloc() failed");
+        free(plain);
+        return 0;
     }
     memcpy((*cookie_data).string, plain, sizeof(pbc_cookie_data));
     free(plain);
 
     cookie_data = libpbc_destringify_cookie_data(cookie_data);
-    
+
     (*cookie_data).broken.last_ts = ntohl((*cookie_data).broken.last_ts);
     (*cookie_data).broken.create_ts = ntohl((*cookie_data).broken.create_ts);
     (*cookie_data).broken.serial = ntohl((*cookie_data).broken.serial);

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.86 2002-06-28 20:01:39 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.87 2002-07-02 18:39:43 jjminer Exp $
  */
 
 /* apache includes */
@@ -395,7 +395,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* base 64 */
         if (!res) {
             base64 = ap_palloc(r->pool, bloblen * 4 / 3 + 20);
-            if (!libpbc_base64_encode(blob, base64, bloblen)) {
+            if (!libpbc_base64_encode( (unsigned char *) blob, 
+                                       (unsigned char *) base64, bloblen)) {
                 syslog(LOG_ERR, "credtrans: libpbc_base64_encode() failed");
                 res = -1;
             }
@@ -1081,8 +1082,8 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
 
     if (pcfg->addl_requests) {
 	if (ncfg->addl_requests) {
-	    cfg->addl_requests = ap_pstrcat(p, pcfg->addl_requests, 
-					    ncfg->addl_requests, NULL);
+	    cfg->addl_requests = (unsigned char *) ap_pstrcat(p, pcfg->addl_requests, 
+                                                 ncfg->addl_requests, NULL);
 	} else {
 	    cfg->addl_requests = pcfg->addl_requests;
 	}
@@ -1341,7 +1342,8 @@ static int pubcookie_user(request_rec *r) {
       int res = 0;
 
       /* base64 decode cookie */
-      if (!libpbc_base64_decode(cookie, blob, &bloblen)) {
+      if (!libpbc_base64_decode( (unsigned char *) cookie, 
+                                 (unsigned char *) blob, &bloblen)) {
           syslog(LOG_ERR, "credtrans: libpbc_base64_decode() failed");
           res = -1;
       }
@@ -1680,10 +1682,10 @@ const char *pubcookie_add_request(cmd_parms *cmd, void *mconfig,
     if (!scfg) return "pubcookie_add_request(): scfg is NULL ?!";
 
     libpbc_debug("pubcookie_add_request(): %s\n", v);
-    cfg->addl_requests = ap_pstrcat(cmd->pool, 
-				    cfg->addl_requests ? cfg->addl_requests : 
-				         (unsigned char *) "",
-				    "&", v, NULL);
+    cfg->addl_requests = (unsigned char *) ap_pstrcat(cmd->pool, 
+                                    cfg->addl_requests ? cfg->addl_requests : 
+                                    (unsigned char *) "",
+                                    "&", v, NULL);
     libpbc_debug("done\n");
 
     return NULL;
