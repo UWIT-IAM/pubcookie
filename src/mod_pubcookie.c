@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.38 1999-09-01 21:33:56 willey Exp $
+    $Id: mod_pubcookie.c,v 1.39 1999-12-07 20:05:50 willey Exp $
  */
 
 /* apache includes */
@@ -64,6 +64,7 @@ typedef struct {
   int   		serial_s_seen;
   int   		serial_s_sent;
   unsigned char		*appsrv_id;
+  int			super_debug;
 } pubcookie_server_rec;
 
 typedef struct {
@@ -137,6 +138,7 @@ int put_out_post(request_rec *r) {
 /*                                                                            */
 unsigned char *get_app_path(pool *p, const char *uri, const char *filename) {
     char *path;
+    char *ptr;
     int i;
 
     /* this is a little screwey because we use uri and filename
@@ -170,6 +172,16 @@ unsigned char *get_app_path(pool *p, const char *uri, const char *filename) {
         return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
 #endif
   
+    /* removed any GET args from the end of the path */
+    ptr = path;
+    while(*ptr) {
+        if(*ptr == '?') {
+            *ptr = '\0';
+            break;
+        }
+        ptr++;
+    }
+
     return path;
 
 }
@@ -185,7 +197,10 @@ request_rec *main_rrec (request_rec *r) {
 unsigned char *genr_app_id(request_rec *r, pubcookie_dir_rec *cfg)
 {
     request_rec *rmain = main_rrec (r);
-    return cfg->app_id ? cfg->app_id : get_app_path(r->pool, rmain->unparsed_uri, r->filename);
+    if( cfg->app_id )
+        return(cfg->app_id);
+    else
+        return get_app_path(r->pool, rmain->unparsed_uri, r->filename);
 
 }
 
@@ -387,6 +402,9 @@ static int auth_failed(request_rec *r) {
 	  args,
 	  PBC_GETVAR_FR, 
 	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
+
+    if( scfg->super_debug )
+        libpbc_debug("super-debug: g_req ready to send: %s\n", g_req_contents);
 
     /* setup the client pull */
     ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
@@ -833,18 +851,21 @@ static int pubcookie_user(request_rec *r) {
     return OK;
   }
 
+  if( scfg->super_debug )
+    libpbc_debug("super-debug: pubcookie_user: about to look for some cookies; current uri: %s\n", r->uri);
+
   sess_cookie_name = make_session_cookie_name(p, genr_app_id(r, cfg));
 
   if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
-      libpbc_debug("pubcookie_user: no g or s cookie, looking for: %s uri was: %s\n", sess_cookie_name, r->uri);
+      libpbc_debug("pubcookie_user: no g or s cookie; want s cookie: %s current uri: %s\n", sess_cookie_name, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
     else {
 
       if( ! (cookie_data = libpbc_unbundle_cookie(cookie, scfg->session_verf_ctx_plus, scfg->c_stuff)) ) {
-        libpbc_debug("pubcookie_user: can't unbundle session cookie: %s\n", r->uri);
+        libpbc_debug("pubcookie_user: can't unbundle session cookie; current uri: %s\n", r->uri);
         cfg->failed = PBC_BAD_AUTH;
         return OK;
       }
@@ -888,9 +909,15 @@ static int pubcookie_user(request_rec *r) {
 
     cfg->has_granting = 1;
 
-    /* the granting cookie gets blanked to early and another login */
+    if( scfg->super_debug )
+      libpbc_debug("super-debug: pubcookie_user: has granting!!!!; current uri is: %s\n", r->uri);
+
+    /* the granting cookie gets blanked too early and another login */
     /* serer loop is required, this just speeds up that loop */
     if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
+      if( scfg->super_debug )
+          libpbc_debug("super-debug: pubcookie_user: in the 'speed up that loop' logic; current uri is: %s\n", r->uri);
+
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
@@ -943,6 +970,9 @@ static int pubcookie_user(request_rec *r) {
     cfg->failed = PBC_BAD_AUTH;
     return OK;
   }
+
+  if( scfg->super_debug )
+    libpbc_debug("super-debug: pubcookie_user: everything is o'tay; current uri is: %s\n", r->uri);
 
   return OK;
 
@@ -1274,6 +1304,27 @@ const char *pubcookie_force_reauth(cmd_parms *cmd, void *mconfig, char *v) {
 }
 
 /*                                                                            */
+const char *set_super_debug(cmd_parms *cmd, void *mconfig, char *v) {
+  server_rec *s = cmd->server;
+  pubcookie_server_rec *scfg;
+#ifdef APACHE1_2
+  pool *p = cmd->pool;
+
+  scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
+						   &pubcookie_module);
+#else
+  ap_pool *p = cmd->pool;
+
+  scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
+						   &pubcookie_module);
+#endif
+
+  scfg->super_debug = 1;
+
+  return NULL;
+}
+
+/*                                                                            */
 const char *pubcookie_set_no_ssl_ok(cmd_parms *cmd, void *mconfig, char *v) {
   pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
 
@@ -1300,6 +1351,8 @@ command_rec pubcookie_commands[] = {
    "Set the name of the encryption keyfile for PubCookies."},
   {"PubCookieAppID", pubcookie_set_app_id, NULL, OR_OPTIONS, TAKE1,
    "Set the name of the application."},
+  {"PubCookieSuperDebug", set_super_debug, NULL, RSRC_CONF, TAKE1,
+   "Turn on super debugging."},
 /* we turn off ForceReauth because it sucks anyway
   {"ForceReauth", pubcookie_force_reauth, NULL, OR_OPTIONS, TAKE1,
    "Force the reauthentication loop through the login server"},
