@@ -23,151 +23,184 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.4 2001-05-29 20:54:33 willey Exp $
+    $Id: INSTALL.login.txt,v 1.5 2001-10-24 19:17:09 willey Exp $
  */
 
 
-Introduction
+1. Introduction
 
-The Pubcookie login server has two primary functions; to authenticate user
-sessions and to issue authentication tokens that may be used by other
-Pubcookie components.  The login server authenticates users either by
-checking user provided credentials via an authentication service
-(Kerberos, SecurID, ...) or by verifying a token that was created on a
-previous visit to the login server.  Example code to interface to an
+The Pubcookie login server has two primary functions: to authenticate
+users and to issue authentication tokens (granting cookies) consumed by
+Pubcookie-enabled target application servers.  Authentication occurs
+either by checking user-provided credentials via a backend authentication
+service (Kerberos, SecurID, ...) or by verifying a token that was created
+on a previous visit to the login server.  Example code to interface to an
 authentication system is provided.
 
-Implementation
+2. Implementation
 
-The login server uses a binary CGI, compiled from C, to process requests.  
-This CGI is the Pubcookie only active component on the login server.  The
-login server runs Apache webserver, however other webserver software that
-supports SSL and CGI would probably work.  Due to the nature of the login
-server only other apps that receive a high level of security scrutiny
-should be run on the login server.
+The Pubcookie login server uses a CGI program to handle all HTTP requests.
+This CGI program, hereafter referred to as "the login cgi" or "index.cgi",
+is compiled from C and is the only Pubcookie active component on the login
+server. The login cgi displays the web page where users are asked to enter
+authentication credentials as well as other web pages that display error
+messages.
 
-The login cgi displays the web page where users are asked to enter
-credentials as well as web pages displaying any errors.
+Due to the important nature of the Pubcookie login server, the only other
+services that should be run on the same system are those which receive an
+equally high level of scrutiny for security.  As deployed at the
+University of Washington, the Pubcookie login server is powered by the
+Apache web server software. Other web server software which supports CGI
+and SSL should also work, but this supposition has not been tested.
 
-Authentication services
+3. Authentication services
 
-Pubcookie has a very simple interface for talking to authentication
-services There is a sample authentication module provied.  Additionally
-there is a module for Kerberos 5.
+The login cgi has a very simple interface for talking to backend
+authentication services. There is a sample authentication module provided.
+Additionally there is a module for Kerberos 5. Internal support for
+multiple and various authentication services is not very flexible and will
+be revised and developed further in the future.
 
-Internal to the login.cgi support for multiple and various authentication
-services is not very flexable and will be revised in the futue.
+Note: Until the authentication module build structure and the credential
+choice mechanism is redone the University of Washington SecurID
+authentication module is included.  This interface is only designed to
+talk to a non-standard SecurID server. We realize that it's confusing, and
+perhaps misleading. But this code shouldn't cause problems; even if there
+are requests for SecurID credentials, the login cgi will fail politely.
 
-Until the authentication module build structure and the credential choice
-mechanism is redone the U of WA securid autheniticaion module is included.  
-This securid interface is a only designed to talk to non-standard securid
-server.  We realize that it's confusing, and perhaps misleading.  having
-this code there shouldn't cause a problem, even if there are requests to
-the login server for securid credentials the the failure is polite.
+4. Localization
 
-Localization
+The design of the login cgi preceded consideration of external use of
+Pubcookie, so there is much work to be done to improve flexibility and
+make it less specific to the University of Washington. As it stands, the
+login cgi must be modified for each environment.
 
-pbc_config.h has macros for the url of the login server, the domain of the
-organization, and other site specific stuff.  They will need to be changed
-to suit your organization.
+First, index.cgi.c uses a mix of Kerberos and SecurID authentication,
+depending on the type of authentication requested. These types are defined
+in pbc_config.h and implemented in two authentication modules,
+index.cgi_krb.c and index.cgi_securid.c, respectively. Localization of the
+login cgi will require replacing this code or adding similar code for a
+new type of authentication. We are grateful to Russell Tokuyama for
+contributing a write-up and sample code used to modify Pubcookie to use
+LDAP for authentication at the University of Hawaii. This work can be
+found in the contrib directory, within index.cgi_ldap; read
+login-server-ldap.txt and then read pubcookie_ldap_modifications.txt to
+learn a possible shortcut.
 
-The login cgi will need to be customized to your local environment.  The
-design of index.cgi didn't take this into consideration so there will be
-much work to be done there.
+Additionally, pbc_config.h defines macros for the URL of the login server,
+the domain of the organization, and other site specific stuff.  
+index.cgi.h defines macros for the location of HTML templates, error
+messages, and an ok_browsers file. They need to be localized as well.
 
-Compiling
+5. Compiling
 
-Of the many Makefiles, Makefile.index.cgi is for making the login CGI and 
-Makefile is for misc tools and general distration.
+Note: it is assumed you have already set up a system running Apache with 
+mod_ssl and have noted the location where OpenSSL is installed.
+
+Makefile.index.cgi is for making the login cgi and Makefile is for
+miscellaneous tools, most importantly the tools used to generate keys for
+target application servers.
 
 The login cgi uses the CGIC library for some functions.  This library is
 included with the Pubcookie distribution.  Pubcookie uses a modified CGIC
-library.  Currently cgic comes in a seperate tar file and is compiled
-seperately.  The pubcookie modifications should not affect other expected
+library.  Currently cgic comes in a separate tar file and is compiled
+separately.  The Pubcookie modifications should not affect other expected
 uses of cgic, the modifications simply make some cgic-internal functions
-available to external apps.
+available externally.
  
-To compile cgic, untar the pubcookie_cgic.tar.gz into a seperate
+To compile cgic, untar the pubcookie_cgic.tar.gz into a separate
 directory. Check the Makefile for installation specific stuff and type
 'make'.  libcgic.a and cgic.h can be put in the pubcookie install
 directory or other locations you please.
 
-Once cigc is compiled you can build the index.cgi with Makefile.index.cgi
+Once cgic is compiled, build index.cgi with Makefile.index.cgi
 
-Server Setup
+Then build the key management tools with Makefile. You'll need these tools
+later.
 
-Apache configuration
+6. Setup: User agent blocking via ok_browsers file
 
-On my test server I hav the following pubcookie directives in addition to 
-the Add/LoadModule lines.
-
-"
-PubCookieLogin https://weblogintest.cac.washington.edu/
-PubCookieCryptKeyfile /usr/local/pubcookie/c_key.pcookiel1
-PubCookieSessionCertfile /usr/local/pubcookie/pubcookie_session.cert
-PubCookieSessionKeyfile /usr/local/pubcookie/pubcookie_session.key
-"
-
-In most cases this should be all that's required unless you want to scope
-a whole webserver to the same pubcookie authentication domain (appid).  
-One popular addition is turning off the inactivity expiration with,
-"PubcookieInactiveExpire -1"  this eliminated the annoying cookie per web
-object and will reduce some unecessary trips back to the login server.
-
-All of the Apache directives for pubcookie are described in:
-https://www.washington.edu/computing/pubcookie/apache/directives.html
-
-User Agent Blocking via ok_browsers file
-
-The idea behind ok_browsers is to block browsers that either hav a known
-security flaw (i.e. don't forget cookies when they shoud) or don't work
-with pubcookie (i.e. Opera which doesn't do domain level cookie scoping
-correctly).  IE and Netscape are the only two browser families that are
-known to work with pubcookie.
+index.cgi.h defines the location of a ok_browsers file.  The idea behind
+ok_browsers is to block browsers that either have a known security flaw
+(i.e. don't forget cookies when they should) or don't work with Pubcookie
+(i.e. Opera which doesn't do domain level cookie scoping correctly).  IE
+and Netscape are the only two browser families that are known to work with
+Pubcookie.
 
 So far we've been too chicken to really use the 'ok_browsers'
-functionality to block browses that we know don't work.  For now our
-ok_broswers has a single line: "Mozilla" since both Netscape and IE claim
+functionality to block browsers that we know don't work.  For now our
+ok_browsers has a single line: "Mozilla". Since both Netscape and IE claim
 to be Mozilla that covers the only two browsers known to work with
-pubcookie.
+Pubcookie. Proceed according to your own policy.
 
-Key Pairs for Signing and Verifying Cookies
+7. More setup: Key pairs for signing and verifying cookies
 
-The key pairs (PBC_L_CERTFILE / PBC_L_KEYFILE, ...) can be generated with
-the openssl command line tool, below is the openssl command.  The Login
-and Granting key pairs only need to generate once.  The Granting key and
-lives on the login server(s) and the Granting cert.  The Session key pair
-is specific to the web application server and you'll want one set per web
-server or web server cluster.
+pbc_config.h defines the location of two key pairs used to sign and verify
+login cookies and granting cookies.
 
-" mod_pubcookie needs a key/certificate pair (session key and session
-certificate) which can be generated using:
+#define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
+#define PBC_L_KEYFILE "/usr/local/pubcookie/pubcookie_login.key"
+#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
+#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
 
-% openssl req -new -x509 -nodes -out file-for-cert -newkey rsa:1024
--keyout file-for-key "
+These key pairs can be generated with the openssl command line tool. For
+example:
 
-Encryption Key / Key Management (as it is)
+% openssl req -new -x509 -nodes -out pubcookie_login.cert -newkey rsa:1024
+-keyout pubcookie_login.key
 
-Current key management in pubcookie is a simple shared key hashed to the
-host's ip.  There is no current mechanism for revoking a key or forcing a
-new generation of keys.
-	
-For the initial install use mkc_make_generic to make a master key.  this 
-master key is then hashed to the host ip's via the mkc_make_local tool.  
+And:
 
-Anciliary Tools
+% openssl req -new -x509 -nodes -out pubcookie_granting.cert -newkey 
+rsa:1024 -keyout pubcookie_granting.key
+
+These key pairs only need to be generated once. PBC_L_CERTFILE,
+PBC_L_KEYFILE, and PBC_G_KEYFILE all reside on the login server.  A copy
+of PBC_G_CERTFILE must be installed with Pubcookie on target application
+servers, which also need to generate their own keys to sign and verify
+their own session cookies.
+
+8. More setup: Encryption key / Key management (as it is)
+
+pbc_config.h also defines the location of a master encryption key and a 
+localized copy:
+
+#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
+#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
+
+Use the pbc_make_generic utility to generate a master key (m_key). For 
+example:
+
+% pbc_make_generic > m_key
+
+Put this master key in the location defined by PBC_MASTER_CRYPT_KEYFILE.
+
+Now use the pbc_make_local utility to hash the master key to the primary
+IP address of your login server and create the localized copy:
+
+% pbc_key_local -a 209.211.239.212 > c_key
+
+Current key management in Pubcookie is a simple shared key (m_key) hashed
+to each participating host's primary IP address. There is no current
+mechanism for revoking a key or forcing new keys to be generated.
+
+Note: Use the pbc_make_local utility to create a localized key (c_key)  
+for each target application server based on its primary IP address. If you 
+are not installing Pubcookie on target application servers, be prepared 
+for requests from sysadmins for c_key files.
+
+9. Ancillary tools
 
 Tools that you need for key management:
-mkc_make_local - 'localizes' master crypt key for a specific host (ip).
-new client hosts will need a localized key.
-mkc_make_generic - Makes a blob of bits that can be used for a master c_key.
+pbc_make_local - 'localizes' master crypt key for a specific host (ip).
+pbc_make_generic - Makes a blob of bits that can be used for a master c_key.
 
 Tool rarely used for debugging:
 test_local_c_key
 
 Obsolete tools that might be handy for debugging:
 pbc_create - creates a pubcookie cookie, see src for usage.
-pbc_verify - decrypts/verifys/displays pubcookie cookies.
+pbc_verify - decrypts/verifies/displays pubcookie cookies.
 
 
 
