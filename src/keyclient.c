@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.18 2002-08-20 20:13:07 greenfld Exp $
+    $Id: keyclient.c,v 2.19 2002-08-23 19:38:28 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -79,6 +79,18 @@
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
 #include "strlcpy.h"
+
+#ifdef WIN32
+   char *SystemRoot;
+#  include "Win32/debug.h"
+#  include "Win32/getopt.h"
+#  include <process.h>
+#  include <io.h>
+#  define pid_t int
+#  define snprintf _snprintf
+#endif
+
+
 
 /* globals */
 int noop = 0;
@@ -142,8 +154,24 @@ int main(int argc, char *argv[])
     int filetype = SSL_FILETYPE_PEM;
     const char *keymgturi = NULL;
     char *keyhost = NULL;
-    int keyport = 443;
+    int keyport = 2222/*443*/;
     int r;
+
+#ifdef WIN32
+	SystemRoot = malloc(MAX_PATH*sizeof(char));
+	GetEnvironmentVariable ("windir",SystemRoot,MAX_PATH);
+	strcat(SystemRoot,"\\System32");
+	{   
+
+	WSADATA wsaData;
+
+	if( WSAStartup((WORD)0x0101, &wsaData ) ) 
+	{  
+	    fprintf(stderr,"Unable to initialize WINSOCK: %d", WSAGetLastError() );
+	    return -1;
+	}
+	}   
+#endif
 
     libpbc_config_init(NULL, "keyclient");
     libpbc_pubcookie_init();
@@ -220,14 +248,18 @@ int main(int argc, char *argv[])
     if (RAND_status() == 0) {
         time_t t = time(NULL);
         pid_t pid = getpid();
+#ifndef WIN32
         char buf[1024];
+#endif
         char *cmd[3] = {"/bin/ps", "-ef", NULL};
 
         RAND_seed((unsigned char *)&t, sizeof(t));
         RAND_seed((unsigned char *)&pid, sizeof(pid));
 
+#ifndef WIN32
         capture_cmd_output(cmd, buf, sizeof(buf));
         RAND_seed((unsigned char *)buf, sizeof(buf));
+#endif
     }
 
     /* Load SSL Error Strings */

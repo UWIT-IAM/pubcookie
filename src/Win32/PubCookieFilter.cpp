@@ -333,7 +333,6 @@ BOOL Pubcookie_Init ()
 		return FALSE;
 	}
 	
-	syslog(LOG_ERR,"Initializing %s",Pubcookie_Version);
 	DebugMsg((DEST,"Pubcookie_Init\n"));
 	
 	DebugMsg((DEST,"  %s\n",Pubcookie_Version));
@@ -350,7 +349,6 @@ BOOL Pubcookie_Init ()
 	// Initialize Pubcookie Stuff
 
     libpbc_pubcookie_init();
-	syslog(LOG_ERR,"libpbc init OK");
 
 
 	// HTTP_FILTER_CONTEXT is not available at DllMain time

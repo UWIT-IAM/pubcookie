@@ -154,11 +154,11 @@ int security_init(void)
 
     if (!keyfile && !certfile) {
 	/* fall back to the pubcookie_session files */
-	keyfile = malloc(1024);
+	keyfile = malloc(1025);
 	snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_session.key");
 
-	certfile = malloc(1024);
+	certfile = malloc(1025);
 	snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
 		 "pubcookie_session.cert");
 

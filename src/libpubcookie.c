@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.39 2002-08-23 04:14:44 ryanc Exp $
+    $Id: libpubcookie.c,v 2.40 2002-08-23 19:38:28 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -681,7 +681,11 @@ int libpbc_set_crypt_key_np(const char *key, const char *peer)
     FILE *f;
 
     make_crypt_keyfile(peer, keyfile);
+#ifdef WIN32
+    if (!(f = pbc_fopen(keyfile, "wb"))) {
+#else
     if (!(f = pbc_fopen(keyfile, "w"))) {
+#endif
 	return PBC_FAIL;
     }
     fwrite(key, sizeof(char), PBC_DES_KEY_BUF, f);
