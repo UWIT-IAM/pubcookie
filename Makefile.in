@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.4 2002-08-15 23:52:52 jjminer Exp $
+# $Id: Makefile.in,v 1.5 2002-08-15 23:55:57 jjminer Exp $
 
 @SET_MAKE@
 
@@ -265,6 +265,7 @@ pbc_myconfig: src/pbc_myconfig.c
 clean::
 	-$(FORCE_RM) *.so src/*.so so_locations 
 	-$(FORCE_RM) $(INDEX_FILES) *.o src/*.o $(TEST_FILES) $(KEY_FILES)
+	-$(FORCE_RM) pbc_myconfig myconf base64
 	(cd cgic; $(MAKE) clean)
 
 distclean:: clean
