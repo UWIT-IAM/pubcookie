@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.29 2002-06-26 20:59:23 willey Exp $
+    $Id: libpubcookie.c,v 2.30 2002-06-28 19:58:47 greenfld Exp $
  */
 
 #if defined (APACHE1_3)
@@ -60,6 +60,7 @@ typedef  int pid_t;  /* win32 process ID */
 #include "pbc_config.h"
 #include "pbc_version.h"
 #include "strlcpy.h"
+#include "security.h"
 
 /* CONSTANTS */
 
@@ -1052,45 +1053,47 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 
 }
 
-/* unfortuneately libpbc_sign_bundle_cookie and libpbc_unbundle are not       */
-/* symetrical in the data they deal with.  the bundle takes the stringified   */
-/* info and the unbundle returns a strunct.  maybe someday i'll clean that up */
-/*                                                                            */
+/**
+ * unfortunately libpbc_sign_bundle_cookie and libpbc_unbundle are not    
+ * symmetrical in the data they deal with.  the bundle takes the stringified
+ * info and the unbundle returns a struct.  maybe someday i'll clean that up
+ *                                                                            
+ * @param cookie_string pointer to the cookie buffer of length
+ * sizeof(pbc_cookie_data)
+ * @param peer the peer this cookie is destined for (NULL for myself)
+ * @returns a pointer to a newly malloc()ed base64 string
+ */
 #ifdef APACHE
 unsigned char *libpbc_sign_bundle_cookie_p(pool *p, 
-	                  unsigned char *cookie_string,
-			  md_context_plus *ctx_plus,
-			  crypt_stuff *c_stuff) 
+					   unsigned char *cookie_string,
+					   const char *peer)
 #else
 unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
-			  md_context_plus *ctx_plus,
-			  crypt_stuff *c_stuff) 
+					    const char *peer)
 #endif
 {
-
     unsigned char		*cookie;
     unsigned char		*sig;
     unsigned char		buf[PBC_4K];
     unsigned char		buf2[PBC_4K];
+    char *out;
+    int outlen;
 
-    memset(buf, 0, sizeof(buf));
-    memset(buf2, 0, sizeof(buf2));
-
-    if ( ! (sig = libpbc_sign_cookie(cookie_string, ctx_plus)) ) {
-        libpbc_debug("libpbc_sign_bundle_cookie: Cookie signing failed\n");
-	return (unsigned char *)NULL;
+    if (libpbc_mk_priv(peer, cookie_string, sizeof(pbc_cookie_data), 
+		       &out, &outlen)) {
+	libpbc_debug("libpbc_sign_bundle_cookie: libpbc_mk_priv failed");
+	return NULL;
     }
 
-    memcpy(buf, sig, PBC_SIG_LEN);
-    pbc_free(sig);
-    memcpy(buf+PBC_SIG_LEN, cookie_string, sizeof(pbc_cookie_data));
+    cookie = (unsigned char *) libpbc_alloc_init(4 * outlen / 3 + 20);
+    if (!cookie) {
+	libpbc_debug("libpbc_sign_bundle_cookie: libpbc_alloc_init failed");
+	free(out);
+	return NULL;
+    }
 
-    /* two bytes get added on in libpbc_encrypt_cookie */
-    if ( ! libpbc_encrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN) )
-	return 0;
-
-    cookie = (unsigned char *)libpbc_alloc_init(PBC_4K);
-    libpbc_base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data) + 2);
+    libpbc_base64_encode(out, cookie, outlen);
+    free(out);
 
     return cookie;
 }
@@ -1147,22 +1150,20 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 /* this is the call used for creating G and S cookies            */
 #ifdef APACHE
 unsigned char *libpbc_get_cookie_p(pool *p, unsigned char *user, 
-	                  unsigned char type, 
-			  unsigned char creds,
-			  int serial,
-			  unsigned char *appsrvid,
-			  unsigned char *appid,
-			  md_context_plus *ctx_plus,
-			  crypt_stuff *c_stuff) 
+				   unsigned char type, 
+				   unsigned char creds,
+				   int serial,
+				   unsigned char *appsrvid,
+				   unsigned char *appid,
+				   const char *peer)
 #else
 unsigned char *libpbc_get_cookie_np(unsigned char *user, 
-	                  unsigned char type, 
-			  unsigned char creds,
-			  int serial,
-			  unsigned char *appsrvid,
-			  unsigned char *appid,
-			  md_context_plus *ctx_plus,
-			  crypt_stuff *c_stuff) 
+				    unsigned char type, 
+				    unsigned char creds,
+				    int serial,
+				    unsigned char *appsrvid,
+				    unsigned char *appid,
+				    const char *peer)
 #endif
 {
 
@@ -1173,8 +1174,7 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
 					 time(NULL),
 					 appsrvid,
 					 appid,
-					 ctx_plus,
-					 c_stuff));
+					 peer));
 
 }
 
@@ -1187,24 +1187,22 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
 /* be treated better then.                                       */
 #ifdef APACHE
 unsigned char *libpbc_get_cookie_with_expire_p(pool *p, unsigned char *user, 
-	                  unsigned char type, 
-			  unsigned char creds,
-			  int serial,
-			  time_t expire,
-			  unsigned char *appsrvid,
-			  unsigned char *appid,
-			  md_context_plus *ctx_plus,
-			  crypt_stuff *c_stuff) 
+					       unsigned char type, 
+					       unsigned char creds,
+					       int serial,
+					       time_t expire,
+					       unsigned char *appsrvid,
+					       unsigned char *appid,
+					       const char *peer)
 #else
 unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user, 
-	                  unsigned char type, 
-			  unsigned char creds,
-			  int serial,
-			  time_t expire,
-			  unsigned char *appsrvid,
-			  unsigned char *appid,
-			  md_context_plus *ctx_plus,
-			  crypt_stuff *c_stuff) 
+						unsigned char type, 
+						unsigned char creds,
+						int serial,
+						time_t expire,
+						unsigned char *appsrvid,
+						unsigned char *appid,
+						const char *peer)
 #endif
 {
 
@@ -1218,7 +1216,7 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
     libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     pbc_free(cookie_data);
-    cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
+    cookie = libpbc_sign_bundle_cookie(cookie_string, peer);
     pbc_free(cookie_string);
 
     return cookie;
@@ -1228,25 +1226,23 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
 /*  deal with unbundling a cookie                                             */
 /*                                                                            */
 #ifdef APACHE
-pbc_cookie_data *libpbc_unbundle_cookie_p(pool *p, char *in, md_context_plus *ctx_plus, crypt_stuff *c_stuff) 
+pbc_cookie_data *libpbc_unbundle_cookie_p(pool *p, char *in, 
+					  const char *peer)
 #else
-pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, crypt_stuff *c_stuff) 
+pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, 
+					   const char *peer)
 #endif
 {
     int			i;
     pbc_cookie_data	*cookie_data;
-    unsigned char	sig[PBC_SIG_LEN];
-    unsigned char	buf[PBC_4K];
-    unsigned char	buf2[PBC_4K];
+    char *plain;
+    int plainlen;
     int outlen;
-
+    unsigned char buf[PBC_4K];
+    
     /* libpbc_debug("libpbc_unbundle_cookie: hello\n"); */
 
-    if( c_stuff == NULL ) 
-        return((pbc_cookie_data *)NULL);
-
     memset(buf, 0, sizeof(buf));
-    memset(buf2, 0, sizeof(buf2));
 
     if ( strlen(in) < PBC_SIG_LEN || strlen(in) > PBC_4K ) {
 	libpbc_debug("libpbc_unbundle_cookie: malformed cookie %s\n", in);
@@ -1258,41 +1254,34 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
 	return 0;
     }
 
-    /* size = data + sig + 2 for crypto offsets */
-    if (outlen != sizeof(pbc_cookie_data) + PBC_SIG_LEN + 2) {
-	libpbc_debug("libpbc_unbundle_cookie: base64 wrong size: %d != %d\n",
-		     outlen, sizeof(pbc_cookie_data) + PBC_SIG_LEN);
+    if (libpbc_rd_priv(peer, buf, outlen, &plain, &plainlen)) {
+	libpbc_debug("libpbc_unbundle_cookie: libpbc_rd_priv() failed\n");
 	return 0;
     }
 
-    if ( ! libpbc_decrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN) )
+    if (plainlen != sizeof(pbc_cookie_data)) {
+	libpbc_debug("libpbc_unbundle_cookie: cookie wrong size: %d != %d\n",
+		     plainlen, sizeof(pbc_cookie_data) + PBC_SIG_LEN);
 	return 0;
-
-    /* break cookie in two */
-    memcpy(sig, buf2, PBC_SIG_LEN);
-    cookie_data = libpbc_init_cookie_data();
-    memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
-
-    if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
-        cookie_data = libpbc_destringify_cookie_data(cookie_data);
-
-	(*cookie_data).broken.last_ts = ntohl((*cookie_data).broken.last_ts);
-	(*cookie_data).broken.create_ts = ntohl((*cookie_data).broken.create_ts);
-	(*cookie_data).broken.serial = ntohl((*cookie_data).broken.serial);
-
-        return cookie_data;
     }
-    else {
-        /* show the the unencrypted cookie contents */
-        for( i=0; i < sizeof(pbc_cookie_data)-1; i++) 
-            if( ((*cookie_data).string)[i] == '\0' )
-                ((*cookie_data).string)[i] = ' ';
-        ((*cookie_data).string)[sizeof(pbc_cookie_data)] = '\0';
-        libpbc_debug("libpbc_unbundle_cookie: decrypted blob: %s\n", (*cookie_data).string);
-        /* either the decryption yielded the wrong stuff or the verify failed */
-	libpbc_debug("libpbc_unbundle_cookie: sig verify failed\n");
-        return NULL;
+
+    /* copy it into a pbc_cookie_data struct */
+    cookie_data = (pbc_cookie_data *) malloc(sizeof(pbc_cookie_data));
+    if (!cookie_data) {
+	libpbc_debug("libpbc_unbundle_cookie: malloc() failed");
+	free(plain);
+	return 0;
     }
+    memcpy((*cookie_data).string, plain, sizeof(pbc_cookie_data));
+    free(plain);
+
+    cookie_data = libpbc_destringify_cookie_data(cookie_data);
+    
+    (*cookie_data).broken.last_ts = ntohl((*cookie_data).broken.last_ts);
+    (*cookie_data).broken.create_ts = ntohl((*cookie_data).broken.create_ts);
+    (*cookie_data).broken.serial = ntohl((*cookie_data).broken.serial);
+
+    return cookie_data;
 }
     
 /*                                                                            */
@@ -1302,9 +1291,11 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
 /* the cookie to be sent back into the world                                  */
 /*                                                                            */
 #ifdef APACHE
-unsigned char *libpbc_update_lastts_p(pool *p, pbc_cookie_data *cookie_data, md_context_plus *ctx_plus, crypt_stuff *c_stuff)
+unsigned char *libpbc_update_lastts_p(pool *p, pbc_cookie_data *cookie_data,
+				      const char *peer)
 #else
-unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_plus *ctx_plus, crypt_stuff *c_stuff)
+unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data,
+				       const char *peer)
 #endif
 {
     unsigned char	*cookie_string;
@@ -1312,7 +1303,8 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
 
     (*cookie_data).broken.last_ts = time(NULL);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
-    cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
+    cookie = libpbc_sign_bundle_cookie(cookie_string, peer);
+    /* xxx memory leaks? */
 
     return cookie;
 

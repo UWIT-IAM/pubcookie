@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.21 2002-06-27 22:07:24 jteaton Exp $
+    $Id: libpubcookie.h,v 1.22 2002-06-28 19:59:12 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -57,29 +57,25 @@ const char libpbc_get_credential_id(const char *name);
 int libpbc_get_crypt_key_p(ap_pool *p, crypt_stuff *c_stuff, char *peer);
 
 unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
-	                         unsigned char, 
-				 unsigned char, 
-				 int,
-				 unsigned char *, 
-				 unsigned char *, 
-				 md_context_plus *, 
-				 crypt_stuff *);
+				   unsigned char, 
+				   unsigned char, 
+				   int,
+				   unsigned char *, 
+				   unsigned char *, 
+				   const char *peer);
 /* for now we use the last_ts field in login cookie as expire_ts */
 unsigned char *libpbc_get_cookie_with_expire_p(ap_pool *, unsigned char *, 
-	                         unsigned char, 
-				 unsigned char, 
-				 int,
-				 time_t,
-				 unsigned char *, 
-				 unsigned char *, 
-				 md_context_plus *, 
-				 crypt_stuff *);
+					       unsigned char, 
+					       unsigned char, 
+					       int,
+					       time_t,
+					       unsigned char *, 
+					       unsigned char *, 
+					       const char *peer);
 pbc_cookie_data *libpbc_unbundle_cookie_p(ap_pool *, char *, 
-	                                md_context_plus *, 
-					crypt_stuff *);
+					  const char *peer);
 unsigned char *libpbc_update_lastts_p(ap_pool *, pbc_cookie_data *,
-                                    md_context_plus *, 
-                                    crypt_stuff *);
+				      const char *peer);
 md_context_plus *libpbc_sign_init_p(ap_pool *, char *);
 md_context_plus *libpbc_verify_init_p(ap_pool *, char *);
 void libpbc_pubcookie_init_p(ap_pool *);
@@ -108,29 +104,25 @@ int libpbc_set_crypt_key_p(ap_pool *, const char *key, const char *peer);
 int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *peer);
 
 unsigned char *libpbc_get_cookie_np(unsigned char *, 
-	                         unsigned char, 
-				 unsigned char, 
-				 int,
-				 unsigned char *, 
-				 unsigned char *, 
-				 md_context_plus *, 
-				 crypt_stuff *);
+				    unsigned char, 
+				    unsigned char, 
+				    int,
+				    unsigned char *, 
+				    unsigned char *, 
+				    const char *peer);
 /* for now we use the last_ts field in login cookie as expire_ts */
 unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *, 
-	                         unsigned char, 
-				 unsigned char, 
-				 int,
-				 time_t,
-				 unsigned char *, 
-				 unsigned char *, 
-				 md_context_plus *, 
-				 crypt_stuff *);
+						unsigned char, 
+						unsigned char, 
+						int,
+						time_t,
+						unsigned char *, 
+						unsigned char *, 
+						const char *peer);
 pbc_cookie_data *libpbc_unbundle_cookie_np(char *, 
-	                                md_context_plus *, 
-					crypt_stuff *);
+					   const char *peer);
 unsigned char *libpbc_update_lastts_np(pbc_cookie_data *,
-                                    md_context_plus *, 
-                                    crypt_stuff *);
+				       const char *peer);
 md_context_plus *libpbc_sign_init_np(char *);
 md_context_plus *libpbc_verify_init_np(char *);
 void libpbc_pubcookie_init_np();
