@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 2.2 2002-07-07 21:27:20 greenfld Exp $
+# $Id: Makefile.in,v 2.3 2002-07-08 20:23:01 jjminer Exp $
 
 @SET_MAKE@
 
@@ -22,16 +22,19 @@ index.cgi:
 mod_pubcookie.so:
 	$(MAKE) -f Makefile.apxs
 
-clean:
+clean: libclean
 	$(MAKE) -f Makefile.login clean
 	$(MAKE) -f Makefile.apxs clean
+
+libclean:
+	$(MAKE) -f Makefile.libpubcookie libclean
 
 distclean:
 	$(MAKE) -f Makefile.login distclean
 	$(MAKE) -f Makefile.apxs distclean
 	$(FORCE_RM) $(GEN_MAKEFILES)
 
-install: clean
+install: libclean
 	$(MAKE) -f Makefile.login install
 	$(MAKE) -f Makefile.apxs install
 

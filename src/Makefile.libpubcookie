@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.libpubcookie,v 1.9 2002-07-07 21:27:20 greenfld Exp $
+# $Id: Makefile.libpubcookie,v 1.10 2002-07-08 20:23:01 jjminer Exp $
 
 LIB_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h pbc_myconfig.h \
 	security.h pbc_logging.h
@@ -23,8 +23,11 @@ GEN_MAKEFILES=Makefile Makefile.login Makefile.settings
 
 MAKEFILES += Makefile.libpubcookie
 
-clean::
-	$(FORCE_RM) $(LIB_OBJ) $(LIB_TESTS) $(CONFIGURE_FILES)
+libclean:
+	$(FORCE_RM) $(LIB_OBJ) $(LIB_TESTS)
+
+clean:: libclean
+	$(FORCE_RM) $(CONFIGURE_FILES)
 
 distclean:: clean
 
