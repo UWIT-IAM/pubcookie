@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.71 $
+ * $Revision: 1.72 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1438,8 +1438,9 @@ int cgiMain()
     /* check to see what cookies we have */
     /* pinit detected in here */
     /* pinit responce detected in here */
-    if (cookie_test(l, c) == PBC_FAIL)
-        exit(0);
+    if (cookie_test(l, c) == PBC_FAIL) {
+        goto done;
+    }
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW,
 		    "cgiMain: checked user_agent, logout, and pinit.");
