@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.19 2005-01-03 23:15:06 willey Exp $
+ * $Id: ntmpl.c,v 1.20 2005-01-15 01:16:59 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -242,7 +242,7 @@ void ntmpl_print_html (pool * p, const char *fpath, const char *fname, ...)
 /* returns PBC_OK if template exists, PBC_FAIL if template doesn't exist      */
 int ntmpl_tmpl_exist (pool * p, const char *fpath, const char *fname)
 {
-    struct stat *buf;
+    struct stat buf;
     int len, ret;
     char *templatefile = NULL;
 
@@ -265,14 +265,10 @@ int ntmpl_tmpl_exist (pool * p, const char *fpath, const char *fname)
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "ntmpl_tmpl_exist: looking for: %s", templatefile);
 
-    buf = malloc (sizeof (struct stat));
-    if (stat (templatefile, buf))
-        ret = PBC_FAIL;
-    else
+    if (stat (templatefile, &buf) == 0)
         ret = PBC_OK;
-
-    if (buf != NULL)
-        free (buf);
+    else
+        ret = PBC_FAIL;
 
     return (ret);
 
