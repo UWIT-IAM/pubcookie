@@ -1857,20 +1857,54 @@ DWORD OnEndOfRequest (HTTP_FILTER_CONTEXT* pFC)
 
 }  /* OnEndOfRequest */
 
+VOID ReplaceToken(const char *token,const char *data, char *psztarget, int targetsize)
+{
+	char *l1;
+	char *szbuff=NULL;
+
+	while (l1=strstr(psztarget,token)) {
+		szbuff = (char *)realloc(szbuff,sizeof(char) * (strlen(psztarget) + strlen(data) - strlen(token) + 1));
+		szbuff[0] = 0;
+		strncat(szbuff,psztarget,l1-psztarget);
+		strcat(szbuff,data);
+		strcat(szbuff,l1+strlen(token));
+		strncpy(psztarget,szbuff,targetsize);
+	}
+
+	free(szbuff);
+
+}
 
 DWORD OnLog (HTTP_FILTER_CONTEXT* pFC, 
 		  	 HTTP_FILTER_LOG* pLogInfo)
 {
 	char szBuff[1024];
-	DWORD dwBuffSize;
+	DWORD dwBuffSize,dwReserved=NULL;
+	char *pszNewClient;
+	pubcookie_dir_rec* dcfg;
+	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	DebugMsg((DEST,"PBC_OnLog\n"));
 
 	szBuff[0]= NULL; dwBuffSize=1024;
+
 	pFC->GetServerVariable(pFC, "INSTANCE_ID",
 							szBuff, &dwBuffSize);
 	DebugMsg((DEST,"  Instance ID   : %s\n",szBuff));
 
+	if ( dcfg ) {
+		
+		DebugMsg((DEST,"  Pubcookie user: (%s)\n",dcfg->pszUser));
+		DebugMsg((DEST,"  Pubcookie user: OK\n"));
+	}
+/*	if (strlen(dcfg->pszUser) > 0) {
+		pszNewClient = (char *)pFC->AllocMem(pFC,dwBuffSize,dwReserved);
+		strncpy(pszNewClient,PBC_CLIENT_LOG_FMT, dwBuffSize);
+		ReplaceToken("%w",pLogInfo->pszClientUserName,pszNewClient, dwBuffSize);
+		ReplaceToken("%p",dcfg->pszUser, pszNewClient, dwBuffSize);
+		pLogInfo->pszClientUserName = pszNewClient;
+	}
+*/
 	DebugMsg((DEST,"  ClientHostName: %s\n",pLogInfo->pszClientHostName));
 	DebugMsg((DEST,"  ClientUserName: %s\n",pLogInfo->pszClientUserName));
 	DebugMsg((DEST,"  ServerName    : %s\n",pLogInfo->pszServerName));
@@ -1894,6 +1928,8 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 
 	if ( pLogInfo->dwBytesRecvd > Max_Bytes_Recvd )
 		Max_Bytes_Recvd = pLogInfo->dwBytesRecvd;
+	
+	
 
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 

@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.74 2003-03-24 21:28:14 jjminer Exp $
+    $Id: pbc_config.h,v 1.75 2003-04-01 00:07:33 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -78,7 +78,7 @@
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
 	#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
 	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
-
+	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
 #endif
 
 #define PBC_REFRESH_TIME 0
