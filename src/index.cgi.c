@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.52 $
+ * $Revision: 1.53 $
  */
 
 
@@ -1517,15 +1517,10 @@ int cgiMain()
 /*    returns credentials ok for ride free                          */
 char ride_free_zone(login_rec *l, login_rec *c)
 {
-    char	*cookie;
     time_t	t;
 
     if (debug) {
 	fprintf(stderr, "ride_free_zone: hello\n");
-    }
-
-    if (!(cookie = malloc(PBC_4K)) ) {
-        abend("out of memory");
     }
 
     if (init_crypt() == PBC_FAIL) {
