@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.20 2002-07-18 20:11:37 greenfld Exp $
+    $Id: keyserver.c,v 2.21 2002-08-06 16:01:24 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -205,31 +205,27 @@ int pushkey(const char *peer)
             exit(1);
         }
         if (res == 0) {
-            char *keyclient = (PBC_PATH "bin/keyclient");
-            char *cmd[15] = {
+            const char *keyclient = (PBC_PATH "bin/keyclient");
+            const char *cmd[15] = {
                keyclient,
                "-u",
-               "-h",
-               (char *) peer,
-               "-L",
-               (char *) lservers[x],
-               "-k",
-               (char *) keyfile, 
-               "-c",
-               (char *) certfile
+               "-H", peer,
+               "-L", lservers[x],
+               "-k", keyfile, 
+               "-c", certfile
             };
             int n = 10;
             if (cafile != NULL) {
                cmd[n++] = "-C";
-               cmd[n++] = (char *) cafile;
+               cmd[n++] = cafile;
             }
             if (cadir != NULL) {
                cmd[n++] = "-D";
-               cmd[n++] = (char *) cadir;
+               cmd[n++] = cadir;
             }
             cmd[n] = NULL;
 
-            res = execv(keyclient, cmd);
+            res = execv(keyclient, (char **const) cmd);
             syslog(LOG_ERR, "execl(): %m");
             for (n=0; cmd[n]!=NULL; n++){
                syslog(LOG_ERR, "%d %s", n, cmd[n]);
