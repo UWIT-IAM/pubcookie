@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.19 2004-02-16 17:05:31 jteaton Exp $
+    $Id: pubcookie.h,v 1.20 2004-12-04 03:36:51 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -43,6 +43,7 @@
 #define PBC_XS_IN_X_STRING 13
 #define PBC_X_CHAR 'X'
 #define PBC_NO_FORCE_REAUTH "NFR"
+#define PBC_POST_NAME "relay.pubcookie3"
 
 /* gotta start somewhere                                                      */
 #define PBC_INIT_IVEC {0x4c,0x43,0x5f,0x98,0xbc,0xab,0xef,0xca}

@@ -33,7 +33,7 @@ typedef struct {
 	char			*crypt_keyfile;
 	int				serial_s_sent;
 	char			server_hostname[MAX_PATH];
-	char			instance_id[8];
+	char			instance_id[MAX_INSTANCE_ID+1];
 	char			strbuff[MAX_REG_BUFF];  //temporary buffer for libpbc_config_getstring calls
 
 } pubcookie_dir_rec;

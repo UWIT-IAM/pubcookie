@@ -10,27 +10,28 @@ If Err = 0 Then
       If Child.Class = "IIsWebServer" Then
 
 		Set objRoot = Child.GetObject("IISWebVirtualDir", "Root")
-		Set objDirectory = objRoot.GetObject("IISWebDirectory", "PBC_RELAY")
+		Set objDirectory = objRoot.GetObject("IISVirtualDir", "PBC_RELAY")
 		If Err Then
 			Err = 0
-			Set objDirectory = objRoot.Create("IISWebDirectory", "PBC_RELAY")
-		End If
+			Set objDirectory = objRoot.Create("IISVirtualDir", "PBC_RELAY")
+                        obDirectory.SetInfo
+ 		End If
 		If Err Then
-			msgbox("Could not open relay directory.  Script permissions not set.")
+			msgbox("Could not open or create relay directory.  POST mode operation unavailable for the site: " & Child.ServerComment & ".")
 			Exit For
 		End If
-		
+
+                obDirectory.Path = "C:\test"		
 		objDirectory.AccessScript = "True"
 		objDirectory.AccessRead = "True"
 		objDirectory.AccessExecute = "True"
 		objDirectory.SetInfo 
 
           If Err = 0 Then
-              msgbox("Added Pubcookie relay to " & Child.ServerComment & ".")
-		  Else
-	          msgbox("Problem encountered adding Pubcookie relay to " & Child.ServerComment & ", error: " & Err & ".")
-		  End If
-          Exit For
+              'msgbox("Added Pubcookie relay to " & Child.ServerComment & ".")
+	    Else
+	        msgbox("Problem encountered adding Pubcookie relay to " & Child.ServerComment & ", error: " & Err & ".")
+	    End If
       End If
     Next
 Else

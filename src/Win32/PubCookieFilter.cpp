@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.36 2004-09-01 21:53:34 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.37 2004-12-04 03:36:51 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -307,6 +307,7 @@ BOOL Pubcookie_Init ()
 {
 	int rslt;
 	pubcookie_dir_rec *p=NULL;
+	DWORD tmpsz = 256;
 
 	p = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec));
 	bzero(p,sizeof(pubcookie_dir_rec));
@@ -335,7 +336,9 @@ BOOL Pubcookie_Init ()
 
 }  /* Pubcookie_Init */
 
-// 'X' out the pubcookie cookies so the web page can't see them.
+// 'X' out the pubcookie cookies so the web page can't see them.  
+//  Not used.  Xed out cookies cause problems with pubcookie logic.
+//  Clear them instead
 void Blank_Cookie (HTTP_FILTER_CONTEXT* pFC,
 				   HTTP_FILTER_PREPROC_HEADERS* pHeaderInfo,
 				   char *name) 
@@ -398,10 +401,10 @@ void Blank_Cookie (HTTP_FILTER_CONTEXT* pFC,
 }  /* Blank_Cookie */
 
 
-int Hide_Cookies (HTTP_FILTER_CONTEXT* pFC,
+int Hide_Cookies (HTTP_FILTER_CONTEXT* pFC,  //This function no longer needed
 					  HTTP_FILTER_PREPROC_HEADERS* pHeaderInfo)
 {
-    pubcookie_dir_rec   *p;
+ /*   pubcookie_dir_rec   *p;
 
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 
@@ -409,7 +412,7 @@ int Hide_Cookies (HTTP_FILTER_CONTEXT* pFC,
 
 	Blank_Cookie(pFC, pHeaderInfo, PBC_S_COOKIENAME);
     Blank_Cookie(pFC, pHeaderInfo, PBC_G_COOKIENAME);
-
+*/
     return OK;
 
 } /* Hide_Cookies */
@@ -541,7 +544,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	
 	Add_No_Cache(pFC);
 
-	snprintf(szTemp,1024,"/PBC_RELAY/PubCookieFilter.dll?login_uri=%s&domain=%s",p->Login_URI,p->Enterprise_Domain);
+	snprintf(szTemp,1024,"/%s?login_uri=%s&domain=%s",PBC_POST_NAME,p->Login_URI,p->Enterprise_Domain);
+	//snprintf(szTemp,1024,p->Login_URI);
 	return (Redirect(pFC,szTemp));
 
 }  /* Auth_Failed */
@@ -1202,7 +1206,11 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	else if (strlen(pachUrl) > 0) {   // This could set appid to a filename in the root dir
 		strcpy((char *)p->appid, pachUrl);
 	}
-
+    
+	// Don't loop trying to protect virtual post name
+	if (!stricmp(PBC_POST_NAME,p->appid)) {
+				return DECLINED;
+	}
 	// Save Path unchanged so cookies will be returned properly
 	// strcpy(p->path_id,p->appid);
 
@@ -1395,8 +1403,6 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			return OK;
 		}
 
-
-
 		pbc_free(p, cookie);
 
 		filterlog(p, LOG_INFO,"  Granting Cookie Contents:\n    user= %s\n    version= %s\n    appsrvid= %s\n    appid= %s\n    type= %c\n    creds= %c\n    create_ts= %d\n    last_ts= %d\n",
@@ -1555,7 +1561,6 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			}
 
 
-//Not currently used..someone unknown issue
 #ifdef COOKIE_PATH
 			if ( stricmp(p->appid,(PBC_DEFAULT_APP_NAME)) == 0 )
 				sprintf(new_cookie, "Set-Cookie: %s_%s=%s; domain=%s; path=/; secure\r\n", 
@@ -1631,6 +1636,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 {
+
 	// The version of the web server this is running on
 	syslog(LOG_INFO, "\nPBC_GetFilterVersion: Web Server is version is %d.%d\n",
 				HIWORD( pVer->dwServerFilterVersion ),
@@ -1868,8 +1874,8 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 					return_rslt = SF_STATUS_REQ_ERROR;
 					break;
 				}
-			else
-				Hide_Cookies(pFC,pHeaderInfo);
+//			else
+			//	Hide_Cookies(pFC,pHeaderInfo);
 //		else
 //			Hide_Cookies(pFC,pHeaderInfo);
 	else
@@ -1971,14 +1977,13 @@ DWORD OnSendResponse (HTTP_FILTER_CONTEXT* pFC,
 
 	if ( p ) {
 		AddToLog(LogBuff,"PBC_OnSendResponse (%s)\n",p->remote_host);
-	} else {
-		AddToLog(LogBuff,"PBC_OnSendResponse\n");
-	}
+	} 
 
 	AddToLog(LogBuff,"  HttpStatus: %d\n",pResponseInfo->HttpStatus);
 
-	filterlog(p, LOG_INFO, LogBuff);
-
+	if ( p ) {
+		filterlog(p, LOG_INFO, LogBuff);
+    }
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 
 }  /* OnSendResponse */ 
@@ -2015,9 +2020,7 @@ DWORD OnEndOfRequest (HTTP_FILTER_CONTEXT* pFC)
 
 	if ( p ) {
 		filterlog(p, LOG_INFO,"PBC_OnEndOfRequest (%s)\n",p->remote_host);
-	} else {
-		filterlog(p, LOG_INFO,"PBC_OnEndOfRequest\n");
-	}
+	} 
 			
 	// OnEndOfNetSession is not called consistantly for each request,
 	// free here instead.
@@ -2054,20 +2057,20 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 		  	 HTTP_FILTER_LOG* pLogInfo)
 {
 	char szBuff[1024];
-	char LogBuff[LOGBUFFSIZE]="";
+	//char LogBuff[LOGBUFFSIZE]="";  Logging here is too problematic with IIS 6 threads being terminated from outside
 	DWORD dwBuffSize,dwReserved=NULL;
 	pubcookie_dir_rec* p;
 	char *pszNewClient;
 
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	AddToLog(LogBuff,"PBC_OnLog\n");
+	//AddToLog(LogBuff,"PBC_OnLog\n");
 
 	szBuff[0]= NULL; dwBuffSize=1024;
 
 	pFC->GetServerVariable(pFC, "INSTANCE_ID",
 							szBuff, &dwBuffSize);
-	AddToLog(LogBuff,"  Instance ID   : %s\n",szBuff);
+	//AddToLog(LogBuff,"  Instance ID   : %s\n",szBuff);
 
 	if ( p ) {
 		if (strlen(p->user) > 0) {
@@ -2076,11 +2079,11 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 			strncpy(pszNewClient,(PBC_CLIENT_LOG_FMT), dwBuffSize);
 			ReplaceToken("%w",pLogInfo->pszClientUserName,pszNewClient, dwBuffSize);
 			ReplaceToken("%p",p->user, pszNewClient, dwBuffSize);
-			AddToLog(LogBuff,"  Modified user : %s\n",pszNewClient);
+			//AddToLog(LogBuff,"  Modified user : %s\n",pszNewClient);
 			pLogInfo->pszClientUserName = pszNewClient;
 		}
 	}
-	AddToLog(LogBuff,"  ClientHostName: %s\n",pLogInfo->pszClientHostName);
+	/* AddToLog(LogBuff,"  ClientHostName: %s\n",pLogInfo->pszClientHostName);
 	AddToLog(LogBuff,"  ClientUserName: %s\n",pLogInfo->pszClientUserName);
 	AddToLog(LogBuff,"  ServerName    : %s\n",pLogInfo->pszServerName);
 	AddToLog(LogBuff,"  Operation     : %s\n",pLogInfo->pszOperation);
@@ -2093,6 +2096,7 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 	AddToLog(LogBuff,"  ProcTime      : %d\n",pLogInfo->msTimeForProcessing);
 
 	filterlog(p, LOG_INFO, LogBuff);
+	*/
 
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 
@@ -2101,22 +2105,10 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 
 DWORD OnEndOfNetSession (HTTP_FILTER_CONTEXT* pFC)
 {
-	pubcookie_dir_rec* p;
-	p = (pubcookie_dir_rec *)pFC->pFilterContext;
-
-	if ( p ) {
-		filterlog(p, LOG_INFO,"PBC_OnEndOfNetSession (%s)\n",p->remote_host);
-	} else {
-		filterlog(p, LOG_INFO,"PBC_OnEndOfNetSession\n");
-	}
 			
-	// Free pFilterContext here if allocated via malloc
-	// However this routine is not to be called consistantly due to keep alives
-	// Use EndOfRequest instead
 
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 
-//	return SF_STATUS_REQ_FINISHED;    ??? not sure if this is necessary ???
 
 }  /* OnEndOfNetSession */
 
@@ -2216,7 +2208,7 @@ BOOL WINAPI GetExtensionVersion(OUT HSE_VERSION_INFO *pVer)
 
 void output_error_page(EXTENSION_CONTROL_BLOCK *pECB) {
 
-   syslog(LOG_WARN,"Extension sent error page");
+   // syslog(LOG_WARN,"Extension sent error page");  //  Access issues in IIS6
 
    SendHttpHeaders(pECB, "200 OK", "Content-type: text/html\r\n\r\n");
 
@@ -2358,16 +2350,15 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    char httpheader[START_COOKIE_SIZE+1024];
    char sztmpstr[MAX_BUFFER];
 
-   //time_t expires = time(NULL) + PBC_GRANTING_EXPIRE;
-
    // Send HTTP headers and set granting cookie
-   syslog(LOG_INFO,"Extension relaying cookie %s\n   domain=%s;\n   path=/;\n   secure;\n",PBC_G_COOKIENAME,expires,p->Enterprise_Domain);
+
+   // syslog(LOG_INFO,"Extension relaying cookie %s\n   domain=%s;\n   path=/;\n   secure;\n",PBC_G_COOKIENAME,p->Enterprise_Domain);
+   // Access issues in 6.0
 
    snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\nContent-type: text/html\r\n\r\n", 
 			PBC_G_COOKIENAME,
 			grpl,
 			p->Enterprise_Domain); 
-			//expires);
 
    SendHttpHeaders(pECB, "200 OK", httpheader);
 
@@ -2439,15 +2430,17 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 
 DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 {
-  char *cookie, *val=NULL, *postdata, *redirect_url;
-  HKEYLIST hKeyList, hKeyFound;
+  char *cookie=NULL, *val=NULL, *postdata=NULL, *redirect_url=NULL;
   char *host, *port, *uri, *qs;
   char *uport;
   int ishttps;
   char szBuffer[MAX_BUFFER];
   DWORD dwBufferSize;
+  size_t ts;
   DWORD retcode=HSE_STATUS_SUCCESS;
+  HKEYLIST hKeyList, hKeyFound;
 
+ //Sleep(20000);  //debug
   pubcookie_dir_rec *p = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec));
   memset(p,0,sizeof(pubcookie_dir_rec));
 
@@ -2460,7 +2453,14 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 
   getqueryarg(qs, p->Login_URI,"login_uri",1024);
   getqueryarg(qs, p->Enterprise_Domain,"domain",1024);
-  
+
+  // syslog(LOG_ERR,"p->Login_URI = %s : strlen = %d",p->Login_URI,strlen(p->Login_URI)); 
+
+  if (strlen(p->Login_URI) < 1) {
+	 output_error_page(pECB);
+     return HSE_STATUS_ERROR;
+  }
+
   libpbc_config_init(p, NULL, "relay");
 
   /* figure out relay uri */
@@ -2494,49 +2494,49 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 	  ishttps = 0;
   }
 
-  
-
   if (port && strcmp(port,ishttps?"443":"80")) {
      uport = (char*) malloc(2+strlen(port));
      sprintf(uport,":%s", port);
   } else uport = strdup("");
-  
-  p->Relay_URI = (char*) malloc(24 + strlen(host) + strlen(uport) + 
-                        strlen(uri));
-  sprintf(p->Relay_URI, "http%c://%s%s%s%s%s",
+
+  ts = 24 + strlen(host) + strlen(uport) + strlen(uri) + strlen(qs);
+  p->Relay_URI = (char*) malloc(ts);
+  snprintf(p->Relay_URI,ts,"http%c://%s%s%s%s%s",
            ishttps?'s':'\0', host, uport, uri,*qs?"?":"", qs);
 
   /* A logout request to the login server will have a
      logout action variable */
 
-  hKeyList = GetKeyList(pECB);
-
   if (getqueryarg(qs,val,PBC_GETVAR_LOGOUT_ACTION,0)) {
       relay_logout_request(pECB, p, val, qs);
       free(val);
-  } else 
-  /* A login reply to the application will have a granting
-     cookie in posted form data */
-
-  if (hKeyFound = FindKey(hKeyList,PBC_G_COOKIENAME)) {
-		 postdata = (char *)GetKeyBuffer(hKeyFound);
-		 redirect_url = (char *)GetKeyBuffer(FindKey(hKeyList,"redirect_url"));
-         relay_granting_reply(pECB, p, postdata, redirect_url); 
-  } else  
-
-  /* A login request from an application will have a granting 
-     request cookie */
-  if (cookie= Get_Ext_Cookie(pECB, p, PBC_G_REQ_COOKIENAME)) {
-         relay_granting_request(pECB, p, cookie);
-
-     /* Otherwise this is an invalid request */
-
   } else {
-     output_error_page(pECB);
-     //retcode = HSE_STATUS_ERROR;
+    /* A login reply to the application will have a granting
+     cookie in posted form data */
+     hKeyList = GetKeyList(pECB);
+
+     if (hKeyFound = FindKey(hKeyList,PBC_G_COOKIENAME)) {
+		 postdata = (char *)GetKeyBuffer(hKeyFound);
+		 if (hKeyFound = FindKey(hKeyList,"redirect_url")) {
+		     redirect_url = (char *)GetKeyBuffer(hKeyFound);
+		 }
+         relay_granting_reply(pECB, p, postdata, redirect_url); 
+    } else  
+
+      /* A login request from an application will have a granting 
+       request cookie */
+       if (cookie= Get_Ext_Cookie(pECB, p, PBC_G_REQ_COOKIENAME)) {
+           relay_granting_request(pECB, p, cookie);
+
+          /* Otherwise this is an invalid request */
+
+    } else {
+       output_error_page(pECB);
+       retcode = HSE_STATUS_ERROR;
+    }
+   FreeKeyList(hKeyList);
   }
 
-  FreeKeyList(hKeyList);
   free(p);
   return retcode;
 }
