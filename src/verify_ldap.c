@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.15 2002-12-06 00:56:01 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.16 2002-12-06 16:47:21 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -330,6 +330,8 @@ static int ldap_connect( LDAP ** ld,
         }
 
         *ld = (LDAP *) ldapssl_init( ludp->lud_host, ludp->lud_port, 1 );
+    } else {
+        *ld = ldap_init( ludp->lud_host, ludp->lud_port );
     }
 
     if (*ld == (LDAP *) -1) 
