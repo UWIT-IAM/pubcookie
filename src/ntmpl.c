@@ -13,6 +13,10 @@ typedef void pool;
 # include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
 #ifdef HAVE_CTYPE_H
 # include <ctype.h>
 #endif
@@ -23,6 +27,10 @@ typedef void pool;
 
 #ifdef HAVE_STDARG_H
 # include <stdarg.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
 #endif
 
 #include "pbc_logging.h"
