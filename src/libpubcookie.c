@@ -18,22 +18,12 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.47 2002-11-14 21:12:12 jjminer Exp $
+    $Id: libpubcookie.c,v 2.48 2003-01-18 00:12:58 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
-#endif
-
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
 #endif
 
 #if defined (WIN32)
@@ -66,6 +56,10 @@ typedef  int pid_t;  /* win32 process ID */
 #  include <string.h>
 # endif /* HAVE_STRING_H */
 
+# ifdef HAVE_STRINGS_H
+#  include <strings.h>
+# endif /* HAVE_STRINGS_S */
+
 # ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # endif /* HAVE_SYS_TIME_H */
@@ -88,6 +82,15 @@ typedef  int pid_t;  /* win32 process ID */
 
 #endif /* WIN32 */
 
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#endif
 
 #ifdef OPENSSL_IN_DIR
 # include <openssl/pem.h>

@@ -20,8 +20,20 @@
 # include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+
 #ifdef HAVE_DMALLOC_H
-# ifndef APACHE
+# ifndef APACHE1_3
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

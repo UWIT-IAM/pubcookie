@@ -19,6 +19,18 @@
 # include <syslog.h>
 #endif /* HAVE_SYSLOG_H */
 
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif
+
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
+
 #include "libpubcookie.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"

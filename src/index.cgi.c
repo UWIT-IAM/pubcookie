@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.95 $
+ * $Revision: 1.96 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -208,10 +208,10 @@ static void buf_template_vprintf(const char *fname, char *dst, size_t n,
 				 va_list ap)
 {
     char *template = get_file_template(fname);
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "buf_tempalte_vprintf: hello");
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "buf_template_vprintf: hello");
     vsnprintf(dst, n, template, ap);
     free(template);
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "buf_tempalte_vprintf: goodbye");
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "buf_template_vprintf: goodbye");
 }
 
 /**
@@ -586,19 +586,20 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
 
     /* if we have a problem then bail with a nice message */
     if ( l_res == PBC_FAIL ) {
-          sprintf( message, "%s%s%s%s%s%s",
-		PBC_EM1_START,
-		TROUBLE_CREATING_COOKIE,
-		PBC_EM1_END,
-      		PBC_EM2_START,
-		PROBLEMS_PERSIST,
-         	PBC_EM2_END);
-          /* XXX print_login_page(l, c, "cookie create failed"); */
-	  pbc_log_activity(PBC_LOG_ERROR,
-		    "Not able to create cookie for user %s at %s-%s",
-		    l->user, l->appsrvid, l->appid);
-          free(message);
-          return(PBC_FAIL);
+        sprintf( message, "%s%s%s%s%s%s",
+                 PBC_EM1_START,
+                 TROUBLE_CREATING_COOKIE,
+                 PBC_EM1_END,
+                 PBC_EM2_START,
+                 PROBLEMS_PERSIST,
+                 PBC_EM2_END);
+        /* XXX print_login_page(l, c, "cookie create failed"); */
+        pbc_log_activity(PBC_LOG_ERROR,
+                         "Not able to create cookie for user %s at %s-%s",
+                         l->user, l->appsrvid, l->appid);
+        if (message != NULL)
+            free(message);
+        return(PBC_FAIL);
     }
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=%s%s\n",
@@ -609,9 +610,14 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
 #ifdef PORT80_TEST
                  ""
 #else
-                 "; secure"
+        "; secure"
 #endif
         );
+
+    if (l_cookie != NULL)
+        free(l_cookie);
+    if (message != NULL)
+        free(message);
 
     return(PBC_OK);
 
@@ -626,19 +632,19 @@ int clear_login_cookie() {
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,"clear_login_cookie: hello");
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\n",
-            PBC_L_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            login_host(), 
-            LOGIN_DIR, 
-            EARLIEST_EVER,
+                 PBC_L_COOKIENAME, 
+                 PBC_CLEAR_COOKIE,
+                 login_host(), 
+                 LOGIN_DIR, 
+                 EARLIEST_EVER,
 #ifdef PORT80_TEST
-            ""
+                 ""
 #else
-            "; secure"
+                     "; secure"
 #endif
-                );
+                     );
 
-    return(PBC_OK);
+                 return(PBC_OK);
 
 }
 
@@ -649,16 +655,16 @@ int clear_login_cookie() {
 int clear_greq_cookie() {
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
-            PBC_G_REQ_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            enterprise_domain(),
-            EARLIEST_EVER,
+                 PBC_G_REQ_COOKIENAME, 
+                 PBC_CLEAR_COOKIE,
+                 enterprise_domain(),
+                 EARLIEST_EVER,
 #ifdef PORT80_TEST
-            ""
+                 ""
 #else
-            "; secure"
+        "; secure"
 #endif
-                );
+        );
 
     return(PBC_OK);
 
@@ -679,13 +685,13 @@ login_rec *load_login_rec(login_rec *l)
         l->user = clean_username(l->user);
 
     l->realm = get_string_arg(PBC_GETVAR_REALM, NO_NEWLINES_FUNC);
-    
+
     /* set a default realm if not passed in */
     if (l->realm == NULL) {
-       tmp = (char *) libpbc_config_getstring("default_realm", NULL);
-       if (tmp) {
-          l->realm = strdup(tmp);
-       }
+        tmp = (char *) libpbc_config_getstring("default_realm", NULL);
+        if (tmp) {
+            l->realm = strdup(tmp);
+        }
     }
 
     l->pass 	      = get_string_arg(PBC_GETVAR_PASS, NO_NEWLINES_FUNC);
@@ -698,7 +704,7 @@ login_rec *load_login_rec(login_rec *l)
     l->creds          = get_int_arg(PBC_GETVAR_CREDS, 0) + 48;
 
     if( (l->creds_from_greq = 
-              get_int_arg(PBC_GETVAR_GREQ_CREDS, 0)+48) == PBC_CREDS_NONE ) 
+         get_int_arg(PBC_GETVAR_GREQ_CREDS, 0)+48) == PBC_CREDS_NONE ) 
         l->creds_from_greq  = l->creds;
 
     l->appid 	      = get_string_arg(PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
@@ -727,7 +733,7 @@ char *url_encode(char *in)
     char	*p;
 
     if (in == NULL) {
-	return NULL;
+        return NULL;
     }
 
     if (!(out = malloc(strlen (in) * 3 + 1)) ) {
@@ -737,45 +743,45 @@ char *url_encode(char *in)
     p = out;
     while( *in ) {
         switch(*in) {
-        case ' ':
-            *p = '+';
-            break;
-        case '!':
-            *p = '%'; *(++p) = '2'; *(++p) = '1';
-            break;
-        case '"':
-            *p = '%'; *(++p) = '2'; *(++p) = '2';
-            break;
-        case '#':
-            *p = '%'; *(++p) = '2'; *(++p) = '3';
-            break;
-        case '$':
-            *p = '%'; *(++p) = '2'; *(++p) = '4';
-            break;
-        case '%':
-            *p = '%'; *(++p) = '2'; *(++p) = '5';
-            break;
-        case '&':
-            *p = '%'; *(++p) = '2'; *(++p) = '6';
-            break;
-        case '+':
-            *p = '%'; *(++p) = '2'; *(++p) = 'B';
-            break;
-        case ':':
-            *p = '%'; *(++p) = '3'; *(++p) = 'A';
-            break;
-        case ';':
-            *p = '%'; *(++p) = '3'; *(++p) = 'B';
-            break;
-        case '=':
-            *p = '%'; *(++p) = '3'; *(++p) = 'D';
-            break;
-        case '?':
-            *p = '%'; *(++p) = '3'; *(++p) = 'F';
-            break;
-	default:
-	    *p = *in;
-	    break;
+            case ' ':
+                *p = '+';
+                break;
+            case '!':
+                *p = '%'; *(++p) = '2'; *(++p) = '1';
+                break;
+            case '"':
+                *p = '%'; *(++p) = '2'; *(++p) = '2';
+                break;
+            case '#':
+                *p = '%'; *(++p) = '2'; *(++p) = '3';
+                break;
+            case '$':
+                *p = '%'; *(++p) = '2'; *(++p) = '4';
+                break;
+            case '%':
+                *p = '%'; *(++p) = '2'; *(++p) = '5';
+                break;
+            case '&':
+                *p = '%'; *(++p) = '2'; *(++p) = '6';
+                break;
+            case '+':
+                *p = '%'; *(++p) = '2'; *(++p) = 'B';
+                break;
+            case ':':
+                *p = '%'; *(++p) = '3'; *(++p) = 'A';
+                break;
+            case ';':
+                *p = '%'; *(++p) = '3'; *(++p) = 'B';
+                break;
+            case '=':
+                *p = '%'; *(++p) = '3'; *(++p) = 'D';
+                break;
+            case '?':
+                *p = '%'; *(++p) = '3'; *(++p) = 'F';
+                break;
+            default:
+                *p = *in;
+                break;
         }
         p++;
         in++;
@@ -797,18 +803,18 @@ char *string_encode(char *in)
     p = out;
     while( *in ) {
         switch(*in) {
-	case '&':
-	    *p = '&'; *(++p) = 'a'; *(++p) = 'm'; *(++p) = 'p'; *(++p) = ';';
-	    break;
-	case '<':
-	    *p = '&'; *(++p) = 'l'; *(++p) = 't'; *(++p) = ';';
-	    break;
-	case '>':
-	    *p = '&'; *(++p) = 'g'; *(++p) = 't'; *(++p) = ';';
-	    break;
-	default:
-	    *p = *in;
-	    break;
+            case '&':
+                *p = '&'; *(++p) = 'a'; *(++p) = 'm'; *(++p) = 'p'; *(++p) = ';';
+                break;
+            case '<':
+                *p = '&'; *(++p) = 'l'; *(++p) = 't'; *(++p) = ';';
+                break;
+            case '>':
+                *p = '&'; *(++p) = 'g'; *(++p) = 't'; *(++p) = ';';
+                break;
+            default:
+                *p = *in;
+                break;
         }
         p++;
         in++;
@@ -835,16 +841,16 @@ void abend(char *message)
 void init_mirror_file(const char * mirrorfile) 
 {
     if (mirrorfile != NULL) {
-	mirror = fopen(mirrorfile, "w");
+        mirror = fopen(mirrorfile, "w");
     } else {
-	mirror = fopen("/tmp/mirror", "w");
+        mirror = fopen("/tmp/mirror", "w");
     }
 }
 
 void close_mirror_file() 
 {
     if (mirror) {
-	fclose(mirror);
+        fclose(mirror);
     }
 }
 
@@ -862,7 +868,7 @@ const char *enterprise_domain()
 
     if( *s != '.' )
         pbc_log_activity(PBC_LOG_ERROR,
-			 "WARNING!!!! enterprise_domain must start with a '.'");
+                         "WARNING!!!! enterprise_domain must start with a '.'");
 
     return(s);
 
@@ -871,7 +877,7 @@ const char *enterprise_domain()
 int has_login_cookie()
 {
     if (getenv("HTTP_COOKIE") && 
-	strstr(getenv("HTTP_COOKIE"), PBC_L_COOKIENAME) )
+        strstr(getenv("HTTP_COOKIE"), PBC_L_COOKIENAME) )
         return(1);
     else
         return(0);
@@ -900,7 +906,7 @@ char *decode_granting_request(char *in, char **peerp)
     char *peer = NULL;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "decode_granting_request: in: %s\n", in);
+                     "decode_granting_request: in: %s\n", in);
 
     if (peerp) *peerp = NULL;
 
@@ -932,49 +938,49 @@ char *decode_granting_request(char *in, char **peerp)
     } else {
         out = strdup(in);    
         libpbc_base64_decode((unsigned char *) in, 
-			     (unsigned char *) out, NULL);
+                             (unsigned char *) out, NULL);
     }
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-		     "decode_granting_request: out: %s\n", out);
+                     "decode_granting_request: out: %s\n", out);
 
 
     return(out);
 }
 
 
-    /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
-    /*                                                                   */
-    /*                                                                   */
-    /* four cases for the main thingie                                   */
-    /*   - reply from login page                                         */
-    /*         in: cred data & granting req data                         */
-    /*         process: validate creds                                   */
-    /*         out: if successful L & G cookies redirect else login page */
-    /*                                                                   */
-    /*   - securid credentials (always requires reauth)                  */
-    /*         in: G_Req with creds==securid                             */
-    /*         out: the login page (incld g_req data and L cookie user)  */
-    /*                                                                   */
-    /*   - sesison expire requires reauth                                */
-    /*         in: G_Req with session_reauth flag set                    */
-    /*         out: the login page (incld g_req data and L cookie user)  */
-    /*                                                                   */
-    /*   - no prev login or creds include securid:                       */
-    /*         in: no L cookie, bunch of GET data                        */
-    /*               OR creds include securid info in g req              */
-    /*         out: the login page (includes data from g req)            */
-    /*                                                                   */
-    /*   - not first time (have L cookie) but L cookie expired or invalid*/
-    /*         in: expired or invalid L cookie, g req                    */
-    /*         out: the login page (includes data from g req)            */
-    /*                                                                   */
-    /*   - not first time (have L cookie) L cookie not expired and valid */
-    /*         in: valid L cookie, g req                                 */
-    /*         out: L & G cookies redirect (username comes from L cookie)*/
-    /*                                                                   */
-    /*                                                                   */
-    /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+/*                                                                   */
+/*                                                                   */
+/* four cases for the main thingie                                   */
+/*   - reply from login page                                         */
+/*         in: cred data & granting req data                         */
+/*         process: validate creds                                   */
+/*         out: if successful L & G cookies redirect else login page */
+/*                                                                   */
+/*   - securid credentials (always requires reauth)                  */
+/*         in: G_Req with creds==securid                             */
+/*         out: the login page (incld g_req data and L cookie user)  */
+/*                                                                   */
+/*   - sesison expire requires reauth                                */
+/*         in: G_Req with session_reauth flag set                    */
+/*         out: the login page (incld g_req data and L cookie user)  */
+/*                                                                   */
+/*   - no prev login or creds include securid:                       */
+/*         in: no L cookie, bunch of GET data                        */
+/*               OR creds include securid info in g req              */
+/*         out: the login page (includes data from g req)            */
+/*                                                                   */
+/*   - not first time (have L cookie) but L cookie expired or invalid*/
+/*         in: expired or invalid L cookie, g req                    */
+/*         out: the login page (includes data from g req)            */
+/*                                                                   */
+/*   - not first time (have L cookie) L cookie not expired and valid */
+/*         in: valid L cookie, g req                                 */
+/*         out: L & G cookies redirect (username comes from L cookie)*/
+/*                                                                   */
+/*                                                                   */
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
 int vector_request(login_rec *l, login_rec *c)
 {
@@ -1014,26 +1020,26 @@ int vector_request(login_rec *l, login_rec *c)
     res = fl->process_request(l, c, &errstr);
 
     switch (res) {
-    case LOGIN_OK:
-        return PBC_OK;
-        break;
+        case LOGIN_OK:
+            return PBC_OK;
+            break;
 
-    case LOGIN_ERR:
-	/* show the user some sort of error */
-	tmpl_print_html(TMPL_FNAME, 
-                    libpbc_config_getstring("tmpl_error", "error"), 
-                    fl->name,
-                    errstr ? errstr : 
-                    "unknown error in flavor process_request");
-        return PBC_FAIL;
-        break;
+        case LOGIN_ERR:
+            /* show the user some sort of error */
+            tmpl_print_html(TMPL_FNAME, 
+                            libpbc_config_getstring("tmpl_error", "error"), 
+                            fl->name,
+                            errstr ? errstr : 
+                            "unknown error in flavor process_request");
+            return PBC_FAIL;
+            break;
 
-    case LOGIN_INPROGRESS:
-        return PBC_FAIL;
-        break;
+        case LOGIN_INPROGRESS:
+            return PBC_FAIL;
+            break;
 
-    default:
-        abort();
+        default:
+            abort();
     }
 }
 
@@ -1059,19 +1065,19 @@ int get_kiosk_duration(login_rec *l)
     char	**values;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW,
-			 "get_kiosk_duration: agent: %s", user_agent());
+                     "get_kiosk_duration: agent: %s", user_agent());
 
     keys = libpbc_config_getlist("kiosk_keys");
     values = libpbc_config_getlist("kiosk_values");
 
     if(keys != NULL) {
-       for(i=0; keys[i] != NULL && values[i] != NULL; i++) {
-           if( strstr(user_agent(), keys[i]) != NULL ) {
-	     pbc_log_activity(PBC_LOG_DEBUG_LOW,"is kiosk: %s duration: %s\n", 
-			      user_agent(), values[i]);
-               return(atoi(values[i]));
-           }
-       }
+        for(i=0; keys[i] != NULL && values[i] != NULL; i++) {
+            if( strstr(user_agent(), keys[i]) != NULL ) {
+                pbc_log_activity(PBC_LOG_DEBUG_LOW,"is kiosk: %s duration: %s\n", 
+                                 user_agent(), values[i]);
+                return(atoi(values[i]));
+            }
+        }
     }
     /* not a kiosk */
     return(PBC_FALSE); /* xxx false isn't a duration -leg */
@@ -1091,7 +1097,7 @@ time_t compute_l_expire(login_rec *l)
 
     if( (l->duration = get_kiosk_duration(l)) == PBC_FALSE )
         l->duration = 
-                libpbc_config_getint("default_l_expire",DEFAULT_LOGIN_EXPIRE);
+            libpbc_config_getint("default_l_expire",DEFAULT_LOGIN_EXPIRE);
 
     t = time(NULL) + l->duration;
 
@@ -1138,18 +1144,18 @@ const char *time_remaining_text(login_rec *c)
         free(remaining), free(h), free(m);
         return(REMAINING_EXPIRED);
     }
-    
+
     snprintf(m, len, "%d minute%c", 
-                secs_left % 3600 / 60,
-                (secs_left % 3600 / 60 >= 2 ? 's' : ' '));
+             secs_left % 3600 / 60,
+             (secs_left % 3600 / 60 >= 2 ? 's' : ' '));
     snprintf(h, len, "%d hour%c", 
-                secs_left/3600,
-                (secs_left/3600 >= 2 ? 's' : ' '));
+             secs_left/3600,
+             (secs_left/3600 >= 2 ? 's' : ' '));
     snprintf(remaining, len, "%s %s %s %d seconds", 
-                (secs_left/3600 >= 1 ? h : ""),
-                (secs_left % 3600 / 60 >= 1 ? m : ""),
-                (secs_left % 3600 / 60 >= 1 ? "and" : ""),
-                secs_left % 3600 % 60);
+             (secs_left/3600 >= 1 ? h : ""),
+             (secs_left % 3600 / 60 >= 1 ? m : ""),
+             (secs_left % 3600 / 60 >= 1 ? "and" : ""),
+             secs_left % 3600 % 60);
 
     free(h), free(m);
     pbc_log_activity(PBC_LOG_DEBUG_LOW, "returning: %s\n", remaining);
@@ -1166,10 +1172,10 @@ int app_logged_out(login_rec *c, const char *appid, const char *appsrvid)
     len = strlen(appid) + strlen(appsrvid) + strlen(APP_LOGOUT_STR) + 3;
     app_string=calloc(len, sizeof(char));
     snprintf(app_string, len, "%s%c%s%c%s", 
-		APP_LOGOUT_STR, APP_LOGOUT_STR_SEP, 
-		appsrvid, APP_LOGOUT_STR_SEP,
-		appid);
-    
+             APP_LOGOUT_STR, APP_LOGOUT_STR_SEP, 
+             appsrvid, APP_LOGOUT_STR_SEP,
+             appid);
+
     /* clean non compliant chars from string */
     p = new = app_string;
     while(*p) {
@@ -1193,7 +1199,7 @@ int app_logged_out(login_rec *c, const char *appid, const char *appsrvid)
                         libpbc_config_getstring("tmpl_logout_app_custom_suffix",
                                                 "logout_app_custom_suffix"));
     }
- 
+
     free(app_string);
     return(PBC_OK);
 
@@ -1205,7 +1211,7 @@ int logout(login_rec *l, login_rec *c, int logout_action)
     char	*appsrvid;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "logout: logout_action: %d\n", logout_action);
+                     "logout: logout_action: %d\n", logout_action);
 
     /* get appid and appsrvid from env */
     if( (appid=get_string_arg(PBC_GETVAR_APPID,NO_NEWLINES_FUNC)) == NULL )
@@ -1232,11 +1238,11 @@ int logout(login_rec *l, login_rec *c, int logout_action)
             tmpl_print_html(TMPL_FNAME,
                             libpbc_config_getstring("tmpl_logout_still_weblogin",
                                                     "logout_still_weblogin"),
-                        (c == NULL || c->user == NULL ? "unknown" : c->user));
+                            (c == NULL || c->user == NULL ? "unknown" : c->user));
             tmpl_print_html(TMPL_FNAME,
                             libpbc_config_getstring("tmpl_logout_time_remaining",
                                                     "logout_time_remaining"), 
-			time_remaining_text(c));
+                            time_remaining_text(c));
             tmpl_print_html(TMPL_FNAME,
                             libpbc_config_getstring("tmpl_logout_postscript_still_weblogin",
                                                     "logout_postscript_still_weblogin"));
@@ -1308,19 +1314,19 @@ int check_logout(login_rec *l, login_rec *c)
     char *new_uri;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "check_logout: program name: %s\n", cgiScriptName);
+                     "check_logout: program name: %s\n", cgiScriptName);
 
     /* check to see if this is a logout redirect */
     logout_action = get_int_arg(PBC_GETVAR_LOGOUT_ACTION, LOGOUT_ACTION_UNSET);
 
     if ( logout_action != LOGOUT_ACTION_UNSET ) {
-	pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "check_logout: logout_action : %s\n", cgiScriptName);
+        pbc_log_activity(PBC_LOG_DEBUG_LOW, 
+                         "check_logout: logout_action : %s\n", cgiScriptName);
         logout(l, c, logout_action);
         do_output();
         exit(0);
     }
- 
+
     logout_prog = (char *)libpbc_config_getstring("logout_prog", NULL);
     uri = strdup(cgiScriptName);
 
@@ -1377,14 +1383,14 @@ void login_status_page(login_rec *c)
         refresh_needed_len = snprintf( refresh_line, refresh_len,
                                        STATUS_HTML_REFRESH, delay, delay );
     }
-    
+
     tmpl_print_html(TMPL_FNAME,
                     libpbc_config_getstring("tmpl_status",
                                             "status"),
                     refresh_line != NULL ? refresh_line : "",
                     (c == NULL || c->user == NULL ? "unknown" : c->user),
                     time_remaining_text(c)
-                    );
+                   );
     if (refresh_line != NULL)
         free(refresh_line);
 }
@@ -1400,52 +1406,52 @@ int pinit(login_rec *l, login_rec *c)
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,"pinit: hello");
 
     if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL ) {
-	/* what credentials should we default to if a user has
-	   come directly to us? */
-	const char *credname = 
-	    libpbc_config_getstring("pinit_default_authtype",
-				    "webiso-vanilla");
-	struct login_flavor *fl = NULL;
-	const char *errstr;
-	login_result res;
-	
-	/* find what the credential id is for that authtype */
-	l->creds_from_greq = l->creds = libpbc_get_credential_id(credname);
-	if (l->creds == PBC_CREDS_NONE) {
-	    /* what are we suppose to do here? i guess just losing is
-             reasonable and safe */
-	    pbc_log_activity(PBC_LOG_ERROR,
-			     "pinit: pinit_default_authtype not recognized");
-	    abort();
-	}
-	l->pinit = PBC_TRUE;
-	l->host = strdup((char *)login_host());
-	l->appsrvid = strdup(l->host);
-	l->appid = strdup("pinit");
-	l->uri = strdup(cgiScriptName);
-	pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
-			     "pinit: ready to print login page");
-	
-	/* find flavor of authn requested */
-	fl = get_flavor(l->creds_from_greq);
+        /* what credentials should we default to if a user has
+           come directly to us? */
+        const char *credname = 
+            libpbc_config_getstring("pinit_default_authtype",
+                                    "webiso-vanilla");
+        struct login_flavor *fl = NULL;
+        const char *errstr;
+        login_result res;
 
-	/* decode login cookie */
-	l->check_error = check_l_cookie(l, c);
+        /* find what the credential id is for that authtype */
+        l->creds_from_greq = l->creds = libpbc_get_credential_id(credname);
+        if (l->creds == PBC_CREDS_NONE) {
+            /* what are we suppose to do here? i guess just losing is
+               reasonable and safe */
+            pbc_log_activity(PBC_LOG_ERROR,
+                             "pinit: pinit_default_authtype not recognized");
+            abort();
+        }
+        l->pinit = PBC_TRUE;
+        l->host = strdup((char *)login_host());
+        l->appsrvid = strdup(l->host);
+        l->appid = strdup("pinit");
+        l->uri = strdup(cgiScriptName);
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "pinit: ready to print login page");
 
-	fl->init_flavor();
-	res = fl->process_request(l, c, &errstr);
-	if (res != LOGIN_INPROGRESS) {
-	    pbc_log_activity(PBC_LOG_ERROR,
-			     "unexpected response from fl->process_request: "
-			"%d %s", res, errstr ? errstr : "(no errstring)");
+        /* find flavor of authn requested */
+        fl = get_flavor(l->creds_from_greq);
 
-	    /* xxx maybe this happens because the default flavor can
-	       verify authentication without any interactions with the user
-	       actually submitting a form? */
+        /* decode login cookie */
+        l->check_error = check_l_cookie(l, c);
 
-	    /* xxx shouldn't we be using vector_request() instead of
-	       calling the flavor ourselves? */
-	}
+        fl->init_flavor();
+        res = fl->process_request(l, c, &errstr);
+        if (res != LOGIN_INPROGRESS) {
+            pbc_log_activity(PBC_LOG_ERROR,
+                             "unexpected response from fl->process_request: "
+                             "%d %s", res, errstr ? errstr : "(no errstring)");
+
+            /* xxx maybe this happens because the default flavor can
+               verify authentication without any interactions with the user
+               actually submitting a form? */
+
+            /* xxx shouldn't we be using vector_request() instead of
+               calling the flavor ourselves? */
+        }
     }
     else {
         login_status_page(c);
@@ -1491,7 +1497,7 @@ int cgiMain()
     print_http_header();
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-		     "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
+                     "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
 
     if (mirrorfile) {
         init_mirror_file(mirrorfile);
@@ -1506,9 +1512,9 @@ int cgiMain()
         char * redirect_final;
 
         if (!(redirect_final = malloc(PBC_4K)) ) {
-           abend("out of memory");
+            abend("out of memory");
         }
-       
+
         snprintf(redirect_final, PBC_4K-1, "https://%s%s",
                  cgiServerName, cgiScriptName);
 
@@ -1521,7 +1527,7 @@ int cgiMain()
                         redirect_final,
                         REFRESH, redirect_final, redirect_final);
 
-	goto done;
+        goto done;
     }
 #endif
 
@@ -1537,69 +1543,69 @@ int cgiMain()
 
     /* log the arrival */
     pbc_log_activity(PBC_LOG_AUDIT,
-		"%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
-                l->first_kiss, 
-                l->user == NULL ? "(null)" : l->user, 
-                cgiRemoteAddr, 
-                l->host == NULL ? "(null)" : l->host, 
-                l->appid == NULL ? "(null)" : l->appid,
-                l->uri == NULL ? "(null)" : l->uri,
-                l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
+                     "%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
+                     l->first_kiss, 
+                     l->user == NULL ? "(null)" : l->user, 
+                     cgiRemoteAddr, 
+                     l->host == NULL ? "(null)" : l->host, 
+                     l->appid == NULL ? "(null)" : l->appid,
+                     l->uri == NULL ? "(null)" : l->uri,
+                     l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
 
-    /* check the user agent */
-    if (!check_user_agent()) {
-        pbc_log_activity(PBC_LOG_AUDIT,
-			 "%s bad agent: %s user: %s client_addr: %s",
-			 l->first_kiss, 
-			 user_agent(), 
-			 l->user == NULL ? "(null)" : l->user, 
-			 cgiRemoteAddr);
-        notok(notok_bad_agent);
-	goto done;
-    }
-    
-    /* look for various logout conditions */
-    check_logout(l, c);
+                     /* check the user agent */
+                     if (!check_user_agent()) {
+                         pbc_log_activity(PBC_LOG_AUDIT,
+                                          "%s bad agent: %s user: %s client_addr: %s",
+                                          l->first_kiss, 
+                                          user_agent(), 
+                                          l->user == NULL ? "(null)" : l->user, 
+                                          cgiRemoteAddr);
+                         notok(notok_bad_agent);
+                         goto done;
+                     }
 
-    /* check to see what cookies we have */
-    /* pinit detected in here */
-    /* pinit responce detected in here */
-    if (cookie_test(l, c) == PBC_FAIL) {
-        goto done;
-    }
+                     /* look for various logout conditions */
+                     check_logout(l, c);
 
-    pbc_log_activity(PBC_LOG_DEBUG_LOW,
-		    "cgiMain: checked user_agent, logout, and pinit.");
+                     /* check to see what cookies we have */
+                     /* pinit detected in here */
+                     /* pinit responce detected in here */
+                     if (cookie_test(l, c) == PBC_FAIL) {
+                         goto done;
+                     }
 
-    /* allow for older versions that don't have force_reauth */
-    if (!l->fr) {
-        l->fr = strdup("NFR");
-    }
-    
-    if (vector_request(l, c) == PBC_OK ) {
-        /* the reward for a hard days work */
-        pbc_log_activity(PBC_LOG_AUDIT,
-    "%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
-			 l->first_kiss, 
-			 l->user == NULL ? "(null)" : l->user, 
-			 cgiRemoteAddr, 
-			 l->host, 
-			 l->appid);
-    
-        /* generate the cookies and print the redirect page */
-        print_redirect_page(l, c);
-    }
+                     pbc_log_activity(PBC_LOG_DEBUG_LOW,
+                                      "cgiMain: checked user_agent, logout, and pinit.");
 
- done:
-    if (mirrorfile) {
-	close_mirror_file();
-    }
+                     /* allow for older versions that don't have force_reauth */
+                     if (!l->fr) {
+                         l->fr = strdup("NFR");
+                     }
 
-    do_output();
+                     if (vector_request(l, c) == PBC_OK ) {
+                         /* the reward for a hard days work */
+                         pbc_log_activity(PBC_LOG_AUDIT,
+                                          "%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
+                                          l->first_kiss, 
+                                          l->user == NULL ? "(null)" : l->user, 
+                                          cgiRemoteAddr, 
+                                          l->host, 
+                                          l->appid);
 
-    if (l != NULL)
-        free(l);
-    return(0);  
+                         /* generate the cookies and print the redirect page */
+                         print_redirect_page(l, c);
+                     }
+
+done:
+                     if (mirrorfile) {
+                         close_mirror_file();
+                     }
+
+                     do_output();
+
+                     if (l != NULL)
+                         free(l);
+                     return(0);  
 }
 
 /* returns NULL if the L cookie is valid                                     */
@@ -1620,28 +1626,28 @@ char *check_l_cookie(login_rec *l, login_rec *c)
         return("couldn't decode login cookie");
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
-		     "in check_l_cookie ready to look at cookie contents %s\n", c->user);
+                     "in check_l_cookie ready to look at cookie contents %s\n", c->user);
 
     /* look at what we got back from the cookie */
     if ( c->user == NULL ) {
-	pbc_log_activity(PBC_LOG_ERROR, 
-			 "no user from L cookie? user from g_req: %s", l->user);
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "no user from L cookie? user from g_req: %s", l->user);
         return "malformed";
     }
 
     if (check_l_cookie_expire(c, t=time(NULL)) == PBC_FAIL ) {
-      pbc_log_activity(PBC_LOG_AUDIT,
-		    "%s expired login cookie; created: %d expire: %d now: %d",
-			l->first_kiss,
-			c->create_ts, 
-			c->expire_ts, 
-                        t);
+        pbc_log_activity(PBC_LOG_AUDIT,
+                         "%s expired login cookie; created: %d expire: %d now: %d",
+                         l->first_kiss,
+                         c->create_ts, 
+                         c->expire_ts, 
+                         t);
         return "expired";
     }
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-		"check_l_cookie ready for creds, c: %c l: %c\n", 
-		c->creds, l->creds);
+                     "check_l_cookie ready for creds, c: %c l: %c\n", 
+                     c->creds, l->creds);
 
     /* probably a pinit or logout */
     if (c->creds == PBC_CREDS_NONE || l->creds == PBC_CREDS_NONE ) {
@@ -1649,21 +1655,21 @@ char *check_l_cookie(login_rec *l, login_rec *c)
     }
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
-		     "check_l_cookie: done dorking with creds\n");
+                     "check_l_cookie: done dorking with creds\n");
 
     l_version = c->version; g_version = l->version;
     if (*l_version != *g_version ) {
         pbc_log_activity(PBC_LOG_ERROR, 
-			 "wrong major version: from L cookie %s, from g_req %s for host %s", l_version, g_version, l->host);
+                         "wrong major version: from L cookie %s, from g_req %s for host %s", l_version, g_version, l->host);
         return("wrong major version");
     }
     if (*(l_version+1) != *(g_version+1) ) {
         pbc_log_activity(PBC_LOG_DEBUG_LOW,
-			 "%s warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l->first_kiss, l_version, g_version, l->host);
+                         "%s warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l->first_kiss, l_version, g_version, l->host);
     }
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-		     "check_l_cookie: done looking at version\n");
+                     "check_l_cookie: done looking at version\n");
 
     l->user = c->user;
 
@@ -1712,14 +1718,14 @@ void notok_need_ssl()
 {
     print_html("%s", NOTOK_NEEDSSL_TEXT1);
     pbc_log_activity(PBC_LOG_AUDIT,
-		     "host %s came in on a non-ssl port, why?", cgiRemoteAddr);
+                     "host %s came in on a non-ssl port, why?", cgiRemoteAddr);
 }
 
 void notok_bad_agent() 
 {
     print_html("%s", NOTOK_BAD_AGENT_TEXT1);
     print_html("The browser you are using identifies itself as:<P><TT></TT>",
-                 cgiUserAgent);
+               cgiUserAgent);
     print_html("%s", NOTOK_BAD_AGENT_TEXT2);
 }
 
@@ -1733,13 +1739,13 @@ void notok ( void (*notok_f)() )
 {
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), 
-					 PBC_FORM_MP_COOKIENAME) ) {
+                                         PBC_FORM_MP_COOKIENAME) ) {
         print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n", 
-		     PBC_FORM_MP_COOKIENAME, 
-		     PBC_CLEAR_COOKIE,
-		     PBC_ENTRPRS_DOMAIN, 
+                     PBC_FORM_MP_COOKIENAME, 
+                     PBC_CLEAR_COOKIE,
+                     PBC_ENTRPRS_DOMAIN, 
                      enterprise_domain(), 
-		     EARLIEST_EVER);
+                     EARLIEST_EVER);
     }
 
     tmpl_print_html(TMPL_FNAME,
@@ -1761,9 +1767,9 @@ int set_pinit_cookie()
 #ifdef PORT80_TEST
                  ""
 #else
-                 "; secure"
+        "; secure"
 #endif
-                     );
+        );
 
     return(PBC_OK);
 }
@@ -1778,9 +1784,9 @@ int clear_pinit_cookie() {
 #ifdef PORT80_TEST
                  ""
 #else
-                 "; secure"
+        "; secure"
 #endif
-                 );
+        );
 
     return(PBC_OK);
 
@@ -1788,7 +1794,7 @@ int clear_pinit_cookie() {
 
 int pinit_responce(login_rec *l, login_rec *c)
 {
-  
+
     pbc_log_activity(PBC_LOG_DEBUG_LOW, "pinit_responce: hello");
 
     clear_pinit_cookie();
@@ -1839,9 +1845,9 @@ int cookie_test(login_rec *l, login_rec *c)
         pinit(l, c);
         return(PBC_FAIL);
     }
-    
+
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
-		     "cookie_test: cookies: %s", cookies);
+                     "cookie_test: cookies: %s", cookies);
 
     /* we don't currently handle form-multipart */
     /* the formmultipart cookie is set by the module */
@@ -1858,17 +1864,17 @@ int cookie_test(login_rec *l, login_rec *c)
 
     /* a cleared G req is as bad as no g req */
     snprintf(cleared_g_req, PBC_1K, "%s=%s", PBC_G_REQ_COOKIENAME, 
-		PBC_CLEAR_COOKIE);
+             PBC_CLEAR_COOKIE);
 
     /* no g_req or cleared g_req then pinit */
     if ( strstr(cookies, PBC_G_REQ_COOKIENAME) == NULL || 
          strstr(cookies, cleared_g_req) != NULL ) {
-         pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
-			     "cookie_test: no g_req or empty g_req");
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "cookie_test: no g_req or empty g_req");
         pinit(l, c);
         return(PBC_FAIL);
     }
-    
+
     return(PBC_OK);
 }
 
@@ -1943,8 +1949,8 @@ int check_user_agent()
     ifp = fopen(OK_BROWSERS_FILE, "r");
     if (ifp == NULL) {
         pbc_log_activity(PBC_LOG_ERROR,
-		  "can't open ok browsers file: %s, continuing", 
-		  OK_BROWSERS_FILE);
+                         "can't open ok browsers file: %s, continuing", 
+                         OK_BROWSERS_FILE);
         return(1);
     }
 
@@ -1991,7 +1997,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
     char *appid;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "print_redirect_page: hello (pinit=%d)\n", l->pinit);
+                     "print_redirect_page: hello (pinit=%d)\n", l->pinit);
     if (!(redirect_dest = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
@@ -2009,7 +2015,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
     }
 
     pbc_log_activity(PBC_LOG_AUDIT, "l->user=%s l->appsrvid=%s l->appid=%s",
-		    l->user, l->appsrvid, l->appid);
+                     l->user, l->appsrvid, l->appid);
 
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
@@ -2021,246 +2027,246 @@ void print_redirect_page(login_rec *l, login_rec *c)
                            l->creds,
                            0,
                            (c == NULL || c->expire_ts < time(NULL) 
-                                ? compute_l_expire(l) 
-                                : c->expire_ts),
+                            ? compute_l_expire(l) 
+                            : c->expire_ts),
                            l_cookie,
                            NULL, /* sending it to myself */
                            PBC_4K);
 
-    if (user != NULL)
-        free(user);
-    if (appsrvid != NULL)
-        free(appsrvid);
-    if (appid != NULL)
-        free(appid);
+                           if (user != NULL)
+                               free(user);
+                           if (appsrvid != NULL)
+                               free(appsrvid);
+                           if (appid != NULL)
+                               free(appid);
 
-    /* since the flavor responsible for 'creds_from_greq' returned
-       LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
-       was successful. */
-    g_res = create_cookie(user = url_encode(l->user),
-                          appsrvid =url_encode(l->appsrvid),
-                          appid = url_encode(l->appid),
-                          PBC_COOKIE_TYPE_G,
-                          l->creds_from_greq,
-                          l->pre_sess_tok,
-                          0,
-                          g_cookie,
-                          l->host,
-                          PBC_4K);
+                           /* since the flavor responsible for 'creds_from_greq' returned
+                              LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
+                              was successful. */
+                           g_res = create_cookie(user = url_encode(l->user),
+                                                 appsrvid =url_encode(l->appsrvid),
+                                                 appid = url_encode(l->appid),
+                                                 PBC_COOKIE_TYPE_G,
+                                                 l->creds_from_greq,
+                                                 l->pre_sess_tok,
+                                                 0,
+                                                 g_cookie,
+                                                 l->host,
+                                                 PBC_4K);
 
-    if (user != NULL)
-        free(user);
-    if (appsrvid != NULL)
-        free(appsrvid);
-    if (appid != NULL)
-        free(appid);
+                                                 if (user != NULL)
+                                                     free(user);
+                                                 if (appsrvid != NULL)
+                                                     free(appsrvid);
+                                                 if (appid != NULL)
+                                                     free(appid);
 
-    /* if we have a problem then bail with a nice message */
-    if ( !l_res || !g_res ) {
-        sprintf( message, "%s%s%s%s%s%s",
-                 PBC_EM1_START,
-                 TROUBLE_CREATING_COOKIE,
-                 PBC_EM1_END,
-                 PBC_EM2_START,
-                 PROBLEMS_PERSIST,
-                 PBC_EM2_END);
-        /* xxx it's kinda hard to jump to print_login_page, because
-           what flavor should we be printing here? */
+                                                 /* if we have a problem then bail with a nice message */
+                                                 if ( !l_res || !g_res ) {
+                                                     sprintf( message, "%s%s%s%s%s%s",
+                                                              PBC_EM1_START,
+                                                              TROUBLE_CREATING_COOKIE,
+                                                              PBC_EM1_END,
+                                                              PBC_EM2_START,
+                                                              PROBLEMS_PERSIST,
+                                                              PBC_EM2_END);
+                                                     /* xxx it's kinda hard to jump to print_login_page, because
+                                                        what flavor should we be printing here? */
 #if 0
-        print_login_page(l, c, message, "cookie create failed",
-                         NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
+                                                     print_login_page(l, c, message, "cookie create failed",
+                                                                      NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
 #endif
 
-        pbc_log_activity(PBC_LOG_ERROR,
-                         "Not able to create cookie for user %s at %s-%s",
-                         l->user, l->appsrvid, l->appid);
-        free(message);
-        return;
-    }
+                                                     pbc_log_activity(PBC_LOG_ERROR,
+                                                                      "Not able to create cookie for user %s at %s-%s",
+                                                                      l->user, l->appsrvid, l->appid);
+                                                     free(message);
+                                                     return;
+                                                 }
 
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "created cookies l_res g_res\n");
+                                                 pbc_log_activity(PBC_LOG_DEBUG_LOW, "created cookies l_res g_res\n");
 
 
-    /* create the http header line with the cookie */
-    snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
+                                                 /* create the http header line with the cookie */
+                                                 snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
 #ifdef PORT80_TEST
-              "Set-Cookie: %s=%s; domain=%s; path=/", 
+                                                           "Set-Cookie: %s=%s; domain=%s; path=/", 
 #else
-              "Set-Cookie: %s=%s; domain=%s; path=/; secure", 
+                                                           "Set-Cookie: %s=%s; domain=%s; path=/; secure", 
 #endif
-              PBC_G_COOKIENAME,
-              g_cookie,
-              enterprise_domain());
+                                                           PBC_G_COOKIENAME,
+                                                           g_cookie,
+                                                           enterprise_domain());
 
-    snprintf( l_set_cookie, sizeof(l_set_cookie)-1, 
+                                                           snprintf( l_set_cookie, sizeof(l_set_cookie)-1, 
 #ifdef PORT80_TEST
-              "Set-Cookie: %s=%s; domain=%s; path=%s", 
+                                                                     "Set-Cookie: %s=%s; domain=%s; path=%s", 
 #else
-              "Set-Cookie: %s=%s; domain=%s; path=%s; secure", 
+                                                                     "Set-Cookie: %s=%s; domain=%s; path=%s; secure", 
 #endif
-              PBC_L_COOKIENAME,
-              l_cookie,
-              login_host(),
-              LOGIN_DIR);
+                                                                     PBC_L_COOKIENAME,
+                                                                     l_cookie,
+                                                                     login_host(),
+                                                                     LOGIN_DIR);
 
-    /* whip up the url to send the browser back to */
-    if (!strcmp(l->fr, "NFR") )
-        redirect_uri = l->uri;
-    else
-        redirect_uri = l->fr;
+                                                                     /* whip up the url to send the browser back to */
+                                                                     if (!strcmp(l->fr, "NFR") )
+                                                                         redirect_uri = l->uri;
+                                                                     else
+                                                                         redirect_uri = l->fr;
 
-    snprintf(redirect_dest, PBC_4K-1, 
+                                                                     snprintf(redirect_dest, PBC_4K-1, 
 #ifdef PORT80_TEST
-             "http://%s%s%s", 
+                                                                              "http://%s%s%s", 
 #else
-             "https://%s%s%s", 
+                                                                              "https://%s%s%s", 
 #endif
-             l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
+                                                                              l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
 
-    if (l->args ) {
-        args_enc = calloc (1, strlen (l->args));
-        libpbc_base64_decode( (unsigned char *) l->args,  
-                              (unsigned char *) args_enc, NULL);
-        snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
-    } else {
-        strcpy( redirect_final, redirect_dest );
-    }
+                                                                     if (l->args ) {
+                                                                         args_enc = calloc (1, strlen (l->args));
+                                                                         libpbc_base64_decode( (unsigned char *) l->args,  
+                                                                                               (unsigned char *) args_enc, NULL);
+                                                                         snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
+                                                                     } else {
+                                                                         strcpy( redirect_final, redirect_dest );
+                                                                     }
 
-    if (redirect_dest != NULL)
-        free(redirect_dest);
+                                                                     if (redirect_dest != NULL)
+                                                                         free(redirect_dest);
 
-    /* we don't use the fab log_message funct here because the url encoding */
-    /* will look like format chars in future *printf's */
-    now = time(NULL);
-    fprintf(stderr,
-            "%s: PUBCOOKIE_DEBUG: %s: %s Redirect user: %s redirect: %s\n",
-            libpbc_time_string(now),
-            ANY_LOGINSRV_MESSAGE,
-            l->first_kiss,
-            l->user, 
-            redirect_final);
+                                                                     /* we don't use the fab log_message funct here because the url encoding */
+                                                                     /* will look like format chars in future *printf's */
+                                                                     now = time(NULL);
+                                                                     fprintf(stderr,
+                                                                             "%s: PUBCOOKIE_DEBUG: %s: %s Redirect user: %s redirect: %s\n",
+                                                                             libpbc_time_string(now),
+                                                                             ANY_LOGINSRV_MESSAGE,
+                                                                             l->first_kiss,
+                                                                             l->user, 
+                                                                             redirect_final);
 
-    /* now blat out the redirect page */
-    if( l->pinit == PBC_FALSE )   /* don't need a G cookie for a pinit */
-        print_header("%s\n", g_set_cookie);
-    else
-        set_pinit_cookie();
-    print_header("%s\n", l_set_cookie);
-    clear_greq_cookie();
+                                                                     /* now blat out the redirect page */
+                                                                     if( l->pinit == PBC_FALSE )   /* don't need a G cookie for a pinit */
+                                                                         print_header("%s\n", g_set_cookie);
+                                                                     else
+                                                                         set_pinit_cookie();
+                                                                     print_header("%s\n", l_set_cookie);
+                                                                     clear_greq_cookie();
 
-    /* incase we have a post */
-    if ( l->post_stuff ) {
-        /* cgiParseFormInput will extract the arguments from the post */
-        /* make them available to subsequent cgic calls */
-        if (cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
-                   != cgiParseSuccess ) {
-	    pbc_log_activity(PBC_LOG_ERROR,
-		      "couldn't parse the decoded granting request cookie");
-            notok(notok_generic);
-	    do_output();
-            exit(0);
-        }
+                                                                     /* incase we have a post */
+                                                                     if ( l->post_stuff ) {
+                                                                         /* cgiParseFormInput will extract the arguments from the post */
+                                                                         /* make them available to subsequent cgic calls */
+                                                                         if (cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
+                                                                             != cgiParseSuccess ) {
+                                                                             pbc_log_activity(PBC_LOG_ERROR,
+                                                                                              "couldn't parse the decoded granting request cookie");
+                                                                             notok(notok_generic);
+                                                                             do_output();
+                                                                             exit(0);
+                                                                         }
 
-	print_html("<HTML>");
-	/* when the page loads click on the last element */
-        /* (which will always be the submit) in the array */
-        /* of elements in the first, and only, form. */
-	print_html("<BODY BGCOLOR=\"white\" onLoad=\"");
+                                                                         print_html("<HTML>");
+                                                                         /* when the page loads click on the last element */
+                                                                         /* (which will always be the submit) in the array */
+                                                                         /* of elements in the first, and only, form. */
+                                                                         print_html("<BODY BGCOLOR=\"white\" onLoad=\"");
 
-        /* depending on whether-or-not there is a SUBMIT field in the form */
-        /* use the correct javascript to autosubmit the POST */
-        /* this should probably be upgraded to only look for submits as */
-        /* field names, not anywhere else */
-        post_stuff_lower = strdup(l->post_stuff);
-        for(p=post_stuff_lower; *p != '\0'; p++)
-            *p = tolower(*p);
-        if (strstr(post_stuff_lower, "submit") != NULL )
-            print_html("document.query.submit.click()");
-        else
-            print_html("document.query.submit");
+                                                                         /* depending on whether-or-not there is a SUBMIT field in the form */
+                                                                         /* use the correct javascript to autosubmit the POST */
+                                                                         /* this should probably be upgraded to only look for submits as */
+                                                                         /* field names, not anywhere else */
+                                                                         post_stuff_lower = strdup(l->post_stuff);
+                                                                         for(p=post_stuff_lower; *p != '\0'; p++)
+                                                                             *p = tolower(*p);
+                                                                         if (strstr(post_stuff_lower, "submit") != NULL )
+                                                                             print_html("document.query.submit.click()");
+                                                                         else
+                                                                             print_html("document.query.submit");
 
-        print_html("\">\n");
+                                                                         print_html("\">\n");
 
-	print_html("<center>");
-        print_table_start();
-	print_html("<tr><td align=\"LEFT\">\n");
+                                                                         print_html("<center>");
+                                                                         print_table_start();
+                                                                         print_html("<tr><td align=\"LEFT\">\n");
 
-	print_html("<form method=\"POST\" action=\"%s\" ", redirect_final);
-        print_html("enctype=\"application/x-www-form-urlencoded\" ");
-        print_html("name=\"query\">\n");
+                                                                         print_html("<form method=\"POST\" action=\"%s\" ", redirect_final);
+                                                                         print_html("enctype=\"application/x-www-form-urlencoded\" ");
+                                                                         print_html("name=\"query\">\n");
 
-        cur = cgiFormEntryFirst;
-        while (cur) {
-            /* in the perl version we had to make sure we were getting */
-            /* rid of this header line                                 */
-            /*        cur->attr =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;   */
+                                                                         cur = cgiFormEntryFirst;
+                                                                         while (cur) {
+                                                                             /* in the perl version we had to make sure we were getting */
+                                                                             /* rid of this header line                                 */
+                                                                             /*        cur->attr =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;   */
 
-            /* if there is a " in the value string we have to put */
-            /* in a TEXTAREA object that will be visible          */
-            if (strstr(cur->value, "\"") || 
-		strstr(cur->value, "\r") || 
-		strstr(cur->value, "\n") ) {
-                if (! limitations_mentioned ) {
-                    print_html("Certain limitations require that this be shown, please ignore it<BR>\n");
-                    limitations_mentioned++;
-                }
-                print_html("<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n", 
-			  cur->attr);
-                print_html("%s</textarea>", string_encode (cur->value));
-                print_html("<P>\n");
-            }
-            else {
-                /* we don't want to cover other people's submits */
-                if ( !strcmp(cur->attr, "submit") )  {
-                    submit_value = string_encode (cur->value);
-                }
-                else {
-                    print_html("<input type=\"hidden\" ");
-		    print_html("name=\"%s\" value=\"%s\">\n",
-			      cur->attr, cur->value);
-                }
-    	    }
+                                                                             /* if there is a " in the value string we have to put */
+                                                                             /* in a TEXTAREA object that will be visible          */
+                                                                             if (strstr(cur->value, "\"") || 
+                                                                                 strstr(cur->value, "\r") || 
+                                                                                     strstr(cur->value, "\n") ) {
+                                                                                         if (! limitations_mentioned ) {
+                                                                                             print_html("Certain limitations require that this be shown, please ignore it<BR>\n");
+                                                                                             limitations_mentioned++;
+                                                                                         }
+                                                                                         print_html("<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n", 
+                                                                                                    cur->attr);
+                                                                                         print_html("%s</textarea>", string_encode (cur->value));
+                                                                                         print_html("<P>\n");
+                                                                                     }
+                                                                             else {
+                                                                                 /* we don't want to cover other people's submits */
+                                                                                 if ( !strcmp(cur->attr, "submit") )  {
+                                                                                     submit_value = string_encode (cur->value);
+                                                                                 }
+                                                                                 else {
+                                                                                     print_html("<input type=\"hidden\" ");
+                                                                                     print_html("name=\"%s\" value=\"%s\">\n",
+                                                                                                cur->attr, cur->value);
+                                                                                 }
+                                                                             }
 
-            /* move onto the next attr/value pair */
-            next = cur->next;
-            cur = next;
-        } /* while cur */
+                                                                             /* move onto the next attr/value pair */
+                                                                             next = cur->next;
+                                                                             cur = next;
+                                                                         } /* while cur */
 
 
-        print_html("</td></tr>\n");
-        print_uwnetid_logo();
-        print_html("<P>");
-        print_html("%s\n", PBC_POST_NO_JS_TEXT);
-        print_html("</td></tr></table>\n");
+                                                                         print_html("</td></tr>\n");
+                                                                         print_uwnetid_logo();
+                                                                         print_html("<P>");
+                                                                         print_html("%s\n", PBC_POST_NO_JS_TEXT);
+                                                                         print_html("</td></tr></table>\n");
 
-        /* put submit at the bottom so it looks better and */
-        if (submit_value )
-            print_html("<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
-        else
-            print_html("<input type=\"submit\" value=\"%s\">\n",
-		      PBC_POST_NO_JS_BUTTON);
+                                                                         /* put submit at the bottom so it looks better and */
+                                                                         if (submit_value )
+                                                                             print_html("<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
+                                                                         else
+                                                                             print_html("<input type=\"submit\" value=\"%s\">\n",
+                                                                                        PBC_POST_NO_JS_BUTTON);
 
-        print_html("</form>\n");
-        print_copyright();
-        print_html("</center>");
-        print_html("</BODY></HTML>\n");
-    }
-    else {
-        /* non-post redirect area                 non-post redirect area */
+                                                                         print_html("</form>\n");
+                                                                         print_copyright();
+                                                                         print_html("</center>");
+                                                                         print_html("</BODY></HTML>\n");
+                                                                     }
+                                                                     else {
+                                                                         /* non-post redirect area                 non-post redirect area */
 
-        /* the refresh header should go into the template as soon as it's*/
-        /* been tested                                                   */
-        tmpl_print_html(TMPL_FNAME,
-                        libpbc_config_getstring("tmpl_nonpost_redirect",
-                                                "nonpost_redirect"),
-                        redirect_final, REFRESH, redirect_final,
-                        redirect_final);
-    } /* end if post_stuff */
+                                                                         /* the refresh header should go into the template as soon as it's*/
+                                                                         /* been tested                                                   */
+                                                                         tmpl_print_html(TMPL_FNAME,
+                                                                                         libpbc_config_getstring("tmpl_nonpost_redirect",
+                                                                                                                 "nonpost_redirect"),
+                                                                                         redirect_final, REFRESH, redirect_final,
+                                                                                         redirect_final);
+                                                                     } /* end if post_stuff */
 
-    free(g_cookie);
-    free(l_cookie);
-    free(message);
-    free(redirect_final);
+                                                                     free(g_cookie);
+                                                                     free(l_cookie);
+                                                                     free(message);
+                                                                     free(redirect_final);
 
 }
 
@@ -2280,7 +2286,7 @@ login_rec *get_query()
     l->post_stuff = get_string_arg(PBC_GETVAR_POST_STUFF, YES_NEWLINES_FUNC);
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "get_query: looked at post_stuff\n");
+                     "get_query: looked at post_stuff\n");
 
     /* take everything out of the environment */
     l = load_login_rec(l);
@@ -2298,22 +2304,24 @@ login_rec *get_query()
 
             g_req_clear = decode_granting_request(g_req, NULL);
 
-	    pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-				 "get_query: decoded granting request: %s\n", 
-		    g_req_clear);
+            pbc_log_activity(PBC_LOG_DEBUG_LOW, 
+                             "get_query: decoded granting request: %s\n", 
+                             g_req_clear);
 
             if (cgiParseFormInput(g_req_clear, strlen(g_req_clear)) 
-                   != cgiParseSuccess ) {
-		pbc_log_activity(PBC_LOG_ERROR,
-		      "couldn't parse the decoded granting request cookie");
+                != cgiParseSuccess ) {
+                pbc_log_activity(PBC_LOG_ERROR,
+                                 "couldn't parse the decoded granting request cookie");
                 notok(notok_generic);
+                if ( g_req != NULL )
+                    free( g_req );
                 return(NULL);
             }
             l = load_login_rec(l);
 
             /* capture the cred that the app asked for */
             l->creds_from_greq  = l->creds;
-    
+
         }
         if ( g_req != NULL )
             free( g_req );
@@ -2339,31 +2347,31 @@ login_rec *get_query()
         }
     }
 
-       pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login user: %s\n",
-			l->user == NULL ? "(null)" : l->user
-			);
-       pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login version: %s\n",
-			l->version == NULL ? "(null)" : l->version
-			);
-       pbc_log_activity(PBC_LOG_AUDIT, 
-			"get_query: from login creds: %c\n", l->creds);
-       pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login appid: %s\n",
-			l->appid == NULL ? "(null)" : l->appid
-			);
-       pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login host: %s\n",
-			l->host == NULL ? "(null)" : l->host
-			);
-       pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login appsrvid: %s\n",
-			l->appsrvid == NULL ? "(null)" : l->appsrvid
-			);
-       pbc_log_activity(PBC_LOG_AUDIT, 
-			"get_query: from login next_securid: %d\n", 
-			l->next_securid);
-       pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login first_kiss: %d\n",
-			(int)l->first_kiss);
-       pbc_log_activity(PBC_LOG_AUDIT, 
-			"get_query: from login post_stuff: %s\n", 
-			(l->post_stuff==NULL ? "" : l->post_stuff));
+    pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login user: %s\n",
+                     l->user == NULL ? "(null)" : l->user
+                    );
+    pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login version: %s\n",
+                     l->version == NULL ? "(null)" : l->version
+                    );
+    pbc_log_activity(PBC_LOG_AUDIT, 
+                     "get_query: from login creds: %c\n", l->creds);
+    pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login appid: %s\n",
+                     l->appid == NULL ? "(null)" : l->appid
+                    );
+    pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login host: %s\n",
+                     l->host == NULL ? "(null)" : l->host
+                    );
+    pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login appsrvid: %s\n",
+                     l->appsrvid == NULL ? "(null)" : l->appsrvid
+                    );
+    pbc_log_activity(PBC_LOG_AUDIT, 
+                     "get_query: from login next_securid: %d\n", 
+                     l->next_securid);
+    pbc_log_activity(PBC_LOG_AUDIT, "get_query: from login first_kiss: %d\n",
+                     (int)l->first_kiss);
+    pbc_log_activity(PBC_LOG_AUDIT, 
+                     "get_query: from login post_stuff: %s\n", 
+                     (l->post_stuff==NULL ? "" : l->post_stuff));
 
     return(l);
 
@@ -2379,7 +2387,7 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     time_t		t;
 
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-		       "verify_unload_login_cookie: hello\n");
+                     "verify_unload_login_cookie: hello\n");
 
     if (!(cookie = malloc(PBC_4K)) )
         abend("out of memory");
