@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.27 $
+ * $Revision: 1.28 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -302,7 +302,6 @@ else { \
 \
 <p><b><font size=\"+1\">The resource you requested requires \"multipart/form-data\" capabilities not supported by the UW NetID \"weblogin\" service. Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a> for further assistance.</font></b></p>\
 \
-<p>&nbsp;</p>\
 "
 
 #define NOTOK_BAD_AGENT_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">This browser is either incompatible or has serious security flaws.</font></B></P>\
