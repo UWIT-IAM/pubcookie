@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.9 2000-08-22 18:10:58 willey Exp $
+    $Id: index.cgi.c,v 1.10 2000-08-22 19:06:01 willey Exp $
  */
 
 
@@ -118,7 +118,6 @@ char *get_string_arg(char *name, cgiFormResultType (*f)())
     s = calloc(length+1, sizeof(char));
 
     if( (res=f(name, s, length+1)) != cgiFormSuccess ) {
-fprintf(stderr, "name is %s result is %d\n", name, res);
         return(NULL);
     } 
     else {
@@ -205,7 +204,6 @@ login_rec *load_login_rec(login_rec *l)
     fprintf(stderr, "load_login_rec: bye\n");
 #endif
 
-fprintf(stderr, "load_login_rec post_stuff: %s\n", l->post_stuff);
     return(l);
 
 }
@@ -488,14 +486,20 @@ int cgiMain()
     /* malloc and populate login_rec                                   */
     l = get_query(); 
 
+    /* log the arrival */
+    log_message("%d Visit from user: %s client addr: %s app host: %s uri: %s", l->first_kiss, l->user, l->remote_host, l->host, l->uri);
+
 #ifdef DEBUG
     fprintf(stderr, "cgiMain: after get_query\n");
 #endif
 
     /* check the user agent */
     if ( !check_user_agent() ) {
-        log_message("bad agent: %s host: %s uri: %s", cgiUserAgent, 
-			l->host, l->uri);
+        log_message("%d bad agent: %s user: %s client_addr: %s",
+        	l->first_kiss, 
+        	cgiUserAgent, 
+		l->user, 
+		l->remote_host);
         notok(notok_bad_agent);
         exit(0);
     }
@@ -558,7 +562,7 @@ int cgiMain()
             print_login_page(l, message, "bad auth", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
             exit(0);
         }
-        log_message("Authentication success: %s type: %d", l->user, l->creds);
+        log_message("Authentication success: %s type: %c", l->user, l->creds);
     }
     else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {             /* securid */
         log_message("securid implies reauth by %s at %s", l->host, l->appid);
@@ -570,7 +574,7 @@ int cgiMain()
         exit(0);
     }
     else if ( (res=check_l_cookie(l)) ) {      /* problem w/ the l cookie*/
-        log_message("Login cookie bad: %s", res);
+        log_message("%d Login cookie bad: %s", l->first_kiss, res);
         print_login_page(l, PRINT_LOGIN_PLEASE, res, YES_CLEAR_LOGIN, YES_CLEAR_GREQ);
         exit(0);
     }
@@ -840,8 +844,11 @@ char *check_l_cookie(login_rec *l)
     }
 
     if( (lc->create_ts + EXPIRE_LOGIN) < (t=time(NULL)) ) {
-        log_message("expired login cookie: created: %d timeout: %dsecs now: %d",
-			lc->create_ts, EXPIRE_LOGIN, t);
+        log_message("%d expired login cookie; created: %d timeout: %dsecs now: %d",
+			l->first_kiss,
+			lc->create_ts, 
+                        EXPIRE_LOGIN, 
+                        t);
         return "expired";
     }
 
@@ -874,7 +881,6 @@ char *check_l_cookie(login_rec *l)
     l->user = lc->user;
     l->creds = lc->creds;
     free(cookie);
-fprintf(stderr, "in check_l_cookie everything is o'tay\n");
     return((char *)NULL);
 }
 
@@ -1263,8 +1269,6 @@ void print_redirect_page(login_rec *l)
     cgiFormEntry	*c;
     cgiFormEntry	*n;
 
-fprintf(stderr, "in print_redirect_page\n");
-
     if( !(redirect_dest_tmp = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
@@ -1300,8 +1304,6 @@ fprintf(stderr, "in print_redirect_page\n");
                           g_cookie,
                           PBC_4K);
 
-fprintf(stderr, "in print_redirect_page got cookies\n");
-
     /* if we have a problem then bail with a nice message */
     if ( !l_res || !g_res ) {
           sprintf( message, "%s%s%s%s%s%s",
@@ -1316,8 +1318,6 @@ fprintf(stderr, "in print_redirect_page got cookies\n");
           free(message);
           return;
     }
-
-fprintf(stderr, "in print_redirect_page cookies are ok\n");
 
     /* create the http header line with the cookie */
     snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
@@ -1362,8 +1362,6 @@ fprintf(stderr, "in print_redirect_page cookies are ok\n");
 
     /* incase we have a post */
     if ( l->post_stuff ) {
-fprintf(stderr, "this is a post\n");
-fprintf(stderr, "these are the post args %s\n", l->post_stuff);
         /* cgiParseFormInput will extract the arguments from the post */
         /* make them available to subsequent cgic calls */
         if( cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
@@ -1468,7 +1466,6 @@ fprintf(stderr, "these are the post args %s\n", l->post_stuff);
     free(l_cookie);
     free(message);
     free(redirect_dest);
-fprintf(stderr, "leaving print_redirect_page\n");
 
 }
 
@@ -1484,23 +1481,17 @@ login_rec *get_query()
     /* take everything out of the environment */
     l = load_login_rec(l);
 
-fprintf(stderr, "did we get any post_stuff the first time: %s\n", l->post_stuff);
-
-fprintf(stderr, "past that printf\n");
-
     /* cgiParseFormInput will extract the arguments from the granting         */
     /* cookie string and make them available to subsequent cgic calls         */
 
     /* if there is a user field there it is a submit from a login */
     if( !l->user ) {
         if( !(g_req = get_granting_request()) ) {
-            log_message("no granting request cookie");
+            log_message("No granting request cookie.  remote addr %s", getenv("REMOTE_ADDR"));
             notok(notok_no_g_or_l);
             return(NULL);
         }
         g_req_clear = decode_granting_request(g_req);
-
-fprintf(stderr, "later on\n");
 
         if( cgiParseFormInput(g_req_clear, strlen(g_req_clear)) 
                    != cgiParseSuccess ) {
@@ -1517,6 +1508,10 @@ fprintf(stderr, "later on\n");
     if( !(l->appid) ) {
         abend("submit from login page problem or granting request mangled");
     }
+
+    /* because it's convenient we add some info that will follow the req */
+    l->first_kiss = time(NULL);
+    l->remote_host = strdup( getenv("REMOTE_ADDR") );
 
 #ifdef DEBUG 
     fprintf(stderr, "from login user: %s\n", l->user);
@@ -1554,18 +1549,6 @@ login_rec *verify_login_cookie (char *cookie, login_rec *l)
 
     if( ! (cookie_data = libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff)) )
         return((login_rec *)NULL);
-
-fprintf(stderr, "in verify_login_cookie ready to do bidness\n");
-
-fprintf(stderr, "from l cookie user: %s\n", (*cookie_data).broken.user);
-fprintf(stderr, "from l cookie version: %s\n", (*cookie_data).broken.version);
-fprintf(stderr, "from l cookie type: %c\n", (*cookie_data).broken.type);
-fprintf(stderr, "from l cookie creds: %c\n", (*cookie_data).broken.creds);
-fprintf(stderr, "from l cookie serial: %d\n", (*cookie_data).broken.serial);
-fprintf(stderr, "from l cookie appsrv_id: %s\n", (*cookie_data).broken.appsrv_id);
-fprintf(stderr, "from l cookie app_id: %s\n", (*cookie_data).broken.app_id);
-fprintf(stderr, "from l cookie create_ts: %d\n", (int)(*cookie_data).broken.create_ts);
-fprintf(stderr, "from l cookie last_ts: %d\n", (int)(*cookie_data).broken.last_ts);
 
     new->user = (*cookie_data).broken.user;
     new->version = (*cookie_data).broken.version;
@@ -1626,7 +1609,6 @@ int create_cookie(char *user_buf,
     cookie_local = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, ctx_plus, c_stuff);
 
     strncpy( cookie, cookie_local, max );
-fprintf(stderr, "nice new cookie is: %s\n", cookie);
     return(OK);
 
 }
@@ -1722,11 +1704,19 @@ char *auth_kdc(const char *username, const char *passwd)
 
     if (code) {
 	if (code == KRB5KRB_AP_ERR_BAD_INTEGRITY)
+#ifdef DEBUG
 	    log_message("auth_kdc: Password incorrect username: %s\n", 
 			username);
+#else
+            ;
+#endif
 	else 
+#ifdef DEBUG
 	    log_message("auth_kdc: %s while checking credntials username: %s\n",
 			error_message(code), username);
+#else
+            ;
+#endif
 	ret = strdup("Auth failed");
     }
 
