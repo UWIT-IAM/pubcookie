@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.53 2001-04-23 22:49:34 willey Exp $
+    $Id: mod_pubcookie.c,v 1.54 2001-04-25 23:57:30 willey Exp $
  */
 
 /* apache includes */
@@ -865,7 +865,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
   scfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
                                                    &pubcookie_module);
 #else
-  ap_add_version_component(ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION, PBC_TESTID, NULL));
+  ap_add_version_component(ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION, "/", PBC_PUBID, NULL));
   scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
 #endif
@@ -1088,10 +1088,10 @@ static int pubcookie_user(request_rec *r) {
   sess_cookie_name = make_session_cookie_name(p, app_id(r));
 
   /* check if the granting cookie's appid matches.  if not, then act as
-     if we don't have one */
+     if we don't have one.  This helps if there are any old g cookies */
   cookie_data = NULL;
-  if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 )
-    if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
+  if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
+    if( !(cookie_data = libpbc_unbundle_cookie(cookie, 
               scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
       libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
       libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
@@ -1099,7 +1099,9 @@ static int pubcookie_user(request_rec *r) {
       cfg->redir_reason_no = PBC_RR_BADG_CODE;
       return OK;
     }
-  /*if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 )*/
+  }
+
+  /* do we hav a session cookie for this app_id? if not check the g cookie */
   if( ! cookie_data || strncasecmp(app_id(r), cookie_data->broken.app_id, sizeof(cookie_data->broken.app_id)-1) != 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
       libpbc_debug("pubcookie_user: no G or S cookie; uri: %s\n", r->uri);
@@ -1209,7 +1211,7 @@ static int pubcookie_user(request_rec *r) {
       libpbc_debug("super-debug: pubcookie_user: has granting; current uri is: %s\n", r->uri);
 
     /* the granting cookie gets blanked too early and another login */
-    /* serer loop is required, this just speeds up that loop */
+    /* server loop is required, this just speeds up that loop */
     if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
       if( scfg->super_debug )
           libpbc_debug("super-debug: pubcookie_user: in the 'speed up that loop' logic; current uri is: %s\n", r->uri);
@@ -1218,17 +1220,6 @@ static int pubcookie_user(request_rec *r) {
       cfg->redir_reason_no = PBC_RR_DUMMYLP_CODE;
       return OK;
     }
-
-    /* - we've unbundled the cookie above
-    if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
-              scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
-      libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
-      libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
-      cfg->failed = PBC_BAD_AUTH;
-      cfg->redir_reason_no = PBC_RR_BADG_CODE;
-      return OK;
-    }
-    */
 
 #ifdef APACHE1_2
     r->connection->auth_type = pstrdup(r->pool, auth_type(r));
