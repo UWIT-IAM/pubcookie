@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.10 2000-01-28 01:36:34 willey Exp $
+    $Id: libpubcookie.c,v 2.11 2000-04-07 17:37:00 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -675,6 +675,7 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     des_cblock			ivec;
     static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
     des_key_schedule    	ks;
+    int				save_des_check_key;
 
     index2=libpbc_get_crypt_index();
     memcpy(ivec, &(c_stuff->key_a[index2]), sizeof(ivec));
@@ -686,7 +687,10 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
 /*  libpbc_debug("libpbc_encrypt_cookie: before setting des_check_key= %d\n",des_check_key); */
 
+    /* save stoopid global and reset it at the end */
+    save_des_check_key = des_check_key;
     des_check_key = 1;
+
     memset(key, 0, sizeof(key));
 #ifdef OPENSSL_0_9_2B
     while ( des_key_sched(key, ks) != 0 && --tries ) {
@@ -701,6 +705,9 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
         des_set_odd_parity(&key);
 #endif
     }
+
+    /* restore the value */
+    des_check_key = save_des_check_key;
 
     if ( ! tries ) {
        libpbc_debug("libpbc_encrypt_cookie: Couldn't find a good key\n");
