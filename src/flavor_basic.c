@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.28 2002-11-14 21:12:12 jjminer Exp $
+    $Id: flavor_basic.c,v 1.29 2002-12-02 16:22:34 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -539,7 +539,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
 
     } else { /* valid login cookie */
         pbc_log_activity(PBC_LOG_AUDIT,
-                         "flavor_basic: free ride", l->user);
+                         "flavor_basic: free ride user: %s", l->user);
         pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: free ride, goodbye\n" );
         return LOGIN_OK;
