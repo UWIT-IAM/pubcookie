@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.36 2001-11-15 01:54:15 willey Exp $
+    $Id: index.cgi.c,v 1.37 2001-11-19 22:32:18 willey Exp $
  */
 
 
@@ -1061,7 +1061,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3) {
             field1_type=FIELD_TYPE_FREE_RIDE;
         }
-        if( (field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && c->alterable_username == PBC_TRUE) ||
+        if( (field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && c != NULL && c->alterable_username == PBC_TRUE) ||
             (field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && l->alterable_username == PBC_TRUE) ) {
             field1_type=FIELD_TYPE_PREFILLED_ALTERABLE;
             free(focus_field);
@@ -1110,6 +1110,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     tmpl_print_out(TMPL_FNAME "login_part1", focus, reason, message_out);
 
 #ifdef FORM_NOT_IN_TMPL
+
     if(field1_prompt != NULL)
         print_form_field(field1_prompt, 
                          "user", 
