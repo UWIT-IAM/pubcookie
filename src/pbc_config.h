@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.44 2001-12-13 21:44:39 willey Exp $
+    $Id: pbc_config.h,v 1.45 2002-03-04 20:49:40 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -36,62 +36,54 @@
 #define APACHE
 #endif
 
+#include "pbc_myconfig.h" 
+
+#ifndef PBC_PATH
+#  if defined (WIN32)
+#    define PBC_PATH "C:\\WINNT\\System32\\inetsrv\\pubcookie\\"
+#  else 
+#    define PBC_PATH "/usr/local/pubcookie/"
+#  endif
+#endif
+
+/* where the runtime configuration file lives */
+#define PBC_CONFIG (PBC_PATH "config")
 
 /****** non University of Washington customers must change these ****/
 /* names of the login servers */
 #define PBC_CONFIGED
-#define PBC_LOGIN_HOST "weblogin.washington.edu"
-#define PBC_LOGIN_URI ""
-#define PBC_LOGIN_PAGE "https://" PBC_LOGIN_HOST "/" PBC_LOGIN_URI
-#define PBC_LOGIN_TEST_HOST "weblogintest.cac.washington.edu"
-#define PBC_LOGIN_PROD_TEST_HOST "webloginprodtest.cac.washington.edu"
-#define PBC_LOGIN_TEST_PAGE "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI
-#define PBC_ENTRPRS_DOMAIN ".washington.edu"
+#define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
+#define PBC_LOGIN_URI (libpbc_config_getstring("login_uri", ""))
+#define PBC_LOGIN_PAGE (libpbc_config_getstring("login_page", "https://" PBC_LOGIN_HOST "/" PBC_LOGIN_URI))
+#define PBC_LOGIN_TEST_HOST (libpbc_config_getstring("login_test_host", "weblogintest.cac.washington.edu"))
+#define PBC_LOGIN_PROD_TEST_HOST (libpbc_config_getstring("login_prod_test_host", "webloginprodtest.cac.washington.edu"))
+#define PBC_LOGIN_TEST_PAGE (libpbc_config_getstring("login_test_page", "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI))
+#define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring("enterprise_domain", ".washington.edu"))
 
 /* keys */
-#if defined (WIN32)
-#define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
-#define PBC_MASTER_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\m_key"
+#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
+#define PBC_MASTER_CRYPT_KEYFILE (PBC_PATH "m_key")
 /* lives only on login servers */
-#define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
+#define PBC_L_CERTFILE (PBC_PATH "pubcookie_login.cert")
 /* lives only on login server */
-#define PBC_L_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.key"
+#define PBC_L_KEYFILE (PBC_PATH "pubcookie_login.key")
 /* lives only on application server */
-#define PBC_S_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.cert"
+#define PBC_S_CERTFILE (PBC_PATH "pubcookie_session.cert")
 /* lives only on application server */
-#define PBC_S_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_session.key"
+#define PBC_S_KEYFILE (PBC_PATH "pubcookie_session.key")
 /* lives on application servers */
-#define PBC_G_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.cert"
+#define PBC_G_CERTFILE (PBC_PATH "pubcookie_granting.cert")
 /* lives only on login server */
-#define PBC_G_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.key"
-#else
+#define PBC_G_KEYFILE (PBC_PATH "pubcookie_granting.key")
 
 /* the login server builds it's key Filenames from the hostname     */
 /* unless NO_HOST_BASED_KEY_FILENAMES is set then the above static  */
 /*   filenames will be used                                         */
-#define PBC_KEY_DIR "/usr/local/pubcookie/"
+#define PBC_KEY_DIR PBC_PATH
 #define PBC_CRYPT_KEY_PREFIX "c_key"
 #define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
 #define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
 #define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
-
-/* the module has directives for the key files, these are the defaults */
-#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
-#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
-/* lives only on login servers */
-#define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
-/* lives only on login server */
-#define PBC_L_KEYFILE "/usr/local/pubcookie/pubcookie_login.key"
-/* lives only on application server */
-#define PBC_S_CERTFILE "/usr/local/pubcookie/pubcookie_session.cert"
-/* lives only on application server */
-#define PBC_S_KEYFILE "/usr/local/pubcookie/pubcookie_session.key"
-/* lives on application servers */
-#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
-/* lives only on login server */
-#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
-
-#endif /* if WIN32 */
 
 #define PBC_CRED1_AUTHTYPE "uwnetid"
 #define PBC_CRED2_AUTHTYPE "-"
