@@ -27,7 +27,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.8 1999-08-23 19:15:24 willey Exp $
+    $Id: pubcookie.h,v 1.9 2000-01-27 22:16:06 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -41,7 +41,9 @@
 #define PBC_DES_KEY_BUF 2048
 
 #define PBC_4K 4096
+#define PBC_20K 20480
 #define PBC_1K 1024
+#define PBC_SHORT_STRING 128
 #define PBC_RAND_MALLOC_BYTES 8
 
 #define PBC_X_STRING "XXXXXXXXXXXXX"
