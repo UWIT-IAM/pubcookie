@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_metaauth.c,v 1.1 2000-08-22 19:30:45 willey Exp $
+    $Id: index.cgi_metaauth.c,v 1.2 2000-09-25 17:58:31 willey Exp $
  */
 
 
@@ -65,7 +65,7 @@ char *auth_ndcpasswd(const char *user, const char *pass)
     success = authsrv_authenticate ( result, resultlen, timeout, sessid, flags, hard_timeout, int_timeout, authtypes, creds);
 
 #ifdef DEBUG
-            fprintf(stderr, "auth_ndcpasswd: success is %d result is %s\n", success, result);
+            log_message("auth_ndcpasswd: success is %d result is %s\n", success, result);
 #endif
 
     if( success ) 

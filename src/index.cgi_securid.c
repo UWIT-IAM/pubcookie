@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_securid.c,v 1.2 2000-09-08 19:20:24 willey Exp $
+    $Id: index.cgi_securid.c,v 1.3 2000-09-25 17:58:31 willey Exp $
  */
 
 
@@ -32,21 +32,43 @@
 #include "index.cgi.h"
 
 /* all of the securid stuff is in files name securid_                         */
-char *auth_securid(char *username, char *sid, int next, login_rec *l) 
+char *auth_securid(char *user, char *sid, int next, login_rec *l) 
 {
     int		intret;
-    char	*reason;
+    char	*reason = NULL;
+    char        *card_id;
+    char        *prn = NULL;
+    char        *p;
+
+    /* if the securid field is really in the form card_id=prn seperate it */
+    card_id = malloc((strlen(sid)>strlen(user) ? strlen(sid) : strlen(user))+1);
+    p = card_id = sid;
+    while( *p ) {
+      if( *p == '=' ) {
+          *p = '\0';
+          prn = ++p;
+      } 
+      p++;
+    }
+    if( prn == NULL ) {
+        card_id = user;
+        prn = sid;
+    }
 
     /* take back being root */
     if( setreuid(65534, 0) != 0 )
         log_message("%s auth_securid: unable to setuid root", l->first_kiss);
 
-    /* securid and next prn */
-    intret = securid(reason,username,sid,1,SECURID_TYPE_NORM,SECURID_DO_SID);
+//#ifdef DEBUG
+    log_message("%s auth_securid: about to securid check user: %s card_id: %s prn: %s ", l->first_kiss, user, card_id, prn);
+//#endif
 
-#ifdef DEBUG
+    /* securid and next prn */
+    intret = securid(reason, user, card_id, prn, 1, SECURID_TYPE_NORM, SECURID_DO_SID);
+
+//#ifdef DEBUG
     log_message("auth_securid: message from securid %s", reason);
-#endif
+//#endif
 
     /* give it up permanently */
     if( setreuid(65534, 65534) != 0 )
