@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.47 2005-02-07 22:26:38 willey Exp $
+ * $Id: security_legacy.c,v 1.48 2005-02-17 19:50:47 willey Exp $
  */
 
 
@@ -544,6 +544,7 @@ int security_init (pool * p, security_context ** contextp)
         pbc_fclose (p, fp);
         return -2;
     }
+    pbc_fclose (p, fp);
 #endif /* WIN32 */
 
 
