@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.36 2003-07-10 19:06:40 willey Exp $
+ * $Id: keyclient.c,v 2.37 2003-11-26 22:18:43 willey Exp $
  */
 
 
@@ -385,15 +385,15 @@ int main(int argc, char *argv[])
         str = X509_NAME_oneline (X509_get_subject_name (mycert),0,0);
         hostname = extract_cn(str);
         if (hostname) {
-            /* warn if hostname != get_my_hostname() */
-            if (strcasecmp(hostname, get_my_hostname())) {
+            /* warn if hostname != get_my_hostname(p) */
+            if (strcasecmp(hostname, get_my_hostname(p))) {
                 fprintf(stderr, "warning: certificate name (%s) doesn't match"
-                        " my hostname (%s)\n", hostname, get_my_hostname());
+                        " my hostname (%s)\n", hostname, get_my_hostname(p));
             }
         } else {
             fprintf(stderr, 
                     "warning: no hostname in my certificate? trying anyway.\n");
-            hostname = get_my_hostname();
+            hostname = get_my_hostname(p);
         }
     }
 

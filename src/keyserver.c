@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.38 2003-07-12 00:38:45 willey Exp $
+ * $Id: keyserver.c,v 2.39 2003-11-26 22:18:43 willey Exp $
  */
 
 
@@ -171,7 +171,7 @@ int pushkey(const char *peer)
         return(0);
     }
 
-    hostname = get_my_hostname();
+    hostname = get_my_hostname(p);
     if (!hostname) {
         pbc_log_activity(p, PBC_LOG_ERROR, "get_my_hostname() failed? %m");
         perror("get_my_hostname");
