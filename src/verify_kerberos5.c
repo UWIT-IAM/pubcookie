@@ -8,7 +8,7 @@
  */
 
 /*
-    $Id: verify_kerberos5.c,v 1.5 2002-06-11 20:21:59 greenfld Exp $
+    $Id: verify_kerberos5.c,v 1.6 2002-06-13 17:55:52 jteaton Exp $
  */
 
 #ifdef HAVE_KRB5
@@ -273,6 +273,10 @@ static int k5support_verify_tgt(krb5_context context,
     int result = -1;
     const char *keytab;
 
+    krb5_keytab keytab;
+    krb5_pointer keytabname;
+
+
     if (errstr) {
 	*errstr = NULL;
     }
@@ -283,11 +287,17 @@ static int k5support_verify_tgt(krb5_context context,
 	return -1;
     }
 
-    keytab = libpbc_config_getstring("kerberos5_keytab", NULL);
-    if (krb5_kt_read_service_key(context, (char *) keytab, server, 0,
+    keytabname = (krb5_pointer) libpbc_config_getstring("kerberos5_keytab",
+                                                        NULL);
+
+    if (krb5_kt_resolve(context, keytabname, &keytab)) {
+       *errstr = "unable to resolve keytab";
+       goto fini;
+    }
+
+    if (krb5_kt_read_service_key(context, keytabname, server, 0,
 				 0, &keyblock)) {
         *errstr = "unable to read service key";
-
 	goto fini;
     }
 
@@ -309,8 +319,8 @@ static int k5support_verify_tgt(krb5_context context,
 	goto fini;
     }
 
-    if (krb5_rd_req(context, auth_context, &packet, 
-		    server, NULL, NULL, NULL)) {
+    if (krb5_rd_req(context, &auth_context, &packet, 
+		    server, keytab, NULL, NULL)) {
         *errstr = "krb5_rd_req failed";
 	goto fini;
     }
