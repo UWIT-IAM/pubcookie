@@ -74,10 +74,11 @@ int libpbc_base64_encode(unsigned char *in, unsigned char *out, int size) {
   return 1;
 }
 
-int libpbc_base64_decode(unsigned char *in, unsigned char *out) {
+int libpbc_base64_decode(unsigned char *in, unsigned char *out, int *osizep) {
   unsigned int a, b, c, d;
   int size = strlen((const char *)in);
   int correct = 0;
+  int osize = 0;
 
   while(size > 0) {
     if(*in != 0) {
@@ -103,6 +104,7 @@ int libpbc_base64_decode(unsigned char *in, unsigned char *out) {
 	    *out++ = (a << 2) + (b >> 4);
 	    *out++ = ((b & 15) << 4) + (c >> 2);
 	    *out++ = ((c & 3) << 6) + d;
+	    osize += 3;
 	  } else
 	    return 0;
 	} else
@@ -113,5 +115,51 @@ int libpbc_base64_decode(unsigned char *in, unsigned char *out) {
       return 0;
   }
   *(out-correct) = 0;
+  osize -= correct;
+  if (osizep) *osizep = osize;
   return 1;
 }
+
+#ifdef TEST_BASE64
+
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+    int decode = 0;
+    int arg = 1;
+    int outlen = 0;
+    int ret;
+    char *outbuf;
+
+    if (argc < 2) {
+	fprintf(stderr, "%s [-d] <blob>\n", argv[0]);
+	exit(1);
+    }
+
+    if (!strcmp(argv[arg], "-d")) {
+	decode = 1;
+	arg++;
+    }
+
+    if (arg != (argc - 1)) {
+	fprintf(stderr, "%s [-d] <blob>\n", argv[0]);
+	exit(1);
+    }
+
+    if (decode) {
+	outbuf = (char *) malloc(strlen(argv[arg]));
+	ret = libpbc_base64_decode(argv[arg], outbuf, &outlen);
+    } else {
+	outbuf = (char *) malloc(2 * strlen(argv[arg]));
+	ret = libpbc_base64_encode(argv[arg], outbuf, strlen(argv[arg]));
+	outlen = strlen(outbuf);
+    }
+
+    printf("ret = %d\n", ret);
+    if (ret) {
+	printf("outlen = %d\nout = %s\n", outlen, outbuf);
+    }
+}
+
+#endif
