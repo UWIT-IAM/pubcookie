@@ -1,0 +1,71 @@
+
+Introduction
+
+The Pubcookie login server has two primary functions; to authenticate user
+sessions and to issue authentication tokens that may be used by other Pubcookie
+components.  The login server authenticates users either by checking user
+provided credentials via an authentication service (Kerberos, SecurID,
+...) or by verifying a token that was created on a previous visit to the
+login server.  Example code to interface to an authentication system is
+provided.
+
+Implementation
+
+The login server uses a binary CGI, compiled from C, to process requests.  
+This CGI is the Pubcookie only active component on the login server.  The login
+server runs Apache webserver, however other webserver software that
+supports SSL and CGI would probably work.  Due to the nature of the login
+server only other apps that receive a high level of security scrutiny
+should be run on the login server.
+
+The login cgi displays the web page where users are asked to enter
+credentials as well as web pages displaying any errors.
+
+Authentication services
+
+Pubcookie has a very simple interface for talking to authentication services
+There is a sample authentication module provied.  Additionally there is a 
+module for Kerberos 5.  
+
+Internal to the login.cgi support for multiple and various authentication services is 
+not very flexable and will be revised in the futue.
+
+Compiling
+
+The login cgi uses the CGIC library for some functions.  This library is
+included with the Pubcookie distribution.  
+Pubcookie uses a modified CGIC library.  Currently cgic comes in a seperate 
+tar file and is compiled seperately.  The pubcookie modifications should
+not affect other expected uses of cgic, the modifications simply make some 
+cgic-internal functions available to external apps.
+ 
+To compile cgic, untar the pubcookie_cgic.tar.gz into a seperate directory.
+Check the Makefile for installation specific stuff and type 'make'.  libcgic.a and cgic.h can be put in the pubcookie install directory or other locations 
+you please.
+
+Once cigc is compiled you can build the index.cgi with Makefile.index.cgi
+
+Key Management (as it is)
+
+Current key management in pubcookie is a simple shared key hashed to the 
+host's ip.  There is no current mechanism for revoking a key or forcing
+a new generation of keys.
+	
+For the initial install use mkc_make_generic to make a master key.  this 
+master key is then hashed to the host ip's via the mkc_make_local tool.  
+
+Anciliary Tools
+
+Tools that you need for key management:
+mkc_make_local - 'localizes' master crypt key for a specific host (ip).
+new client hosts will need a localized key.
+mkc_make_generic - Makes a blob of bits that can be used for a master c_key.
+
+Tool rarely used for debugging:
+test_local_c_key
+
+Obsolete tools that might be handy for debugging:
+pbc_create - creates a pubcookie cookie, see src for usage.
+pbc_verify - decrypts/verifys/displays pubcookie cookies.
+
+
