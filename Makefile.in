@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.8 2002-08-16 16:09:05 jjminer Exp $
+# $Id: Makefile.in,v 1.9 2002-08-16 19:51:58 jjminer Exp $
 
 @SET_MAKE@
 
@@ -25,8 +25,8 @@ TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
 LOGIN_DIR=$(PUBCOOKIE_DIR)/login
 
 INSTALL=@INSTALL@ -p -b
-INSTALL_BIN=$(INSTALL) -m 755 -o root -g other
-INSTALL_OTHER=$(INSTALL) -m 644 -o root -g other
+INSTALL_BIN=$(INSTALL) -m 755
+INSTALL_OTHER=$(INSTALL) -m 644
 INSTALL_DIR=$(INSTALL) -d
 
 RM=@RM@
