@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.12 2002-06-26 22:02:22 jjminer Exp $
+    $Id: keyserver.c,v 2.13 2002-06-27 19:41:42 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -164,7 +164,7 @@ int pushkey(const char *peer)
             perror("fork");
             exit(1);
         }
-        if (fork() == 0) {
+        if (res == 0) {
             /* child */
             res = execl("keyclient", "keyclient", 
                         "-L", lservers[x],
