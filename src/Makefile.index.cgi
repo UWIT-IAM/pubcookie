@@ -18,13 +18,13 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.6 2001-08-03 17:42:08 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.7 2001-08-22 23:24:15 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-# some options are DEBUG
+# some options are: DEBUG MAKE_MIRROR 
 CFLAGS=-O3 -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include -I/usr/local/include
 
 # order is important here
