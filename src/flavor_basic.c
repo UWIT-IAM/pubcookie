@@ -34,6 +34,7 @@ static int init_basic(void)
 
     if (!v || !v->v) {
 	fprintf(stderr, "flavor_basic: verifier not found: %s\n", vname);
+	v = NULL;
 	return -1;
     }
 
@@ -44,7 +45,7 @@ static int init_basic(void)
     return 0;
 }
 
-void print_login_page(login_rec *l, login_rec *c, const char **errstr)
+static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 {
     /* currently, we never clear the login cookie
        we always clear the greq cookie */
@@ -145,6 +146,8 @@ void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 static login_result process_basic(login_rec *l, login_rec *c,
 				  const char **errstr)
 {
+    struct credentials *creds = NULL;
+
     /* make sure we're initialized */
     assert(v != NULL);
     assert(l != NULL);
@@ -154,6 +157,11 @@ static login_result process_basic(login_rec *l, login_rec *c,
     assert(errstr);
 
     *errstr = NULL;
+
+    if (!v) {
+	log_message("flavor_basic: flavor not correctly configured");
+	return LOGIN_ERR;
+    }
 
     /* choices, choices */
 
@@ -176,7 +184,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
     */
 
     if (l->reply == FORM_REPLY) {
-        if (v->v(l->user, l->pass, NULL, l->realm, NULL, errstr) == 0) {
+        if (v->v(l->user, l->pass, NULL, l->realm, &creds, errstr) == 0) {
             if (debug) {
                fprintf(stderr, "authentication successful for %s\n", l->user);
             }
@@ -200,6 +208,34 @@ static login_result process_basic(login_rec *l, login_rec *c,
                }
             }
 
+	    /* if we got some long-term credentials, save 'em for later */
+	    if (creds != NULL) {
+	        char *outbuf;
+		int outlen;
+		char *out64;
+
+		if (!libpbc_mk_priv(NULL, creds->str, creds->sz,
+				    &outbuf, &outlen)) {
+		    /* save for later */
+		    out64 = malloc(outlen * 4 / 3 + 20);
+		    libpbc_base64_encode(outbuf, out64, outlen);
+
+		    print_header("Set-Cookie: %s=%s; domain=%s; secure\n",
+				 PBC_CRED_COOKIENAME, out64, PBC_LOGIN_HOST);
+
+		    /* free buffer */
+		    free(outbuf);
+		    free(out64);
+		} else {
+		    log_message("libpbc_mk_priv failed: can't save credentials");
+		}
+
+		/* xxx save creds for later just in case we're
+		   really flavor_getcred. this leaks. */
+		l->flavor_extension = creds;
+
+		creds = NULL;
+	    }
 
 	    return LOGIN_OK;
 	} else {
@@ -221,8 +257,25 @@ static login_result process_basic(login_rec *l, login_rec *c,
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
 
+    /* l->check_error will be set whenever we couldn't decode the
+       login cookie, including (for example) when the login cookie
+       has expired. */
     } else if (l->check_error) {
 	*errstr = l->check_error;
+	log_message("flavor_basic: %s", *errstr);
+
+	print_login_page(l, c, errstr);
+	return LOGIN_INPROGRESS;
+
+    /* if l->check_error is NULL, then 'c' must be set and must
+       contain the login cookie information */
+    } else if (!c) {
+	log_message("flavor_basic: check_error/c invariant violated");
+	abort();
+
+    /* make sure the login cookie represents credentials for this flavor */
+    } else if (c->creds != PBC_BASIC_CRED_ID) {
+	*errstr = "cached credentials wrong flavor";
 	log_message("flavor_basic: %s", *errstr);
 
 	print_login_page(l, c, errstr);
@@ -236,7 +289,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
 
 struct login_flavor login_flavor_basic =
 {
-    'A', /* id */
+    PBC_BASIC_CRED_ID, /* id; see libpbc_get_credential_id() */
     &init_basic, /* init_flavor() */
     &process_basic /* process_request() */
 };
