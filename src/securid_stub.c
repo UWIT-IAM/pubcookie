@@ -52,11 +52,13 @@ char **argv;
       printf ("\ti ->%d<- name ->%s<- prn ->%s<- card_id ->%s<-\n", i, name, prn, card_id);
 
       if( i == 2 ) {
-          securid(reason, name, NULL,prn,1,SECURID_TYPE_NORM,SECURID_ONLY_CRN) ? printf("fail\n") : printf("ok\n");
+          securid(reason, name, NULL,prn,1,SECURID_TYPE_NORM,SECURID_DO_SID) ? printf("fail\n") : printf("ok\n");
+//          securid(reason, name, NULL,prn,1,SECURID_TYPE_NORM,SECURID_ONLY_CRN) ? printf("fail\n") : printf("ok\n");
       }
       else {
           if ( i == 3 )
-              securid(reason,name,card_id,prn,1,SECURID_TYPE_NORM,SECURID_ONLY_CRN) ? printf("fail\n") : printf("ok\n");
+ //             securid(reason,name,card_id,prn,1,SECURID_TYPE_NORM,SECURID_ONLY_CRN) ? printf("fail\n") : printf("ok\n");
+              securid(reason,name,card_id,prn,1,SECURID_TYPE_NORM,SECURID_DO_SID) ? printf("fail\n") : printf("ok\n");
           else
               printf("fail\n");
       }
