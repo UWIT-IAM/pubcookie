@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.2 2002-06-07 17:40:21 greenfld Exp $
+    $Id: keyserver.c,v 2.3 2002-06-07 17:51:00 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -87,6 +87,7 @@ void myprintf(const char *format, ...)
 
 int debug = 1;
 const char *keyfile = "server.pem";
+const char *certfile = "server.pem";
 
 enum optype {
     NOOP,
@@ -136,7 +137,8 @@ void pushkey(const char *peer)
 	    /* child */
 	    res = execl("keyclient", "keyclient", 
 			"-L", lservers[x],
-			"-c", keyfile, 
+			"-k", keyfile, 
+			"-c", certfile, 
 			"-u", "-h", peer, NULL);
 	    syslog(LOG_ERR, "execl(): %m");
 	    exit(2);
@@ -246,7 +248,8 @@ int doit(const char *peer, enum optype op, const char *newkey)
 void usage(void)
 {
     printf("usage: keyserver [options]\n");
-    printf("  -c <key/cert file> : key to use for TLS authentication\n");
+    printf("  -c <cert file>     : certificate to use for TLS authentication\n");
+    printf("  -k <key>           : key to use for TLS authentication\n");
     printf("  -a                 : expect keyfile in ASN.1\n");
     printf("  -p (default)       : expect keyfile in PEM\n");
     printf("  -C <cert file>     : CA cert to use for client verification\n");
@@ -309,7 +312,12 @@ int main(int argc, char *argv[])
 	    break;
 
 	case 'c':
-	    /* 'optarg' is the key/certificate file */
+	    /* 'optarg' is the certificate file */
+	    certfile = strdup(optarg);
+	    break;
+
+	case 'k':
+	    /* 'optarg' is the key file */
 	    keyfile = strdup(optarg);
 	    break;
 
@@ -339,7 +347,7 @@ int main(int argc, char *argv[])
     ctx = SSL_CTX_new(TLSv1_server_method());
 
     /* setup the correct certificate */
-    if (!SSL_CTX_use_certificate_file(ctx, keyfile, filetype)) {
+    if (!SSL_CTX_use_certificate_file(ctx, certfile, filetype)) {
 	logerrstr("SSL_CTX_use_certificate_file");
 	exit(1);
     }
