@@ -10,6 +10,7 @@ if (!defined &PUBCOOKIE_CONFIG) {
     eval 'sub PBC_BAD_USER_HANDLER () {"pubcookie-bad-user";}' unless defined(&PBC_BAD_USER_HANDLER);
     eval 'sub PBC_LOGIN_PAGE () {"https://pcookiel1.cac.washington.edu/login/";}' unless defined(&PBC_LOGIN_PAGE);
     eval 'sub PBC_CRYPT_KEYFILE () {"/usr/local/pubcookie/c_key";}' unless defined(&PBC_CRYPT_KEYFILE);
+    eval 'sub PBC_MASTER_CRYPT_KEYFILE () {"/usr/local/pubcookie/m_key";}' unless defined(&PBC_MASTER_CRYPT_KEYFILE);
     eval 'sub PBC_DEFAULT_INACT_EXPIRE () {30* 60;}' unless defined(&PBC_DEFAULT_INACT_EXPIRE);
     eval 'sub PBC_DEFAULT_HARD_EXPIRE () {8* 60* 60;}' unless defined(&PBC_DEFAULT_HARD_EXPIRE);
     eval 'sub PBC_MAX_HARD_EXPIRE () {12* 60* 60;}' unless defined(&PBC_MAX_HARD_EXPIRE);
