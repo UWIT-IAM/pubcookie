@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.17 1999-01-25 04:31:00 willey Exp $
+    $Id: libpubcookie.c,v 1.18 1999-02-10 04:08:21 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -311,19 +311,21 @@ unsigned char *libpbc_gethostip_np()
     if ( (h = gethostbyname(myname.nodename)) == NULL ) 
        	libpbc_abend("%s: host unknown.\n", myname.nodename);
 
-    addr = libpbc_alloc_init(h->h_length +1);
+    addr = libpbc_alloc_init(h->h_length);
     memcpy(addr, h->h_addr_list[0], h->h_length);
     
     return addr;
 }
 
+/* we only use the first four bytes of the ip (maybe someday they'll be       */
+/* longer) but it doesn't matter here.                                        */
 /*                                                                            */
 char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
 {
     int			i;
 
     for( i=0; i<PBC_DES_KEY_BUF; ++i ) {
-	in[i] ^= addr_bytes[i % strlen(addr_bytes)];
+	in[i] ^= addr_bytes[i % 4];
     }
     
     return in;
@@ -426,7 +428,9 @@ pbc_cookie_data *libpbc_destringify_cookie_data(pbc_cookie_data *cookie_data)
 
 }
 
-/* make a cookie_data struct a string                                         */
+/* package the cookie info for transit                                        */
+/*   - make the cookie_data struct a string                                   */
+/*   - do network byte order conversion                                       */
 #ifdef APACHE
 unsigned char *libpbc_stringify_cookie_data_p(pool *p, pbc_cookie_data *cookie_data) 
 #else
@@ -435,6 +439,7 @@ unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data)
 {
     unsigned char	*cookie_string;
     unsigned char	*ptr;
+    int			temp;
 
     ptr = cookie_string = (unsigned char *)libpbc_alloc_init(sizeof(pbc_cookie_data));
     ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.user, PBC_USER_LEN);
@@ -443,14 +448,22 @@ unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data)
     ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.app_id, PBC_APP_ID_LEN);
     *ptr = (*cookie_data).broken.type;
     ptr++;
+
     *ptr = (*cookie_data).broken.creds;
     ptr++;
-    memcpy(ptr, &(*cookie_data).broken.serial, sizeof(int));
+
+    temp = htonl((*cookie_data).broken.serial);
+    memcpy(ptr, &temp, sizeof(int));
     ptr += sizeof(int);
-    memcpy(ptr, &(*cookie_data).broken.create_ts, sizeof(time_t));
+
+    temp = htonl((*cookie_data).broken.create_ts);
+    memcpy(ptr, &temp, sizeof(time_t));
     ptr += sizeof(time_t);
-    memcpy(ptr, &(*cookie_data).broken.last_ts, sizeof(time_t));
+
+    temp = htonl((*cookie_data).broken.last_ts);
+    memcpy(ptr, &temp, sizeof(time_t));
     ptr += sizeof(time_t);
+
     return cookie_string;
 
 }
@@ -542,6 +555,10 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
 }
 
+/* put stuff in the cookie structure                                          */
+/*  note: we don't do network byte order conversion here,                     */
+/*  instead we leave that for stringify                                       */
+/*                                                                            */
 void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 	                  unsigned char *user, 
 	                  unsigned char type, 
@@ -555,14 +572,17 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
     strncpy((*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
-    (*cookie_data).broken.serial = htons(serial);
-    (*cookie_data).broken.create_ts = htonl(time(NULL));
-    (*cookie_data).broken.last_ts = htonl(time(NULL));
+    (*cookie_data).broken.serial = serial;
+    (*cookie_data).broken.create_ts = time(NULL);
+    (*cookie_data).broken.last_ts = time(NULL);
     strncpy((*cookie_data).broken.appsrv_id, appsrv_id, PBC_APPSRV_ID_LEN-1);
     strncpy((*cookie_data).broken.app_id, app_id, PBC_APP_ID_LEN-1);
 
 }
 
+/* unfortuneately libpbc_sign_bundle_cookie and libpbc_unbundle are not       */
+/* symetrical in the data they deal with.  the bundle takes the stringified   */
+/* info and the unbundle returns a strunct.  maybe someday i'll clean that up */
 /*                                                                            */
 #ifdef APACHE
 unsigned char *libpbc_sign_bundle_cookie_p(pool *p, 
@@ -686,7 +706,6 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     unsigned char	sig[PBC_SIG_LEN];
     unsigned char	buf[PBC_4K];
     unsigned char	buf2[PBC_4K];
-    time_t		temp;
 
     memset(buf, 0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
@@ -712,12 +731,9 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
         cookie_data = libpbc_destringify_cookie_data(cookie_data);
 
-	temp = ntohl((*cookie_data).broken.last_ts);
-	(*cookie_data).broken.last_ts = temp;
-	temp = ntohl((*cookie_data).broken.create_ts);
-	(*cookie_data).broken.create_ts = temp;
-	temp = ntohs((*cookie_data).broken.serial);
-	(*cookie_data).broken.serial = temp;
+	(*cookie_data).broken.last_ts = ntohl((*cookie_data).broken.last_ts);
+	(*cookie_data).broken.create_ts = ntohl((*cookie_data).broken.create_ts);
+	(*cookie_data).broken.serial = ntohl((*cookie_data).broken.serial);
 
         return cookie_data;
     }
@@ -742,7 +758,7 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
     unsigned char	*cookie_string;
     unsigned char	*cookie;
 
-    (*cookie_data).broken.last_ts = htonl(time(NULL));
+    (*cookie_data).broken.last_ts = time(NULL);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
 
