@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.13 2000-09-25 17:59:47 willey Exp $
+    $Id: libpubcookie.c,v 2.14 2001-04-13 21:11:50 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -970,6 +970,9 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
         return cookie_data;
     }
     else {
+        /* show the unencrypted cookie contents */
+        libpbc_debug("libpbc_unbundle_cookie: username from decrypted blob: %s\n", (*cookie_data).broken.user);
+        /* either the decryption yielded the wrong stuff or the verify failed */
 	libpbc_debug("libpbc_unbundle_cookie: sig verify failed\n");
         return NULL;
     }
