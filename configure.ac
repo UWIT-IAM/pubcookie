@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.51 $)
+AC_REVISION($Revision: 1.52 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -393,6 +393,7 @@ AC_ARG_WITH(general-log,
 
 ssl_include_path=
 ssl_lib_path=
+ssl_openssl=openssl
 
 AC_ARG_WITH(ssl,
     AC_HELP_STRING([--with-ssl=PATH], [Openssl lib/include root]),
@@ -402,6 +403,7 @@ AC_ARG_WITH(ssl,
    *)
      ssl_include_path="-I$withval/include"
      ssl_lib_path="-L$withval/lib"
+     ssl_openssl="$withval/bin/openssl"
      ;;
   esac ])
 
@@ -413,6 +415,7 @@ AC_ARG_WITH(ssl-dir,
    *)
      ssl_include_path="-I$withval/include"
      ssl_lib_path="-L$withval/lib"
+     ssl_bin_path="$withval/bin/openssl"
      ;;
   esac ])
 
@@ -444,7 +447,7 @@ if test "x$ssl_include_path" = "x" -a -d "/usr/include/openssl"; then
     ssl_include_path="-I/usr/include/openssl"
 fi
 
-if test "x$ssl_lib_path" = "x" -a -d "/usr/local/ssl/include"; then
+if test "x$ssl_lib_path" = "x" -a -d "/usr/local/ssl/lib"; then
     ssl_lib_path="-L/usr/local/ssl/lib"
 fi
 
@@ -455,7 +458,32 @@ fi
 if test "x$ssl_lib_path" != "x"; then
     LDFLAGS="$LDFLAGS $ssl_lib_path"
 fi
-  
+
+# Look for openssl krb5 includes
+
+AC_MSG_CHECKING([for openssl krb5 includes])
+vfi=
+vfa=
+for vf in `$ssl_openssl version -f`
+do
+    case $vf in
+      -I*) vfi="$vfi $vf"
+           ;;
+    esac
+    vfa="yes"
+done
+if test "x$vfi" != "x" ; then
+    CPPFLAGS="$CPPFLAGS $vfi"
+    AC_MSG_RESULT([$vfi])
+else
+    if test "x$vfa" != "x"; then
+       AC_MSG_RESULT([none])
+    else
+       AC_MSG_WARN([could not run openssl to find includes])
+    fi
+fi
+
+
 AC_CHECK_LIB(crypto,ERR_load_ASN1_strings,,
              AC_MSG_ERROR([libcrypto is required.]))
 AC_CHECK_LIB(ssl,SSL_library_init,,
@@ -772,6 +800,23 @@ if test "$enable_dmalloc" = "yes"; then
 
 fi
 
+AC_ARG_WITH(fcgi,
+    AC_HELP_STRING([--with-fcgi=PATH],[Build for fastcgi ]),
+[ case "${withval}" in
+   no)
+    ;;
+   *)
+    CPPFLAGS="$CPPFLAGS -I$withval/include -DWITH_FCGI"
+    LIBS="$LIBS -lfcgi"
+    LDFLAGS="$LDFLAGS -L$withval/lib"
+    ;;
+  esac ])
+
+if test "$enable_shadow" = "yes"; then
+    AC_CHECK_HEADERS([shadow.h crypt.h])
+    AC_CHECK_LIB(crypt, crypt)
+fi
+
 fi # End of stuff we skip if we're not enabling the login server.
 
 LOGINLIBS=$LIBS
@@ -791,7 +836,7 @@ AC_STRUCT_TM
 
 # Checks for library functions.
 AC_FUNC_FORK
-AC_FUNC_MALLOC
+# AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF

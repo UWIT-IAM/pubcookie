@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.135 2004-03-21 04:46:59 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.136 2004-03-31 16:53:57 fox Exp $
  */
 
 
@@ -35,6 +35,9 @@ extern int errno;
 #include "http_main.h"
 #include "http_protocol.h"
 #include "util_script.h"
+#ifdef APACHE2
+#include "ap_mpm.h"
+#endif
 
 /* ssleay lib stuff */
 
@@ -189,6 +192,86 @@ void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
 
 }
 
+
+/* We have to, in the depths of the module, be able to recover
+   the current server record - without having the request rec.  
+
+   In apache 1.3, which handles only one request at a time, we can
+   just store the server record pointer.
+
+   In apache 2.x, which can be threaded and handle several requests
+   at a time, we can utilize the ubiquitous pool pointer.  We just
+   save, for each thread, current pool and server pointers.  Later
+   we can recover the server from the pool.
+  
+   Seems complicated, but I can't think of a better way that doesn't
+   rewrite the entire library API.
+   */
+
+static server_rec *current_server_rec;
+
+#ifdef APACHE1_3
+server_rec *find_server_from_pool(pool *p)
+{
+   return (current_server_rec);
+}
+
+#else  /* APACHE 2 */
+
+typedef struct pc_pool_ent pc_pool_ent;
+struct pc_pool_ent {
+   apr_pool_t *p;
+   server_rec *s;
+}; 
+pc_pool_ent *pc_pool_list;  /* List of all active req pools by thread */
+int pc_pool_list_size = 0;  /* Determined by max threads */
+
+/* Recovering the server means finding the pool in the list */
+server_rec *find_server_from_pool(pool *pf)
+{
+   pc_pool_ent *e;
+   int n;
+   for (n=0,e=pc_pool_list; n<pc_pool_list_size; n++,e++) {
+      if (e->p == pf) return (e->s);
+   }
+
+   ap_log_error(PC_LOG_ERR, current_server_rec, "POOL %x not found! ", pf);
+   return (current_server_rec);
+}
+
+/* The pool list is indexed by the thread number.
+   This structure from the scoreboard. */
+
+typedef struct ap_sb_handle_t ap_sb_handle_t;
+struct ap_sb_handle_t {
+    int child_num;
+    int thread_num;
+};
+
+/* Updating the list means storing the server/pool at the thread index. */
+static void update_pool_list(request_rec *r)
+{
+    int ti = ((ap_sb_handle_t*) r->connection->sbh)->thread_num;
+    pc_pool_ent *pe;
+    ap_log_rerror(PC_LOG_DEBUG, r, "POOL set: (%d/%d) = s=%x, p=%x/%x",
+              ti, pc_pool_list_size, r->server, r->pool, r->pool);
+    if (ti<pc_pool_list_size) {
+       pe = pc_pool_list + ti;
+       pe->p = r->pool;
+       pe->s = r->server;
+    }
+}
+
+static void init_pool_list(pool *p)
+{
+    ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &pc_pool_list_size);
+    pc_pool_list = (pc_pool_ent*)
+            ap_pcalloc(p, sizeof(pc_pool_ent)*pc_pool_list_size);
+}
+#endif
+
+
+
 /**
  * read the post stuff and spit it back out
  * @param r reuquest_rec
@@ -236,8 +319,9 @@ int put_out_post(request_rec *r) {
  */
 int get_pre_s_token(request_rec *r) {
     int i;
+    pool *p = r->pool;
     
-    if( (i = libpbc_random_int(r->pool)) == -1 ) {
+    if( (i = libpbc_random_int(p)) == -1 ) {
         ap_log_rerror(PC_LOG_EMERG, r, 
 		"get_pre_s_token: OpenSSL error");
     }
@@ -278,7 +362,7 @@ int check_end_session(request_rec *r) {
     int 		  ret = 0;
     const char            *end_session;
     char                  *word;
-    pool                  *p = r->pool;
+    pool *p = r->pool;
     pubcookie_dir_rec     *cfg;
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
@@ -371,6 +455,7 @@ unsigned char *appsrvid(request_rec *r)
 {
     pubcookie_server_rec	*scfg;
     pubcookie_dir_rec		*cfg;
+    pool *p = r->pool;
 
     cfg=(pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
@@ -381,15 +466,16 @@ unsigned char *appsrvid(request_rec *r)
         return(scfg->appsrvid);
     else
         /* because of multiple passes through don't use r->hostname() */
-        return (unsigned char *) ap_pstrdup(r->pool, ap_get_server_name(r));
+        return (unsigned char *) ap_pstrdup(p, ap_get_server_name(r));
 
 }
 
 /* make sure agents don't cache the redirect */
 void set_no_cache_headers(request_rec *r) {
+    pool *p = r->pool;
 
 #ifdef APACHE2
-    char *datestr = apr_palloc(r->pool, APR_RFC822_DATE_LEN);
+    char *datestr = apr_palloc(p, APR_RFC822_DATE_LEN);
     apr_rfc822_date(datestr, r->request_time);
     ap_table_set(r->headers_out, "Expires", datestr);
 #else
@@ -408,6 +494,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
     pubcookie_server_rec *scfg;
     char                 *new_cookie;
     unsigned char        *cookie;
+    pool *p = r->pool;
 #ifdef PORT80_TEST
     char *secure = "";
 #else
@@ -423,10 +510,10 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* just update the idle timer */
         /* xxx it would be nice if the idle timeout has been disabled
            to avoid recomputing and resigning the cookie? */
-        cookie = libpbc_update_lastts(r->pool, scfg->sectext, cfg->cookie_data, NULL, 0);
+        cookie = libpbc_update_lastts(p, scfg->sectext, cfg->cookie_data, NULL, 0);
     } else {
         /* create a brand new cookie, initialized with the present time */
-        cookie = libpbc_get_cookie(r->pool, 
+        cookie = libpbc_get_cookie(p, 
                                      scfg->sectext,
 				     (unsigned char *)r->USER, 
                                      PBC_COOKIE_TYPE_S, 
@@ -438,8 +525,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
 					 0);
     }
 
-    new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
-			     make_session_cookie_name(r->pool, 
+    new_cookie = ap_psprintf(p, "%s=%s; path=%s;%s", 
+			     make_session_cookie_name(p, 
                              PBC_S_COOKIENAME, 
                              appid(r)),
 			     cookie, 
@@ -458,7 +545,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
          the first time since our cred cookie doesn't expire (which is poor
          and why we need cookie extensions) */
         /* encrypt */
-        if (libpbc_mk_priv(r->pool, scfg->sectext, NULL, 0, cfg->cred_transfer,
+        if (libpbc_mk_priv(p, scfg->sectext, NULL, 0, cfg->cred_transfer,
                            cfg->cred_transfer_len,
                            &blob, &bloblen)) {
             ap_log_rerror(PC_LOG_ERR, r,
@@ -468,8 +555,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
 
         /* base 64 */
         if (!res) {
-            base64 = ap_palloc(r->pool, (bloblen + 3) / 3 * 4 + 1);
-            if (!libpbc_base64_encode(r->pool, (unsigned char *) blob, 
+            base64 = ap_palloc(p, (bloblen + 3) / 3 * 4 + 1);
+            if (!libpbc_base64_encode(p, (unsigned char *) blob, 
                                        (unsigned char *) base64, bloblen)) {
                 ap_log_rerror(PC_LOG_ERR, r, 
                               "credtrans: libpbc_base64_encode() failed");
@@ -478,8 +565,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
         }
 
         /* set */
-        new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
-                                 make_session_cookie_name(r->pool, 
+        new_cookie = ap_psprintf(p, "%s=%s; path=%s;%s", 
+                                 make_session_cookie_name(p, 
                                                           PBC_CRED_COOKIENAME,
                                                           appid(r)),
                                  base64,
@@ -503,7 +590,7 @@ void clear_granting_cookie(request_rec *r) {
 #endif
     pool *p = r->pool;
 
-    new_cookie = ap_psprintf(r->pool, 
+    new_cookie = ap_psprintf(p, 
                  "%s=; domain=%s; path=/; expires=%s;%s", 
        PBC_G_COOKIENAME, 
        PBC_ENTRPRS_DOMAIN,
@@ -522,7 +609,7 @@ void clear_transfer_cookie(request_rec *r) {
 #endif
     pool *p = r->pool;
 
-    new_cookie = ap_psprintf(r->pool, 
+    new_cookie = ap_psprintf(p, 
                              "%s=; domain=%s; path=/; expires=%s;%s", 
                              PBC_CRED_TRANSFER_COOKIENAME,
                              PBC_ENTRPRS_DOMAIN,
@@ -539,8 +626,9 @@ void clear_pre_session_cookie(request_rec *r) {
 #else
     char *secure = " secure";
 #endif
+    pool *p = r->pool;
 
-    new_cookie = ap_psprintf(r->pool, 
+    new_cookie = ap_psprintf(p, 
                  "%s=; path=/; expires=%s;%s", 
        PBC_PRE_S_COOKIENAME, 
        EARLIEST_EVER, secure);
@@ -557,13 +645,14 @@ void clear_session_cookie(request_rec *r) {
 #else
     char *secure = " secure";
 #endif
+    pool *p = r->pool;
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                                      &pubcookie_module);
 
-    new_cookie = ap_psprintf(r->pool, 
+    new_cookie = ap_psprintf(p, 
 		"%s=%s; path=/; expires=%s;%s",
-                make_session_cookie_name(r->pool, PBC_S_COOKIENAME, appid(r)), 
+                make_session_cookie_name(p, PBC_S_COOKIENAME, appid(r)), 
 	        PBC_CLEAR_COOKIE,
                 EARLIEST_EVER,
                 secure);
@@ -572,9 +661,9 @@ void clear_session_cookie(request_rec *r) {
 
     if (cfg->cred_transfer) {
         /* extra cookies (need cookie extensions) */
-        new_cookie = ap_psprintf(r->pool, 
+        new_cookie = ap_psprintf(p, 
                                  "%s=%s; path=/; expires=%s;%s",
-                                 make_session_cookie_name(r->pool, 
+                                 make_session_cookie_name(p, 
                                                           PBC_CRED_COOKIENAME, 
                                                           appid(r)), 
                                  PBC_CLEAR_COOKIE,
@@ -595,13 +684,11 @@ static int do_end_session_redirect_handler(request_rec *r) {
     pubcookie_dir_rec    *cfg;
     pubcookie_server_rec *scfg;
     char                 *refresh;
+    pool *p = r->pool;
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, 					 &pubcookie_module);
-
-    ap_log_rerror(PC_LOG_DEBUG, r,
-        "do_end_session_redirect_handler: pre-hello: h=%s", r->handler);
 
 #ifdef APACHE2
     if (strcmp(r->handler, PBC_END_SESSION_REDIR_HANDLER)) return DECLINED;
@@ -618,7 +705,7 @@ static int do_end_session_redirect_handler(request_rec *r) {
 
     ap_send_http_header(r);
 
-    refresh = ap_psprintf(r->pool, "%d;URL=%s?%s=%d&%s=%s&%s=%s", 
+    refresh = ap_psprintf(p, "%d;URL=%s?%s=%d&%s=%s&%s=%s", 
 		PBC_REFRESH_TIME, 
 		scfg->login,
 		PBC_GETVAR_LOGOUT_ACTION,
@@ -706,6 +793,7 @@ int blank_cookie(request_rec *r, char *name) {
     const char *cookie_header; 
     char *cookie;
     char *ptr;
+    pool *p = r->pool;
     request_rec *mr = top_rrec (r);
     char *c2;
     char *name_w_eq;
@@ -725,7 +813,7 @@ int blank_cookie(request_rec *r, char *name) {
     /*   return DECLINED;                          */
 
     /* add an equal on the end */
-    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+    name_w_eq = ap_pstrcat(p, name, "=", NULL);
 
     if(!(cookie = strstr(cookie_header, name_w_eq)))
         return 0;
@@ -796,9 +884,6 @@ static int auth_failed_handler(request_rec *r) {
                                          &pubcookie_module);
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
-
-    ap_log_rerror(PC_LOG_DEBUG, r,
-        "auth_failed_handler: pre-hello: h=%s", r->handler);
 
 #ifdef APACHE2
     if (strcmp(r->handler, PBC_AUTH_FAILED_HANDLER)) return DECLINED;
@@ -918,7 +1003,8 @@ static int auth_failed_handler(request_rec *r) {
     /*   the body of the redirect                    */
 
     e_g_req_contents = ap_palloc(p, (strlen(g_req_contents) + 3) / 3 * 4 + 1);
-    libpbc_base64_encode(p, (unsigned char *) g_req_contents, (unsigned char *) e_g_req_contents, strlen(g_req_contents));
+    libpbc_base64_encode(p, (unsigned char *) g_req_contents,
+         (unsigned char *) e_g_req_contents, strlen(g_req_contents));
 
     /* create whole g req cookie */
     ap_snprintf(g_req_cookie, PBC_4K-1, 
@@ -1070,15 +1156,16 @@ char *get_cookie(request_rec *r, char *name) {
     char *cookie, *ptr;
     request_rec *mr = top_rrec (r);
     char *name_w_eq;
+    pool *p = r->pool;
 
     /* get cookies */
     if( (cookie_header = ap_table_get(mr->notes, name)) )
-        return ap_pstrdup(r->pool, cookie_header);
+        return ap_pstrdup(p, cookie_header);
     if(!(cookie_header = ap_table_get(r->headers_in, "Cookie")))
         return NULL;
 
     /* add an equal on the end */
-    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+    name_w_eq = ap_pstrcat(p, name, "=", NULL);
 
     /* find the one that's pubcookie */
     if(!(cookie_header = strstr(cookie_header, name_w_eq)))
@@ -1086,7 +1173,7 @@ char *get_cookie(request_rec *r, char *name) {
 
     cookie_header += strlen(name_w_eq);
 
-    cookie = ap_pstrdup(r->pool, cookie_header);
+    cookie = ap_pstrdup(p, cookie_header);
 
     ptr = cookie;
     while(*ptr) {
@@ -1103,8 +1190,10 @@ char *get_cookie(request_rec *r, char *name) {
 static void mylog(pool *p, int logging_level, const char *msg)
 {
     int apri = APLOG_INFO;
+    server_rec *s = find_server_from_pool(p);
 
     /* convert pubcookie error level to apache error level */
+
     if (logging_level == PBC_LOG_ERROR)
         apri = APLOG_ERR|APLOG_NOERRNO;
     else if (logging_level == PBC_LOG_DEBUG_LOW ||
@@ -1113,26 +1202,59 @@ static void mylog(pool *p, int logging_level, const char *msg)
         apri = APLOG_DEBUG|APLOG_NOERRNO;
 
 #ifdef APACHE2
-    ap_log_error(APLOG_MARK, apri, 0, NULL, "%s", msg);
+    ap_log_error(APLOG_MARK, apri, 0, s, "%s", msg);
 #else
-    ap_log_error(APLOG_MARK, apri, NULL, "%s", msg);
+    ap_log_error(APLOG_MARK, apri, s, "%s", msg);
 #endif
 
 }
 
 #ifdef APACHE2
-static int pubcookie_init(pool *p, pool *plog, pool *ptemp, server_rec *main_s) {
+#define PC_INIT_FAIL return HTTP_INTERNAL_SERVER_ERROR
+#define PC_INIT_OK   return OK
+static int pubcookie_init(pool *pconf, pool *plog, pool *ptemp,
+      server_rec *main_s)
 #else  /* apache 2 */
-static void pubcookie_init(server_rec *main_s, pool *p) {
+#define PC_INIT_FAIL exit (1);
+#define PC_INIT_OK   return
+static void pubcookie_init(server_rec *main_s, pool *pconf)
 #endif
+{
     server_rec                  *s;
     pubcookie_server_rec 	*scfg;
     char 		 	*fname;
+    pool      *p = pconf;
 
-    /* initialize each virtual server */
-    /* some of the code should be pulled out of the loop */
-    for (s = main_s; s != NULL; s=s->next) {
+    ap_log_error(PC_LOG_DEBUG, main_s,
+        "pubcookie_init: hello");
+    current_server_rec = main_s;
+ 
+#ifdef APACHE2
+    init_pool_list(p);
+    pc_pool_list->s = main_s; 
+    pc_pool_list->p = p; 
+#endif
 
+    pbc_configure_init(p, "mod_pubcookie", 
+        NULL,
+        NULL,
+        &libpbc_apacheconfig_getint,
+        &libpbc_apacheconfig_getlist,
+        &libpbc_apacheconfig_getstring,
+        &libpbc_apacheconfig_getswitch);
+
+    pbc_log_init(p, "mod_pubcookie", NULL, &mylog, NULL, NULL);
+
+  /* initialize each virtual server */
+
+  for (s = main_s; s != NULL; s=s->next) {
+
+#ifdef APACHE2
+    pc_pool_list->s = s; 
+    pc_pool_list->p = p; 
+#else
+    current_server_rec = s;
+#endif
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
     ap_add_version_component(
@@ -1141,36 +1263,23 @@ static void pubcookie_init(server_rec *main_s, pool *p) {
 #endif
             ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION_STRING, NULL));
 
-    ap_log_error(PC_LOG_DEBUG, s,
-        "pubcookie_init: hello");
-
     /* bail if PubcookieAuthTypes not set */
     if( scfg->authtype_names == NULL ) {
         ap_log_error(PC_LOG_EMERG, s, 
 		"PubCookieAuthTypeNames configuration directive must be set!");
-	exit(1);
+	PC_INIT_FAIL;
     }
 
     if (ap_table_get(scfg->configlist, "ssl_key_file") == NULL) {
         ap_log_error(PC_LOG_EMERG, s, 
 		"PubCookieSessionKeyFile configuration directive must be set!");
-	exit(1);
+	PC_INIT_FAIL;
     }
     if (ap_table_get(scfg->configlist, "ssl_cert_file") == NULL) {
         ap_log_error(PC_LOG_EMERG, s, 
 		"PubCookieSessionCertFile configuration directive must be set!");
-	exit(1);
+	PC_INIT_FAIL;
     }
-
-    pbc_log_init(p, "mod_pubcookie", NULL, &mylog, NULL);
-
-    pbc_configure_init(p, "mod_pubcookie", 
-        &libpbc_apacheconfig_init,
-        scfg,
-        &libpbc_apacheconfig_getint,
-        &libpbc_apacheconfig_getlist,
-        &libpbc_apacheconfig_getstring,
-        &libpbc_apacheconfig_getswitch);
 
     if (ap_table_get(scfg->configlist, "granting_cert_file") == NULL) {
         ap_log_error(PC_LOG_EMERG, s, 
@@ -1178,8 +1287,8 @@ static void pubcookie_init(server_rec *main_s, pool *p) {
              PBC_KEY_DIR, "pubcookie_granting.cert");
     }
 
-
     /* libpubcookie initialization */
+    ap_log_error(PC_LOG_DEBUG, s, "pubcookie_init: libpbc");
     libpbc_pubcookie_init(p, &scfg->sectext);
 
     if (!scfg->login) {
@@ -1191,10 +1300,13 @@ static void pubcookie_init(server_rec *main_s, pool *p) {
                      scfg->login);
     }
 
-    ap_log_error(PC_LOG_DEBUG, s,
-        "pubcookie_init: bye");
 
-    }
+  } /* end of per-server loop */
+#ifdef APACHE2
+  pc_pool_list->p = NULL;  /* clear */
+#endif
+  ap_log_error(PC_LOG_DEBUG, s, "pubcookie_init: bye");
+  PC_INIT_OK;
 }
 
 /*                                                                            */
@@ -1326,7 +1438,7 @@ int get_pre_s_from_cookie(request_rec *r)
     pubcookie_server_rec *scfg;
     pbc_cookie_data     *cookie_data = NULL;
     char 		*cookie = NULL;
-    pool       		*p = r->pool;
+    pool                *p = r->pool;
 
     cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config, 
                 &pubcookie_module);
@@ -1338,7 +1450,8 @@ int get_pre_s_from_cookie(request_rec *r)
       		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
 		r->uri);
     else
-        cookie_data = libpbc_unbundle_cookie(p, scfg->sectext, cookie, NULL, 0);
+        cookie_data = libpbc_unbundle_cookie(p, scfg->sectext,
+                            cookie, NULL, 0);
 
     if( cookie_data == NULL ) {
         ap_log_rerror(PC_LOG_INFO, r, 
@@ -1362,7 +1475,7 @@ static int pubcookie_user(request_rec *r) {
     pbc_cookie_data     *cookie_data;
     pool *p = r->pool;
     char *sess_cookie_name;
-    char *new_cookie = ap_palloc( r->pool, PBC_1K);
+    char *new_cookie = ap_palloc( p, PBC_1K);
     int cred_from_trans;
     int pre_sess_from_cookie;
 
@@ -1377,10 +1490,9 @@ static int pubcookie_user(request_rec *r) {
     ap_log_rerror(PC_LOG_DEBUG, r, 
         "pubcookie_user: hello, uri: %s auth_type: %s", r->uri, ap_auth_type(r));
 
-    /* stash the server_rec away so the get_config callbacks know
-       which virtual server they are running under
-       this uses a global variable, and will definately break under apache2 */
-    libpbc_apacheconfig_storeglobal(scfg);
+#ifdef APACHE2
+    update_pool_list(r);
+#endif
 
     /* get defaults for unset args */
     pubcookie_dir_defaults(cfg);
@@ -1411,7 +1523,7 @@ static int pubcookie_user(request_rec *r) {
        /* 'lookup_ssl_var' doesn't work until 2.0.49. Assume ssl before then */
        if (atoi(AP_SERVER_MINORVERSION AP_SERVER_PATCHLEVEL)<49) isssl = "on";
        else {
-          s = lookup_ssl_var(r->pool, r->server, r->connection, r, "HTTPS"); 
+          s = lookup_ssl_var(p, r->server, r->connection, r, "HTTPS"); 
           ap_log_rerror(PC_LOG_DEBUG, r, "pubcookie_user: have ssl_var: %s", s);
           if (!strcmp(s, "on")) isssl = "on";
        }
@@ -1443,7 +1555,8 @@ static int pubcookie_user(request_rec *r) {
        if we don't have one.  This helps if there are any old g cookies */
     cookie_data = NULL;
     if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
-        cookie_data = libpbc_unbundle_cookie(p, scfg->sectext, cookie, ap_get_server_name(r), 1);
+        cookie_data = libpbc_unbundle_cookie(p,
+                scfg->sectext, cookie, ap_get_server_name(r), 1);
         if( !cookie_data) {
             ap_log_rerror(PC_LOG_INFO, r, 
 	  		"can't unbundle G cookie; uri: %s\n", r->uri);
@@ -1470,7 +1583,7 @@ static int pubcookie_user(request_rec *r) {
       }
       else {  /* hav S cookie */
 
-        cookie_data = libpbc_unbundle_cookie(p, scfg->sectext, cookie, NULL, 0);
+        cookie_data = libpbc_unbundle_cookie(p,scfg->sectext,cookie,NULL,0);
         if( ! cookie_data ) {
             ap_log_rerror(PC_LOG_INFO, r, 
 	  		"can't unbundle S cookie; uri: %s\n", r->uri);
@@ -1483,16 +1596,16 @@ static int pubcookie_user(request_rec *r) {
         }
 
         /* we tell everyone what authentication check we did */
-        r->AUTH_TYPE = ap_pstrdup(r->pool, ap_auth_type(r));
-        r->USER = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+        r->AUTH_TYPE = ap_pstrdup(p, ap_auth_type(r));
+        r->USER = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
 
         /* save the full user/realm for later */
-        cfg->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+        cfg->user = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
 
         /* check for acceptable realms and strip realm */
         if ((*r->USER)||(cfg->noprompt<=0)) {
             char *tmprealm, *tmpuser;
-            tmpuser = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+            tmpuser = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
             tmprealm = index(tmpuser, '@');
             if (tmprealm) {
                 tmprealm[0] = 0;
@@ -1505,15 +1618,15 @@ static int pubcookie_user(request_rec *r) {
             if (cfg->strip_realm == 1) {
                r->USER = tmpuser;
             } else {
-               r->USER = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+               r->USER = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
             }
 
             if (cfg->accept_realms != NULL) {
                 int realmmatched = 0;
                 char *thisrealm;
-                char *okrealms = ap_pstrdup(r->pool, cfg->accept_realms);
+                char *okrealms = ap_pstrdup(p, cfg->accept_realms);
                 while (*okrealms && !realmmatched &&
-                       (thisrealm=ap_getword_white_nc(r->pool,&okrealms))){
+                       (thisrealm=ap_getword_white_nc(p,&okrealms))){
                     if (strcmp(thisrealm,tmprealm) == 0) {
                        realmmatched++;
                     }
@@ -1610,20 +1723,20 @@ static int pubcookie_user(request_rec *r) {
         return OK;
       }
 
-      r->AUTH_TYPE = ap_pstrdup(r->pool, ap_auth_type(r));
-      r->USER = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+      r->AUTH_TYPE = ap_pstrdup(p, ap_auth_type(r));
+      r->USER = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
 
       ap_log_rerror(PC_LOG_DEBUG, r, 
 	"pubcookie_user: set type (%s) and user (%s)",
             r->AUTH_TYPE, r->USER);
 
         /* save the full user/realm for later */
-        cfg->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+        cfg->user = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
 
         /* check for acceptable realms and strip realm */
         if (*cfg->user) {
             char *tmprealm, *tmpuser;
-            tmpuser = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+            tmpuser = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
             tmprealm = index(tmpuser, '@');
             if (tmprealm) {
                 tmprealm[0] = 0;
@@ -1636,15 +1749,15 @@ static int pubcookie_user(request_rec *r) {
             if (cfg->strip_realm == 1) {
                r->USER = tmpuser;
             } else {
-               r->USER = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+               r->USER = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
             }
 
             if (cfg->accept_realms != NULL) {
                 int realmmatched = 0;
                 char *thisrealm;
-                char *okrealms = ap_pstrdup(r->pool, cfg->accept_realms);
+                char *okrealms = ap_pstrdup(p, cfg->accept_realms);
                 while (*okrealms && !realmmatched &&
-                       (thisrealm=ap_getword_white_nc(r->pool,&okrealms))){
+                       (thisrealm=ap_getword_white_nc(p,&okrealms))){
                     if (strcmp(thisrealm,tmprealm) == 0) {
                        realmmatched++;
                     }
@@ -1860,8 +1973,9 @@ static int pubcookie_typer(request_rec *r) {
   pubcookie_dir_rec *cfg;
   pubcookie_server_rec *scfg;
   unsigned char *cookie;
+  pool *p = r->pool;
   int first_time_in_session = 0;
-  char *new_cookie = ap_palloc( r->pool, PBC_1K);
+  char *new_cookie = ap_palloc( p, PBC_1K);
 
   if(!ap_auth_type(r))
     return DECLINED;
@@ -1882,6 +1996,10 @@ static int pubcookie_typer(request_rec *r) {
       "Pubcookie auth configured with no requires lines");
     return HTTP_INTERNAL_SERVER_ERROR;
   }
+
+#ifdef APACHE2
+  update_pool_list(r);
+#endif
 
   if( cfg->has_granting ) {
     ap_log_rerror(PC_LOG_DEBUG, r,
@@ -1935,6 +2053,7 @@ static int pubcookie_fixups(request_rec *r)
 {
     pubcookie_dir_rec *cfg;
     table *e = r->subprocess_env;
+    pool *p = r->pool;
 
     /* here we set any additional environment variables for the client */
 
@@ -1942,7 +2061,7 @@ static int pubcookie_fixups(request_rec *r)
                                                      &pubcookie_module);
     
     if (cfg->cred_transfer) {
-        char *krb5ccname = ap_psprintf(r->pool, "/tmp/k5cc_%d", getpid());
+        char *krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d", getpid());
     
         ap_table_setn(e, "KRB5CCNAME", krb5ccname);
     }
@@ -1962,13 +2081,14 @@ static int pubcookie_hparse(request_rec *r)
 {
     char *cookies;
     char *nextcookie;
+    pool *p = r->pool;
 
     ap_log_rerror(PC_LOG_DEBUG, r, 
 		"pubcookie_hparse: main=%x", r->main);
 
     if (! (cookies = (char *)ap_table_get (r->headers_in, "Cookie")))
         return OK;
-    cookies = ap_pstrdup (r->pool, cookies);
+    cookies = ap_pstrdup (p, cookies);
 
     nextcookie = cookies;
     while (nextcookie) {
@@ -2003,6 +2123,20 @@ static int pubcookie_hparse(request_rec *r)
     }
 
     return OK;
+}
+
+/* Save the server record info for this request  */
+
+static int pubcookie_post_read(request_rec *r)
+{
+    ap_log_rerror(PC_LOG_DEBUG, r, 
+		"pubcookie_post_read: sr=%x", r->server);
+#ifdef APACHE2
+    update_pool_list(r);
+#else
+    current_server_rec = r->server;
+#endif
+    return DECLINED;
 }
 
 /*                                                                            */
@@ -2640,8 +2774,8 @@ static int load_keyed_directives(request_rec *r, char *key) {
 
           /* Setup dummy cmd_parms struct */
           memset(&parms, 0, sizeof(parms));
-          parms.pool = r->pool;  /* this is all we really use */
-          parms.temp_pool = r->pool;
+          parms.pool = p;  /* this is all we really use */
+          parms.temp_pool = p;
           parms.server = r->server;
 
           /* Look for and process valid commands */
@@ -2703,14 +2837,10 @@ module pubcookie_module = {
     pubcookie_typer,             /* type_checker */
     pubcookie_fixups,            /* fixups */
     NULL,                        /* logger */
-    pubcookie_hparse             /* header parser */
-#ifdef EAPI
-    ,
-    NULL,                        /* EAPI: add_module */
-    NULL,                        /* EAPI: remove_module */
-    NULL,                        /* EAPI: rewrite_command */
-    NULL                         /* EAPI: new_connection */
-#endif
+    pubcookie_hparse,            /* header parser */
+    NULL,                        /* child init */
+    NULL,                        /* exit/cleanup */
+    pubcookie_post_read          /* post read request */
 };
 
 #else /* apache 2 */
@@ -2735,6 +2865,7 @@ static void register_hooks(pool      * p) {
     ap_hook_handler(do_end_session_redirect_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_handler(bad_user_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_post_config(pc_post_config, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_post_read_request(pubcookie_post_read, NULL, NULL, APR_HOOK_MIDDLE);
 }
 module AP_MODULE_DECLARE_DATA pubcookie_module = {
     STANDARD20_MODULE_STUFF,

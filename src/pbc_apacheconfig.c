@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.11 2004-03-02 16:14:44 dors Exp $
+ * $Id: pbc_apacheconfig.c,v 2.12 2004-03-31 16:53:57 fox Exp $
  */
 
 
@@ -110,65 +110,25 @@ typedef apr_table_t table;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-pubcookie_server_rec * globalsr;
-
-void libpbc_apacheconfig_storeglobal(pubcookie_server_rec *scfg) {
-   globalsr = (pubcookie_server_rec *) scfg;
-}
-
-int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident)
-{
-    /*
-     * stash a pointer to the server rec structure so the get functions
-     * can access it
-     */
-    globalsr = (pubcookie_server_rec *) initarg;
-
-    /* Look up umask */
-    /* 
-    val = libpbc_myconfig_getstring(p, "umask", "022");
-    while (*val) {
-        if (*val >= '0' && *val <= '7') umaskval = umaskval*8 + *val - '0';
-        val++;
-    }
-    umask(umaskval);
-     */
-
-    /* paranoia checks */
-
-    /* check that our login host is in our enterprise domain */
-    /* if (!strstr(PBC_LOGIN_HOST, PBC_ENTRPRS_DOMAIN)) { */
-
-    /* } */
-
-    /* xxx check that our login URI points to our login host */
-
-    /* xxx check that keydir exists */
-
-    /* xxx check that we can read our symmetric key */
-
-    /* xxx check that the granting certificate (public key) is readable */
-
-    return 0;
-}
-
 const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *def)
 {
-    table * configlist = globalsr->configlist;
+    server_rec *sr = find_server_from_pool(p);
+    pubcookie_server_rec *scfg =
+       (pubcookie_server_rec *) ap_get_module_config(sr->module_config,
+                                                   &pubcookie_module);
+
+    table * configlist = scfg->configlist;
     const char * ret;
 
-    if ( key == NULL )
-        return def;
-
-    ap_log_error(PC_LOG_DEBUG,  NULL, "looking for %s", key);
+    if ( key == NULL ) return def;
 
     ret = ap_table_get(configlist, key);
   
     if (ret) { 
-        ap_log_error(PC_LOG_DEBUG,  NULL, "found %s with value %s", key, ret);
+        ap_log_error(PC_LOG_DEBUG,  sr, "found %s with value %s", key, ret);
         return ret;
     } 
-    ap_log_error(PC_LOG_DEBUG,  NULL, "failed to find %s, returning default %s", key, def);
+    ap_log_error(PC_LOG_DEBUG,  sr, "failed to find %s, returning default %s", key, def);
     return def;
 }
 
@@ -188,6 +148,9 @@ int libpbc_apacheconfig_getint(pool *p, const char *key, int def)
  * i didn't bother because they're not used (yet)
  *
  */
+
+/* see the myconfig equivalents for reference */
+
 char **libpbc_apacheconfig_getlist(pool *p, const char *key) {
    ap_log_error(PC_LOG_CRIT, NULL,
        "libpbc_apacheconfig_getlist not implmented, was looking for %s",
@@ -202,65 +165,3 @@ int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def) {
    return def;
 } 
 
-/* these are the myconfig equivalents, for reference */
-#if 0
-char **libpbc_myconfig_getlist(pool *p, const char *key)
-{
-    const char *tval = libpbc_myconfig_getstring(p, key, NULL);
-    char *val;
-    char **ret;
-    char *ptr;
-    int c;
-
-    if (tval == NULL) {
-	return NULL;
-    }
-
-    c = 1; /* initial string */
-    for (ptr = strchr(tval, ' '); ptr != NULL; ptr = strchr(ptr + 1, ' ')) {
-	c++;
-    }
-
-    /* we malloc a buffer long enough for the subpointers followed by
-       the string that we modify by adding \0 */
-    ret = pbc_malloc(p, sizeof(char *) * (c + 2) + strlen(tval) + 1);
-    if (!ret) {
-	fatal(p, "out of memory", EX_OSERR);
-    }
-
-    /* copy the string to the end of the buffer.
-       assumes sizeof(char) = 1 */
-    val = ((char *) ret) + (sizeof(char *) * (c + 2));
-
-    strcpy(val, tval);
-    c = 0;
-    ret[c++] = val;
-    for (ptr = strchr(val, ' '); ptr != NULL; ptr = strchr(ptr, ' ')) {
-	*ptr++ = '\0';
-	if (*ptr == ' ') continue;
-	ret[c++] = ptr;
-    }
-    ret[c] = NULL;
-
-    return ret;
-}
-
-int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
-{
-    const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
-
-    if (!val) return def;
-    
-    if (*val == '0' || *val == 'n' ||
-        (*val == 'o' && val[1] == 'f') || *val == 'f') {
-        return 0;
-    }
-    else if (*val == '1' || *val == 'y' ||
-             (*val == 'o' && val[1] == 'n') || *val == 't') {
-        return 1;
-    }
-
-    return def;
-}
-
-#endif

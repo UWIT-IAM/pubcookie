@@ -6,8 +6,12 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.120 2004-03-19 17:18:26 fox Exp $
+ * $Id: index.cgi.c,v 1.121 2004-03-31 16:53:57 fox Exp $
  */
+
+#ifdef WITH_FCGI
+#include "fcgi_stdio.h"
+#endif
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -126,6 +130,14 @@ FILE *headerout;
 
 /* do we want debugging? */
 int debug;
+
+#ifdef WITH_FCGI
+int cgi_count = 0;
+int max_cgi_count = 0;
+#endif
+
+security_context *context; /* to hold all of the certs for a transaction */
+char **ok_user_agents = NULL;
 
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 /*      general utility thingies                                           */
@@ -413,6 +425,39 @@ void init_login_rec(pool *p, login_rec *r)
 }
 
 /*
+ * free some things in the record 
+ */
+void free_login_rec(pool *p, login_rec *r)
+{
+    if (r) {
+        if (r->args != NULL) pbc_free(p, r->args);
+        if (r->uri != NULL) pbc_free(p, r->uri);
+        if (r->host != NULL) pbc_free(p, r->host);
+        if (r->method != NULL) pbc_free(p, r->method);
+        if (r->version != NULL) pbc_free(p, r->version);
+        if (r->appid != NULL) pbc_free(p, r->appid);
+        if (r->appsrvid != NULL) pbc_free(p, r->appsrvid);
+        if (r->fr != NULL) pbc_free(p, r->fr);
+        if (r->user != NULL) pbc_free(p, r->user);
+        if (r->realm != NULL) pbc_free(p, r->realm);
+        if (r->pass != NULL) pbc_free(p, r->pass);
+        if (r->pass2 != NULL) pbc_free(p, r->pass2);
+        if (r->post_stuff != NULL) pbc_free(p, r->post_stuff);
+        if (r->real_hostname != NULL) pbc_free(p, r->real_hostname);
+        if (r->appsrv_err != NULL) pbc_free(p, r->appsrv_err);
+        if (r->appsrv_err_string != NULL) pbc_free(p, r->appsrv_err_string);
+        if (r->file != NULL) pbc_free(p, r->file);
+        if (r->flag != NULL) pbc_free(p, r->flag);
+        if (r->referer != NULL) pbc_free(p, r->referer);
+        if (r->first_kiss != NULL) pbc_free(p, r->first_kiss);
+        if (r->relay_uri != NULL) pbc_free(p, r->relay_uri);
+        /* r->check_error is NULL or static */
+        /* r->flavor_extension needs to be freed by the flavor */
+        pbc_free(p, r);
+    }
+}
+
+/*
  * this returns first cookie for a given name
  */
 int get_cookie(pool *p, char *name, char *result, int max)
@@ -615,7 +660,8 @@ int expire_login_cookie(pool *p, const security_context *context, login_rec *l, 
         /* XXX print_login_page(l, c, "cookie create failed"); */
 	pbc_log_activity(p, PBC_LOG_ERROR,
 		    "Not able to create cookie for user %s at %s-%s",
-		    l->user, l->appsrvid, l->appid);
+		    user, l->appsrvid?l->appsrvid:"(none)",
+                    l->appid?l->appid:"(none)");
         if (message != NULL)
             pbc_free(p, message);
         return(PBC_FAIL);
@@ -1503,7 +1549,7 @@ int logout(pool *p, const security_context *context, login_rec *l, login_rec *c,
  * @param l login_rec from submission
  * @param c login_rec from cookies
  *
- * @returns PBC_OK if not a logout, or never returns if a logout
+ * @returns PBC_OK if not a logout, PBC_FAIL if a logout.
  */
 int check_logout(pool *p, const security_context *context, login_rec *l, login_rec *c) 
 {
@@ -1525,8 +1571,7 @@ int check_logout(pool *p, const security_context *context, login_rec *l, login_r
 	pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			 "check_logout: logout_action : %s\n", cgiScriptName);
         logout(p, context, l, c, logout_action);
-        do_output(p);
-        exit(0);
+        return (PBC_FAIL);
     }
 
     ptr = ptr2 = uri = strdup(cgiScriptName);
@@ -1555,10 +1600,8 @@ int check_logout(pool *p, const security_context *context, login_rec *l, login_r
     if(logout_prog != NULL && uri != NULL &&
        strcasecmp(logout_prog, uri) == 0 ) {
         logout(p, context, l, c, LOGOUT_ACTION_CLEAR_L_NO_APP);
-        do_output(p);
-        if (uri != NULL)
-            free(uri);
-        exit(0);
+        if (uri != NULL) free(uri);
+        return (PBC_FAIL);
     }
 
     if (uri != NULL)
@@ -1685,6 +1728,22 @@ int pinit(pool *p, const security_context *context, login_rec *l, login_rec *c)
 /*	main line                                                          */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
+int cgiMain_init()
+{
+   void *p;
+   const char *s;
+   libpbc_config_init(p, NULL, "logincgi");
+   debug = libpbc_config_getint(p, "debug", 0);
+   pbc_log_init_syslog(p, "pubcookie login server");
+   get_kiosk_parameters(p);
+   libpbc_pubcookie_init(p, &context);
+   max_cgi_count = libpbc_config_getint(p, "max_requests_per_server", 100);
+   if (max_cgi_count<0) max_cgi_count = 0;
+   init_user_agent(p);
+   pbc_log_activity(p, PBC_LOG_ERROR, "Pubcookie login initialized, "
+            "max/process = %d\n", max_cgi_count);
+}
+
 /**
  * cgiMain: the main routine, called by libcgic
  */
@@ -1695,15 +1754,9 @@ int cgiMain()
     const char *mirrorfile;
     void *p; /* we pass a pointer around that is an Apache memory pool if we're
                 using apache, here we just pass a void pointer */
-    security_context *context; /* to hold all of the certs for a transaction */
 
-
-    libpbc_config_init(p, NULL, "logincgi");
-    debug = libpbc_config_getint(p, "debug", 0);
-    pbc_log_init(p, "pubcookie login server", NULL, NULL, NULL);
-    get_kiosk_parameters(p);
-
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+              "cgiMain() Hello (%d)\n", cgi_count++);
 
     /* the html and headers are written to tmpfiles then 
      * transmitted to the browser when complete
@@ -1713,7 +1766,6 @@ int cgiMain()
 
     mirrorfile = libpbc_config_getstring(p, "mirrorfile", NULL);
 
-    libpbc_pubcookie_init(p, &context);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "cgiMain() done initializing...\n");
 
@@ -1721,9 +1773,6 @@ int cgiMain()
 
     /* always print out the standard headers */
     print_http_header(p);
-
-    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
-		     "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
 
     if (mirrorfile) {
         init_mirror_file(p, mirrorfile);
@@ -1801,7 +1850,7 @@ int cgiMain()
     }
     
     /* look for various logout conditions */
-    check_logout(p, context, l, c);
+    if (check_logout(p, context, l, c) != PBC_OK) goto done;
 
     /* check to see what cookies we have */
     /* pinit detected in here */
@@ -1839,93 +1888,13 @@ done:
 
     do_output(p);
 
-    if (c != NULL) {
-        if (c->args != NULL)
-            pbc_free(p, c->args);
-        if (c->uri != NULL)
-            pbc_free(p, c->uri);
-        if (c->host != NULL)
-            pbc_free(p, c->host);
-        if (c->method != NULL)
-            pbc_free(p, c->method);
-        if (c->version != NULL)
-            pbc_free(p, c->version);
-        if (c->appid != NULL)
-            pbc_free(p, c->appid);
-        if (c->appsrvid != NULL)
-            pbc_free(p, c->appsrvid);
-        if (c->fr != NULL)
-            pbc_free(p, c->fr);
-        if (c->user != NULL)
-            pbc_free(p, c->user);
-        if (c->realm != NULL)
-            pbc_free(p, c->realm);
-        if (c->pass != NULL)
-            pbc_free(p, c->pass);
-        if (c->pass2 != NULL)
-            pbc_free(p, c->pass2);
-        if (c->post_stuff != NULL)
-            pbc_free(p, c->post_stuff);
-        if (c->real_hostname != NULL)
-            pbc_free(p, c->real_hostname);
-        if (c->appsrv_err != NULL)
-            pbc_free(p, c->appsrv_err);
-        if (c->appsrv_err_string != NULL)
-            pbc_free(p, c->appsrv_err_string);
-        if (c->file != NULL)
-            pbc_free(p, c->file);
-        if (c->flag != NULL)
-            pbc_free(p, c->flag);
-        if (c->referer != NULL)
-            pbc_free(p, c->referer);
-        if (c->first_kiss != NULL)
-            pbc_free(p, c->first_kiss);
-        pbc_free(p, c);
-    }
+    free_login_rec(p, c);
+    free_login_rec(p, l);
 
-    if (l != NULL) {
-        if (l->args != NULL)
-            pbc_free(p, l->args);
-        if (l->uri != NULL)
-            pbc_free(p, l->uri);
-        if (l->host != NULL)
-            pbc_free(p, l->host);
-        if (l->method != NULL)
-            pbc_free(p, l->method);
-        if (l->version != NULL)
-            pbc_free(p, l->version);
-        if (l->appid != NULL)
-            pbc_free(p, l->appid);
-        if (l->appsrvid != NULL)
-            pbc_free(p, l->appsrvid);
-        if (l->fr != NULL)
-            pbc_free(p, l->fr);
-        if (l->user != NULL)
-            pbc_free(p, l->user);
-        if (l->realm != NULL)
-            pbc_free(p, l->realm);
-        if (l->pass != NULL)
-            pbc_free(p, l->pass);
-        if (l->pass2 != NULL)
-            pbc_free(p, l->pass2);
-        if (l->post_stuff != NULL)
-            pbc_free(p, l->post_stuff);
-        if (l->real_hostname != NULL)
-            pbc_free(p, l->real_hostname);
-        if (l->appsrv_err != NULL)
-            pbc_free(p, l->appsrv_err);
-        if (l->appsrv_err_string != NULL)
-            pbc_free(p, l->appsrv_err_string);
-        if (l->file != NULL)
-            pbc_free(p, l->file);
-        if (l->flag != NULL)
-            pbc_free(p, l->flag);
-        if (l->referer != NULL)
-            pbc_free(p, l->referer);
-        if (l->first_kiss != NULL)
-            pbc_free(p, l->first_kiss);
-        pbc_free(p, l);
-    }
+    fclose(htmlout);
+    fclose(headerout);
+
+    if (max_cgi_count && (cgi_count>=max_cgi_count)) exit (0);
 
     return(0);  
 
@@ -1949,7 +1918,8 @@ char *check_l_cookie(pool *p, const security_context *context, login_rec *l, log
         return("couldn't decode login cookie");
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
-		     "in check_l_cookie ready to look at cookie contents %s\n", c->user);
+		     "in check_l_cookie ready to look at cookie contents %s\n",
+          c->user?c->user:"(null)");
 
     /* look at what we got back from the cookie */
     if ( c->user == NULL ) {
@@ -1994,7 +1964,7 @@ char *check_l_cookie(pool *p, const security_context *context, login_rec *l, log
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 		     "check_l_cookie: done looking at version\n");
 
-    l->user = c->user;
+    l->user = strdup(c->user);
 
     return((char *)NULL);
 }
@@ -2264,62 +2234,93 @@ char *to_lower(pool *p, char *in)
 
 }
 
-/**
- *  clean_ok_browsers_line lowercases a string, and truncates it at
- *  the first \n
- *
- *  @param in pointer to a string, which is modified
- *  @return nothing
- */
-void clean_ok_browsers_line(pool *p, char *in)
+
+/*  Load the ok_browsers file: copy to memory, create a list of lines. */
+
+int init_user_agent(pool *p)
 {
-    char *ptr;
+    FILE *ifp;
+    long ifplen;
+    char *s, *txt;
+    int nl = 0;
+    char **ok;
 
-    for(ptr = in; *ptr; ptr++) {
-        *ptr = tolower(*ptr);
-        if (*ptr == '\n' ) 
-            *ptr-- = '\0';
+    ifp = fopen(OK_BROWSERS_FILE, "r");
+    if (ifp) {
+      fseek(ifp, 0, SEEK_END);
+      ifplen = ftell(ifp);
+      if (ifplen>0) {
+         int bol = 1;
+         txt = (char*) malloc(ifplen+1);
+         fseek(ifp, 0, SEEK_SET);
+         if (fread(txt,ifplen,1,ifp)==1) {
+            txt[ifplen] = '\0';
+
+            /* lowercase and break into lines */
+
+            for (s=txt;*s;*s++) {
+               if (*s=='\n') nl++;
+               else if (isupper(*s)) *s = tolower(*s);
+            }
+            ok = ok_user_agents = (char**) malloc((nl+1)*sizeof(char*));
+            
+            while (*txt) {
+               if (*txt=='#') while ((*txt) && (*txt!='\n')) txt++;
+               while (*txt && *txt=='\n') txt++;
+               if (s=strchr(txt,'\n')) *s = '\0';
+               if (*txt) *ok++ = txt;
+               if (!s) break;
+               else txt = ++s;
+            }
+            *ok++ = NULL;
+         } else {
+            free(ok_user_agents);
+            ok_user_agents = NULL;
+         }
+        
+      }
+      fclose(ifp);
     }
+
+    if (ok_user_agents) {
+        char **a;
+        for (a=ok_user_agents; a && *a; a++) {
+           pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+		  "  ok browser: %s", *a);
+        }
+    } else pbc_log_activity(p, PBC_LOG_ERROR,
+		  "can't open ok browsers file: %s, continuing", 
+		  OK_BROWSERS_FILE);
+
 }
-
-
+    
+    
 /**
  *  check_user_agent: checks the user_agent string from the browser
  *  to see if it contains any of the lines of OK_BROWSERS_FILE as
  *  a substring
  *
- *  @param none
- *  @return 0 on error
  *  @return 1 if a valid substring matches
  *  @return 0 if no match is found (the browser is bad)
  */
 int check_user_agent(pool *p)
 {
-    char line[PBC_1K];
     char agent_clean[PBC_1K];
-    FILE *ifp;
+    char **a;
+    char *s;
 
-    ifp = fopen(OK_BROWSERS_FILE, "r");
-    if (ifp == NULL) {
-        pbc_log_activity(p, PBC_LOG_ERROR,
-		  "can't open ok browsers file: %s, continuing", 
-		  OK_BROWSERS_FILE);
-        return(1);
-    }
+    if (!ok_user_agents) return (1);
 
     /* make the user agent lower case */
+    
     strncpy(agent_clean, user_agent(p), sizeof(agent_clean));
-    clean_ok_browsers_line(p, agent_clean);
-
-    while(fgets(line, sizeof(line), ifp) != NULL) {
-        clean_ok_browsers_line(p, line);
-        if (line[0] == '#' ) {
-            continue;
-        } 
-        if (strstr(agent_clean, line)) {
-            return(1);
-        }
+    for (s=agent_clean;*s;s++) if (isupper(*s)) *s = tolower(*s);
+           pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+		  "  chk browser: %s", agent_clean);
+    for (a=ok_user_agents; *a; a++) {
+       if (strstr(agent_clean, *a)) return(1);
     }
+           pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "  not found");
 
     return(0);
 }
@@ -2540,8 +2541,7 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
 	    pbc_log_activity(p, PBC_LOG_ERROR,
 		      "couldn't parse the decoded granting request cookie");
             notok(p, notok_generic);
-	    do_output(p);
-            exit(0);
+            return;
         }
 
 	print_html(p, "<HTML>");

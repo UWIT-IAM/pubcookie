@@ -6,7 +6,7 @@
 /** @file pbc_logging.h
  * Header file for logging stuff
  *
- * $Id: pbc_logging.h,v 1.19 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_logging.h,v 1.20 2004-03-31 16:53:57 fox Exp $
  */
 
 
@@ -40,9 +40,10 @@
 #endif /* NEED_LOG_FAC */
 
 /* callbacks for the logging subsystem */
-typedef void pbc_open_log(char *ident, int option, int facility);
+typedef void pbc_open_log(const char *ident, int option, int facility);
 typedef void pbc_log_func(pool *p, int priority, const char *msg);
 typedef void pbc_close_log();
+typedef int  pbc_log_level(pool *p);
 
 /**
  * Initializes the logging system.
@@ -53,7 +54,9 @@ typedef void pbc_close_log();
  * @param c optional function to replace closelog()
  */
 void pbc_log_init(pool *p, const char *ident,
-                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c);
+                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c,
+                  pbc_log_level *v);
+void pbc_log_init_syslog(pool *p, const char *ident);
 
 /**
  * Log activity messages

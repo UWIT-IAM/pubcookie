@@ -6,7 +6,7 @@
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.26 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_logging.c,v 1.27 2004-03-31 16:53:57 fox Exp $
  */
 
 
@@ -96,12 +96,6 @@ CODE facilitynames[] =
 
 #endif /* NEED_SYSLOG_NAMES */
 
-static void mylog(pool *p, int logging_level, const char *mymsg);
-
-static pbc_open_log *olog = NULL;
-static pbc_log_func *logf = &mylog;
-static pbc_close_log *clog = NULL;
-
 #if defined (WIN32)
 /* xxx is there a better win32 function? */
 
@@ -154,17 +148,29 @@ static void mylog(pool *p, int logging_level, const char *mymsg)
 
 #endif
 
-void pbc_log_init(pool *p, const char *ident,
-                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c)
+/* The log level is use a lot - no sense recomputing it each time. */
+static cfg_logging_level = (-1);
+int myloglevel(pool *p)
 {
-    /* sigh, prototypes not totally standardized so I need to cast */
-    if (!o) o = (pbc_open_log *) &openlog;
-    if (!l) l = (pbc_log_func *) &mylog;
-    if (!c) c = (pbc_close_log *) &closelog;
+   if (cfg_logging_level<0)
+          cfg_logging_level = libpbc_config_getint(p, "logging_level", 0);
+   return (cfg_logging_level);
+}
+
+static pbc_open_log *olog = NULL;
+static pbc_log_func *logf = &mylog;
+static pbc_close_log *clog = NULL;
+static pbc_log_level *llog = NULL;
+
+void pbc_log_init(pool *p, const char *ident,
+                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c, 
+                  pbc_log_level *v)
+{
 
     olog = o;
     logf = l;
     clog = c;
+    llog = v;
 
     if (!ident) {
         ident = "pubcookie";
@@ -174,6 +180,12 @@ void pbc_log_init(pool *p, const char *ident,
         /* open syslog - we are appending the PID to the log */
         olog((char *) ident, LOG_PID, LOG_AUTHPRIV);
     }
+
+}
+
+void pbc_log_init_syslog(pool *p, const char *ident)
+{
+    pbc_log_init(p, ident, &openlog, &mylog, &closelog, &myloglevel);
 }
 
 
@@ -192,12 +204,11 @@ void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list 
 {
     char      log[PBC_4K];
         
-    if (logging_level <= (libpbc_config_getint(p, "logging_level", logging_level))) {
-        /* xxx deal with %m here? */
-        vsnprintf(log, sizeof(log)-1, format, args);
-        
-        logf(p, logging_level, log);
-    }
+    if (llog && (llog(p)<logging_level)) return;
+
+    /* xxx deal with %m here? */
+    vsnprintf(log, sizeof(log)-1, format, args);
+    logf(p, logging_level, log);
 }
 
 void pbc_log_close(pool *p)
@@ -207,10 +218,3 @@ void pbc_log_close(pool *p)
     }
 }
 
-#if 0
-char* pbc_create_log_message(pool *p, char *info, char* user, char* app_id)
-{
-    return sprintf(%s: user ip: %s \t app id: %s \n %s, 
-                   libpbc_time_string(p, time(NULL)),user,app_id, info);
-}
-#endif

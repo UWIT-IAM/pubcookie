@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.7 2004-03-19 17:18:26 fox Exp $
+    $Id: mod_pubcookie.h,v 2.8 2004-03-31 16:53:57 fox Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -71,6 +71,7 @@
 /* misc prototype */
 char *make_session_cookie_name(pool *, char *, unsigned char *);
 static int load_keyed_directives(request_rec *r, char *key);
+server_rec *find_server_from_pool(pool *p);
 
 module pubcookie_module;
 

@@ -6,9 +6,12 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.12 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: ntmpl.c,v 1.13 2004-03-31 16:53:57 fox Exp $
  */
 
+#ifdef WITH_FCGI
+#include "fcgi_stdio.h"
+#endif
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
