@@ -1,5 +1,7 @@
 #include "cgic.h"
 
+int cgiMain_init(){}
+
 int cgiMain() {
 	cgiWriteEnvironment("/home/boutell/public_html/capcgi.dat");
 	cgiHeaderContentType("text/html");

@@ -175,6 +175,7 @@ extern cgiEnvironmentResultType cgiReadEnvironment(char *filename);
 
 
 extern int cgiMain();
+extern int cgiMain_init();
 
 #endif /* CGI_C */
 

@@ -1,6 +1,6 @@
 
 /*
-  $Id: cgictest.c,v 1.1 2002-08-15 23:47:15 jjminer Exp $
+  $Id: cgictest.c,v 1.2 2004-04-07 17:09:27 fox Exp $
  */
 
 #include <stdio.h>
@@ -15,6 +15,8 @@ void Color();
 void Flavors();
 void NonExButtons();
 void RadioButtons();
+
+int cgiMain_init() {}
 
 int cgiMain() {
 #if DEBUG

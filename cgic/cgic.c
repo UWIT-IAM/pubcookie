@@ -1,6 +1,10 @@
 /* 
-  $Id: cgic.c,v 1.1 2002-08-15 23:47:15 jjminer Exp $
+  $Id: cgic.c,v 1.2 2004-04-07 17:09:27 fox Exp $
  */
+
+#ifdef WITH_FCGI
+#include "fcgi_stdio.h"
+#endif
 
 #if CGICDEBUG
 #define CGICDEBUGSTART \
@@ -66,6 +70,12 @@ static int cgiStrEqNc(char *s1, char *s2);
 int main(int argc, char *argv[]) {
 	int result;
 	char *cgiContentLengthString;
+
+        cgiMain_init();
+
+#ifdef WITH_FCGI
+   while (FCGI_Accept() >= 0) {
+#endif
 	cgiSetupConstants();
 	cgiGetenv(&cgiServerSoftware, "SERVER_SOFTWARE");
 	cgiGetenv(&cgiServerName, "SERVER_NAME");
@@ -173,6 +183,9 @@ int main(int argc, char *argv[]) {
         fprintf(dout, "done for all and going to return %d\n", result);
         CGICDEBUGEND
 #endif /* CGICDEBUG */
+#ifdef WITH_FCGI
+   }
+#endif
 	return result;
 }
 
