@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.6 1998-07-24 23:14:00 willey Exp $
+    $Id: mod_pubcookie.c,v 1.7 1998-07-26 06:18:22 willey Exp $
  */
 
 #include "httpd.h"
@@ -157,10 +157,9 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
   pubcookie_server_rec *cfg;
 
   cfg = (pubcookie_server_rec *) pcalloc(p, sizeof(pubcookie_server_rec));
-  return (void *) cfg;
 
   cfg->appsrv_id = libpbc_alloc_init(PBC_APPSRV_ID_LEN);
-  strcpy(cfg->appsrv_id, s->server_hostname);
+  strcpy(cfg->appsrv_id, get_local_host(p));
 
   cfg->c_stuff = libpbc_init_crypt(cfg->crypt_keyfile ? cfg->crypt_keyfile : PBC_CRYPT_KEYFILE);
 
@@ -170,6 +169,7 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
 
   cfg->granting_verf_ctx_plus = libpbc_verify_init(cfg->g_certfile ? cfg->g_certfile : PBC_G_CERTFILE);
 
+  return (void *) cfg;
 }
 
 static void *pubcookie_server_merge(pool *p, void *base, void *override) {
@@ -220,8 +220,8 @@ static int pubcookie_user(request_rec *r) {
   if(!auth_type(r))
     return DECLINED;
 
-  if(strcmp(auth_type(r), "PBC_NUWNETID_AUTHTYPE"))
-    if(strcmp(auth_type(r), "PBC_SECURID_AUTHTYPE"))
+  if(strcmp(auth_type(r), PBC_NUWNETID_AUTHTYPE))
+    if(strcmp(auth_type(r), PBC_SECURID_AUTHTYPE))
       return DECLINED;
 
   cfg = (pubcookie_rec *) get_module_config(r->per_dir_config, 
@@ -319,8 +319,8 @@ int pubcookie_auth (request_rec *r) {
   int x;
   const char *line_ptr, *word_ptr;
 
-  if( strcmp(auth_type(r), "PBC_NUWNETID_AUTHTYPE") != 0)
-    if( strcmp(auth_type(r), "PBC_SECURID_AUTHTYPE") != 0)
+  if( strcmp(auth_type(r), PBC_NUWNETID_AUTHTYPE) != 0)
+    if( strcmp(auth_type(r), PBC_SECURID_AUTHTYPE) != 0)
       return DECLINED;
 
   cfg = (pubcookie_rec *)get_module_config(r->per_dir_config,
@@ -369,6 +369,13 @@ static int pubcookie_typer(request_rec *r) {
   pubcookie_server_rec *scfg;
   unsigned char	*cookie;
   char *new_cookie = palloc( r->pool, PBC_1K);
+
+  if(!auth_type(r))
+    return DECLINED;
+
+  if(strcmp(auth_type(r), PBC_NUWNETID_AUTHTYPE))
+    if(strcmp(auth_type(r), PBC_SECURID_AUTHTYPE))
+      return DECLINED;
 
   cfg = (pubcookie_rec *) get_module_config(r->per_dir_config, 
 					    &pubcookie_module);
