@@ -6,11 +6,10 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.150 2004-08-17 21:46:57 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.151 2004-08-18 00:14:00 fox Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
-int use_post = 1;
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -967,7 +966,7 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
     }
 
 
-    if (!use_post) {
+    if (!scfg->use_post) {
        /* GET method puts granting request in a cookie */
        ap_snprintf(g_req_cookie, PBC_4K-1, 
                 "%s=%s; domain=%s; path=/;%s",
@@ -995,7 +994,7 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
     /* If we're using the post method, just bundle everything
        in a post to the login server. */
     
-    if (use_post) {
+    if (scfg->use_post) {
        char cp[24];
        if (port==80 || port==443) cp[0] = '\0';
        else sprintf(cp,":%d", port);
@@ -2489,7 +2488,7 @@ static const char *pubcookie_set_method(cmd_parms *cmd,
                                                    &pubcookie_module);
 
     if (!strcasecmp(v,"get")) scfg->use_post = 0;
-    if (!strcasecmp(v,"post")) scfg->use_post = 1;
+    else if (!strcasecmp(v,"post")) scfg->use_post = 1;
     else return ("Invalid pubcookie login method");
     return NULL;
 }
