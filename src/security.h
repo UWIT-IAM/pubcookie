@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: security.h,v 1.8 2003-07-03 04:25:21 willey Exp $
+  $Id: security.h,v 1.9 2003-12-17 22:10:56 ryanc Exp $
  */
 
 #ifndef INCLUDED_SECURITY_H
@@ -36,8 +36,8 @@ int security_init(pool *p);
  * @param outlen the length of outbuf.
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
-		   char **outbuf, int *outlen);
+int libpbc_mk_priv(pool *p, const char *peer, const char use_granting, 
+		   const char *buf, const int len, char **outbuf, int *outlen);
 
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
@@ -53,8 +53,8 @@ int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks)
  */
-int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
-		   char **outbuf, int *outlen);
+int libpbc_rd_priv(pool *p, const char *peer, const char use_granting, const char *buf, 
+		   const int len, char **outbuf, int *outlen);
 
 /**
  * libpbc_mk_safe allocates a signature and returns it to the
@@ -69,8 +69,8 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
  * @param outlen the length of the signature
  * @returns 0 success, non-0 on failure
  */
-int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
-		   char **outbuf, int *outlen);
+int libpbc_mk_safe(pool *p, const char *peer, const char use_granting, 
+		   const char *buf, const int len, char **outbuf, int *outlen);
 
 /**
  * verifies a message signed with libpbc_mk_safe()
@@ -83,8 +83,8 @@ int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
  * @param siglen the length of the received signature
  * @returns 0 on success, non-0 on any failure
  */
-int libpbc_rd_safe(pool *p, const char *peer, const char *buf, const int len,
-		   const char *sigbuf, const int siglen);
+int libpbc_rd_safe(pool *p, const char *peer, const char use_granting,
+		   const char *buf, const int len, const char *sigbuf, const int siglen);
 
 /**
  * returns the public name of this service. this is what other systems

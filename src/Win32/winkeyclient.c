@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.5 2003-11-12 04:46:29 ryanc Exp $
+  $Id: winkeyclient.c,v 1.6 2003-12-17 22:10:56 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +54,7 @@ typedef void pool;
 # include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
+#include "getopt.h"
 #include "../pbc_config.h"
 #include "../pbc_configure.h"
 #include "../libpubcookie.h"
@@ -80,6 +81,9 @@ extern char * optarg;
 /* globals */
 int noop = 0;
 extern pool *p; //initialized in debug
+int newkeyp = 1;
+char *hostname = NULL;
+
 
 int Messagef(const char * format, ...){
     char msg[2048];
@@ -187,6 +191,33 @@ int get_crypt_key(crypt_stuff *c_stuff, const char *peer)
 
     return PBC_OK;
 }
+void ParseCmdLine(LPSTR lpCmdLine) {
+	int c;
+
+    while ((c = getopt(__argc, __argv, "udH:")) != -1) {
+        switch (c) {
+            case 'd':
+                /* download, don't generate a new key */
+                newkeyp = 0;
+                break;
+
+            case 'u':
+                /* upload, don't generate a new key */
+                newkeyp = -1;
+                break;
+
+            case 'H':
+				/* Application server hostname
+				   Default is gethostbyname() if not specified here */
+                hostname = strdup(optarg);
+                break;
+
+            case '?':
+            default:
+                break;
+        }
+    }
+}
 
 int APIENTRY WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -197,9 +228,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     char buf[2 * PBC_DES_KEY_BUF]; /* plenty of room for base64 encoding */
     unsigned char thekey[PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
-    char *hostname;
 	struct hostent *h;
-    int newkeyp,ret;
+    int ret;
     int done = 0;
     const char *keymgturi = NULL;
     char *keyhost = NULL;
@@ -232,10 +262,13 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     libpbc_config_init(p, NULL, "keyclient");
 
-	gethostname(sztmp, sizeof(sztmp)-1);
-	h = gethostbyname(sztmp);
-	hostname = strdup(h->h_name);
-    newkeyp = 1;//TODO: make option to just download, newkeyp=0;
+	ParseCmdLine(lpCmdLine);
+
+	if (!hostname) { 
+		gethostname(sztmp, sizeof(sztmp)-1);
+		h = gethostbyname(sztmp);
+		hostname = strdup(h->h_name);
+	}
 
     //
     // Create credentials.

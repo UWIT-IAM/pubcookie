@@ -6,7 +6,7 @@
 /** @file security.c
  * Support for security structure
  *
- * $Id: security.c,v 1.6 2003-07-02 22:04:04 willey Exp $
+ * $Id: security.c,v 1.7 2003-12-17 22:10:56 ryanc Exp $
  */
 
 
@@ -57,28 +57,28 @@ int main(int argc, char *argv[])
     in = argv[1];
     inlen = strlen(in);
     printf("signing '%s'...\n", in);
-    if (libpbc_mk_safe(p, NULL, in, inlen, &outbuf, &outlen)) {
+    if (libpbc_mk_safe(p, NULL, 0, in, inlen, &outbuf, &outlen)) {
 	printf("libpbc_mk_safe() failed\n");
 	exit(1);
     }
     printme(p, "sig", outbuf, outlen);
 
     printf("verifying sig...");
-    if (libpbc_rd_safe(p, NULL, in, inlen, outbuf, outlen)) {
+    if (libpbc_rd_safe(p, NULL, 0, in, inlen, outbuf, outlen)) {
 	printf("libpbc_rd_safe() failed\n");
 	exit(1);
     }
     printf("ok\n");
 
     printf("encrypting '%s'...\n", in);
-    if (libpbc_mk_priv(p, NULL, in, inlen, &outbuf, &outlen)) {
+    if (libpbc_mk_priv(p, NULL, 0, in, inlen, &outbuf, &outlen)) {
 	printf("libpbc_mk_priv() failed\n");
 	exit(1);
     }
     printme(p, "blob", outbuf, outlen);
 
     printf("decrypting blob...\n");
-    if (libpbc_rd_priv(p, NULL, outbuf, outlen, &out2buf, &out2len)) {
+    if (libpbc_rd_priv(p, NULL, 0, outbuf, outlen, &out2buf, &out2len)) {
 	printf("libpbc_rd_priv() failed\n");
 	exit(1);
     }

@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.32 2003-12-11 21:48:44 willey Exp $
+ * $Id: security_legacy.c,v 1.33 2003-12-17 22:10:56 ryanc Exp $
  */
 
 
@@ -485,8 +485,6 @@ static int get_crypt_key(pool *p, const char *peername, char *buf)
     char keyfile[1024];
     
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_crypt_key: hello\n");
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "Looking for crypt key %s", peername); //debug
 
     make_crypt_keyfile(p, peername, keyfile);
 	
@@ -522,7 +520,7 @@ static int get_crypt_key(pool *p, const char *peername, char *buf)
  * @param outlen the length of outbuf.
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
+int libpbc_mk_priv(pool *p, const char *peer, const char use_granting, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     int r;
@@ -579,7 +577,7 @@ int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
 	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
     }
 
-    r = libpbc_mk_safe(p, peer, buf, len, &mysig, &siglen);
+    r = libpbc_mk_safe(p, peer, use_granting, buf, len, &mysig, &siglen);
     if (!r) {
         *outlen = len + siglen + 2;
         *outbuf = pbc_malloc(p, *outlen);
@@ -625,7 +623,7 @@ int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks
  */
-int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
+int libpbc_rd_priv(pool *p, const char *peer, const char use_granting, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     int index1, index2;
@@ -641,7 +639,7 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv: hello\n");
 
-    sig_len = EVP_PKEY_size(peer ? g_pub : sess_pub);
+    sig_len = EVP_PKEY_size(use_granting ? g_pub : sess_pub);
     mysig = (char *) pbc_malloc(p, sig_len);
 
     if (len < sig_len + 2) {
@@ -650,11 +648,10 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
       return(1);
     }
 
-    /* since i'm reading a message, i always decrypt using my key in this
-     security model. */
-    if (get_crypt_key(p, libpbc_get_cryptname(p), (char *) keybuf) < 0) {
+    /* if peer is null, use cryptname */
+	if (get_crypt_key(p, (peer ? peer : libpbc_get_cryptname(p)), (char *) keybuf) < 0) {
       return(1) ;
-    }
+    } 
 
     index1 = (unsigned char) buf[len - 2];
     index2 = (unsigned char) buf[len - 1];
@@ -687,7 +684,7 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
                      DES_DECRYPT);
 
     /* verify signature */
-    r = libpbc_rd_safe(p, peer, *outbuf, *outlen, mysig, sig_len);
+	r = libpbc_rd_safe(p, peer, use_granting, *outbuf, *outlen, mysig, sig_len); 
 
     if( mysig != NULL )
         pbc_free(p, mysig);
@@ -708,7 +705,7 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
  * application. 'outbuf' does not contain the plaintext message; both
  * 'buf' and 'outbuf' must be sent to the other side
  */
-int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
+int libpbc_mk_safe(pool *p, const char *peer, const char use_granting, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     unsigned char *sig;
@@ -726,9 +723,7 @@ int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
     *outbuf = NULL;
     *outlen = 0;
 
-    /* sign with g_key if it exists and there is a peer; session key otherwise */
-    if (g_key && peer) thekey = g_key;
-    else thekey = sess_key;
+	thekey = use_granting ? g_key : sess_key;
 
     sig = (unsigned char *) pbc_malloc(p, EVP_PKEY_size(thekey));
     sig_len = EVP_PKEY_size(thekey);
@@ -752,7 +747,7 @@ int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
     return r;
 }
 
-int libpbc_rd_safe(pool *p, const char *peer, const char *buf, const int len,
+int libpbc_rd_safe(pool *p, const char *peer, const char use_granting, const char *buf, const int len,
 		   const char *sigbuf, const int siglen)
 {
     EVP_MD_CTX ctx;
@@ -762,14 +757,12 @@ int libpbc_rd_safe(pool *p, const char *peer, const char *buf, const int len,
 
     assert(buf != NULL && sigbuf != NULL);
 
-    /* if peer is set, we'll assume that this is signed with the granting
-       key (no other cross-server messages in this security model) */
-
     /* initialize the MD5 context */
     EVP_VerifyInit(&ctx, EVP_md5());
     EVP_VerifyUpdate(&ctx, buf, len);
+	pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "Verifying signature with %s certificate",use_granting ? "granting" : "session");
     r = EVP_VerifyFinal(&ctx, (unsigned char *) sigbuf, siglen, 
-			peer ? g_pub : sess_pub);
+		use_granting ? g_pub : sess_pub);
 
     if (!r) {
 	/* xxx log openssl error */

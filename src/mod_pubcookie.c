@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.124 2003-12-11 21:48:44 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.125 2003-12-17 22:10:56 ryanc Exp $
  */
 
 
@@ -339,7 +339,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* just update the idle timer */
         /* xxx it would be nice if the idle timeout has been disabled
            to avoid recomputing and resigning the cookie? */
-        cookie = libpbc_update_lastts(r->pool, cfg->cookie_data, NULL);
+        cookie = libpbc_update_lastts(r->pool, cfg->cookie_data, NULL, 0);
     } else {
         /* create a brand new cookie, initialized with the present time */
         cookie = libpbc_get_cookie(r->pool, 
@@ -349,7 +349,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
 				     23, 
 				     (unsigned char *)appsrvid(r), 
 				     appid(r), 
-				     NULL);
+				     NULL,
+					 0);
     }
 
     new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
@@ -372,7 +373,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
          the first time since our cred cookie doesn't expire (which is poor
          and why we need cookie extensions) */
         /* encrypt */
-        if (libpbc_mk_priv(r->pool, NULL, cfg->cred_transfer,
+        if (libpbc_mk_priv(r->pool, NULL, 0, cfg->cred_transfer,
                            cfg->cred_transfer_len,
                            &blob, &bloblen)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, r,
@@ -833,7 +834,8 @@ static int auth_failed_handler(request_rec *r) {
                                    pre_sess_tok,
                                    (unsigned char *)appsrvid(r), 
                                    appid(r), 
-				   NULL);
+								   NULL,
+								   0);
 		
     pre_s_cookie = ap_psprintf(p, 
               			"%s=%s; path=%s;%s", 
@@ -1188,7 +1190,7 @@ int get_pre_s_from_cookie(request_rec *r)
       		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
 		r->uri);
     else
-        cookie_data = libpbc_unbundle_cookie(p, cookie, NULL);
+        cookie_data = libpbc_unbundle_cookie(p, cookie, NULL, 0);
 
     if( cookie_data == NULL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
@@ -1270,7 +1272,7 @@ static int pubcookie_user(request_rec *r) {
      if we don't have one.  This helps if there are any old g cookies */
   cookie_data = NULL;
   if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
-      cookie_data = libpbc_unbundle_cookie(p, cookie, ap_get_server_name(r));
+      cookie_data = libpbc_unbundle_cookie(p, cookie, ap_get_server_name(r), 1);
       if( !cookie_data) {
           ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
 	  		"can't unbundle G cookie; uri: %s\n", r->uri);
@@ -1297,7 +1299,7 @@ static int pubcookie_user(request_rec *r) {
     }
     else {  /* hav S cookie */
 
-      cookie_data = libpbc_unbundle_cookie(p, cookie, NULL);
+      cookie_data = libpbc_unbundle_cookie(p, cookie, NULL, 0);
       if( ! cookie_data ) {
           ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
 	  		"can't unbundle S cookie; uri: %s\n", r->uri);
@@ -1468,6 +1470,7 @@ static int pubcookie_user(request_rec *r) {
        to me. otherwise it's from me to me. */
       if (!res && libpbc_rd_priv(p, cred_from_trans ? 
                                     ap_get_server_name(r) : NULL, 
+									cred_from_trans ? 1 : 0,
                                  blob, bloblen, 
                                  &plain, &plainlen)) {
           ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 

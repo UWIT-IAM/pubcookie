@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.19 2003-07-03 04:25:21 willey Exp $
+ * $Id: flavor_getcred.c,v 1.20 2003-12-17 22:10:56 ryanc Exp $
  */
 
 
@@ -264,7 +264,7 @@ static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
 	}
 
 	/* decrypt */
-	if (libpbc_rd_priv(p, NULL, plain, plainlen, 
+	if (libpbc_rd_priv(p, NULL, 0, plain, plainlen, 
 			   &(master->str), &(master->sz))) {
 	    pbc_log_activity(p, PBC_LOG_ERROR,
                              "flavor_getcred: couldn't libpbc_rd_priv %s",
@@ -291,7 +291,7 @@ static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
     /* put the new credentials in a star cookie so they'll be sent to the 
        app server */
     /* encrypt */
-    if (libpbc_mk_priv(p, l->host, newcreds->str, newcreds->sz,
+    if (libpbc_mk_priv(p, l->host, 1, newcreds->str, newcreds->sz,
 		       &outbuf, &outlen)) {
 	pbc_log_activity(p, PBC_LOG_ERROR,
                          "flavor_getcred: libpbc_mk_priv failed");

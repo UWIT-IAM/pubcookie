@@ -80,7 +80,7 @@
 				AdditionalIncludeDirectories="include/openssl,include"
 				PreprocessorDefinitions="_DEBUG,WIN32,_WINDOWS,HAVE_STRING_H,HAVE_STDIO_H,HAVE_STDARG_H,HAVE_SNPRINTF"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\Debug/keyclient.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -137,6 +137,9 @@
 				RelativePath=".\debug.c">
 			</File>
 			<File
+				RelativePath="getopt.c">
+			</File>
+			<File
 				RelativePath="..\pbc_configure.c">
 			</File>
 			<File
@@ -154,6 +157,9 @@
 			Filter="h;hpp;hxx;hm;inl">
 			<File
 				RelativePath="WebClient.h">
+			</File>
+			<File
+				RelativePath="getopt.h">
 			</File>
 			<File
 				RelativePath="..\pbc_config.h">

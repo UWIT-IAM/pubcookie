@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.111 2003-12-11 21:48:44 willey Exp $
+ * $Id: index.cgi.c,v 1.112 2003-12-17 22:10:56 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2605,7 +2605,7 @@ login_rec *verify_unload_login_cookie (pool *p, login_rec *l)
     new = malloc(sizeof(login_rec));
     init_login_rec(p, new);
 
-    cookie_data = libpbc_unbundle_cookie(p, cookie, NULL);
+    cookie_data = libpbc_unbundle_cookie(p, cookie, NULL, 0);
 
     /* Done with cookie */
     if (cookie != NULL)
@@ -2698,7 +2698,7 @@ int create_cookie(pool *p, char *user_buf,
 
     cookie_local = (char *) 
         libpbc_get_cookie_with_expire(p, user, type, creds, pre_sess_tok,
-                                      create, expire, appsrvid, appid, peer);
+		create, expire, appsrvid, appid, peer, peer ? 1 : 0);
 
     if (peer != NULL)
         free(peer);

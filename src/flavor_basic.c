@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.43 2003-12-11 21:48:44 willey Exp $
+ * $Id: flavor_basic.c,v 1.44 2003-12-17 22:10:56 ryanc Exp $
  */
 
 
@@ -662,7 +662,7 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
                 int outlen;
                 char *out64;
 
-                if (!libpbc_mk_priv(p, NULL, creds->str, creds->sz,
+                if (!libpbc_mk_priv(p, NULL, 0, creds->str, creds->sz,
                                     &outbuf, &outlen)) {
                     /* save for later */
                     out64 = malloc(outlen * 4 / 3 + 20);

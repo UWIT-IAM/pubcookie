@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.22 2003-11-21 06:50:48 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.23 2003-12-17 22:10:56 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -17,10 +17,10 @@
 // #include <shfolder.h>  // For System Path, in Platform SDK
 #include <httpfilt.h>
 
+typedef void pool;
+
 extern "C" 
 {
-	typedef void pool;
-
 #include <pem.h>
 #include "../pubcookie.h"
 #include "../libpubcookie.h"
@@ -200,7 +200,7 @@ int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
 
         filterlog(dcfg, LOG_ERR,	"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", dcfg->uri);
     else
-        cookie_data = libpbc_unbundle_cookie(p, cookie, NULL);
+		cookie_data = libpbc_unbundle_cookie(p, cookie, dcfg->server_hostname, false);
 
     if( cookie_data == NULL ) {
         filterlog(dcfg, LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", dcfg->uri);
@@ -497,7 +497,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		pre_sess_tok,
 		(unsigned char *)dcfg->server_hostname, 
 		(unsigned char *)dcfg->appid,
-		dcfg->server_hostname);
+		dcfg->server_hostname,
+		0);
 	
     Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s,dcfg->appsrvid);
 	
@@ -1096,13 +1097,13 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}
 		else {
 
-		if( ! (cookie_data = libpbc_unbundle_cookie(p, cookie, NULL)) ) {
-			filterlog(dcfg, LOG_ERR,"[Pubcookie_User] Can't unbundle Session cookie for URL %s; remote_host: %s",
-				dcfg->uri, dcfg->remote_host);
-			dcfg->failed = PBC_BAD_SESSION_CERT;
-			pbc_free(p, cookie);
-			return OK;
-		}
+			if( ! (cookie_data = libpbc_unbundle_cookie(p, cookie, dcfg->server_hostname, false)) ) {
+				filterlog(dcfg, LOG_ERR,"[Pubcookie_User] Can't unbundle Session cookie for URL %s; remote_host: %s",
+					dcfg->uri, dcfg->remote_host);
+				dcfg->failed = PBC_BAD_SESSION_CERT;
+				pbc_free(p, cookie);
+				return OK;
+			}
 		else {
 			dcfg->cookie_data = cookie_data;
 		}
@@ -1172,7 +1173,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}*/ 		/* PBC_X_STRING doesn't seem to be used any longer */
 
 
-		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, dcfg->server_hostname)) ) {
+		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, dcfg->server_hostname, true)) ) {
 			filterlog(dcfg, LOG_ERR,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
 				dcfg->uri, dcfg->remote_host);
 			dcfg->failed = PBC_BAD_GRANTING_CERT;
@@ -1331,7 +1332,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 		if (dcfg->inact_exp > 0 || first_time_in_session) {
 			
 			if( !first_time_in_session ) {
-				cookie = libpbc_update_lastts(p, dcfg->cookie_data, NULL);
+				cookie = libpbc_update_lastts(p, dcfg->cookie_data, dcfg->server_hostname, 0);
 				filterlog(dcfg, LOG_INFO,"  Setting session cookie last timestamp to: %ld\n",dcfg->cookie_data->broken.last_ts);
 			}
 			else {
@@ -1342,7 +1343,8 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 					23,
 					(unsigned char *)dcfg->server_hostname, 
 					(unsigned char *)dcfg->appid,
-					dcfg->server_hostname);
+					dcfg->server_hostname,
+					0);
 
 				filterlog(dcfg, LOG_INFO,"  Created new session cookie.\n");
 			}
@@ -1996,9 +1998,8 @@ DllMain(
     case DLL_PROCESS_ATTACH:
 		{
 			// Initialize Pubcookie Stuff - and Set Debut Trace Flags
-	
 			fReturn = Pubcookie_Init ();
-			
+		
 			if ( !fReturn )
 				syslog(LOG_ERR, "\n*** Pubcookie_Init Failed !\n\n");
 			
