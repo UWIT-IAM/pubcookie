@@ -169,7 +169,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
     *errstr = NULL;
 
     if (!v) {
-	log_message("flavor_basic: flavor not correctly configured");
+	pbc_log_activity(PBC_LOG_ERROR,
+			 "flavor_basic: flavor not correctly configured");
 	return LOGIN_ERR;
     }
 
@@ -237,7 +238,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
 		    free(outbuf);
 		    free(out64);
 		} else {
-		    log_message("libpbc_mk_priv failed: can't save credentials");
+		    pbc_log_activity(PBC_LOG_ERROR, 
+			     "libpbc_mk_priv failed: can't save credentials");
 		}
 
 		/* xxx save creds for later just in case we're
