@@ -28,10 +28,10 @@ void CPBC_PropSheet::GetEffectiveValue(int i) {
 	ReadValAsString(key,i,L"/");
 
 	// Then root key  **Deprecated**
-	//StringCbCopy (key, BUFFSIZE, PBC_WEB_VAR_LOCATION);
 	//ReadValAsString(key,i,L"/");
 
 	// Then traverse pwzRegPath
+	StringCbCopy (key, BUFFSIZE, PBC_WEB_VAR_LOCATION);
 	ptr = pwzRegPath;
 
 	int first_node = 1;
