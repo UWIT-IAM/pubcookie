@@ -2,7 +2,7 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_verify.c,v 1.11 2001-11-28 22:36:41 willey Exp $
+    $Id: pbc_verify.c,v 1.12 2002-06-17 18:19:58 jteaton Exp $
  */
 
 /*                                                                            */
@@ -38,8 +38,9 @@ int main(int argc, char **argv) {
     /* if we're given a keyfile, use it */
     if ( argv[2] )
         c_stuff = libpbc_init_crypt(argv[2]);
-    else 
-        c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+    else
+        c_stuff = libpbc_init_crypt(get_my_hostname());
+
 
     /* if we're given a certfile to use, use it */
     if ( argv[2] && argv[3] )
@@ -47,7 +48,7 @@ int main(int argc, char **argv) {
     else if ( type == PBC_COOKIE_TYPE_G )
         ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
     else if ( type == PBC_COOKIE_TYPE_L )
-        ctx_plus = libpbc_verify_init(PBC_L_CERTFILE);
+        ctx_plus = libpbc_verify_init(PBC_S_CERTFILE);
     else if ( type == PBC_COOKIE_TYPE_S )
         ctx_plus = libpbc_verify_init(PBC_S_CERTFILE);
     else
