@@ -23,7 +23,7 @@ version of this document</a> is always the most up-to-date version.
 <li><a href="#implementation">Implementation</a></li>
 <li><a href="#authsvcs">Authentication Services</a></li>
 <li><a href="#apacheconfig">Apache Configuration</a></li>
-<li><a href="#build">Build the Login Server Components</a></li>
+<li><a href="#build">Build &amp; Install the Login Server Components</a></li>
 <li><a href="#config">Setup Run-time Pubcookie Config File</a></li>
 <li><a href="#keymgt">Key Management &amp; Setup</a></li>
 <li><a href="#keyserver">Keyserver Setup</a></li>
@@ -186,32 +186,50 @@ commented out.
 AddHandler cgi-script .cgi
 </pre>
 
-<h4><a name="build">Build the Pubcookie Login Server Components</a></h4>
+<h4><a name="build">Build &amp; Install the Login Server Components</a></h4>
 
 <p>
-Compilation has been made easier with autoconf. (Thanks Jon Miner, University 
-of Wisconsin!) To build a barebones login server, run:</p>
+Compiling the source code has been made easier with autoconf. (Thanks Jon Miner, 
+University of Wisconsin!)
+</p>
+
+<p>To build a barebones login server, run:</p>
 
 <pre>
 $ ./configure --enable-login --disable-apache
 $ make
-$ make install
 </pre>
 
 <p>
-This sequence will build and install the <tt>index.cgi</tt>,
-<tt>keyserver</tt>, and <tt>keyclient</tt> binaries, using the default
-directory prefix (<tt>/usr/local/pubcookie</tt>, henceforth called
-<tt>{PUBCOOKIE_DIR}</tt>), along with the "alwaystrue" verifier.</p>
+This will build the login cgi and its "alwaystrue" verifier, as well
+as the keyserver and keyclient binaries. It also prepares for
+installation using the default installation directory prefix, henceforth 
+called <tt>{PUBCOOKIE_DIR}</tt>, of <tt>/usr/local/pubcookie</tt>.
+</p>
 
 <p>
-To build other verifiers (e.g. "kerberos_v5", "ldap", or "shadow") 
-along with the login cgi look at the configure options and adjust 
-accordingly:
+To build other verifiers (e.g. "kerberos_v5", "ldap", or "shadow")
+along with the other base components, look at the configure options and 
+re-run the configure script accordingly:
 </p>
 
 <pre>
 $ ./configure --help
+</pre>
+
+<p>To install the login server components into the installation directory, 
+run:</p>
+
+<pre>
+$ make install
+</pre>
+
+<p>Now you can view the results by listing the contents of
+<tt>{PUBCOOKIE_DIR}</tt>.</p>
+
+<pre>
+$ ls /usr/local/pubcookie
+keyclient  keys  keyserver  login  login_templates  login_templates.default
 </pre>
 
 <h4><a name="config">Setup Run-time Pubcookie Config File</a></h4>
@@ -231,7 +249,7 @@ copying it to <tt>{PUBCOOKIE_DIR}/config</tt> and edit it there, e.g.:
 </p>
 
 <pre>
-$ cp config.login.sample /usr/local/pubcookie/config
+$ cp doc/config.login.sample /usr/local/pubcookie/config
 </pre>
 
 <p>
@@ -385,7 +403,8 @@ service keyserver
 }
 </pre>
 
-<p>After adding this line (or file), restart <tt>inetd</tt>.</p>
+<p>After adding this line to inetd.conf (or file to xinetd), restart <tt>inetd</tt>
+(or xinetd).</p>
 
 <h4><a name="keyclient">Run Keyclient for the Login Server</a></h4>
 
@@ -692,7 +711,7 @@ Copyright 1999-2003, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.10 2003-04-19 16:40:58 dors Exp $
+$Id: install-login.html,v 1.11 2003-04-20 07:08:34 dors Exp $
 </pre>
 </body>
 
