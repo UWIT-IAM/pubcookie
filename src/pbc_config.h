@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.31 2001-01-26 21:23:50 willey Exp $
+    $Id: pbc_config.h,v 1.32 2001-04-27 22:03:14 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -36,10 +36,17 @@
 #define APACHE
 #endif
 
+/* names of the login servers */
+/****** non University of Washington customers must change these ****/
+#define PBC_LOGIN_PAGE "https://weblogin.washington.edu/"
+#define PBC_LOGIN_HOST "weblogin.washington.edu"
+#define PBC_LOGIN_TEST_PAGE "https://weblogintest.cac.washington.edu/"
+#define PBC_LOGIN_TEST_HOST "weblogintest.cac.washington.edu"
+#define PBC_ENTRPRS_DOMAIN ".washington.edu"
+
 #define PBC_UWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
-#define PBC_ENTRPRS_DOMAIN ".washington.edu"
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
 #define PBC_DEFAULT_INACT_EXPIRE     ( 30 * 60 )
 #define PBC_MIN_HARD_EXPIRE 	 ( 1 * 60 * 60 )
@@ -128,8 +135,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_HTML_COPYRIGHT "<P><address>&#169; 1999 University of Washington</address><P>\n" 
 #define PBC_POST_NO_JS_BUTTON "Click here to continue"
 #define PBC_UWNETID_LOGO "images/login.gif"
-
-#define PBC_LOGIN_PAGE "https://weblogin.washington.edu/"
 
 #if defined (WIN32)
 #define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
