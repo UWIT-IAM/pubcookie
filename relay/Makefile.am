@@ -3,6 +3,7 @@ tpldir=$(install_dir)/templates
 cgi_PROGRAMS=index.cgi
 tpl_DATA=tologin.tpl toapp.tpl
 
+DESTDIR=@prefix@
 EXTRA_DIST= tologin.tpl toapp.tpl hello.tpl README
 
 INCLUDES= -I@pubcookie_src@ -I@webtpl_dir@/include
