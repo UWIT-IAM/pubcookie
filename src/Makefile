@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.38 2001-10-24 19:35:37 willey Exp $
+#   $Id: Makefile,v 1.39 2001-10-24 22:25:24 willey Exp $
 #
 
 # your compiler here
@@ -72,6 +72,7 @@ MODULEMISC=CHANGES.mod_pubcookie \
            Makefile.tmpl \
            Makefile.apxs 
 LOGINMISC=CHANGES.login \
+          Makefile \
           Makefile.index.cgi \
           contrib\* \
 	  INSTALL.login
