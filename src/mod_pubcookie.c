@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.157 2004-10-07 20:23:40 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.158 2004-11-03 22:50:18 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -292,18 +292,17 @@ char *get_post_data(request_rec *r, int post_len) {
 }
 
 /**
- * get a positive random int used to bind the granting cookie and pre-session
- * @returns random int >= 0 or -1 for error
+ * get a random int used to bind the granting cookie and pre-session
+ * @returns random int or -1 for error
+ * but, what do we do about that error?
  */
 int get_pre_s_token(request_rec *r) {
     int i;
     pool *p = r->pool;
     
-    while( (i = libpbc_random_int(p)) < 0 ) {
-        if( i == -1 ) {
-            ap_log_rerror(PC_LOG_EMERG, r, "get_pre_s_token: OpenSSL error");
-            return(i);
-        }
+    if( (i = libpbc_random_int(p)) == -1 ) {
+        ap_log_rerror(PC_LOG_EMERG, r, 
+		"get_pre_s_token: OpenSSL error");
     }
 
     ap_log_rerror(PC_LOG_DEBUG, r, 
@@ -1354,12 +1353,6 @@ void pubcookie_server_defaults(pubcookie_server_rec *scfg)
     
 }
 				 
-/**
- *  get the pre-session cookie
- * returns pre-session cookie or 
- *         -2 if there is no pre-session cookie or 
- *         -1 if the pre-session cookie is broken
- */
 int get_pre_s_from_cookie(request_rec *r)
 {
     pubcookie_dir_rec   *cfg;
@@ -1373,15 +1366,13 @@ int get_pre_s_from_cookie(request_rec *r)
     scfg = (pubcookie_server_rec *) ap_get_module_config(
 		r->server->module_config, &pubcookie_module);
 
-    if( (cookie = get_cookie(r, PBC_PRE_S_COOKIENAME)) == NULL ) {
+    if( (cookie = get_cookie(r, PBC_PRE_S_COOKIENAME)) == NULL )
         ap_log_rerror(PC_LOG_INFO, r, 
-      		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", r->uri);
-        return -2;
-    }
-    else {
+      		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
+		r->uri);
+    else
         cookie_data = libpbc_unbundle_cookie(p, scfg->sectext,
                             cookie, NULL, 0);
-    }
 
     if( cookie_data == NULL ) {
         ap_log_rerror(PC_LOG_INFO, r, 
@@ -1415,6 +1406,9 @@ static int pubcookie_user_hook(request_rec *r)
       "pubcookie_user_hook: uri: %s auth_type: %s", r->uri, ap_auth_type(r));
 
     if(!ap_auth_type(r)) return DECLINED;
+
+    /* bail if the request is for favicon.ico */
+    if ( ! strncasecmp(r->unparsed_uri, "/favicon.ico", 12) ) return DECLINED;
 
     /* if it's basic auth then it's not pubcookie */
 /*
@@ -1453,7 +1447,7 @@ static int pubcookie_user_hook(request_rec *r)
       			" .. user_hook: Can't use Granting cookie");
           stop_the_show(r, scfg, cfg, rr);
           return DONE;
-       } else if (rr->failed == PBC_BAD_USER) {
+        } else if (rr->failed == PBC_BAD_USER) {
           ap_log_rerror(PC_LOG_DEBUG, r,
       			      " .. user_hook: bad user");
           r->content_type = "text/html";
@@ -1709,26 +1703,15 @@ int pubcookie_user(request_rec *r, pubcookie_server_rec *scfg,
       pre_sess_from_cookie = get_pre_s_from_cookie(r);
       ap_log_rerror(PC_LOG_DEBUG, r, 
 	"pubcookie_user: ret from get_pre_s_from_cookie");
-      if( pre_sess_from_cookie < 0 ) {
-        ap_log_rerror(PC_LOG_INFO, r, 
-        	"pubcookie_user, pre session cookie broken or missing, uri: %s",
-		r->uri);
-        ap_log_rerror(PC_LOG_DEBUG, r, 
-        	"pubcookie_user, get_pre_s_from_cookie error: %d, uri: %s", 
-	  	pre_sess_from_cookie, r->uri);
-        rr->failed = PBC_BAD_G_STATE;
-        rr->stop_message = ap_pstrdup(p,"Pre-session cookie broken or missing");
-        rr->redir_reason_no = PBC_RR_BADPRES_CODE;
-        return OK;
-      }
       if( (*cookie_data).broken.pre_sess_token != pre_sess_from_cookie ) {
         ap_log_rerror(PC_LOG_INFO, r, 
-        	"pubcookie_user, pre-sess tokens mismatched, uri: %s", r->uri);
+        	"pubcookie_user, pre session tokens mismatched, uri: %s", r->uri);
         ap_log_rerror(PC_LOG_DEBUG, r, 
         	"pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s", 
 	  (*cookie_data).broken.pre_sess_token, pre_sess_from_cookie, r->uri);
-        rr->failed = PBC_NO_PS_MATCH;
-        rr->redir_reason_no = PBC_RR_NOPSMATCH_CODE;
+        rr->failed = PBC_BAD_G_STATE;
+        rr->stop_message = ap_pstrdup(p, "Couldn't decode pre-session cookie");
+        rr->redir_reason_no = PBC_RR_BADPRES_CODE;
         return OK;
       }
 
