@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: verify.h,v 1.7 2003-03-06 06:12:50 jjminer Exp $
+    $Id: verify.h,v 1.8 2003-04-05 03:14:35 jteaton Exp $
  */
 #ifndef INCLUDED_VERIFY_H
 #define INCLUDED_VERIFY_H
@@ -79,7 +79,7 @@ typedef int plaintext_verifier(pool * p, const char *userid,
  * @param creds the credentials to free
  * @returns always succeeds
  */
-typedef void credentials_free(struct credentials *creds);
+typedef void credentials_free(pool *p, struct credentials *creds);
 
 
 /**
@@ -94,7 +94,7 @@ typedef void credentials_free(struct credentials *creds);
  *        which must later be free'd with credentials_free()
  * @returns 0 on success, non-zero on failure
  */
-typedef int credentials_derive(struct credentials *creds,
+typedef int credentials_derive(pool *p, struct credentials *creds,
 			       const char *app,
 			       const char *target,
 			       struct credentials **newcreds);

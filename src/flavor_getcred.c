@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: flavor_getcred.c,v 1.13 2003-03-24 22:52:56 jjminer Exp $
+    $Id: flavor_getcred.c,v 1.14 2003-04-05 03:14:35 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -293,7 +293,7 @@ static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
     /* derive those credentials and throw them in a cookie */
     /* we pass 'l->host' in to cred_derive because that's what we're going
        to use as the peer when we encrypt newcreds */
-    if (v->cred_derive(master, l->host, target, &newcreds)) {
+    if (v->cred_derive(p, master, l->host, target, &newcreds)) {
 	pbc_log_activity(p, PBC_LOG_ERROR, "flavor_getcred: cred_derive failed");
 	*errstr = "cred_derive failed";
 	free(master->str);
@@ -328,7 +328,7 @@ static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
     /* cleanup */
     free(out64);
     free(outbuf);
-    v->cred_free(newcreds);
+    v->cred_free(p, newcreds);
     /* xxx this sucks; 'master' wasn't necessary allocated by the
        verifier, so it's not clear that we should be asking it to free
        it.  (and if we ever want to associate credentials with some
@@ -336,7 +336,7 @@ static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
        above is insufficient. maybe we want a credentials_serialize
        and credentials_unserialize and make credentials completely opaque?
     */
-    v->cred_free(master);
+    v->cred_free(p, master);
 
     /* tell the rest of the pubcookie code that we actually just finished
        verifying basic creds (but we don't touch l->creds_from_greq) */
