@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.7 1999-08-23 19:13:18 willey Exp $
+    $Id: libpubcookie.c,v 2.8 1999-11-18 18:51:15 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -87,7 +87,7 @@ void *libpbc_abend(const char *format,...)
     
     va_start(args, format);
     now = time(NULL);
-    sprintf(format_w_time, "%s: ABEND: %s", libpbc_time_string(now), format);
+    snprintf(format_w_time, sizeof(format_w_time), "%s: ABEND: %s", libpbc_time_string(now), format);
 #if defined (WIN32)
     vsprintf(buff, format_w_time, args);
     OutputDebugString(buff);  /* win32 debugging */
@@ -121,7 +121,7 @@ int libpbc_debug(const char *format,...)
 
     va_start(args, format);
     now = time(NULL);
-    sprintf(format_w_time, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
+    snprintf(format_w_time, sizeof(format_w_time), "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
 #if defined (WIN32)
     vsprintf(buff, format_w_time, args);
     OutputDebugString(buff);  /* win32 debugging */
