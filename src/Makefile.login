@@ -4,11 +4,9 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.9 2002-06-28 03:30:17 jjminer Exp $
+# $Id: Makefile.login,v 1.10 2002-06-28 19:54:01 greenfld Exp $
 
 include Makefile.settings
-
-DEFINES += -DDEBUG
 
 CGIC_DIR=/usr/user/cgic1.07-pubcookie1.01
 CGIC_LIB=$(CGIC_DIR)/libcgic.a
@@ -33,9 +31,6 @@ EXTRA_LIBS += -ldes -lkrb5 -ldes
 
 ## HAVE_SHADOW - you want the shadow password verifier.
 DEFINES += -DHAVE_SHADOW
-
-## MAKE_MIRROR - mirrors everything sent to the browser
-# DEFINES += -DMAKE_MIRROR
 
 # There be dragons here...
 
@@ -68,10 +63,10 @@ VERIFY_SRC=verify_alwaystrue.c \
 	verify_shadow.c \
 	verify_ldap.c
 
-FLAVOR_SRC=flavor.c flavor_basic.c
+FLAVOR_SRC=flavor.c flavor_basic.c flavor_getcred.c
 
 INDEX_OBJ=index.cgi.o verify.o flavor.o \
-		  flavor_basic.o \
+		  flavor_basic.o flavor_getcred.o \
 		  $(VERIFIERS)
 
 INDEX_FILES=index.cgi
@@ -158,7 +153,7 @@ what_is_my_ip: what_is_my_ip.o $(LIB_OBJ)
 index.cgi: $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB) 
 		$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS)
 
-index.cgi.o $(VERIFIERS) flavor_$(FLAVOR).o: $(MAKEFILES) $(LIB_HEAD) $(INDEX_HEAD)
+$(INDEX_OBJ): $(MAKEFILES) $(LIB_HEAD) $(INDEX_HEAD)
 
 keyserver: keyserver.o $(LIB_OBJ)
 		$(CC) ${CFLAGS} -o $@ keyserver.o $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS)
