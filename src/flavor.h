@@ -1,6 +1,18 @@
-/*
-  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
-  For terms of use see doc/LICENSE.txt in this distribution.
+/* ========================================================================
+ * Copyright 2005 University of Washington
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================================
  */
 
 /** @file flavor.h
@@ -10,7 +22,7 @@
  * - the policy of when freerides are allowed
  * - what the layout of the login page is, how login messages are printed. 
  *
- * $Id: flavor.h,v 1.13 2005-01-03 23:15:05 willey Exp $
+ * $Id: flavor.h,v 1.14 2005-02-07 22:26:37 willey Exp $
  */
 
 #ifndef INCLUDED_FLAVOR_H
