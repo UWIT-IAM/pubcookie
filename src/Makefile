@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.8 1999-01-11 21:44:31 willey Exp $
+# $Id: Makefile,v 1.9 1999-01-11 22:02:12 willey Exp $
 #
 
 CC=gcc
@@ -44,7 +44,7 @@ tar:
 	mkdir $(NAME); \
 	for i in $(SRC) $(GEN_HEAD) $(MISC) ;\
 	do \
-		chmod 664 $$i; \
+		chmod 664 $(NAME)/$$i; \
 		cp $$i $(NAME); \
 	done; \
 	$(TAR) cf $(TARFILE) $(NAME); \
