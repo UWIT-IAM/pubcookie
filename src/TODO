@@ -1,0 +1,5 @@
+
+- add more junk to random seed stuff
+- break a few things up so 'secure' functions and includes can go in more 
+protected files
+- replace base64.c with something from ssleay
