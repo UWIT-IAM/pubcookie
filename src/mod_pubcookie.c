@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.138 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: mod_pubcookie.c,v 1.139 2004-04-08 21:09:06 fox Exp $
  */
 
 
@@ -192,6 +192,81 @@ void dump_dir_rec(request_rec *r, pubcookie_dir_rec *cfg) {
 
 }
 
+#if defined(APACHE2) && defined(_AIX)
+
+/** Apache 2 does not export the symbol ap_get_local_host
+   so we need to redefine it here to allow the module to
+   load as a dso under aix. Reported to apache as a bug.
+   Haven't heard anything. 
+
+   These are from util.c **/
+
+#define ap_get_local_host LOCAL_ap_get_local_host
+
+#include <netdb.h>
+static char *find_fqdn(apr_pool_t *a, struct hostent *p)
+{
+    int x;
+
+    if (!strchr(p->h_name, '.')) {
+        if (p->h_aliases) {
+            for (x = 0; p->h_aliases[x]; ++x) {
+                if (strchr(p->h_aliases[x], '.') &&
+                    (!strncasecmp(p->h_aliases[x], p->h_name,
+                                  strlen(p->h_name))))
+                    return apr_pstrdup(a, p->h_aliases[x]);
+            }
+        }
+        return NULL;
+    }
+    return apr_pstrdup(a, (void *) p->h_name);
+}
+
+char *ap_get_local_host(apr_pool_t *a)
+{
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+    char str[MAXHOSTNAMELEN + 1];
+    char *server_hostname = NULL;
+    struct hostent *p;
+
+    if (gethostname(str, sizeof(str) - 1) != 0)
+    {
+        ap_log_perror(APLOG_MARK, APLOG_STARTUP | APLOG_WARNING, 0, a,
+                     "%s: gethostname() failed to determine ServerName",
+                     ap_server_argv0);
+    }
+    else
+    {
+        str[sizeof(str) - 1] = '\0';
+        if ((!(p = gethostbyname(str)))
+            || (!(server_hostname = find_fqdn(a, p)))) {
+            /* Recovery - return the default servername by IP: */
+            if (p && p->h_addr_list[0]) {
+                apr_snprintf(str, sizeof(str), "%pA", p->h_addr_list[0]);
+                server_hostname = apr_pstrdup(a, str);
+                /* We will drop through to report the IP-named server */
+            }
+        }
+        else {
+            /* Since we found a fdqn, return it with no logged message. */
+            return server_hostname;
+        }
+    }
+
+    if (!server_hostname)
+        server_hostname = apr_pstrdup(a, "127.0.0.1");
+
+    ap_log_perror(APLOG_MARK, APLOG_ALERT|APLOG_STARTUP, 0, a,
+                 "%s: Could not determine the server's fully qualified "
+                 "domain name, using %s for ServerName",
+                 ap_server_argv0, server_hostname);
+
+    return server_hostname;
+}
+
+#endif /* AP2 and AIX */
 
 /* We have to, in the depths of the module, be able to recover
    the current server record - without having the request rec.  

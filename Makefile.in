@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.50 2004-02-19 23:07:02 fox Exp $
+# $Id: Makefile.in,v 1.51 2004-04-08 21:09:06 fox Exp $
 
 @SET_MAKE@
 
@@ -257,14 +257,14 @@ VERSION = `echo @PACKAGE_VERSION@ | $(SED) "s/ /-/g" `
 BASENAME = @PACKAGE_TARNAME@
 DISTNAME = $(BASENAME)-$(VERSION)
 
-.PHONY: all clean install dist login_server apache_module ver aix_warning
-
+# PHONY before 'all' causes aix make to make .PHONY
 all: $(builddir)/Makefile @login_server@ keyclient @apache_module@
 
-# Damned broken make on AIX..
+.PHONY: all clean install dist login_server apache_module ver aix_warning
 
-@IF_AIX_MAKE@.c.o:
-@IF_AIX_MAKE@	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(srcdir)/aclocal.m4
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
@@ -283,16 +283,19 @@ $(builddir)/src/pbc_path.h: $(builddir)/stamp-h
 $(builddir)/stamp-h: $(srcdir)/src/config.h.in $(srcdir)/src/pbc_path.h.in $(builddir)/config.status
 	$(builddir)/config.status
 
-$(builddir)/Makefile: $(srcdir)/Makefile.in $(builddir)/src/config.h
-	$(builddir)/config.status
+$(builddir)/Makefile: $(srcdir)/Makefile.in $(builddir)/src/config.h $(builddir)/config.status
 
 $(builddir)/config.status: $(srcdir)/configure
 	$(builddir)/config.status --recheck
 
-$(builddir)/src/%.o: $(srcdir)/src/%.c
-	$(CC) $(CFLAGS) -o $@ -c $<
+# $(builddir)/src/%.o: $(srcdir)/src/%.c
+# 	$(CC) $(CFLAGS) -o $@ -c $<
 
-login_server: l_ver $(INDEX_FILES) $(KEYMGT_FILES)
+login_server: @no_login@ l_ver $(INDEX_FILES) $(KEYMGT_FILES)
+
+no_login:
+	@echo "The login server is not configured"
+	@bomb
 
 l_ver:
 	@echo Making $(DISTNAME) login server;
@@ -331,7 +334,8 @@ $(builddir)/index.cgi: $(builddir)/cgic/libcgic.a $(LIB_OBJ) $(INDEX_OBJ)
 	$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
 
 $(builddir)/cgic/libcgic.a:
-	(cd $(builddir)/cgic; make)
+	@echo "Making all in cgic"
+	(cd $(builddir)/cgic; $(MAKE))
 
 $(INDEX_OBJ): $(LIB_HEAD) $(INDEX_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 
@@ -341,12 +345,13 @@ keyserver: $(builddir)/src/keyserver.o $(LIB_OBJ)
 keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(builddir)/src/keyclient.o $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
 
+
 # Installation Targets
 
-install: $(KEY_DIR) @install_login@ @install_apache@
-	$(INSTALL_BIN) keyclient $(PUBCOOKIE_DIR)
+install: $(KEY_DIR) @install_login@ @install_apache@ 
+@IF_MOD@	$(INSTALL_BIN) keyclient $(PUBCOOKIE_DIR)
 
-install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
+install-login: @no_login@ $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
 	@for file in $(INDEX_FILES); do \
 		echo $(INSTALL_BIN) $$file $(LOGIN_DIR); \
 		$(INSTALL_BIN) $$file $(LOGIN_DIR); \
@@ -390,8 +395,9 @@ install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMP
 		$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)/config; \
 		true
 
-install-apache: apache_module
-	$(APXS) -i -A -n pubcookie mod_pubcookie.@APACHE_MOD_EXT@
+install-apache: @no_module@
+	@echo "Making all in module"
+	(cd module; $(MAKE) install)
 
 $(PUBCOOKIE_DIR):
 	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
@@ -449,6 +455,7 @@ clean::
 	-$(FORCE_RM) $(TEST_FILES) $(KEYMGT_FILES)
 	-$(FORCE_RM) pbc_myconfig myconf base64
 	(cd $(builddir)/cgic; $(MAKE) clean)
+@IF_MOD@	(cd $(builddir)/module; $(MAKE) clean)
 
 distclean:: clean
 	$(FORCE_RM) $(CONFIGURE_TMP_FILES)
@@ -457,26 +464,12 @@ distclean:: clean
 
 # APXS Stuff.
 
-APACHE_DEFINES= -DAPACHE -DAPACHE@APACHE_VERSION@
+apache_module: @no_module@
+	(cd module; $(MAKE))
 
-apache_module: a_ver mod_pubcookie.@APACHE_MOD_EXT@ aix_warning 
-
-aix_warning:
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo "NOTE:"
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo "AIX keeps shared libraries in memory.  In order to for"
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo "\"make install\" to function, you need to do one of two things:"
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo "   1) Manually rm "`$(APXS) -q LIBEXECDIR`"/mod_pubcookie.so"
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo "   2) Stop Apache and run slibclean as root"
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo
-@IF_AIX@@IF_MODULE_UPGRADE@	@echo "Sorry for the inconvenience."
-
-a_ver:
-	@echo Making $(DISTNAME) apache module;
-
-mod_pubcookie.@APACHE_MOD_EXT@: $(MOD_SRC) $(MOD_HEAD) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
-	$(APXS) -c -o mod_pubcookie.@APACHE_MOD_EXT@ $(CPPFLAGS) $(APACHE_DEFINES) \
-			@APXS_LDFLAGS@ \
-			$(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
+no_module:
+	@echo "The apache module is not configured."
+	@bomb
 
 # Win32 ... Nothing here except the Dist files.
 

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.52 $)
+AC_REVISION($Revision: 1.53 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -31,28 +31,11 @@ AC_ARG_ENABLE(apache,
                    AC_MSG_RESULT(no)
                    enable_apache=no
                    AC_SUBST(MAKE_APACHE, "@echo Skipping ")
+                   AC_SUBST(IF_MOD, [#])
+                   AC_SUBST(no_module, "no_module")
                    ;;
                esac ])
 
-if test "x$enable_apache_static" = "x"; then
-    enable_apache_static=no
-fi
-
-AC_MSG_CHECKING([if I should build the static apache module])
-
-AC_ARG_ENABLE(apache-static,
-              AC_HELP_STRING( [--enable-apache-static],
-                              [Enable building the static apache module
-                              (default: off)]),
-              [ case "${enableval}" in
-                yes)
-                   AC_MSG_RESULT(yes)
-                   ;;
-                *)
-                   AC_MSG_RESULT(no)
-                   enable_apache_static=no
-                   ;;
-                esac ])
 
 if test "x$enable_login" = "x"; then
     enable_login=no
@@ -72,56 +55,33 @@ AC_ARG_ENABLE(login,
                 *)
                    AC_MSG_RESULT(no)
                    AC_SUBST(MAKE_LOGIN, "@echo Skipping ")
+                   AC_SUBST(no_login, "no_login")
                    ;;
                esac ])
 
 if test "$enable_login" = "no" && \
-   test "$enable_apache" = "no" && \
-   test "$enable_apache_static" = "no"; then
+   test "$enable_apache" = "no"; then
     AC_MSG_ERROR([the login server or apache module must be enabled], 1)
 fi
 
 # Checks for programs.
 AC_PROG_CC
 
+AC_CANONICAL_HOST
 AC_AIX
 
-# For whatever reason AIX needs a list of exported symbols.
-AC_CANONICAL_HOST
-APXS_LDFLAGS=
-
+AIX_LDFLAGS=
+need_slib_clean=
 case $host in
+
     *aix*)
-# Check for IBM xlc compiler.
+#      AIX needs additional loader help
 
-if test "$GCC" != "yes"; then
-
-AC_MSG_CHECKING([for IBM xlc Compiler])
-AC_TRY_RUN( [ 
-    #include <stdlib.h>
-
-    #ifndef __xlC__
-    # define __xlC__ 0
-    #endif
-
-    int main() {
-        exit( __xlC__ == 0 );
-    }
-    ],
-    [ AC_MSG_RESULT([yes])
-    APXS_LDFLAGS="-Wl,-bE:mod_pubcookie.exp"
-    AC_DEFINE( IBM_XLC, 1,
-    [Define to 1 if the Compiler is IBM xlc] )
-    IBM_XLC=1
-    ],
-    [ AC_MSG_RESULT([no])
-    ]
-)
-
-fi
-
-aix_system=yes
+      aix_system=yes
+      AIX_LDFLAGS="-Wl,-bE:mod_pubcookie.exp -Wl,-bnoentry -Wl,-lcrypto"
+      need_slib_clean="need_slib_clean"
     ;;
+
     *sun*)
 # Check to see if this is the Sun Workshop compiler.
 
@@ -152,11 +112,8 @@ fi
     ;;
 esac
 
-if test "$aix_system" != "yes"; then
-    AC_SUBST( IF_AIX, [#] )
-fi;
-
-AC_SUBST(APXS_LDFLAGS, "$APXS_LDFLAGS")
+AC_SUBST(AIX_LDFLAGS, "$AIX_LDFLAGS")
+AC_SUBST(need_slib_clean, "$need_slib_clean")
 
 # Fix problems where we're using gcc without gnu ld
 # (Code by Bradford L. Barrett at University of Florida)
@@ -184,6 +141,8 @@ AC_PATH_PROG(CHMOD, chmod, chmod)
 AC_PATH_PROG(TEST, test, test)
 AC_PATH_PROG(MAKE, make)
 AC_PATH_PROG(GMAKE, gmake)
+AC_PATH_PROG(PWD, pwd)
+AC_PATH_PROG(LS, ls)
 
 gnu_make=no
 
@@ -199,19 +158,10 @@ if test "x$MAKE" != "x"; then
     fi
 fi
 
-if test "$aix_system" = "yes" && \
-   test "x$GMAKE" = "x" && \
-   test "$gnu_make" = "no"; then
-    AC_SUBST( IF_AIX_MAKE, "" )
-else
-    AC_SUBST( IF_AIX_MAKE, [#] )
-fi
+
+# Are we building a module?  which type?  dso or static
 
 if test "$enable_apache" = "yes"; then
-
-if test "x$with_apxs" = "x"; then
-    with_apxs=no
-fi
 
 AC_ARG_WITH(apxs,
     AC_HELP_STRING([--with-apxs=PATH],[/path/to/apxs]),
@@ -236,9 +186,7 @@ AC_ARG_WITH(apxs,
       ;;
   esac ])
 
-  if test "x$APXS" = "x"; then
-      AC_MSG_ERROR( "apxs is required for building mod_pubcookie!" )
-  fi
+if ! test "x$APXS" = "x"; then
   AC_MSG_CHECKING( [if $APXS works] )
   $APXS -q CFLAGS >/dev/null 2>&1
   if test "$?" != "0"; then
@@ -249,6 +197,7 @@ AC_ARG_WITH(apxs,
   fi
 
   AC_MSG_RESULT([yes])
+  AC_SUBST(APACHE_PREFIX, `$APXS -q PREFIX`)
 
   AC_MSG_CHECKING([Apache version])
   APACHE_VERSION=
@@ -293,16 +242,56 @@ AC_ARG_WITH(apxs,
 
   CFLAGS=$OCFLAGS
 
-  AC_MSG_CHECKING( [if we are upgrading mod_pubcookie] )
-  if test -f `$APXS -q LIBEXECDIR`"/mod_pubcookie.so"; then
-      AC_MSG_RESULT([yes])
-      AC_SUBST( IF_MODULE_UPGRADE, "" )
-  else
-      AC_MSG_RESULT([no])
-      AC_SUBST( IF_MODULE_UPGRADE, [#] )
-  fi
+  apache_target=module
+  apache_src_ref=".."
 
-fi # If they disabled apache, don't look for apxs.
+fi # if apxs
+
+# look for the static module build
+apache_src=
+AC_MSG_CHECKING(for apache src)
+AC_ARG_WITH(apache-src,
+[  --with-apache-src=DIR   Build static Apache module.  DIR is the path
+                           to the top-level Apache source directory.],
+[
+   if test "$withval" = "yes"; then
+      AC_MSG_ERROR(You need to specify a directory with --with-apache-src)
+   fi
+   if test -d $withval/modules && \
+      test -f $withval/include/httpd.h; then  # apache2
+         APACHE_VERSION=2
+         apache_src=$withval
+         apache_target=$withval/modules/pubcookie
+         apache_src_ref=$PWD
+#        I can't get it to work on apache2
+         AC_MSG_ERROR(Cannot build static Apache 2 module)
+   fi
+   if test -d $withval/src/modules && \
+      test -f $withval/src/include/httpd.h; then
+         APACHE_VERSION=1_3
+         apache_src=$withval
+         apache_target=$withval/src/modules/pubcookie
+         apache_src_ref=$PWD
+   fi
+   if test "x$apache_src" = "x"; then
+         AC_MSG_ERROR(Cannot find the apache source)
+   fi
+   AC_MSG_RESULT($withval)
+
+],[
+    AC_MSG_RESULT(no)
+])
+
+
+# if module was wanted make sure one will be built
+
+if test "$with_apxs" = "no" && \
+   test "x$apache_src" = "x"; then
+    AC_MSG_ERROR([either apxs or the apache path must be specified], 1)
+fi
+
+fi # if apache module
+
 
 # Checks for libraries.
 AC_CHECK_LIB(socket,socket)
@@ -501,6 +490,7 @@ else
 		 [Define to 1 if openssl is directly in include path.])],
 		[AC_MSG_ERROR([can't find required SSL header files (may need --with-ssl-inc-dir)])])
 fi
+
 
 # Login Server specific stuff.
 
@@ -769,7 +759,7 @@ AC_ARG_WITH(mango-lib-dir,
 
     AC_CHECK_HEADERS([mgoapi.h mgostuff.h])
     LIBS="$LIBS -lmgoapi";
-    AC_CHECK_LIB(mgoapi)
+    AC_CHECK_LIB(mgoapi,MGOinitialize)
 fi
 
 AC_ARG_ENABLE(dmalloc,
@@ -817,7 +807,8 @@ if test "$enable_shadow" = "yes"; then
     AC_CHECK_LIB(crypt, crypt)
 fi
 
-fi # End of stuff we skip if we're not enabling the login server.
+fi # End of enabling the login server.
+
 
 LOGINLIBS=$LIBS
 
@@ -826,6 +817,8 @@ LIBS=$OLDLIBS
 AC_SUBST(LOGINLIBS, $LOGINLIBS)
 
 # End of Login-server specific stuff, hopefully.
+
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -856,21 +849,135 @@ AM_MAINTAINER_MODE
 
 AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
+
+
+
+# setup module directory if we're building the module 
+if test "$enable_apache" = "yes";  then
+
+   echo "Copying apache module sources to $apache_target."
+
+   if ! test -d $apache_target; then
+      mkdir $apache_target
+   fi
+
+# get a list of components from the modules.mk file
+pc=
+for f in `sed -n -e '
+/\\\\$/{ 
+  s/\\\\$//
+  H
+  d
+} 
+H
+g
+/^\nMOD_PUBCOOKIE/{
+ s/\n//g
+ s/.*=//
+ p
+}
+s/.*//
+h
+' modules.mk `
+do
+#  echo "  $f"
+  pc="$pc $f"
+done
+# get a list of includes from the src dir
+pch=
+cd src
+for f in `$LS *.h`
+do
+#  echo "   $f"
+  pch="$pch $f"
+done
+cd ..
+
+# cleanup then setup module build directory
+$RM -f $apache_target/.libs/*
+$RM -f $apache_target/*.*
+for f in $pc
+do
+# echo "  $f"
+  ln -sf $apache_src_ref/src/${f}.c $apache_target
+done
+for f in $pch
+do
+# echo "  $f"
+  ln -sf $apache_src_ref/src/$f $apache_target
+done
+
+obj=
+for p in $pc
+do
+  obj="$obj $p.o"
+done
+src=
+
+# copy the appropriate makefile
+
+# apxs module
+if test "x$APXS" != "x";  then
+
+  touch $apache_target/.deps
+
+  if test "$APACHE_VERSION" = "2"; then
+     AC_SUBST( MOD_LIST, $MOD_LIST )
+     cp Makefile.in.ap2 $apache_target/Makefile.in
+     ln -sf $apache_src_ref/modules.mk $apache_target
+  fi
+
+  if test "$APACHE_VERSION" = "1_3"; then
+
+    AC_SUBST( MOD_OBJ, $obj )
+    AC_SUBST( MOD_HDR, $pch )
+     
+    cp Makefile.in.ap1 $apache_target/Makefile.in
+    ln -sf $apache_src_ref/mod_pubcookie.exp $apache_target
+
+  fi # apache 1.3
+
+AC_CONFIG_FILES([$apache_target/Makefile])
+
+fi # apxs module
+
+# apache 1.3 static build
+if test "x$apache_src" != "x"; then
+cat > $apache_target/Makefile.tmpl.in << END
+# Makefile.tmpl: generated by configure 
+#
+END
+   cat Makefile.tmpl.in >> $apache_target/Makefile.tmpl.in
+   AC_SUBST( MOD_OBJ, $obj )
+   AC_SUBST( MOD_HDR, $pch )
+   AC_CONFIG_FILES([$apache_target/Makefile.tmpl])
+
+   cat > $apache_target/Makefile.libdir <<'END'
+# dummy
+END
+
+fi # apache 1.3 static
+
+fi # setup module directory
+
 AC_OUTPUT
 
-if test "x$GMAKE" = "x" && \
-   test "$gnu_make" = "no"; then
-   AC_MSG_WARN([
-   $MAKE is not GNU make and gmake was not found on your system.
-   You may have problems compiling.
-   Please let $PACKAGE_BUGREPORT know if you have a fix.
-   ])
+# finish with advisories
+
+# gmake
+if test "$gnu_make" = "no"; then
+   echo ""
+   echo "Note.  Your default make program is not GNU make."
+   echo "       Your builds will be more efficient"
+   echo "       if you can use gmake instead of make."
+   echo ""
 fi
-if test "x$GMAKE" != "x" && \
-   test "$gnu_make" = "no"; then
-    AC_MSG_WARN([
-    I found make and gmake on your system and
-    $MAKE doesn't seem to be GNU Make.
-    For best results please use $GMAKE.
-    ])
+
+# config of apache src
+if test "x$apache_src" != "x"; then
+   echo ""
+   echo "Reminder: You must reconfigure apache with "
+   echo "           --activate-module=src/modules/pubcookie/libpubcookie.a"
+   echo ""
 fi
+

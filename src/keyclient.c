@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.44 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: keyclient.c,v 2.45 2004-04-08 21:09:06 fox Exp $
  */
 
 
@@ -92,6 +92,11 @@ extern char * optarg;
 #  define snprintf _snprintf
 #endif
 
+/* We can't use the library because we may not haev a granting cookie.
+   We son't actually do much with it anyway, so it's not missed.
+   Define this to make keyclient not work */
+#undef USINGPBCLIB
+
 /* globals */
 int noop = 0;
 
@@ -108,24 +113,26 @@ static void mylog(pool *p, int logging_level, const char *msg)
 
 static void usage(void)
 {
-    printf("usage: keyclient [options]\n");
-    printf("  -c <cert file>     : cert to use for TLS authentication\n");
-    printf("  -k <key file>      : key to use for TLS authentication\n");
-    printf("  -n                 : just show what would be done\n");
-    printf("  -d                 : don't generate a new key, just download\n");
-    printf("                       the existing one\n");
-    printf("  -u                 : upload the local copy of the key\n");
-    printf("  -a                 : expect keyfile in ASN.1\n");
-    printf("  -p (default)       : expect keyfile in PEM\n");
-    printf("  -H <hostname>      : pretend to be <hostname> (dangerous!)\n");
-    printf("  -K <URI>           : base URL of key management server\n");  
-    printf("  -C <cert file>     : CA cert to use for client verification\n");
-    printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
-    printf("  -1                 : permit <hostname>\n");
-    printf("  -G <cert_out>      : get granting cert (to cert_out)\n");
+    printf("usage: keyclient [options]                 Download (upload) host key\n");
+    printf("       keyclient -1 <host> [options]       Permit 'host' to access keyserver\n");
+    printf("       keyclient -G <gcertfile> [options]  Get granting cert (to gcertfile)\n");
+    printf("\n  options:\n");
+    printf("  -K <URI>        : URI of key management server\n");
+    printf("  -c <cert file>  : cert to use for authn. Def: ssl_cert_file\n");
+    printf("  -k <key file>   : key to use for authen. Def: ssl_key_file\n");
+    printf("  -C <ca file>    : authorized CA certs file. Def: ssl_ca_file\n");
+    printf("  -D <ca dir>     : authorized CA certs dir. Def: ssl_ca_path\n");
+    printf("  -n              : just show what would be done\n");
+    printf("  -d              : don't generate a new hostkey\n");
+    printf("                    just download the existing one\n");
+    printf("  -u              : upload the local hostkey to the server\n");
+    printf("  -a              : expect keyfile in ASN.1\n");
+    printf("  -p              : expect keyfile in PEM (default) \n");
+    printf("  -H <hostname>   : pretend to be <hostname> (dangerous!)\n");
 
     exit(1);
 }
+
 
 /* destructively returns the value of the CN */
 static char *extract_cn(char *s)
@@ -176,7 +183,9 @@ int main(int argc, char *argv[])
     int keyport = 443;
     int r;
     pool *p = NULL;
+#ifdef USINGPBCLIB
     security_context *context = NULL;
+#endif
     char *gcert = NULL;
 
 #ifdef WIN32
@@ -198,7 +207,9 @@ int main(int argc, char *argv[])
 
     libpbc_config_init(p, NULL, "keyclient");
     pbc_log_init(p, "keyclient", NULL, &mylog, NULL, NULL);
+#ifdef USINGPBCLIB
     libpbc_pubcookie_init(p, &context);
+#endif
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
@@ -419,16 +430,23 @@ int main(int argc, char *argv[])
 
         str = X509_NAME_oneline (X509_get_subject_name (mycert),0,0);
         hostname = extract_cn(str);
+#ifdef USINGPBCLIB
         if (hostname) {
             /* warn if hostname != get_my_hostname(p) */
             if (strcasecmp(hostname, get_my_hostname(p, context))) {
                 fprintf(stderr, "warning: certificate name (%s) doesn't match"
-                        " my hostname (%s)\n", hostname, get_my_hostname(p, context));
+                 " my hostname (%s)\n", hostname, get_my_hostname(p, context));
             }
         } else {
             fprintf(stderr, 
                     "warning: no hostname in my certificate? trying anyway.\n");
             hostname = get_my_hostname(p, context);
+        }
+#endif
+        if (!hostname) {
+            fprintf(stderr,
+              "The %s certificate has no hostname (CN)\n", certfile);
+            exit (1);
         }
     }
 

@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.53 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: flavor_basic.c,v 1.54 2004-04-08 21:09:06 fox Exp $
  */
 
 
@@ -285,9 +285,9 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
     char *user_field_html;
 
     if ( strcmp(static_config, STATIC_USER_FIELD_KIND) == 0 ) {
-        if ( c != NULL && c->user != NULL & reason == FLB_REAUTH ||
-             c != NULL && c->user != NULL & reason == FLB_CACHE_CREDS_WRONG ||
-             l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
+        if ((c && c->user &&
+               (reason==FLB_REAUTH || reason==FLB_CACHE_CREDS_WRONG)) ||
+             (l->user && l->ride_free_creds == PBC_BASIC_CRED_ID) ) {
             user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
                                         "tmpl_login_user_static",
                                         "login_user_static" ), loser);

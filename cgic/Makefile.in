@@ -1,4 +1,4 @@
-#    $Id: Makefile.in,v 1.2 2002-10-24 19:26:49 jjminer Exp $
+#    $Id: Makefile.in,v 1.3 2004-04-08 21:09:06 fox Exp $
 
 #You may wish to add -DNO_UNISTD and -DNO_SYSTEM to CFLAGS if
 #your system lacks the /usr/include/unistd.h header file
@@ -9,10 +9,14 @@ srcdir=@srcdir@
 builddir=@builddir@
 
 # potential flags CGICDEBUG
-CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@ @DEFS@ 
+CFLAGS=@CFLAGS@ $(CPPFLAGS)
+LIBS=@LOGINLIBS@ 
+LDFLAGS=@LDFLAGS@ $(LIBS)
+
 CC=@CC@
 AR=@AR@
-LIBS=-L./ -lcgic
+CGICLIBS=-L./ -lcgic $(LDFLAGS)
 FORCE_RM=@RM@ -f
 
 all: libcgic.a cgictest capture
@@ -22,13 +26,13 @@ libcgic.a: cgic.o $(srcdir)/cgic.h
 	$(AR) rc libcgic.a cgic.o
 
 cgictest: cgictest.o libcgic.a 
-	$(CC) $(CFLAGS) cgictest.o -o cgictest ${LIBS}
+	$(CC) $(CFLAGS) cgictest.o -o cgictest ${CGICLIBS}
 
 tmp: $(srcdir)/tmp.c
-	cc -o tmp -I. $(srcdir)/tmp.c $(LIBS)
+	cc -o tmp -I. $(srcdir)/tmp.c $(CGICLIBS)
 
 capture: capture.o libcgic.a
-	$(CC) $(CFLAGS) capture.o -o capture ${LIBS}
+	$(CC) $(CFLAGS) capture.o -o capture ${CGICLIBS}
 
 clean:
 	$(FORCE_RM) *.o *.a cgictest capture
