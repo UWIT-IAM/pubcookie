@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.23 1999-04-29 19:12:14 willey Exp $
+    $Id: mod_pubcookie.c,v 1.24 1999-04-29 21:17:48 willey Exp $
  */
 
 /* apache includes */
@@ -52,6 +52,47 @@ typedef struct {
   char 		creds;
   char 		*force_reauth;
 } pubcookie_dir_rec;
+
+/*                                                                            */
+int package_post(request_rec *r) {
+   char argsbuffer[HUGE_STRING_LEN];
+   int retval;
+
+   /* checkout http_protocols.c for reading the body info */
+   if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
+        return retval;
+
+   if (ap_should_client_block(r)) {
+        int len_read;
+
+        /* do we need one of these here ? */
+        ap_hard_timeout("copy script args", r);
+
+        while ((len_read =
+                ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN)) > 0) {
+            ap_reset_timeout(r);
+/*
+            if (ap_bwrite(script_out, argsbuffer, len_read) < len_read) {
+ */
+                /* silly script stopped reading, soak up remaining message */
+/*
+                while (ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
+ */
+                    /* dump it */
+/*
+                }
+                break;
+            }
+ */
+            
+            libpbc_debug("package_post: is this it? %s\n", argsbuffer);
+        }
+
+
+        ap_kill_timeout(r);
+    }
+
+}
 
 /*                                                                            */
 unsigned char *get_app_path(pool *p, const char *path_in) {
@@ -176,48 +217,52 @@ int blank_cookie(request_rec *r, char *name) {
 /*                                                                            */
 static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
-  char 			*refresh = palloc(r->pool, PBC_1K);
-  char 			*new_cookie = palloc(r->pool, PBC_1K);
-  char 			*args = palloc(r->pool, PBC_1K);
-  char 			*g_req_contents = palloc(r->pool, PBC_1K);
-  char 			*e_g_req_contents = palloc(r->pool, PBC_1K);
+    char 		 *refresh = palloc(r->pool, PBC_1K);
+    char 		 *new_cookie = palloc(r->pool, PBC_1K);
+    char 		 *args = palloc(r->pool, PBC_1K);
+    char 		 *g_req_contents = palloc(r->pool, PBC_1K);
+    char 		 *e_g_req_contents = palloc(r->pool, PBC_1K);
 #else
-  char 			*refresh = ap_palloc(r->pool, PBC_1K);
-  char 			*new_cookie = ap_palloc(r->pool, PBC_1K);
-  char 			*args = ap_palloc(r->pool, PBC_1K);
-  char 			*g_req_contents = ap_palloc(r->pool, PBC_1K);
-  char 			*e_g_req_contents = ap_palloc(r->pool, PBC_1K);
+    char 		 *refresh = ap_palloc(r->pool, PBC_1K);
+    char 		 *new_cookie = ap_palloc(r->pool, PBC_1K);
+    char 		 *args = ap_palloc(r->pool, PBC_1K);
+    char 		 *g_req_contents = ap_palloc(r->pool, PBC_1K);
+    char 		 *e_g_req_contents = ap_palloc(r->pool, PBC_1K);
 #endif
-  char			*refresh_e;
-  pubcookie_server_rec 	*scfg;
-  pubcookie_dir_rec 	*cfg;
-  request_rec		*mr = main_rrec (r);
+    char		 *refresh_e;
+    pubcookie_server_rec *scfg;
+    pubcookie_dir_rec 	 *cfg;
+    request_rec		 *mr = main_rrec (r);
 
 #ifdef APACHE1_2
-  cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
+    cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
 				 	 &pubcookie_module);
-  scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
+    scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
 	                                 &pubcookie_module);
 #else
-  cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
+    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
 				 	 &pubcookie_module);
-  scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
+    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
 	                                 &pubcookie_module);
 #endif
 
-  /* reset these dippy flags */
-  cfg->failed = 0;
+    /* reset these dippy flags */
+    cfg->failed = 0;
 
-  /* deal with GET args */
-  if ( r->args )
-      base64_encode(r->args, args, strlen(r->args));
-  else
-      strcpy(args, "");
+    /* deal with GET args */
+    if ( r->args )
+        base64_encode(r->args, args, strlen(r->args));
+    else
+        strcpy(args, "");
 
-  r->content_type = "text/html";
+    /* maybe deal with post args */
+    if ( r->method_number == M_POST ) 
+        package_post(r);
 
-  /* make the granting request */
-  ap_snprintf(g_req_contents, PBC_1K-1, 
+    r->content_type = "text/html";
+
+    /* make the granting request */
+    ap_snprintf(g_req_contents, PBC_1K-1, 
 	  "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s", 
 	  PBC_GETVAR_APPSRVID,
 	  (scfg->appsrv_id ? scfg->appsrv_id : (unsigned char *) r->server->server_hostname),
@@ -238,50 +283,66 @@ static int auth_failed(request_rec *r) {
 	  PBC_GETVAR_FR, 
 	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
 
-  base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
+    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 
-  ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
 	  PBC_G_REQ_COOKIENAME, 
 	  e_g_req_contents,
 	  PBC_ENTRPRS_DOMAIN);
 
-  if ( cfg->force_reauth )
-      cfg->force_reauth = NULL;
+    if ( cfg->force_reauth )
+        cfg->force_reauth = NULL;
 
-  /* setup the client pull */
-  ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
+    /* setup the client pull */
+    ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
 	  (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
 
+    /* load and send the header */
 #ifdef APACHE1_2
-  table_add(r->headers_out, "Set-Cookie", new_cookie);
+    table_add(r->headers_out, "Set-Cookie", new_cookie);
 
-  refresh_e = os_escape_path(r->pool, refresh, 0);
-/* in our lynx friendly future      */
-/*    - remove the next line        */
-/*	- add the commented html line */
-  table_add(r->headers_out, "Refresh", refresh);
+    /* we want to make sure agents don't cache the redirect */
+    table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
+    table_set(r->headers_out, "Cache-Control", "no-cache");
+    table_set(r->headers_out, "Pragma", "no-cache");
 
-  /* we want to make sure agents don't cache the redirect */
-  table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
-  table_set(r->headers_out, "Cache-Control", "no-cache");
-  table_set(r->headers_out, "Pragma", "no-cache");
+    refresh_e = os_escape_path(r->pool, refresh, 0);
 
-  send_http_header(r);
-  rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
-/* in our lynx friendly future      */
-/* rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh); */
-#else
-  ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+#ifdef REDIRECT_IN_HEADER
+    table_add(r->headers_out, "Refresh", refresh); */
+#endif
+    send_http_header(r);
+#else              
+    ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
   
-  refresh_e = ap_os_escape_path(r->pool, refresh, 0);
-  ap_table_add(r->headers_out, "Refresh", refresh);
-  ap_send_http_header(r);
-  ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
-/* in our lynx friendly future      */
-/*  ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh); */
+    /* we want to make sure agents don't cache the redirect */
+    ap_table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
+    ap_table_set(r->headers_out, "Cache-Control", "no-cache");
+    ap_table_set(r->headers_out, "Pragma", "no-cache");
+
+    refresh_e = ap_os_escape_path(r->pool, refresh, 0);
+#ifdef REDIRECT_IN_HEADER
+    ap_table_add(r->headers_out, "Refresh", refresh);
+#endif
+    ap_send_http_header(r);
 #endif
 
-  return OK;
+    /* now send a body */
+#ifdef APACHE1_2
+#ifndef REDIRECT_IN_HEADER
+    rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
+#else  
+    rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
+#endif
+#else
+#ifndef REDIRECT_IN_HEADER
+    ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
+#else
+    ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
+#endif
+#endif
+
+    return OK;
 }
 
 /*                                                                            */
