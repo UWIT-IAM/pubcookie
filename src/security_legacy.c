@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.28 2003-07-03 04:25:21 willey Exp $
+ * $Id: security_legacy.c,v 1.29 2003-09-20 02:10:55 ryanc Exp $
  */
 
 
@@ -174,6 +174,29 @@ int security_init(pool *p)
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "security_init: hello\n");
 
+	/* initialize the random number generator */
+#if defined (WIN32)
+    /* Windows only has milliseconds */
+    {
+	SYSTEMTIME   ts;
+	unsigned char buf[sizeof(ts.wMilliseconds)];
+	
+	GetLocalTime(&ts);
+	memcpy(buf, &ts.wMilliseconds, sizeof(ts.wMilliseconds));
+	RAND_seed(buf, sizeof(ts.wMilliseconds));
+    }
+#else
+    {
+	struct timeval tv; 
+	struct timezone tz;
+	unsigned char buf[sizeof(tv.tv_usec)];
+	
+	gettimeofday(&tv, &tz);
+	memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
+	RAND_seed(buf, sizeof(tv.tv_usec));
+    }
+#endif
+
     /* first we try to use the ssl files */
     keyfile = mystrdup(p, libpbc_config_getstring(p, "ssl_key_file", NULL));
     if (keyfile && access(keyfile, R_OK | F_OK)) {
@@ -209,11 +232,11 @@ int security_init(pool *p)
 
     if (!keyfile && !certfile) {
         /* try the pubcookie_login files */
-        keyfile = pbc_malloc(p, 1025); /* Windows snprintf broken 8/21/02 RJC */
+        keyfile = pbc_malloc(p, 1025); 
         snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_login.key");
 
-        certfile = pbc_malloc(p, 1025); /* Windows snprintf broken 8/21/02 RJC */
+        certfile = pbc_malloc(p, 1025); 
         snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_login.cert");
 
@@ -225,7 +248,7 @@ int security_init(pool *p)
             certfile = NULL;
         }
     }
-
+#ifndef WIN32
     if (!keyfile) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
 		"security_init: couldn't find session keyfile (try setting ssl_key_file?)");
@@ -237,7 +260,7 @@ int security_init(pool *p)
 		"security_init: couldn't find session certfile (try setting ssl_cert_file?)");
         return -1;
     }
-
+#endif
     /* it's generally easier to find the granting key/cert */
     g_keyfile = mystrdup(p, libpbc_config_getstring(p, "granting_key_file", NULL));
     g_certfile = mystrdup(p, libpbc_config_getstring(p, "granting_cert_file", NULL));
@@ -272,12 +295,14 @@ int security_init(pool *p)
     /* now read them into memory */
 	
     /* session key */
-
+#ifdef WIN32
+    if (keyfile && certfile) {
+#endif
     fp = pbc_fopen(p, keyfile, "r");
 
     if (!fp) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "security_init: couldn't read keyfile: pbc_fopen %s: %m", keyfile);
+                         "security_init: couldn't read keyfile: pbc_fopen %s", keyfile);
         return -1;
     }
 
@@ -299,7 +324,7 @@ int security_init(pool *p)
     fp = pbc_fopen(p, certfile, "r");
     if (!fp) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "security_init: couldn't read certfile: pbc_fopen %s: %m", certfile);
+                         "security_init: couldn't read certfile: pbc_fopen %s", certfile);
         return -1;
     }
  /*
@@ -326,7 +351,37 @@ int security_init(pool *p)
         myname = mystrdup(p, tmp);
     }
     pbc_fclose(p, fp);
+#ifdef WIN32
+	}
+	else {
+        char tmp[1024];
+		struct hostent *hp;
 
+		sess_key=EVP_PKEY_new();
+		
+		if (!EVP_PKEY_assign_RSA(sess_key,RSA_generate_key(1024,RSA_F4,NULL,NULL)))
+		{
+			pbc_log_activity(p, PBC_LOG_ERROR, 
+				"[Pubcookie_Init] Unable to find or generate session keypair.");
+			return -1;
+		}
+
+		/* sess_key was assigned both public and private keys */
+		sess_pub = sess_key;
+	
+		{
+			gethostname(tmp, sizeof(tmp)-1);
+			if ( !(hp = gethostbyname(tmp)) ) {
+				pbc_log_activity(p, PBC_LOG_ERROR, 
+					"[Pubcookie_Init] gethostbyname failed.");
+				return -1;
+			}
+			myname = mystrdup(p, hp->h_name);
+		}
+		
+	}
+
+#endif
     /* granting key */
     if (g_keyfile) {
 	fp = pbc_fopen(p, g_keyfile, "r");
@@ -347,8 +402,8 @@ int security_init(pool *p)
 	    pbc_fclose(p, fp);
 	} else {
 	    pbc_log_activity(p, PBC_LOG_ERROR, 
-                             "security_init: couldn't read granting keyfile: pbc_fopen %s: %m", 
-                             g_keyfile);  /* Bugfix 8/21/02 RJC */
+                             "security_init: couldn't read granting keyfile: pbc_fopen %s", 
+                             g_keyfile);  
 	    /* fatal, since we were configured for it */
 	    exit(1);
 	}
@@ -357,8 +412,8 @@ int security_init(pool *p)
     fp = pbc_fopen(p, g_certfile, "r");
     if (!fp) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "security_init: couldn't read granting certfile: pbc_fopen %s: %m", 
-                         g_certfile); /* Bugfix 8/21/02 RJC */
+                         "security_init: couldn't read granting certfile: pbc_fopen %s", 
+                         g_certfile); 
 	return -1;
     }
     /*
@@ -377,29 +432,6 @@ int security_init(pool *p)
     pbc_fclose(p, fp);
 
     /* xxx CA file / CA dir ? */
-
-    /* initialize the random number generator */
-#if defined (WIN32)
-    /* Windows only has milliseconds */
-    {
-	SYSTEMTIME   ts;
-	unsigned char buf[sizeof(ts.wMilliseconds)];
-	
-	GetLocalTime(&ts);
-	memcpy(buf, &ts.wMilliseconds, sizeof(ts.wMilliseconds));
-	RAND_seed(buf, sizeof(ts.wMilliseconds));
-    }
-#else
-    {
-	struct timeval tv; 
-	struct timezone tz;
-	unsigned char buf[sizeof(tv.tv_usec)];
-	
-	gettimeofday(&tv, &tz);
-	memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
-	RAND_seed(buf, sizeof(tv.tv_usec));
-    }
-#endif
 
     if (keyfile != NULL)
         pbc_free(p, keyfile);
