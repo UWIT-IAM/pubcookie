@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.20 2002-11-14 21:12:11 jjminer Exp $
+# $Id: Makefile.in,v 1.21 2002-11-14 22:10:40 jjminer Exp $
 
 @SET_MAKE@
 
@@ -44,7 +44,7 @@ LIBS=@LIBS@
 CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src
 CFLAGS=@CFLAGS@ $(CPPFLAGS)
 LDFLAGS=@LDFLAGS@ $(LIBS)
-LOGINLIBS=@LOGINLIBS@ -lcgic
+LOGINLIBS=@LOGINLIBS@
 
 APXS=@APXS@
 
@@ -286,17 +286,16 @@ keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 
 # Installation Targets
 
-install: $(KEY_DIR) install-keymgt @install_login@ @install_apache@
+install: $(KEY_DIR) @install_login@ @install_apache@
 
 install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) login_server
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
+	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
 
 install-apache: apache_module
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
-
-install-keymgt: $(PUBCOOKIE_DIR)
-	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
+	$(INSTALL_BIN) keyclient $(PUBCOOKIE_DIR)
 
 $(PUBCOOKIE_DIR):
 	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
