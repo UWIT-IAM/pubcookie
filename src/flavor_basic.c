@@ -19,6 +19,7 @@
 static verifier *v = NULL;
 extern int debug;
 
+
 static int init_basic(void)
 {
     const char *vname;
@@ -27,21 +28,21 @@ static int init_basic(void)
     vname = libpbc_config_getstring("basic_verifier", NULL);
 
     if (!vname) {
-      pbc_log_activity(PBC_LOG_ERROR, 
-			 "flavor_basic: no verifier configured\n");
+	pbc_log_activity(PBC_LOG_ERROR, 
+			 "flavor_basic: no verifier configured");
 	return -1;
     }
 
     v = get_verifier(vname);
 
     if (!v || !v->v) {
-      pbc_log_activity(PBC_LOG_ERROR, 
-		 "flavor_basic: verifier not found: %s\n", vname);
+	pbc_log_activity(PBC_LOG_ERROR, 
+			 "flavor_basic: verifier not found: %s", vname);
 	v = NULL;
 	return -1;
     }
     pbc_log_activity(PBC_LOG_DEBUG_LOW,
-		     "init_basic: using %s verifier\n", vname);
+		     "init_basic: using %s verifier", vname);
     return 0;
 }
 
@@ -53,7 +54,7 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
     int need_clear_greq = 1;
     char message_out[1024];
 
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello\n");
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
     assert(errstr);
 
     /* set the cookies */
@@ -120,6 +121,15 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 		PBC_GETVAR_SESSION_REAUTH, l->session_reauth);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
 		"first_kiss", (l->first_kiss ? l->first_kiss : "") );
+    {
+	/* xxx sigh, i have to explicitly save this */
+	char *target = get_string_arg(PBC_GETVAR_CRED_TARGET, NO_NEWLINES_FUNC);
+	if (target) {
+	    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		       PBC_GETVAR_CRED_TARGET, target);
+	}
+    }
+
     /* this tags the incoming request as a form reply */
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
 		PBC_GETVAR_REPLY, FORM_REPLY);
@@ -254,7 +264,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
     } else if (l->session_reauth) {
 	*errstr = "reauthentication required";
 	pbc_log_activity(PBC_LOG_AUDIT,
-			 "flavor_basic: %s", *errstr,l->user);
+			 "flavor_basic: %s: %s", l->user, *errstr);
 
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
@@ -264,7 +274,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
        has expired. */
     } else if (l->check_error) {
 	*errstr = l->check_error;
-	pbc_log_activity(PBC_LOG_ERROR,"flavor_basic: %s", *errstr);
+	pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
@@ -279,13 +289,13 @@ static login_result process_basic(login_rec *l, login_rec *c,
     /* make sure the login cookie represents credentials for this flavor */
     } else if (c->creds != PBC_BASIC_CRED_ID) {
 	*errstr = "cached credentials wrong flavor";
-	pbc_log_activity(PBC_LOG_ERROR,"flavor_basic: %s", *errstr);
+	pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
 
     } else { /* valid login cookie */
-      pbc_log_activity(PBC_LOG_AUDIT,
+	pbc_log_activity(PBC_LOG_AUDIT,
 			 "flavor_basic: free ride", l->user);
 	return LOGIN_OK;
     }
