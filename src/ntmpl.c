@@ -18,7 +18,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.23 2005-02-07 22:26:38 willey Exp $
+ * $Id: ntmpl.c,v 1.24 2005-03-30 21:29:11 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -376,7 +376,7 @@ char *ntmpl_sub_template (pool * p, const char *fpath, const char *fname,
             strcpy (percent + (int) strlen (subst), buf);
 
             /* move to the trailing % */
-            percent = percent + (int) strlen (subst);
+            percent = percent + (int) strlen (subst) - 1;
 
             len -= strlen (subst);
 
