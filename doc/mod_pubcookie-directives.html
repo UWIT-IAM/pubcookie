@@ -339,18 +339,27 @@ directive to their server configuration.</p>
 
 <h3><a name="PubcookieAddlRequest">PubcookieAddlRequest directive</a></h3>
 
+
+
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieAuthTypeNames ???<br>
+"Help"><strong>Syntax:</strong></a> PubcookieAddlRequest
+<i>opt1</i>=<i>val1</i> [<i>opt2</i>=<i>val2</i>...]<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config?, virtual host?, 
-directory?, .htaccess? <br>
+"Help"><strong>Context:</strong></a> server config, virtual host, 
+directory, .htaccess <br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
 3.0 and higher and Apache 1.3 and later.</p>
 
-<p>This directive allows the user (the application?) to give arbitrary
-requests to the login server. Send the following options to the login
-server along with authentication requests.</p>
+<p>This directive allows the application to give arbitrary requests to
+the login server. The directive causes the following options to be
+sent to the login server along with authentication requests.</p>
+
+<p>Currently, it is site-defined what options cause what sort of
+responses from the login server and how these responses are
+returned. Eventually, there will be a standardized mechanism for
+returning answers. Likely they will be returned in extensions to the
+granting response and set as environment variables.</p>
 
 </body>
 </html>
