@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_etcpasswd.c,v 1.2 2001-12-09 09:12:22 willey Exp $
+    $Id: index.cgi_etcpasswd.c,v 1.3 2002-03-05 21:41:00 willey Exp $
  */
 
 
@@ -34,39 +34,33 @@
 
 char *auth_etcpasswd(char *user, char *passwd, login_rec *l) 
 {
-#ifdef SHADOW 
-    const char		*shadow = "/etc/shadow";
-    struct spwd 	*spwd;
-#else
     const char		*pwfile = "/etc/passwd"; 
     struct passwd	*passwd;
-#endif
     char		*crypted;
+    FILE		*ifp;
 
 #ifdef DEBUG
     log_message("%s auth_etcpasswd: gonna look for: %s", l->first_kiss, user);
 #endif
 
+    if( !(ifp = pbc_fopen(pwfile, "r")) )
+        return("cannot open the password file for read\n");
 
-#ifdef SHADOW 
-    spwd = getspnam(user);
-    crypted = spwd->sp_pwdp;
-#else
     pwd = getpwnam(user);
     crypted = pwd->pw_password;
-#endif
 
-    /* give it up permanently */
-    if( setreuid(65534, 65534) != 0 )
-        log_message("%s auth_securid: unable to setuid nobody", l->first_kiss);
-
-    if( intret == -1 ) {
-         print_login_page(l, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-    } 
-    else if( intret == 0 ) {       /* O.K. !!!!!!!! */
-        return(NULL);
-    }
-
-    return("SecurID failed");
+    return(check_password(password, crypted));
 
 }
+
+
+char *check_password(const char *passwd, const char *hash)
+{
+    char sample[120];
+
+    strncpy(sample, (char *)crypt(passwd, hash), sizeof(sample) - 1);
+
+    return (strcmp(sample, hash) == 0) ? NULL : "password mismatch";
+
+}
+
