@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.11 2001-11-14 00:27:17 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.12 2001-11-15 01:58:58 willey Exp $
 #
 
 # your compiler here
@@ -42,6 +42,9 @@ EXTRA_LIBS=-lkrb5 -lmgoapi -lnfstub
 # choose your compile flags.
 # some options are: DEBUG - voluminious debug info
 #                   MAKE_MIRROR - mirrors everything sent to the browser
+#                   NO_HOST_BASED_KEY_FILENAMES - the login server will form
+#                             key filenames from components including the 
+#                             hostname unless this is set
 #                   FORM_NOT_IN_TMPL - if your login form isn't in the template
 #                                      hopefully obsolete soon, only UWash need
 CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include -DFORM_NOT_IN_TMPL
