@@ -23,28 +23,13 @@ extern "C" {
    declared explicitely with globaldef and globalref.  On other OS:es,
    these macros are defined with something sensible. */
 
-#if defined(VMS) && !defined(__DECC)
+#if defined(VMS) && !defined(__DECC) && !defined(__DECCXX)
 # define OPENSSL_EXTERN globalref
 # define OPENSSL_GLOBAL globaldef
 #else
-
-/*OPENSSL_EXTERN and OPENSSL_GLOBAL need to be set differently for static buids,
-  dynamic builds of the libraries, and dynamic links to the libraries*/
-
-# ifdef OPENSSL_STATIC
-#  define OPENSSL_EXTERN extern  
-#  define OPENSSL_GLOBAL
-
-# else
-#  ifdef OPENSSL_BUILDING
-#   define OPENSSL_EXTERN __declspec(dllexport)
-#   define OPENSSL_GLOBAL __declspec(dllexport)
-#  else 
-#   define OPENSSL_EXTERN __declspec(dllimport)
-#   define OPENSSL_GLOBAL __declspec(dllimport)
-#  endif//OPENSSL_BUILDING
-# endif //OPENSSL_STATIC
-#endif //VMS
+# define OPENSSL_EXTERN extern
+# define OPENSSL_GLOBAL
+#endif
 
 #ifdef  __cplusplus
 }
