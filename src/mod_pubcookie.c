@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.54 2001-04-25 23:57:30 willey Exp $
+    $Id: mod_pubcookie.c,v 1.55 2001-05-02 18:43:04 willey Exp $
  */
 
 /* apache includes */
@@ -1009,16 +1009,6 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
 
 }
 
-/* make sure the creds from the cookie are adequate for the server requiremnts*/
-int check_creds(int need, int got) {
-
-    if( (need & got) == need )
-        return PBC_OK;
-    else
-        return PBC_FAIL;
-
-}
-
 /*                                                                            */
 static int pubcookie_user(request_rec *r) {
   pubcookie_dir_rec *cfg;
@@ -1263,8 +1253,7 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check creds */
-  if( check_creds( atoi(&cfg->creds), atoi(&(*cookie_data).broken.creds) ) 
-		== PBC_FAIL ) {
+  if( cfg->creds != cookie_data->broken.creds ) {
     libpbc_debug("pubcookie_user: wrong creds; required: %c cookie: %c uri: %s\n", cfg->creds, (*cookie_data).broken.creds, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGCREDS_CODE;
