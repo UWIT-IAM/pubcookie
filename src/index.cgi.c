@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.74 $
+ * $Revision: 1.75 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1342,7 +1342,11 @@ int cgiMain()
     login_rec *c = NULL;   /* only from login cookie */
     const char *mirrorfile;
 
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...");
+    libpbc_config_init(NULL, "logincgi");
+    debug = libpbc_config_getint("debug", 0);
+    pbc_log_init();
+
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...\n");
 
     /* the html and headers are written to tmpfiles then 
      * transmitted to the browser when complete
@@ -1350,14 +1354,11 @@ int cgiMain()
     htmlout = tmpfile();
     headerout = tmpfile();
 
-    libpbc_config_init(NULL, "logincgi");
-    debug = libpbc_config_getint("debug", 0);
-    pbc_log_init();
     mirrorfile = libpbc_config_getstring("mirrorfile", NULL);
 
     libpbc_pubcookie_init();
 
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "cgiMain() done initializing...");
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "cgiMain() done initializing...\n");
 
     sleep(libpbc_config_getint("sleepfor", 0));
 

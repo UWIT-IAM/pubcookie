@@ -267,6 +267,12 @@
 /* Define to 1 if you have the <x509.h> header file. */
 #undef HAVE_X509_H
 
+/* Define to LOG_AUTH if your system doesn't define LOG_AUTHPRIV */
+#undef NEED_LOG_AUTHPRIV
+
+/* Define to 1 if your system doesn't define LOG_MAKEPRI */
+#undef NEED_LOG_MAKEPRI
+
 /* Define to 1 if openssl is in include/openssl */
 #undef OPENSSL_IN_DIR
 
@@ -287,6 +293,12 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define to the AUDIT syslog() facility */
+#undef PBC_LOG_AUDIT_FACILITY
+
+/* Define to the GENERAL syslog() facility */
+#undef PBC_LOG_GENERAL_FACILITY
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

@@ -9,6 +9,7 @@
 
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
+# include <sys/syslog.h>
 #endif /* HAVE_SYSLOG_H */
 
 #include "libpubcookie.h"
@@ -43,26 +44,22 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 {
     char      new_message[PBC_4K];
     char      log[PBC_4K];
-
+        
     if (logging_level <= (libpbc_config_getint("logging_level", logging_level)))    {
-#if 0
-        /* should I move the timestamp here? */
-        snprintf(new_message, sizeof(new_message)-1, "%s: %s",
-                 SYSERR_LOGINSRV_MESSAGE, message);
-        vsnprintf(log, sizeof(log)-1, new_message, args);
-#else
+
+        int pri = LOG_INFO;
+        int fac = PBC_LOG_GENERAL_FACILITY;
+
+
         vsnprintf(log, sizeof(log)-1, format, args);
-#endif
-        /* write to syslog, making it a "private auth"  message.
-           This seemed to be the most reasonable option...I originally had
-           it a configurable option, but decided against it. */
+        
+        if (logging_level == PBC_LOG_ERROR)
+            pri = LOG_ERR;
+        else if (logging_level == PBC_LOG_AUDIT)
+            fac = PBC_LOG_AUDIT_FACILITY;
 
-        if (logging_level != PBC_LOG_ERROR)
-            syslog(LOG_INFO, log);
-        else
-            syslog(LOG_ERR, log);
+        syslog( LOG_MAKEPRI(fac,pri), log );
     }
-
 }
 
 void pbc_log_close()

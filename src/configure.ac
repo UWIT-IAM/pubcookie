@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.4 $)
-AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@blah)
+AC_REVISION($Revision: 2.5 $)
+AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -28,7 +28,7 @@ if test "x$with_apxs" = "x"; then
 fi
 
 AC_ARG_WITH(apxs,
-[  --with-apxs=PATH    /path/to/apxs],
+    AC_HELP_STRING([--with-apxs=PATH],[/path/to/apxs]),
 [ case "$withval" in
    no)
       OLDPATH=$PATH
@@ -54,14 +54,58 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h shadow.h stdlib.h \
                   string.h strings.h sys/param.h sys/socket.h sys/time.h \
-                  syslog.h unistd.h getopt.h ctype.h stdarg.h stdio.h \
+                  unistd.h getopt.h ctype.h stdarg.h stdio.h \
                   sys/utsname.h time.h pwd.h sys/types.h assert.h sys/stat.h \
                   sysexits.h mgoapi.h securid.h sys/resource.h fnmatch.h])
+
+AC_CHECK_HEADER([syslog.h], 
+    AC_DEFINE(HAVE_SYSLOG_H, 1,
+              [Define to 1 if you have the <syslog.h> header file.])
+    AC_MSG_CHECKING([for LOG_AUTHPRIV in syslog.h])
+    AC_TRY_LINK([#include <syslog.h>], [ printf( "%d", LOG_AUTHPRIV ); ],
+                   [AC_MSG_RESULT(found) ],
+                   [AC_MSG_RESULT(not found)
+                    AC_DEFINE(NEED_LOG_AUTHPRIV, 1,
+                              [Define to LOG_AUTH if your system doesn't define LOG_AUTHPRIV])])
+    AC_MSG_CHECKING([for LOG_MAKEPRI in syslog.h])
+    AC_TRY_LINK([#include <syslog.h>], [ printf( "%d", LOG_MAKEPRI(1,2) ); ],
+                   [AC_MSG_RESULT(found) ],
+                   [AC_MSG_RESULT(not found)
+                    AC_DEFINE(NEED_LOG_MAKEPRI, 1,
+                              [Define to 1 if your system doesn't define LOG_MAKEPRI])])
+    )
+
+AC_MSG_CHECKING([audit log facility])
+AC_ARG_WITH(audit-log,
+            AC_HELP_STRING([--with-audit-log=facility],
+                           [syslog() facility of audit messages
+                            (default: LOG_AUTHPRIV)]),
+            AC_MSG_RESULT($withval)
+            [AC_DEFINE_UNQUOTED(PBC_LOG_AUDIT_FACILITY, $withval,
+                       [Define to the AUDIT syslog() facility])],
+            AC_MSG_RESULT(LOG_AUTHPRIV)
+            [AC_DEFINE(PBC_LOG_AUDIT_FACILITY, LOG_AUTHPRIV,
+                       [Define to the AUDIT syslog() facility])],
+                       )
+
+AC_MSG_CHECKING([general log facility])
+AC_ARG_WITH(general-log,
+            AC_HELP_STRING([--with-general-log=facility],
+                           [syslog() facility of general messages
+                            (default: LOG_AUTHPRIV)]),
+            AC_MSG_RESULT($withval)
+            [AC_DEFINE_UNQUOTED(PBC_LOG_GENERAL_FACILITY, $withval,
+                       [Define to the GENERAL syslog() facility])],
+            AC_MSG_RESULT(LOG_AUTHPRIV)
+            [AC_DEFINE(PBC_LOG_GENERAL_FACILITY, LOG_AUTHPRIV,
+                       [Define to the GENERAL syslog() facility])],
+                       )
+
 
 # OpenSSL Fun
 
 AC_ARG_WITH(ssl-dir,
-[  --with-ssl-dir=PATH    Openssl lib/include root],
+    AC_HELP_STRING([--with-ssl-dir=PATH], [Openssl lib/include root]),
 [ case "$withval" in
    no)
      ;;
@@ -72,7 +116,7 @@ AC_ARG_WITH(ssl-dir,
   esac ])
 
 AC_ARG_WITH(ssl-inc-dir,
-[  --with-ssl-inc-dir=PATH    Openssl include path],
+    AC_HELP_STRING([--with-ssl-inc-dir=PATH], [Openssl include path]),
 [ case "$withval" in
    no)
      ;;
@@ -82,7 +126,7 @@ AC_ARG_WITH(ssl-inc-dir,
   esac ])
 
 AC_ARG_WITH(ssl-lib-dir,
-[  --with-ssl-lib-dir=PATH    Openssl lib path],
+    AC_HELP_STRING([--with-ssl-lib-dir=PATH], [Openssl lib path]),
 [ case "$withval" in
    no)
      ;;
@@ -114,7 +158,7 @@ OLDCPPFLAGS=$CPPFLAGS
 OLDCFLAGS=$CFLAGS
 
 AC_ARG_WITH(cgic-dir,
-[  --with-cgic-dir=PATH     CGIC lib/include directory],
+    AC_HELP_STRING([--with-cgic-dir=PATH], [CGIC lib/include directory]),
 [ case "$withval" in
    no)
     ;;
@@ -131,7 +175,7 @@ if test "$ac_cv_header_cgic_h"; then
 fi
 
 AC_ARG_ENABLE(krb5,
-[  --enable-krb5    Enable Kerberos 5 Verifier ],
+    AC_HELP_STRING([--enable-krb5],[Enable Kerberos 5 Verifier]),
 [ case "${enableval}" in
    yes)
     AC_DEFINE(ENABLE_KRB5, 1, [Define to 1 to support krb5 verifiers])
@@ -144,7 +188,7 @@ if test "$enable_krb5" = "yes"; then
 fi
 
 AC_ARG_ENABLE(ldap,
-[  --enable-ldap    Enable LDAP Verifier ],
+    AC_HELP_STRING([--enable-ldap],[Enable LDAP Verifier]),
 [ case "${enableval}" in
    yes)
     AC_DEFINE(ENABLE_LDAP, 1, [Define to 1 to support LDAP verifiers])
@@ -162,7 +206,7 @@ if test "$enable_ldap" = "yes"; then
 fi
 
 AC_ARG_ENABLE(shadow,
-[  --enable-shadow    Enable Shadow Verifier ],
+    AC_HELP_STRING([--enable-shadow],[Enable Shadow Verifier ]),
 [ case "${enableval}" in
    yes)
     AC_DEFINE(ENABLE_SHADOW, 1, [Define to 1 to support shadow verifiers])

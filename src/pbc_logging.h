@@ -11,17 +11,18 @@
 #define PBC_LOG_DEBUG_VERBOSE 3
 #define PBC_LOG_DEBUG_OUTPUT 5
 
-#ifndef HAVE_LOG_AUTHPRIV
-# define LOG_AUTHPRIV LOG_AUTH
-#endif
-
-#ifndef HAVE_LOG_MAKEPRI
-# define LOG_MAKEPRI(fac, pri) fac|pri
-#endif
-
 #ifdef HAVE_STDARG_H
 # include <stdarg.h>
 #endif /* HAVE_STDARG_H */
+
+#ifdef NEED_LOG_AUTHPRIV
+# define LOG_AUTHPRIV LOG_AUTH
+#endif /* NEED_LOG_AUTHPRIV */
+
+#ifdef NEED_LOG_MAKEPRI
+# define LOG_MAKEPRI(fac, pri) fac|pri
+#endif /* NEED_LOG_MAKEPRI */
+
 
 /**
  *Initializes the logging system.  Optional.
