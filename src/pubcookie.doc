@@ -1,0 +1,90 @@
+Introduction
+------------
+This package attempts to provide a system for transferring authentication
+information across multiple web servers.  It was designed to fill a need
+at the University of Washington.  At the time of its design, many
+university web servers relied on domain name/ip address for
+authentication and authorization.  This system was breaking down do to
+the ever expanding population of users who were authorized to use
+university resources.  The design goals for a replacement system were:
+
+ * Transparent access to multiple web servers
+
+ * Users should not enter their passwords into web pages
+
+ * No modifications required per client
+
+ * Functional across a large set of clients
+
+ * Only minor modifications allowed on the server
+
+ * Must be able to function with Apache, Netscape and Microsoft web
+   servers
+
+This solution address all of the above points except for the second.
+This solution does not directly address the problem of authentication
+although a few examples are given in the Login Server section.
+
+This solution is based upon the Netscape cookie protocol 
+(see http://home.netscape.com/newsref/std/cookie_spec.html).
+
+In short, the solution is:
+
+ 1) User authenticates to a login server
+ 2) The login server sends a signed cookie to client
+ 3) The client sends the cookie to local servers with all of its requests
+ 4) The local servers validate the cookie and accept the user as 
+    authenticated.
+ 
+
+Cookie Format
+-------------
+A cookie is formed by creating a string:
+
+  time:username
+
+Where "time" is the creation date of the cookie and is an 8 character
+hexadecimal string representing the number of seconds since 00:00:00
+GMT, January 1, 1970 and "username" is a simple login name.  (This may
+become a full krb5 principal name at some point).
+
+A 128 byte signature of this string is generated using an RSA private
+key and an MD5 hash.  The signature is prepended to the above string
+without a separator.   Finally, the string is encoded with base64 (without
+line breaks).  The current code generates signatures using the EVPSign*
+routines from SSLeay (see http://www.psy.uq.oz.au/~ftp/Crypto).
+
+Client Requirements
+-------------------
+Clients simply need to understand the Netscape cookie protocol.  As
+of now NS, IE and Lynx all support cookies.
+
+Server Requirements
+-------------------
+The server needs to be configured with a module that understands
+this system.  At the moment there exists a module for Apache.  Modules
+for Netscape servers and Microsoft servers are under consideration/development.
+
+The server needs to have a copy of the public key that matches the private
+key with which the login servers signs cookies.
+
+Login Server Requirements
+-------------------------
+The login server must know how to create cookies.  Some sample code
+for creating cookies is included.
+
+The login server needs a public/private keypair for signing cookies.
+
+The login server needs some method of authenticating users.  How the
+login server chooses to authenticate users is not important to this
+solution.  At the moment a prototype Kerberos authentication system
+and an SSL enabled Basic Auth system have been tested.
+
+The login server needs to send cookies to clients using the following
+format:
+
+  Set-Cookie:  pubcookie={base64 cookie string}; domain=washington.edu; path=/
+
+$Id: pubcookie.doc,v 1.1 1998-02-14 08:24:47 willey Exp $
+
+
