@@ -16,10 +16,6 @@
 # include <string.h>
 #endif /* HAVE_STRING_H */
 
-#ifdef HAVE_SYSLOG_H
-# include <syslog.h>
-#endif /* HAVE_SYSLOG_H */
-
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
@@ -54,12 +50,15 @@
 #endif
 
 #include "pbc_config.h"
+#include "pbc_logging.h"
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
 #include "strlcpy.h"
 
 #include "security.h"
 #include "pubcookie.h"
+
+#define PBC_SIG_LEN 128
 
 /* privacy format is:
 
@@ -191,12 +190,14 @@ int security_init(void)
     }
 
     if (!keyfile) {
-	syslog(LOG_ERR, "couldn't find session keyfile (try setting ssl_key_file?)");
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't find session keyfile (try setting ssl_key_file?)");
 	return -1;
     }
 
     if (!certfile) {
-	syslog(LOG_ERR, "couldn't find session certfile (try setting ssl_cert_file?)");
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't find session certfile (try setting ssl_cert_file?)");
 	return -1;
     }
 
@@ -219,13 +220,15 @@ int security_init(void)
     /* test g_keyfile */
     if (access(g_keyfile, R_OK | F_OK)) {
         /* this is only a problem for login servers */
-	syslog(LOG_DEBUG, "couldn't find granting keyfile (try setting granting_key_file?)");
+	pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "couldn't find granting keyfile (try setting granting_key_file?)");
 	g_keyfile = NULL;
     }
 
     /* test g_certfile; it's a fatal error if this isn't found */
     if (access(g_certfile, R_OK | F_OK)) {
-	syslog(LOG_ERR, "couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
 	return -1;
     }
 
@@ -236,7 +239,8 @@ int security_init(void)
     fp = fopen(keyfile, "r");
 
     if (!fp) {
-	syslog(LOG_ERR, "couldn't read keyfile: fopen %s: %m", keyfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't read keyfile: fopen %s: %m", keyfile);
 	return -1;
     }
 
@@ -244,7 +248,8 @@ int security_init(void)
 					  PEM_STRING_EVP_PKEY,
 					  fp, NULL, NULL, NULL);
     if (!sess_key) {
-	syslog(LOG_ERR, "couldn't parse session key: %s", keyfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't parse session key: %s", keyfile);
 	return -1;
     }
     fclose(fp);
@@ -252,7 +257,8 @@ int security_init(void)
     /* session cert */
     fp = fopen(certfile, "r");
     if (!fp) {
-	syslog(LOG_ERR, "couldn't read certfile: fopen %s: %m", certfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't read certfile: fopen %s: %m", certfile);
 	return -1;
     }
     sess_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
@@ -260,7 +266,8 @@ int security_init(void)
 				       fp, NULL, NULL, NULL);
     if (!sess_cert) {
 	/* xxx openssl errors */
-	syslog(LOG_ERR, "couldn't parse session certificate: %s", certfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't parse session certificate: %s", certfile);
 	return -1;
     }
     sess_pub = X509_extract_key(sess_cert);
@@ -284,13 +291,15 @@ int security_init(void)
 					       PEM_STRING_EVP_PKEY,
 					       fp, NULL, NULL, NULL);
 	    if (!g_key) {
-		syslog(LOG_ERR, "couldn't parse granting key: %s", g_keyfile);
+		pbc_log_activity(PBC_LOG_ERROR, 
+                                 "couldn't parse granting key: %s", g_keyfile);
 		return -1;
 	    }
 	    fclose(fp);
 	} else {
-	    syslog(LOG_ERR, "couldn't read granting keyfile: fopen %s: %m", 
-		   g_keyfile);  /* Bugfix 8/21/02 RJC */
+	    pbc_log_activity(PBC_LOG_ERROR, 
+                             "couldn't read granting keyfile: fopen %s: %m", 
+                             g_keyfile);  /* Bugfix 8/21/02 RJC */
 	    /* fatal, since we were configured for it */
 	    exit(1);
 	}
@@ -298,15 +307,17 @@ int security_init(void)
     /* granting cert */
     fp = fopen(g_certfile, "r");
     if (!fp) {
-	syslog(LOG_ERR, "couldn't read granting certfile: fopen %s: %m", 
-	       g_certfile); /* Bugfix 8/21/02 RJC */
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't read granting certfile: fopen %s: %m", 
+                         g_certfile); /* Bugfix 8/21/02 RJC */
 	return -1;
     }
     g_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
 				    PEM_STRING_X509,
 				    fp, NULL, NULL, NULL);
     if (!g_cert) {
-	syslog(LOG_ERR, "couldn't parse granting certificate: %s", g_certfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't parse granting certificate: %s", g_certfile);
 	return -1;
     }
     g_pub = X509_extract_key(g_cert);
@@ -369,12 +380,14 @@ static int get_crypt_key(const char *peername, char *buf)
     make_crypt_keyfile(peername, keyfile);
 	
     if (!(fp = fopen(keyfile, "rb"))) {
-	syslog(LOG_ERR, "can't open crypt key %s: %m", keyfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "can't open crypt key %s: %m", keyfile);
 	return -1;
     }
 
     if( fread(buf, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
-	syslog(LOG_ERR, "canb't read crypt key %s: short read", keyfile);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "canb't read crypt key %s: short read", keyfile);
 	fclose(fp);
 	return -1;
     }
@@ -419,6 +432,8 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
 
     peer2 = peer ? peer : libpbc_get_cryptname();
     if (get_crypt_key(peer2, (char *) keybuf) < 0) {
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "get_crypt_key(%s) failed", peer2);
 	return -1;
     }
 
@@ -433,7 +448,8 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
         des_set_odd_parity(&key);
     }
     if (!tries) {
-	syslog(LOG_ERR, "couldn't find a good DES key");
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't find a good DES key");
 	return -1;
     }
 
@@ -447,28 +463,31 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
 	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
     }
 
-    *outlen = len + PBC_SIG_LEN + 2;
-    *outbuf = malloc(*outlen);
-    if (!*outbuf) {
-	syslog(LOG_ERR, "libpbc_mk_priv: malloc failed");
-	return -1;
-    }
-
     r = libpbc_mk_safe(peer, buf, len, &mysig, &siglen);
     if (!r) {
-	assert(siglen == PBC_SIG_LEN);
+        *outlen = len + siglen + 2;
+        *outbuf = malloc(*outlen);
+        if (!*outbuf) {
+            pbc_log_activity(PBC_LOG_ERROR, 
+                             "libpbc_mk_priv: malloc failed");
+            free(mysig);
+            return -1;
+        }
+
 	des_cfb64_encrypt( (unsigned char *) mysig, (unsigned char *) *outbuf, 
-                       PBC_SIG_LEN, ks, &ivec, &i, DES_ENCRYPT);
+                           siglen, ks, &ivec, &i, DES_ENCRYPT);
 	free(mysig);
 
 	des_cfb64_encrypt( (unsigned char *) buf, 
-                       (unsigned char *) (*outbuf) + PBC_SIG_LEN, len, 
+                       (unsigned char *) (*outbuf) + siglen, len, 
                        ks, &ivec, &i, DES_ENCRYPT);
-	(*outbuf)[PBC_SIG_LEN + len] = (unsigned char) index1;
-	(*outbuf)[PBC_SIG_LEN + len + 1] = (unsigned char) index2;
+	(*outbuf)[siglen + len] = (unsigned char) index1;
+	(*outbuf)[siglen + len + 1] = (unsigned char) index2;
     }
 
     if (r) {
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "libpbc_mk_safe() failed");
 	free(*outbuf);
 	*outbuf = NULL;
     }
@@ -502,7 +521,8 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     int r;
 
     if (len < PBC_SIG_LEN + 2) {
-        syslog(LOG_ERR, "libpbc_rd_priv() called with small length: %d", len);
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "libpbc_rd_priv() called with small length: %d", len);
         return -1;
     }
 
@@ -525,7 +545,8 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     memcpy(key, &keybuf[index1], sizeof(key));
     des_set_odd_parity(&key);
     if (des_set_key_checked(&key, ks)) {
-        syslog(LOG_ERR, "des_set_key_checked failed: didn't derive a good key");
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "des_set_key_checked failed: didn't derive a good key");
         return -1;
     }
 
@@ -545,7 +566,8 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     r = libpbc_rd_safe(peer, *outbuf, *outlen, mysig, PBC_SIG_LEN);
 
     if (r) {
-        syslog(LOG_ERR, "plaintext received was %s", *outbuf);
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "plaintext received was %s", *outbuf);
         free(*outbuf);
         *outbuf = 0;
     }
@@ -574,7 +596,8 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
     *outlen = 0;
 
     if (peer && !g_key) {
-	syslog(LOG_ERR, "no granting key: can't secure message to %s", peer);
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "no granting key: can't secure message to %s", peer);
 	return -1;
     }
 
@@ -588,13 +611,13 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
     EVP_SignInit(&ctx, EVP_md5());
     EVP_SignUpdate(&ctx, buf, len);
     if (EVP_SignFinal(&ctx, sig, &sig_len, thekey)) {
-	assert(sig_len == PBC_SIG_LEN);
 	*outbuf = (char *) sig;
 	*outlen = sig_len;
 	r = 0;
     } else {
 	/* xxx log openssl error */
-	syslog(LOG_ERR, "EVP_SignFinal failed");
+	pbc_log_activity(PBC_LOG_ERROR, 
+                         "EVP_SignFinal failed");
         free(sig);
 	r = -1;
     }
@@ -610,11 +633,6 @@ int libpbc_rd_safe(const char *peer, const char *buf, const int len,
 
     assert(buf != NULL && sigbuf != NULL);
 
-    if (siglen != PBC_SIG_LEN) {
-	syslog(LOG_ERR, "libpbc_rd_safe(): unexpected signature length");
-	return -1;
-    }
-
     /* if peer is set, we'll assume that this is signed with the granting
        key (no other cross-server messages in this security model) */
 
@@ -626,9 +644,11 @@ int libpbc_rd_safe(const char *peer, const char *buf, const int len,
 
     if (!r) {
 	/* xxx log openssl error */
-		ERR_load_crypto_strings();
-		syslog(LOG_ERR, "couldn't verify signature for %s OpenSSL error: %s", 
-	       peer ? peer : "(self)", ERR_error_string(ERR_get_error(),NULL));
+        ERR_load_crypto_strings();
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "couldn't verify signature for %s OpenSSL error: %s", 
+                         peer ? peer : "(self)",
+                         ERR_error_string(ERR_get_error(), NULL));
     }
 
     return !r;
