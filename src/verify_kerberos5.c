@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.7 $
+ * $Revision: 1.8 $
  */
 
 /* login cgi includes */
@@ -271,7 +271,6 @@ static int k5support_verify_tgt(krb5_context context,
     krb5_keyblock *keyblock = NULL;
     krb5_error_code k5_retcode;
     int result = -1;
-    const char *keytab;
 
     krb5_keytab keytab;
     krb5_pointer keytabname;
@@ -319,8 +318,8 @@ static int k5support_verify_tgt(krb5_context context,
 	goto fini;
     }
 
-    if (krb5_rd_req(context, &auth_context, &packet, 
-		    server, keytab, NULL, NULL)) {
+    if (k5_retcode = krb5_rd_req(context, auth_context, &packet, 
+		                 server, keytab, NULL, NULL)) {
         *errstr = "krb5_rd_req failed";
 	goto fini;
     }
