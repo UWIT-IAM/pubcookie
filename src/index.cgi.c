@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.102 $
+ * $Revision: 1.103 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1856,6 +1856,7 @@ int pinit_response(pool *p, login_rec *l, login_rec *c)
     ntmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_logout_time_remaining",
                                             "logout_time_remaining"),
+                    "remaining",
                     time_remaining_text(p, c),
                     NULL);
     ntmpl_print_html(p, TMPL_FNAME,
