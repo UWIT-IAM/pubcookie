@@ -17,7 +17,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.17 2002-06-26 21:09:06 greenfld Exp $
+    $Id: INSTALL.login.txt,v 1.18 2002-06-26 21:18:29 greenfld Exp $
  */
 
 
@@ -130,7 +130,7 @@ and "login_uri" in pubcookie configuration file.  (Individual
 applications may override what login server they refer to with the
 PubCookieLogin directive in their apache configuration file.)
 
-4.1. Apache configuration directive you might hav to tweak
+4.2. Apache configuration directive you might have to tweak
 
 Apache needs to know how to identify and handle cgi scripts.  Some
 distributions of Apache will hav the cgi handler disabled, you will
@@ -140,6 +140,32 @@ commented out.
 AddHandler cgi-script .cgi
 
 5. Compiling
+
+5.1 Compile time configuration
+
+You should look at "Makefile.settings". You may need to set:
+
+SSL_BASE and/or SSL_OTHER_INC_DIR/SSL_OTHER_LIB_DIR
+    the location of the OpenSSL libraries & headers
+
+EXTRA_CFLAGS / EXTRA_LDFLAGS / EXTRA_LIBS
+    other things your system might need
+
+PUBCOOKIE_DIR
+    the root directory of your Pubcookie installation (where Pubcookie
+    related files will be placed)
+
+You may also have to edit "Makefile.login":
+
+CGIC_DIR
+    where you compiled CGIC
+
+DEFINES += -DHAVE_<verifier>
+    Each verifier will have its own section; comment out that section
+    to enable that verifier. (Many verifiers require external
+    libraries.)
+
+5.2 Building the binaries
 
 Note: it is assumed you have already set up a system running Apache with 
 mod_ssl and have noted the location where OpenSSL is installed.
@@ -165,12 +191,8 @@ a bug and you should report it so we can fix it.)
 
 6. Run-time configuration:
 
-The only compile-time configuration that needs to be edited in the source
-to get the login cgi working is the location of the root pubcookie
-directory.  This can be set in the "Makefile.settings" file before
-compiling.  It defaults to 
-
-Everything else is read from {PUBCOOKIE_PATH}/config as "attr: value"
+Most configuration can be done at run-time via the "config" file. It
+is located at {PUBCOOKIE_DIR}/config as "attr: value"
 lines.  A sample configuration file is included as "config.sample".
 
 Some of the more notable attributes are:
@@ -212,12 +234,12 @@ make it less specific to the University of Washington.
 However, preliminary work has been done with login templates
 (specifying the look of each page the login CGI serves up) and the
 run-time configuration file.  These pages should live in
-{PUBCOOKIE_PATH}/login_templates.  We recommend you start with the
+{PUBCOOKIE_DIR}/login_templates.  We recommend you start with the
 files in login_templates.generic/ and customize them as you see fit.
 
 8. More configuration: User agent blocking via ok_browsers file
 
-The {PUBCOOKIE_PATH}/ok_browsers file contains a list of acceptable
+The {PUBCOOKIE_DIR}/ok_browsers file contains a list of acceptable
 browsers.  The idea behind ok_browsers is to block browsers that
 either have a known security flaw (i.e. don't forget cookies when they
 should) or don't work with Pubcookie (i.e. Opera which doesn't do
@@ -232,7 +254,7 @@ with Pubcookie. Proceed according to your own policy.
 
 9. Key management
 
-{PUBCOOKIE_PATH}/keys is the location of the keystore that the login
+{PUBCOOKIE_DIR}/keys is the location of the keystore that the login
 cgi uses.  The login cgi makes use of several different keys.
 
 9.1 Generate keypairs for the login server
