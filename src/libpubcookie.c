@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.8 1999-11-18 18:51:15 willey Exp $
+    $Id: libpubcookie.c,v 2.9 1999-12-07 20:03:32 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -72,6 +72,7 @@ char *libpbc_time_string(time_t t)
 }
 
 #if defined (WIN32)
+extern int Debug_Trace;
 extern FILE *debugFile;  /* from PubcookieFilter */
 #endif
 
@@ -123,10 +124,12 @@ int libpbc_debug(const char *format,...)
     now = time(NULL);
     snprintf(format_w_time, sizeof(format_w_time), "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
 #if defined (WIN32)
-    vsprintf(buff, format_w_time, args);
-    OutputDebugString(buff);  /* win32 debugging */
-    if ( debugFile )
-        fprintf(debugFile,"%s",buff);
+    if ( Debug_Trace ) {
+	vsprintf(buff, format_w_time, args);
+	OutputDebugString(buff);  /* win32 debugging */
+	if ( debugFile )
+	    fprintf(debugFile,"%s",buff);
+	}
 #else
     vfprintf(stderr, format_w_time, args);
 #endif
@@ -205,7 +208,7 @@ void libpbc_pubcookie_init_np()
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
 
-/*  libpbc_debug("libpbc_pubcookie_init\n");  */
+/*  libpbc_debug("libpbc_pubcookie_init\n"); */
 
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
@@ -251,9 +254,9 @@ unsigned char *libpbc_alloc_init_np(int len)
 /* read and store a private key                                               */
 /*    no return value b/c it's fail out or succeed onward                     */
 #ifdef APACHE
-void libpbc_get_private_key_p(pool *p, md_context_plus *ctx_plus, char *keyfile)
+int libpbc_get_private_key_p(pool *p, md_context_plus *ctx_plus, char *keyfile)
 #else
-void libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
+int libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
 #endif
 {
 
@@ -262,32 +265,39 @@ void libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
 
 /*  libpbc_debug("libpbc_get_private_key\n");  */
 
-    if( ! keyfile )
+    if( ! keyfile ) {
         libpbc_abend("libpbc_get_private_key: No keyfile specified\n");
+	return 0;
+    }
 
-    if( ! (key_fp = pbc_fopen(keyfile, "r")) )
+    if( ! (key_fp = pbc_fopen(keyfile, "r")) ) {
         libpbc_abend("libpbc_get_private_key: Could not open keyfile: %s\n", keyfile);
+        return 0;
+    }
 
 #ifdef PRE_OPENSSL_094
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
-                        PEM_STRING_EVP_PKEY, key_fp, NULL, NULL)) )
+		  PEM_STRING_EVP_PKEY, key_fp, NULL, NULL)) ) {
 #else
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
-                        PEM_STRING_EVP_PKEY, key_fp, NULL, NULL, NULL)) )
+		  PEM_STRING_EVP_PKEY, key_fp, NULL, NULL, NULL)) ) {
 #endif
         libpbc_abend("libpbc_get_private_key: Could not read keyfile: %s\n", keyfile);
+        return 0;
+    }
 
     pbc_fclose(key_fp);
     memcpy(ctx_plus->private_key, key, sizeof(EVP_PKEY));
 
+    return 1;
 }
 
 /* read, decode,  and store a public key                                      */
 /*    no return value b/c it's fail out or succeed onward                     */
 #ifdef APACHE
-void libpbc_get_public_key_p(pool *p, md_context_plus *ctx_plus, char *certfile)
+int libpbc_get_public_key_p(pool *p, md_context_plus *ctx_plus, char *certfile)
 #else
-void libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
+int libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
 #endif
 {
     FILE 	*fp;
@@ -296,26 +306,36 @@ void libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
 
 /*  libpbc_debug("libpbc_get_public_key\n"); */
 
-    if( ! certfile )
+    if( ! certfile ) {
         libpbc_abend("libpbc_get_public_key: No certfile specified\n");
+        return 0;
+    }
 
-    if( ! (fp = pbc_fopen(certfile, "r")) )
+    if( ! (fp = pbc_fopen(certfile, "r")) ) {
 	libpbc_abend("libpbc_get_public_key: Could not open keyfile: %s\n", certfile);
+        return 0;
+    }
 
 #ifdef PRE_OPENSSL_094
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
-	                PEM_STRING_X509, fp, NULL, NULL)) )
+		           PEM_STRING_X509, fp, NULL, NULL)) ) {
 #else
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
-	                PEM_STRING_X509, fp, NULL, NULL, NULL)) )
+		           PEM_STRING_X509, fp, NULL, NULL, NULL)) ) {
 #endif
         libpbc_abend("libpbc_get_public_key: Could not read cert file: %s\n", certfile);
+        return 0;
+    }
 
-    if( ! (key = X509_extract_key(x509)) )
+    if( ! (key = X509_extract_key(x509)) ) {
         libpbc_abend("libpbc_get_public_key: Could not convert cert to public key\n");
+        return 0;
+    }
 
     pbc_fclose(fp);
     memcpy(ctx_plus->public_key, key, sizeof(EVP_PKEY));
+
+    return 1;
 }
 
 /* mallocs a pbc_cookie_data struct                                           */
@@ -423,15 +443,20 @@ unsigned char *libpbc_gethostip_np()
     err=gethostname(hostname, sizeof(hostname));
     if( (h = gethostbyname(hostname)) == NULL ) {
         libpbc_abend("gethostname error= %d, %s: host unknown.\n", err,hostname);
+	return NULL;
     }
 #else
     struct utsname      myname;
 
-    if ( uname(&myname) < 0 )
+    if ( uname(&myname) < 0 ) {
 	libpbc_abend("problem doing uname lookup\n");
+	return NULL;
+    }
 
-    if ( (h = gethostbyname(myname.nodename)) == NULL ) 
+    if ( (h = gethostbyname(myname.nodename)) == NULL ) {
        	libpbc_abend("%s: host unknown.\n", myname.nodename);
+	return NULL;
+    }
 #endif
 
     addr = libpbc_alloc_init(h->h_length);
@@ -457,9 +482,9 @@ char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
 
 /*                                                                            */
 #ifdef APACHE
-void libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *keyfile)
+int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *keyfile)
 #else
-void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
+int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 #endif
 {
     FILE             *fp;
@@ -470,11 +495,16 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
-    if( ! (fp = pbc_fopen(keyfile, "rb")) )  /* win32 - must be binary */
-        libpbc_abend("libpbc_crypt_key: Failed open: %s\n", keyfile);
+    if( ! (fp = pbc_fopen(keyfile, "rb")) ) { /* win32 - must be binary read */
+        libpbc_abend("libpbc_get_crypt_key: Failed open: %s\n", keyfile);
+        return 0;
+    }
     
-    if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF)
-        libpbc_abend("libpbc_crypt_key: Failed read: %s\n", keyfile);
+    if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
+        libpbc_abend("libpbc_get_crypt_key: Failed read: %s\n", keyfile);
+	pbc_fclose(fp);
+	return 0;
+    }
     
     pbc_fclose(fp);
 
@@ -482,6 +512,8 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
     memcpy(c_stuff->key_a, libpbc_mod_crypt_key(key_in, addr), sizeof(c_stuff->key_a));
     pbc_free(key_in);
     pbc_free(addr);
+
+    return 1;
 }
 
 /*                                                                            */
@@ -497,9 +529,12 @@ crypt_stuff *libpbc_init_crypt_np(char *keyfile)
 
     c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
 
-    libpbc_get_crypt_key(c_stuff, keyfile);
-
-    return c_stuff;
+    if ( libpbc_get_crypt_key(c_stuff, keyfile) ) {
+        return c_stuff;
+    } else {
+	libpbc_free_crypt(c_stuff);
+	return NULL;
+    }
 }
 
 /*                                                                            */
@@ -658,8 +693,9 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
         des_set_odd_parity(&key);
 #endif
     }
+
     if ( ! tries ) {
-       libpbc_debug("libpbc_encrypt_cookie: Coudn't find a good key\n");
+       libpbc_debug("libpbc_encrypt_cookie: Couldn't find a good key\n");
        return 0;
     }
 
@@ -801,9 +837,14 @@ md_context_plus *libpbc_verify_init_np(char *certfile)
 /*  libpbc_debug("libpbc_verify_init: certfile= %s\n",certfile); */
 
     ctx_plus = libpbc_init_md_context_plus();
-    libpbc_get_public_key(ctx_plus, certfile);
 
-    return ctx_plus;
+    if ( libpbc_get_public_key(ctx_plus, certfile) ) {
+        return ctx_plus;
+    } else {
+	libpbc_free_md_context_plus(ctx_plus);
+	return NULL;
+    }
+
 }
 
 /*                                                                            */
@@ -820,8 +861,13 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 /*  libpbc_debug("libpbc_sign_init: keyfile= %s\n",keyfile); */
 
     ctx_plus = libpbc_init_md_context_plus();
-    libpbc_get_private_key(ctx_plus, keyfile);
-    return ctx_plus;
+
+    if ( libpbc_get_private_key(ctx_plus, keyfile) ) {
+	return ctx_plus;
+    } else {
+	libpbc_free_md_context_plus(ctx_plus);
+	return NULL;
+    }
 }
 
 /*                                                                            */
