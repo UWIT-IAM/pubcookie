@@ -4,6 +4,18 @@
 # include "pbc_path.h"
 #endif
 
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
+
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
 #endif /* HAVE_STDIO_H */
@@ -93,34 +105,34 @@ static EVP_PKEY *g_pub;
 /* my name */
 static char *myname = NULL;
 
-static char *mystrdup(const char *s)
+static char *mystrdup(pool *p, const char *s)
 {
-    if (s) return strdup(s);
+    if (s) return pbc_strdup(p, s);
     else return NULL;
 }
 
 /* destructively returns the value of the CN */
-static char *extract_cn(char *s)
+static char *extract_cn(pool *p, char *s)
 {
-    char *p;
+    char *ptr;
     char *q;
 
     if (!s) return NULL;
 
-    p = strstr(s, "CN=");
-    if (p) {
-        p += 3;
-        q = strstr(p, "/Email=");
+    ptr = strstr(s, "CN=");
+    if (ptr) {
+        ptr += 3;
+        q = strstr(ptr, "/Email=");
         if (q) {
             *q = '\0';
         }
-        q =strchr(p, '/');
+        q =strchr(ptr, '/');
         if (q) {
             *q = '\0';
         }
     }
 
-    return p;
+    return ptr;
 }
 
 
@@ -136,7 +148,7 @@ static char *extract_cn(char *s)
    . check pubcookie_granting
 
 */
-int security_init(void)
+int security_init(pool *p)
 {
 
     /* our private session keypair */
@@ -148,36 +160,36 @@ int security_init(void)
 
     FILE *fp;
 
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "security_init: hello\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "security_init: hello\n");
 
     /* first we try to use the ssl files */
-    keyfile = mystrdup(libpbc_config_getstring("ssl_key_file", NULL));
+    keyfile = mystrdup(p, libpbc_config_getstring(p, "ssl_key_file", NULL));
     if (keyfile && access(keyfile, R_OK | F_OK)) {
-        free(keyfile);
+        pbc_free(p, keyfile);
         /* not there ? */
         keyfile = NULL;
     }
-    certfile = mystrdup(libpbc_config_getstring("ssl_cert_file", NULL));
+    certfile = mystrdup(p, libpbc_config_getstring(p, "ssl_cert_file", NULL));
     if (certfile && access(certfile, R_OK | F_OK)) {
-        free(certfile);
+        pbc_free(p, certfile);
         /* not there ? */
         certfile = NULL;
     }
 
     if (!keyfile && !certfile) {
         /* fall back to the pubcookie_session files */
-        keyfile = malloc(1025);
+        keyfile = pbc_malloc(p, 1025);
         snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_session.key");
 
-        certfile = malloc(1025);
+        certfile = pbc_malloc(p, 1025);
         snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_session.cert");
 
         if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
             /* session keys not valid */
-            free(keyfile);
-            free(certfile);
+            pbc_free(p, keyfile);
+            pbc_free(p, certfile);
             keyfile = NULL;
             certfile = NULL;
         }
@@ -185,63 +197,63 @@ int security_init(void)
 
     if (!keyfile && !certfile) {
         /* try the pubcookie_login files */
-        keyfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+        keyfile = pbc_malloc(p, 1025); /* Windows snprintf broken 8/21/02 RJC */
         snprintf(keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_login.key");
 
-        certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+        certfile = pbc_malloc(p, 1025); /* Windows snprintf broken 8/21/02 RJC */
         snprintf(certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_login.cert");
 
         if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
             /* login keys not valid */
-            free(keyfile);
-            free(certfile);
+            pbc_free(p, keyfile);
+            pbc_free(p, certfile);
             keyfile = NULL;
             certfile = NULL;
         }
     }
 
     if (!keyfile) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't find session keyfile (try setting ssl_key_file?)");
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+		"security_init: couldn't find session keyfile (try setting ssl_key_file?)");
         return -1;
     }
 
     if (!certfile) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't find session certfile (try setting ssl_cert_file?)");
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+		"security_init: couldn't find session certfile (try setting ssl_cert_file?)");
         return -1;
     }
 
     /* it's generally easier to find the granting key/cert */
-    g_keyfile = mystrdup(libpbc_config_getstring("granting_key_file", NULL));
-    g_certfile = mystrdup(libpbc_config_getstring("granting_cert_file", NULL));
+    g_keyfile = mystrdup(p, libpbc_config_getstring(p, "granting_key_file", NULL));
+    g_certfile = mystrdup(p, libpbc_config_getstring(p, "granting_cert_file", NULL));
 
 
     if (!g_keyfile) {
-        g_keyfile = malloc(1025); /* Windows snprintf broken  8/21/02 RJC */
+        g_keyfile = pbc_malloc(p, 1025); /* Windows snprintf broken  8/21/02 RJC */
         snprintf(g_keyfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_granting.key");
     }
 
     if (!g_certfile) {
-        g_certfile = malloc(1025); /* Windows snprintf broken 8/21/02 RJC */
+        g_certfile = pbc_malloc(p, 1025); /* Windows snprintf broken 8/21/02 RJC */
         snprintf(g_certfile, 1024, "%s"DIR_SEP"%s", PBC_KEY_DIR,
                  "pubcookie_granting.cert");
     }
     /* test g_keyfile */
     if (access(g_keyfile, R_OK | F_OK)) {
         /* this is only a problem for login servers */
-        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
-                         "couldn't find granting keyfile (try setting granting_key_file?)");
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+		"security_init: couldn't find granting keyfile (try setting granting_key_file?)");
         g_keyfile = NULL;
     }
 
     /* test g_certfile; it's a fatal error if this isn't found */
     if (access(g_certfile, R_OK | F_OK)) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't find granting certfile (try setting granting_cert_file?): tried %s", g_certfile);
         return -1;
     }
 
@@ -249,11 +261,11 @@ int security_init(void)
 	
     /* session key */
 
-    fp = fopen(keyfile, "r");
+    fp = pbc_fopen(p, keyfile, "r");
 
     if (!fp) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't read keyfile: fopen %s: %m", keyfile);
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't read keyfile: pbc_fopen %s: %m", keyfile);
         return -1;
     }
 
@@ -261,17 +273,17 @@ int security_init(void)
 					  PEM_STRING_EVP_PKEY,
 					  fp, NULL, NULL, NULL);
     if (!sess_key) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't parse session key: %s", keyfile);
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't parse session key: %s", keyfile);
         return -1;
     }
-    fclose(fp);
+    pbc_fclose(p, fp);
 
     /* session cert */
-    fp = fopen(certfile, "r");
+    fp = pbc_fopen(p, certfile, "r");
     if (!fp) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't read certfile: fopen %s: %m", certfile);
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't read certfile: pbc_fopen %s: %m", certfile);
         return -1;
     }
     sess_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
@@ -279,49 +291,49 @@ int security_init(void)
 				       fp, NULL, NULL, NULL);
     if (!sess_cert) {
         /* xxx openssl errors */
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't parse session certificate: %s", certfile);
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't parse session certificate: %s", certfile);
         return -1;
     }
     sess_pub = X509_extract_key(sess_cert);
     myname = X509_NAME_oneline (X509_get_subject_name (sess_cert),0,0);
-    myname = extract_cn(myname);
+    myname = extract_cn(p, myname);
     if (!myname) {
         char tmp[1024];
         /* hmm, no name encoded in the certificate; we'll just use our
            hostname */
         gethostname(tmp, sizeof(tmp)-1);
-        myname = strdup(tmp);
+        myname = mystrdup(p, tmp);
     }
-    fclose(fp);
+    pbc_fclose(p, fp);
 
     /* granting key */
     if (g_keyfile) {
-	fp = fopen(g_keyfile, "r");
+	fp = pbc_fopen(p, g_keyfile, "r");
 
 	if (fp) {
 	    g_key = (EVP_PKEY *) PEM_ASN1_read((char *(*)()) d2i_PrivateKey, 
 					       PEM_STRING_EVP_PKEY,
 					       fp, NULL, NULL, NULL);
 	    if (!g_key) {
-		pbc_log_activity(PBC_LOG_ERROR, 
-                                 "couldn't parse granting key: %s", g_keyfile);
+		pbc_log_activity(p, PBC_LOG_ERROR, 
+                                 "security_init: couldn't parse granting key: %s", g_keyfile);
 		return -1;
 	    }
-	    fclose(fp);
+	    pbc_fclose(p, fp);
 	} else {
-	    pbc_log_activity(PBC_LOG_ERROR, 
-                             "couldn't read granting keyfile: fopen %s: %m", 
+	    pbc_log_activity(p, PBC_LOG_ERROR, 
+                             "security_init: couldn't read granting keyfile: pbc_fopen %s: %m", 
                              g_keyfile);  /* Bugfix 8/21/02 RJC */
 	    /* fatal, since we were configured for it */
 	    exit(1);
 	}
     }
     /* granting cert */
-    fp = fopen(g_certfile, "r");
+    fp = pbc_fopen(p, g_certfile, "r");
     if (!fp) {
-	pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't read granting certfile: fopen %s: %m", 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't read granting certfile: pbc_fopen %s: %m", 
                          g_certfile); /* Bugfix 8/21/02 RJC */
 	return -1;
     }
@@ -329,13 +341,13 @@ int security_init(void)
 				    PEM_STRING_X509,
 				    fp, NULL, NULL, NULL);
     if (!g_cert) {
-	pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't parse granting certificate: %s", g_certfile);
+	pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "security_init: couldn't parse granting certificate: %s", g_certfile);
 	return -1;
     }
     g_pub = X509_extract_key(g_cert);
 
-    fclose(fp);
+    pbc_fclose(p, fp);
 
     /* xxx CA file / CA dir ? */
 
@@ -363,22 +375,23 @@ int security_init(void)
 #endif
 
     if (keyfile != NULL)
-        free(keyfile);
+        pbc_free(p, keyfile);
     if (certfile != NULL)
-        free(certfile);
+        pbc_free(p, certfile);
     if (g_keyfile != NULL)
-        free(g_keyfile);
+        pbc_free(p, g_keyfile);
     if (g_certfile != NULL)
-        free(g_certfile);
+        pbc_free(p, g_certfile);
     
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "security_init: goodbye\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "security_init: goodbye\n");
 
     return 0;
 }
 
-const char *libpbc_get_cryptname(void)
+const char *libpbc_get_cryptname(pool *p)
 {
     return myname;
+
 }
 
 /**
@@ -387,10 +400,10 @@ const char *libpbc_get_cryptname(void)
  * @param buf a buffer of at least 1024 characters which gets the filename
  * @return always succeeds
  */
-static void make_crypt_keyfile(const char *peername, char *buf)
+static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
     
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);
 
@@ -399,33 +412,33 @@ static void make_crypt_keyfile(const char *peername, char *buf)
     }
     strlcat(buf, peername, 1024);
     
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: goodbye\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: goodbye\n");
 }
 
-static int get_crypt_key(const char *peername, char *buf)
+static int get_crypt_key(pool *p, const char *peername, char *buf)
 {
     FILE *fp;
     char keyfile[1024];
     
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "get_crypt_key: hello\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_crypt_key: hello\n");
 
-    make_crypt_keyfile(peername, keyfile);
+    make_crypt_keyfile(p, peername, keyfile);
 	
-    if (!(fp = fopen(keyfile, "rb"))) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+    if (!(fp = pbc_fopen(p, keyfile, "rb"))) {
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "can't open crypt key %s: %m", keyfile);
 	return -1;
     }
 
     if( fread(buf, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "can't read crypt key %s: short read", keyfile);
-	fclose(fp);
+	pbc_fclose(p, fp);
 	return -1;
     }
 
-    fclose(fp);
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "get_crypt_key: goodbye\n");
+    pbc_fclose(p, fp);
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "get_crypt_key: goodbye\n");
 
     return 0;
 }
@@ -443,7 +456,7 @@ static int get_crypt_key(const char *peername, char *buf)
  * @param outlen the length of outbuf.
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv(const char *peer, const char *buf, const int len,
+int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     int r;
@@ -460,16 +473,16 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
     int tries = 5;
     int c;
     
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: hello\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: hello\n");
 
     assert(outbuf != NULL && outlen != NULL);
     assert(buf != NULL && len > 0);
 
-    peer2 = peer ? peer : libpbc_get_cryptname();
+    peer2 = peer ? peer : libpbc_get_cryptname(p);
 
 
-    if (get_crypt_key(peer2, (char *) keybuf) < 0) {
-        pbc_log_activity(PBC_LOG_ERROR, 
+    if (get_crypt_key(p, peer2, (char *) keybuf) < 0) {
+        pbc_log_activity(p, PBC_LOG_ERROR, 
                          "get_crypt_key(%s) failed", peer2);
 	return -1;
     }
@@ -485,7 +498,7 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
         des_set_odd_parity(&key);
     }
     if (!tries) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "couldn't find a good DES key");
 	return -1;
     }
@@ -500,20 +513,21 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
 	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
     }
 
-    r = libpbc_mk_safe(peer, buf, len, &mysig, &siglen);
+    r = libpbc_mk_safe(p, peer, buf, len, &mysig, &siglen);
     if (!r) {
         *outlen = len + siglen + 2;
-        *outbuf = malloc(*outlen);
+        *outbuf = pbc_malloc(p, *outlen);
         if (!*outbuf) {
-            pbc_log_activity(PBC_LOG_ERROR, 
-                             "libpbc_mk_priv: malloc failed");
-            free(mysig);
+            pbc_log_activity(p, PBC_LOG_ERROR, 
+                             "libpbc_mk_priv: pbc_malloc failed");
+            pbc_free(p, mysig);
             return -1;
         }
 
 	des_cfb64_encrypt( (unsigned char *) mysig, (unsigned char *) *outbuf, 
                            siglen, ks, &ivec, &i, DES_ENCRYPT);
-	free(mysig);
+
+	pbc_free(p, mysig);
 
 	des_cfb64_encrypt( (unsigned char *) buf, 
                        (unsigned char *) (*outbuf) + siglen, len, 
@@ -523,12 +537,12 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
     }
 
     if (r) {
-        pbc_log_activity(PBC_LOG_ERROR, 
+        pbc_log_activity(p, PBC_LOG_ERROR, 
                          "libpbc_mk_safe() failed");
-	free(*outbuf);
+	pbc_free(p, *outbuf);
 	*outbuf = NULL;
     }
-    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: goodbye\n");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: goodbye\n");
 
     return r;
 }
@@ -545,7 +559,7 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks
  */
-int libpbc_rd_priv(const char *peer, const char *buf, const int len,
+int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     int index1, index2;
@@ -553,21 +567,27 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     des_cblock key, ivec;
     des_key_schedule ks;
     unsigned char keybuf[PBC_DES_KEY_BUF];
-    char mysig[PBC_SIG_LEN];
+    char *mysig;
+    int sig_len;
     static unsigned char ivec_tmp[PBC_INIT_IVEC_LEN] = PBC_INIT_IVEC;
     int c;
     int r;
 
-    if (len < PBC_SIG_LEN + 2) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "libpbc_rd_priv() called with small length: %d", len);
-        return -1;
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv: hello\n");
+
+    sig_len = EVP_PKEY_size(peer ? g_pub : sess_pub);
+    mysig = (unsigned char *) pbc_malloc(p, sig_len);
+
+    if (len < sig_len + 2) {
+      pbc_log_activity(p, PBC_LOG_ERROR,
+		"libpbc_rd_priv() called with small length: %d", len);
+      return(1);
     }
 
     /* since i'm reading a message, i always decrypt using my key in this
-       security model. */
-    if (get_crypt_key(libpbc_get_cryptname(), (char *) keybuf) < 0) {
-        return -1;
+     security model. */
+    if (get_crypt_key(p, libpbc_get_cryptname(p), (char *) keybuf) < 0) {
+      return(1) ;
     }
 
     index1 = (unsigned char) buf[len - 2];
@@ -576,41 +596,42 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     /* setup ivec */
     memcpy(ivec, &(keybuf[index2]), sizeof(ivec));
     for (c = 0; c < sizeof(ivec); ++c) {
-        ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
+      ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
     }
 
     /* setup key */
     memcpy(key, &keybuf[index1], sizeof(key));
     des_set_odd_parity(&key);
     if (des_set_key_checked(&key, ks)) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "des_set_key_checked failed: didn't derive a good key");
-        return -1;
+      pbc_log_activity(p, PBC_LOG_ERROR,
+	"des_set_key_checked failed: didn't derive a good key");
+      return 1;
     }
 
     /* allocate outbuf */
-    *outlen = len - PBC_SIG_LEN - 2;
+    *outlen = len - sig_len - 2;
     *outbuf = (char *) malloc(*outlen);
 
     /* decrypt */
     des_cfb64_encrypt( (unsigned char *) buf,  (unsigned char *) mysig,
-                       PBC_SIG_LEN, ks, &ivec, &i, DES_DECRYPT);
+                     sig_len, ks, &ivec, &i, DES_DECRYPT);
 
-    des_cfb64_encrypt( (unsigned char *) buf + PBC_SIG_LEN,  
-                       (unsigned char *) *outbuf, *outlen, ks, &ivec, &i,
-                       DES_DECRYPT);
+    des_cfb64_encrypt( (unsigned char *) buf + sig_len,
+                     (unsigned char *) *outbuf, *outlen, ks, &ivec, &i,
+                     DES_DECRYPT);
 
     /* verify signature */
-    r = libpbc_rd_safe(peer, *outbuf, *outlen, mysig, PBC_SIG_LEN);
+    r = libpbc_rd_safe(p, peer, *outbuf, *outlen, mysig, sig_len);
 
-    if (r) {
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "plaintext received was %s", *outbuf);
-        free(*outbuf);
-        *outbuf = 0;
-    }
+    if (!r) return 0;
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+                   "plaintext received was %s", *outbuf);
+    pbc_free(p, *outbuf);
+    *outbuf = 0;
+    if (r == -1) return -1;
 
     return r;
+
 }
 
 /**
@@ -618,7 +639,7 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
  * application. 'outbuf' does not contain the plaintext message; both
  * 'buf' and 'outbuf' must be sent to the other side
  */
-int libpbc_mk_safe(const char *peer, const char *buf, const int len,
+int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen)
 {
     unsigned char *sig;
@@ -627,6 +648,9 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
     EVP_PKEY *thekey;
     int r;
 
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_mk_safe: hello, peer is %s",
+		peer ? peer : "self");
+
     assert(buf != NULL);
     assert(outbuf != NULL);
     assert(outlen != NULL);
@@ -634,8 +658,8 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
     *outlen = 0;
 
     if (peer && !g_key) {
-	pbc_log_activity(PBC_LOG_ERROR, 
-                         "no granting key: can't secure message to %s", peer);
+	pbc_log_activity(p, PBC_LOG_ERROR, 
+	   "libpbc_mk_safe: no granting key: can't secure message to %s", peer);
 	return -1;
     }
 
@@ -643,7 +667,7 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
     if (peer) thekey = g_key;
     else thekey = sess_key;
 
-    sig = (unsigned char *) malloc(EVP_PKEY_size(thekey));
+    sig = (unsigned char *) pbc_malloc(p, EVP_PKEY_size(thekey));
     sig_len = EVP_PKEY_size(thekey);
 
     EVP_SignInit(&ctx, EVP_md5());
@@ -654,20 +678,24 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
 	r = 0;
     } else {
 	/* xxx log openssl error */
-	pbc_log_activity(PBC_LOG_ERROR, 
-                         "EVP_SignFinal failed");
-        free(sig);
+	pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "libpbc_mk_safe: EVP_SignFinal failed");
+        pbc_free(p, sig);
 	r = -1;
     }
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_mk_safe: goodbye, sig_len: %d", *outlen);
 
     return r;
 }
 
-int libpbc_rd_safe(const char *peer, const char *buf, const int len,
+int libpbc_rd_safe(pool *p, const char *peer, const char *buf, const int len,
 		   const char *sigbuf, const int siglen)
 {
     EVP_MD_CTX ctx;
     int r;
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_rd_safe: hello");
 
     assert(buf != NULL && sigbuf != NULL);
 
@@ -683,11 +711,13 @@ int libpbc_rd_safe(const char *peer, const char *buf, const int len,
     if (!r) {
 	/* xxx log openssl error */
         ERR_load_crypto_strings();
-        pbc_log_activity(PBC_LOG_ERROR, 
-                         "couldn't verify signature for %s OpenSSL error: %s", 
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "libpbc_rd_safe: couldn't verify signature for %s OpenSSL error: %s", 
                          peer ? peer : "(self)",
                          ERR_error_string(ERR_get_error(), NULL));
     }
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_rd_safe: goodbye, r: %d", r);
 
     return !r;
 }

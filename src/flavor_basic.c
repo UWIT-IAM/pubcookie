@@ -23,12 +23,24 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.29 2002-12-02 16:22:34 jjminer Exp $
+    $Id: flavor_basic.c,v 1.30 2003-03-05 22:38:47 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
+#endif
+
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
 #endif
 
 #ifdef HAVE_STDIO_H
@@ -77,15 +89,16 @@ extern int debug;
 #define INIT_HIDDEN_SIZE 2048
 #define GETCRED_HIDDEN_MAX 512
 
-static int init_basic(void)
+static int init_basic()
 {
     const char *vname;
+    void *p;
     
     /* find the verifier configured */
-    vname = libpbc_config_getstring("basic_verifier", NULL);
+    vname = libpbc_config_getstring(p, "basic_verifier", NULL);
 
     if (!vname) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
 			 "flavor_basic: no verifier configured");
 	return -1;
     }
@@ -93,12 +106,12 @@ static int init_basic(void)
     v = get_verifier(vname);
 
     if (!v || !v->v) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
 			 "flavor_basic: verifier not found: %s", vname);
 	v = NULL;
 	return -1;
     }
-    pbc_log_activity(PBC_LOG_DEBUG_LOW,
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
 		     "init_basic: using %s verifier", vname);
     return 0;
 }
@@ -107,7 +120,7 @@ static int init_basic(void)
  * return the length of the passed file in bytes or 0 if we cant tell
  * resets the file postion to the start
  */
-static long file_size(FILE *afile)
+static long file_size(pool *p, FILE *afile)
 {
   long len;
   if (fseek(afile, 0, SEEK_END) != 0)
@@ -120,7 +133,7 @@ static long file_size(FILE *afile)
 
 /* get the reason for our existing.  Returns NULL for an empty file. */
 
-char * get_reason( const char * reasonpage ) {
+char * get_reason(pool *p, const char * reasonpage ) {
     char * reasonfile;
     const char * reasonpath = TMPL_FNAME;
     int reasonfilelen;
@@ -129,7 +142,7 @@ char * get_reason( const char * reasonpage ) {
     char * reasonhtml;
     int readlen;
 
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_reason: hello");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_reason: hello");
 
     reasonfilelen = strlen(reasonpath) + strlen("/") + strlen(reasonpage) + 1;
 
@@ -140,16 +153,16 @@ char * get_reason( const char * reasonpage ) {
                    reasonpath[strlen(reasonpath) - 1 ] == '/' ? "" : "/",
                    reasonpage ) > reasonfilelen )  {
         /* Need to do something, we would have overflowed. */
-        abend("Reason filename overflow!\n");
+        abend(p, "Reason filename overflow!\n");
     }
 
-    reason_file = fopen( reasonfile, "r" );
+    reason_file = pbc_fopen(p, reasonfile, "r" );
 
     if (reason_file == NULL) {
-        libpbc_abend( "Cannot open reasonfile %s", reasonfile );
+        libpbc_abend(p, "Cannot open reasonfile %s", reasonfile );
     }
 
-    reason_len = file_size( reason_file );
+    reason_len = file_size(p, reason_file);
 
     if (reason_len == 0)
         return NULL;
@@ -158,26 +171,26 @@ char * get_reason( const char * reasonpage ) {
 
     if ( reasonhtml == NULL ) {
         /* Out of memory! */
-        libpbc_abend( "Out of memory allocating to read reason file" );
+        libpbc_abend(p,  "Out of memory allocating to read reason file" );
     }
 
     readlen = fread( reasonhtml, 1, reason_len, reason_file );
 
     if (readlen != reason_len) {
-        libpbc_abend( "read %d when expecting %d on reason file read.",
+        libpbc_abend(p,  "read %d when expecting %d on reason file read.",
                       readlen, reason_len );
     }
 
     reasonhtml[reason_len] = '\0';
-    fclose(reason_file);
+    pbc_fclose(p, reason_file);
     free(reasonfile);
 
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_reason: goodbye");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_reason: goodbye");
 
     return reasonhtml;
 }
 
-static void print_login_page(login_rec *l, login_rec *c, int reason)
+static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
        we always clear the greq cookie */
@@ -193,11 +206,11 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
 
     char * reason_html = NULL;
     
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
 
     /* set the cookies */
     if (need_clear_login) {
-        print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+        print_header(p, "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
                      PBC_L_COOKIENAME, 
                      PBC_CLEAR_COOKIE,
                      PBC_LOGIN_HOST,
@@ -206,7 +219,7 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
     }
 
     if (need_clear_greq) {
-        print_header("Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
+        print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
                      PBC_G_REQ_COOKIENAME, 
                      PBC_CLEAR_COOKIE,
                      PBC_ENTRPRS_DOMAIN);
@@ -215,32 +228,32 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
 
     switch (reason) {
         case FLB_BAD_AUTH:
-            reasonpage = libpbc_config_getstring( "tmpl_login_bad_auth",
+            reasonpage = libpbc_config_getstring(p,  "tmpl_login_bad_auth",
                                                   "login_bad_auth" );
             break;
         case FLB_REAUTH:
-            reasonpage = libpbc_config_getstring( "tmpl_login_reauth",
+            reasonpage = libpbc_config_getstring(p,  "tmpl_login_reauth",
                                                   "login_reauth" );
             break;
         case FLB_CACHE_CREDS_WRONG:
-            reasonpage = libpbc_config_getstring( "tmpl_login_cache_creds_wrong",
+            reasonpage = libpbc_config_getstring(p,  "tmpl_login_cache_creds_wrong",
                                                   "login_cache_creds_wrong" );
             break;
         case FLB_LCOOKIE_ERROR:
         default:
-            reasonpage = libpbc_config_getstring( "tmpl_login_nolcookie",
+            reasonpage = libpbc_config_getstring(p,  "tmpl_login_nolcookie",
                                                   "login_nolcookie" );
             break;
     }
 
     if (reasonpage == NULL) {
         /* We shouldn't be here, but handle it anyway, of course. */
-        libpbc_abend( "Reasonpage is null, this is impossible." );
+        libpbc_abend(p,  "Reasonpage is null, this is impossible." );
     }
     
     /* Get the HTML for the error reason */
     
-    reason_html = get_reason(reasonpage);
+    reason_html = get_reason(p, reasonpage);
 
     while (hidden_needed_len > hidden_len) {
 
@@ -253,7 +266,7 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
 
         if (hidden_fields == NULL) {
             /* Out of memory, ooops. */
-            libpbc_abend( "Out of memory allocating for hidden fields!" );
+            libpbc_abend(p,  "Out of memory allocating for hidden fields!" );
         }
         
         hidden_len = hidden_needed_len;
@@ -308,7 +321,7 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
     /* xxx save add'l requests */
     {
         /* xxx sigh, i have to explicitly save this */
-        char *target = get_string_arg(PBC_GETVAR_CRED_TARGET,
+        char *target = get_string_arg(p, PBC_GETVAR_CRED_TARGET,
                                       NO_NEWLINES_FUNC);
 
         if (target) {
@@ -318,7 +331,7 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
 
             if (getcred_hidden == NULL) {
                 /* Out of memory */
-                libpbc_abend( "Out of memory allocating for GetCred" );
+                libpbc_abend(p,  "Out of memory allocating for GetCred" );
             }
 
             needed_len = snprintf( getcred_hidden, GETCRED_HIDDEN_MAX, 
@@ -327,15 +340,15 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
 
             if ( needed_len > GETCRED_HIDDEN_MAX ) {
                 /* We were going to overflow, oops. */
-                libpbc_abend( "Almost overflowed writing GetCred" );
+                libpbc_abend(p,  "Almost overflowed writing GetCred" );
             }
         } 
     }
 
     /* Display the login form. */
 
-    tmpl_print_html(TMPL_FNAME,
-                    libpbc_config_getstring("tmpl_login",
+    tmpl_print_html(p, TMPL_FNAME,
+                    libpbc_config_getstring(p, "tmpl_login",
                                             "login"),
                     PBC_LOGIN_URI,
                     reason_html != NULL ? reason_html : "",
@@ -345,7 +358,7 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
 
     /* this tags the incoming request as a form reply */
 
-    print_html("\n");
+    print_html(p, "\n");
 
     if (reason_html != NULL)
         free( reason_html );
@@ -356,7 +369,7 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
     if (getcred_hidden != NULL)
         free( getcred_hidden );
 
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
 }
 
 /* process_basic():
@@ -370,13 +383,13 @@ static void print_login_page(login_rec *l, login_rec *c, int reason)
    if authentication has succeeded, no output is generated and it returns
    LOGIN_OK.
  */
-static login_result process_basic(login_rec *l, login_rec *c,
+static login_result process_basic(pool *p, login_rec *l, login_rec *c,
 				  const char **errstr)
 {
     struct credentials *creds = NULL;
     struct credentials **credsp = NULL;
 
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n" );
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n" );
 
     /* make sure we're initialized */
     assert(v != NULL);
@@ -389,7 +402,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
     *errstr = NULL;
 
     if (!v) {
-        pbc_log_activity(PBC_LOG_ERROR,
+        pbc_log_activity(p, PBC_LOG_ERROR,
                          "flavor_basic: flavor not correctly configured");
         return LOGIN_ERR;
     }
@@ -415,14 +428,14 @@ static login_result process_basic(login_rec *l, login_rec *c,
      */
 
     if (l->reply == FORM_REPLY) {
-        if (libpbc_config_getswitch("save_credentials", 0)) {
+        if (libpbc_config_getswitch(p, "save_credentials", 0)) {
             credsp = &creds;
         }
 
         if (v->v(l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
             if (debug) {
                 /* xxx log realm */
-                pbc_log_activity( PBC_LOG_AUDIT,
+                pbc_log_activity(p,  PBC_LOG_AUDIT,
                                   "authentication successful for %s\n", l->user );
             }
 
@@ -432,10 +445,11 @@ static login_result process_basic(login_rec *l, login_rec *c,
 
             /* optionally stick @REALM into the username */
             if (l->user && l->realm &&
-                libpbc_config_getswitch("append_realm", 0)) {
+                libpbc_config_getswitch(p, "append_realm", 0)) {
                 /* append @REALM onto the username */
                 char * tmp;
-                tmp = calloc(strlen(l->user)+strlen(l->realm)+1, 1);
+                tmp = pbc_malloc(p, strlen(l->user)+strlen(l->realm)+1);
+                memset(tmp, 0, strlen(l->user)+strlen(l->realm)+1);
                 if (tmp) {
                     strncat(tmp, l->user, strlen(l->user));
                     strncat(tmp, "@", 1);
@@ -451,22 +465,22 @@ static login_result process_basic(login_rec *l, login_rec *c,
                 int outlen;
                 char *out64;
 
-                if (!libpbc_mk_priv(NULL, creds->str, creds->sz,
+                if (!libpbc_mk_priv(p, NULL, creds->str, creds->sz,
                                     &outbuf, &outlen)) {
                     /* save for later */
                     out64 = malloc(outlen * 4 / 3 + 20);
-                    libpbc_base64_encode( (unsigned char *) outbuf,
+                    libpbc_base64_encode(p, (unsigned char *) outbuf,
                                           (unsigned char *) out64,
                                           outlen );
 
-                    print_header("Set-Cookie: %s=%s; domain=%s; secure\n",
+                    print_header(p, "Set-Cookie: %s=%s; domain=%s; secure\n",
                                  PBC_CRED_COOKIENAME, out64, PBC_LOGIN_HOST);
 
                     /* free buffer */
                     free(outbuf);
                     free(out64);
                 } else {
-                    pbc_log_activity(PBC_LOG_ERROR, 
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
                                      "libpbc_mk_priv failed: can't save credentials");
                 }
 
@@ -477,7 +491,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
                 creds = NULL;
             }
 
-            pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+            pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                              "process_basic: good login, goodbye\n" );
 
             return LOGIN_OK;
@@ -486,25 +500,25 @@ static login_result process_basic(login_rec *l, login_rec *c,
             if (!*errstr) {
                 *errstr = "authentication failed";
             }
-            pbc_log_activity(PBC_LOG_AUDIT,
+            pbc_log_activity(p, PBC_LOG_AUDIT,
                              "flavor_basic: login failed for %s: %s", 
                              l->user == NULL ? "(null)" : l->user,
                              *errstr);
 
             /* make sure 'l' reflects that */
             l->user = NULL;	/* in case wrong username */
-            print_login_page(l, c, FLB_BAD_AUTH);
+            print_login_page(p, l, c, FLB_BAD_AUTH);
 
-            pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+            pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                              "process_basic: login in progress, goodbye\n" );
             return LOGIN_INPROGRESS;
         }
     } else if (l->session_reauth) {
         *errstr = "reauthentication required";
-        pbc_log_activity(PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
+        pbc_log_activity(p, PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
 
-        print_login_page(l, c, FLB_REAUTH);
-        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+        print_login_page(p, l, c, FLB_REAUTH);
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
@@ -513,34 +527,34 @@ static login_result process_basic(login_rec *l, login_rec *c,
            has expired. */
     } else if (l->check_error) {
         *errstr = l->check_error;
-        pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
+        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
-        print_login_page(l, c, FLB_LCOOKIE_ERROR);
-        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+        print_login_page(p, l, c, FLB_LCOOKIE_ERROR);
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
         /* if l->check_error is NULL, then 'c' must be set and must
            contain the login cookie information */
     } else if (!c) {
-        pbc_log_activity(PBC_LOG_ERROR,
+        pbc_log_activity(p, PBC_LOG_ERROR,
                          "flavor_basic: check_error/c invariant violated");
         abort();
 
         /* make sure the login cookie represents credentials for this flavor */
     } else if (c->creds != PBC_BASIC_CRED_ID) {
         *errstr = "cached credentials wrong flavor";
-        pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
+        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
-        print_login_page(l, c, FLB_CACHE_CREDS_WRONG);
-        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+        print_login_page(p, l, c, FLB_CACHE_CREDS_WRONG);
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
     } else { /* valid login cookie */
-        pbc_log_activity(PBC_LOG_AUDIT,
+        pbc_log_activity(p, PBC_LOG_AUDIT,
                          "flavor_basic: free ride user: %s", l->user);
-        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: free ride, goodbye\n" );
         return LOGIN_OK;
     }

@@ -19,13 +19,15 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.25 2002-11-14 21:12:12 jjminer Exp $
+    $Id: keyclient.c,v 2.26 2003-03-05 22:38:47 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+typedef void pool;
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -170,6 +172,7 @@ int main(int argc, char *argv[])
     char *keyhost = NULL;
     int keyport = 443;
     int r;
+    pool *pp = NULL;
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
@@ -188,12 +191,12 @@ int main(int argc, char *argv[])
 	}   
 #endif
 
-    libpbc_config_init(NULL, "keyclient");
-    libpbc_pubcookie_init();
-    keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
-    certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
-    cafile = libpbc_config_getstring("ssl_ca_file", NULL);
-    cadir = libpbc_config_getstring("ssl_ca_path", NULL);
+    libpbc_config_init(pp, NULL, "keyclient");
+    libpbc_pubcookie_init(pp);
+    keyfile = libpbc_config_getstring(pp, "ssl_key_file", "server.pem");
+    certfile = libpbc_config_getstring(pp, "ssl_cert_file", "server.pem");
+    cafile = libpbc_config_getstring(pp, "ssl_ca_file", NULL);
+    cadir = libpbc_config_getstring(pp, "ssl_ca_path", NULL);
 
     hostname = NULL;
 
@@ -272,7 +275,7 @@ int main(int argc, char *argv[])
         RAND_seed((unsigned char *)&pid, sizeof(pid));
 
 #ifndef WIN32
-        capture_cmd_output(cmd, buf, sizeof(buf));
+        capture_cmd_output(pp, cmd, buf, sizeof(buf));
         RAND_seed((unsigned char *)buf, sizeof(buf));
 #endif
     }
@@ -310,7 +313,7 @@ int main(int argc, char *argv[])
     }
 
     /* figure out the key management server */
-    keymgturi = libpbc_config_getstring("keymgt_uri", NULL);
+    keymgturi = libpbc_config_getstring(p, "keymgt_uri", NULL);
     if (keymgturi ==  NULL) {
         keymgturi = malloc(1024);
         snprintf((char *) keymgturi, 1024, "https://%s/cgi-bin/keyserver", 
@@ -413,12 +416,12 @@ int main(int argc, char *argv[])
     if (newkeyp == -1) {
         char enckey[PBC_DES_KEY_BUF * 2];
 
-        if (libpbc_get_crypt_key(&c_stuff, hostname) != PBC_OK) {
+        if (libpbc_get_crypt_key(p, &c_stuff, hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
             exit(1);
         }
 
-        libpbc_base64_encode(c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
 
         /* we're uploading! */
         snprintf(buf, sizeof(buf),
@@ -491,7 +494,7 @@ int main(int argc, char *argv[])
                         /* chomp new line */
                         *strchr(p, '\r') = '\0';
                     }
-                    ret = libpbc_base64_decode( (unsigned char *) p, thekey, &osize);
+                    ret = libpbc_base64_decode(p, (unsigned char *) p, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         fprintf(stderr, "keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
                         exit(1);
@@ -502,7 +505,7 @@ int main(int argc, char *argv[])
                         exit(1);
                     }
 
-                    if (libpbc_set_crypt_key( (const char *) thekey, hostname) != PBC_OK) {
+                    if (libpbc_set_crypt_key(p, (const char *) thekey, hostname) != PBC_OK) {
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
                     }

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: flavor.h,v 1.6 2002-08-20 20:31:18 greenfld Exp $
+    $Id: flavor.h,v 1.7 2003-03-05 22:38:47 willey Exp $
  */
 
 /* a flavor specifies:
@@ -57,14 +57,15 @@ struct login_flavor {
     /* given a login request 'l' and a (possibly NULL) login cookie 'c',
        process the request.  if there are insufficient credentials,
        print out a login form and return accordingly. */
-    login_result (*process_request)(login_rec *l, login_rec *c, 
+    login_result (*process_request)(pool *p, login_rec *l, login_rec *c, 
 				    const char **errstr);
 };
 
 /**
  * given a flavor id, return the corresponding login_flavor
+ * @param pool Apache memory pool or void
  * @param id the unique byte representing the flavor 
  * @returns the struct login_flavor if supported, NULL otherwise */
-struct login_flavor *get_flavor(const char id);
+struct login_flavor *get_flavor(pool *p, const char id);
 
 #endif /* INCLUDED_FLAVOR_H */

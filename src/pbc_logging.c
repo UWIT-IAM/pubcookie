@@ -4,6 +4,8 @@
 # include "pbc_path.h"
 #endif
 
+typedef void pool;
+
 #ifdef HAVE_TIME_H
 # include <time.h>
 #endif /* HAVE_TIME_H */
@@ -82,7 +84,7 @@ CODE facilitynames[] =
 
 #endif /* NEED_SYSLOG_NAMES */
 
-static void mylog(int logging_level, const char *mymsg);
+static void mylog(pool *p, int logging_level, const char *mymsg);
 
 static pbc_open_log *olog = NULL;
 static pbc_log_func *logf = &mylog;
@@ -94,7 +96,7 @@ static pbc_close_log *clog = NULL;
 extern int Debug_Trace;
 extern FILE *debugFile;  /* from PubcookieFilter */
 
-static void mylog(int logging_level, const char *mymsg)
+static void mylog(pool *p, int logging_level, const char *mymsg)
 {
     /* xxx should we prepend the time? */
 
@@ -106,17 +108,17 @@ static void mylog(int logging_level, const char *mymsg)
 
 #else
 
-static void mylog(int logging_level, const char *mymsg)
+static void mylog(pool *p, int logging_level, const char *mymsg)
 {
     int pri = LOG_INFO;
     int fac = PBC_LOG_GENERAL_FACILITY;
-    const char *facstr = libpbc_config_getstring("general_facility", NULL);
+    const char *facstr = libpbc_config_getstring(p, "general_facility", NULL);
 
     if (logging_level == PBC_LOG_ERROR) {
         pri = LOG_ERR;
     } else if (logging_level == PBC_LOG_AUDIT) {
         fac = PBC_LOG_AUDIT_FACILITY;
-        facstr = libpbc_config_getstring("audit_facility", NULL);
+        facstr = libpbc_config_getstring(p, "audit_facility", NULL);
     }
 
     if (facstr != NULL) {
@@ -140,7 +142,7 @@ static void mylog(int logging_level, const char *mymsg)
 
 #endif
 
-void pbc_log_init(const char *ident,
+void pbc_log_init(pool *p, const char *ident,
                   pbc_open_log *o, pbc_log_func *l, pbc_close_log *c)
 {
     /* sigh, prototypes not totally standardized so I need to cast */
@@ -163,40 +165,40 @@ void pbc_log_init(const char *ident,
 }
 
 
-void pbc_log_activity(int logging_level, const char *message,...)
+void pbc_log_activity(pool *p, int logging_level, const char *message,...)
 {
     va_list args;
 
     va_start(args, message);
 
-    pbc_vlog_activity( logging_level, message, args );
+    pbc_vlog_activity(p, logging_level, message, args );
 
     va_end(args);
 }
 
-void pbc_vlog_activity( int logging_level, const char * format, va_list args )
+void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list args )
 {
     char      log[PBC_4K];
         
-    if (logging_level <= (libpbc_config_getint("logging_level", logging_level))) {
+    if (logging_level <= (libpbc_config_getint(p, "logging_level", logging_level))) {
         /* xxx deal with %m here? */
         vsnprintf(log, sizeof(log)-1, format, args);
         
-        logf(logging_level, log);
+        logf(p, logging_level, log);
     }
 }
 
-void pbc_log_close()
+void pbc_log_close(pool *p)
 {
     if (clog) {
-        clog();
+        clog(p);
     }
 }
 
 #if 0
-char* pbc_create_log_message(char *info, char* user, char* app_id)
+char* pbc_create_log_message(pool *p, char *info, char* user, char* app_id)
 {
     return sprintf(%s: user ip: %s \t app id: %s \n %s, 
-                   libpbc_time_string(time(NULL)),user,app_id, info);
+                   libpbc_time_string(p, time(NULL)),user,app_id, info);
 }
 #endif

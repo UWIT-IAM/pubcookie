@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.109 2003-02-20 16:44:22 jteaton Exp $
+    $Id: mod_pubcookie.c,v 1.110 2003-03-05 22:38:47 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -199,7 +199,7 @@ int put_out_post(request_rec *r) {
 int get_pre_s_token(request_rec *r) {
     int i;
     
-    if( (i = libpbc_random_int()) == -1 ) {
+    if( (i = libpbc_random_int(r->pool)) == -1 ) {
         ap_log_rerror(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, r, 
 		"get_pre_s_token: OpenSSL error");
     }
@@ -299,7 +299,7 @@ char pubcookie_auth_type(request_rec *r) {
     }
 
     /* ok, check the list in libpubcookie */
-    return libpbc_get_credential_id(auth_type);
+    return libpbc_get_credential_id(p, auth_type);
 }
 
 request_rec *main_rrec (request_rec *r) {
@@ -379,11 +379,11 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* just update the idle timer */
         /* xxx it would be nice if the idle timeout has been disabled
            to avoid recomputing and resigning the cookie? */
-        cookie = libpbc_update_lastts_p(r->pool, cfg->cookie_data, NULL);
+        cookie = libpbc_update_lastts(r->pool, cfg->cookie_data, NULL);
     } else {
         /* create a brand new cookie, initialized with the present time */
-        cookie = libpbc_get_cookie_p(r->pool, 
-                                     (unsigned char *)r->connection->user, 
+        cookie = libpbc_get_cookie(r->pool, 
+				     (unsigned char *)r->connection->user, 
                                      PBC_COOKIE_TYPE_S, 
 				     cfg->creds, 
 				     23, 
@@ -422,14 +422,13 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* base 64 */
         if (!res) {
             base64 = ap_palloc(r->pool, (bloblen + 3) / 3 * 4 + 1);
-            if (!libpbc_base64_encode( (unsigned char *) blob, 
+            if (!libpbc_base64_encode(r->pool, (unsigned char *) blob, 
                                        (unsigned char *) base64, bloblen)) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
                               "credtrans: libpbc_base64_encode() failed");
                 res = -1;
             }
         }
-        if (blob) free(blob);
 
         /* set */
         new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
@@ -455,6 +454,7 @@ void clear_granting_cookie(request_rec *r) {
 #else
     char *secure = " secure";
 #endif
+    pool *p = r->pool;
 
     new_cookie = ap_psprintf(r->pool, 
                  "%s=; domain=%s; path=/; expires=%s;%s", 
@@ -473,6 +473,7 @@ void clear_transfer_cookie(request_rec *r) {
 #else
     char *secure = " secure";
 #endif
+    pool *p = r->pool;
 
     new_cookie = ap_psprintf(r->pool, 
                              "%s=; domain=%s; path=/; expires=%s;%s", 
@@ -746,7 +747,7 @@ static int auth_failed_handler(request_rec *r) {
     /* deal with GET args */
     if ( r->args ) {
         args = ap_pcalloc (p, (strlen (r->args) + 3) / 3 * 4 + 1);
-        libpbc_base64_encode( (unsigned char *) r->args, 
+        libpbc_base64_encode(p, (unsigned char *) r->args, 
 			      (unsigned char *) args, strlen(r->args));
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
             "GET args before encoding length %d, string: %s", 
@@ -848,7 +849,7 @@ static int auth_failed_handler(request_rec *r) {
     /*   the body of the redirect                    */
 
     e_g_req_contents = ap_palloc(p, (strlen(g_req_contents) + 3) / 3 * 4 + 1);
-    libpbc_base64_encode( (unsigned char *) g_req_contents, (unsigned char *) e_g_req_contents, strlen(g_req_contents));
+    libpbc_base64_encode(p, (unsigned char *) g_req_contents, (unsigned char *) e_g_req_contents, strlen(g_req_contents));
 
     /* create whole g req cookie */
     ap_snprintf(g_req_cookie, PBC_4K-1, 
@@ -862,7 +863,8 @@ static int auth_failed_handler(request_rec *r) {
         "g_req length %d cookie: %s", strlen(g_req_cookie), g_req_cookie);
 
     /* make the pre-session cookie */
-    pre_s = (char *) libpbc_get_cookie_p(p, 
+
+    pre_s = (char *) libpbc_get_cookie(p,
                                    (unsigned char *) "presesuser",
                                    PBC_COOKIE_TYPE_PRE_S, 
                                    PBC_CREDS_NONE, 
@@ -1024,7 +1026,7 @@ char *get_cookie(request_rec *r, char *name) {
 
 }
 
-static void mylog(int logging_level, const char *msg)
+static void mylog(pool *p, int logging_level, const char *msg)
 {
     int apri = APLOG_INFO;
 
@@ -1033,6 +1035,8 @@ static void mylog(int logging_level, const char *msg)
         apri = APLOG_ERR;
 
     ap_log_error(APLOG_MARK, apri, NULL, "%s", msg);
+//    fprintf(stderr, msg);
+
 }
 
 static void pubcookie_init(server_rec *s, pool *p) {
@@ -1051,11 +1055,11 @@ static void pubcookie_init(server_rec *s, pool *p) {
 	exit(1);
     }
 
-    libpbc_config_init(NULL, "mod_pubcookie");
-    pbc_log_init("mod_pubcookie", NULL, &mylog, NULL);
+    libpbc_config_init(p, NULL, "mod_pubcookie");
+    pbc_log_init(p, "mod_pubcookie", NULL, &mylog, NULL);
 
     /* libpubcookie initialization */
-    libpbc_pubcookie_init();
+    libpbc_pubcookie_init(p);
 
     if (!scfg->login) {
         /* if the user didn't explicitly configure a login server,
@@ -1183,7 +1187,7 @@ int get_pre_s_from_cookie(request_rec *r)
       		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
 		r->uri);
     else
-        cookie_data = libpbc_unbundle_cookie(cookie, NULL);
+        cookie_data = libpbc_unbundle_cookie(p, cookie, NULL);
 
     if( cookie_data == NULL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
@@ -1265,7 +1269,7 @@ static int pubcookie_user(request_rec *r) {
      if we don't have one.  This helps if there are any old g cookies */
   cookie_data = NULL;
   if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
-      cookie_data = libpbc_unbundle_cookie(cookie, ap_get_server_name(r));
+      cookie_data = libpbc_unbundle_cookie(p, cookie, ap_get_server_name(r));
       if( !cookie_data) {
           ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
 	  		"can't unbundle G cookie; uri: %s\n", r->uri);
@@ -1292,7 +1296,7 @@ static int pubcookie_user(request_rec *r) {
     }
     else {  /* hav S cookie */
 
-      cookie_data = libpbc_unbundle_cookie(cookie, NULL);
+      cookie_data = libpbc_unbundle_cookie(p, cookie, NULL);
       if( ! cookie_data ) {
           ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
 	  		"can't unbundle S cookie; uri: %s\n", r->uri);
@@ -1308,7 +1312,7 @@ static int pubcookie_user(request_rec *r) {
       r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
       r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 
-      if( libpbc_check_exp((*cookie_data).broken.create_ts, cfg->hard_exp) == PBC_FAIL ) {
+      if( libpbc_check_exp(p, (*cookie_data).broken.create_ts, cfg->hard_exp) == PBC_FAIL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
         	"S cookie hard expired; user: %s cookie timestamp: %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
@@ -1322,7 +1326,7 @@ static int pubcookie_user(request_rec *r) {
       }
 
       if( cfg->inact_exp != -1 &&
-          libpbc_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp) == PBC_FAIL ) {
+          libpbc_check_exp(p, (*cookie_data).broken.last_ts, cfg->inact_exp) == PBC_FAIL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
         	"S cookie inact expired; user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
@@ -1375,7 +1379,7 @@ static int pubcookie_user(request_rec *r) {
     r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
     r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 
-    if( libpbc_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) == PBC_FAIL ) {
+    if( libpbc_check_exp(p, (*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) == PBC_FAIL ) {
       ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
       		"pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s", time(NULL)-(*cookie_data).broken.create_ts-PBC_GRANTING_EXPIRE, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
       cfg->failed = PBC_BAD_AUTH;
@@ -1409,7 +1413,7 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check version id */
-  if( libpbc_check_version(cookie_data) == PBC_FAIL ) {
+  if( libpbc_check_version(p, cookie_data) == PBC_FAIL ) {
     ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
     		"pubcookie_user: wrong version id; module: %d cookie: %d uri: %s", PBC_VERSION, (*cookie_data).broken.version);
     cfg->failed = PBC_BAD_AUTH;
@@ -1452,7 +1456,7 @@ static int pubcookie_user(request_rec *r) {
       int res = 0;
 
       /* base64 decode cookie */
-      if (!libpbc_base64_decode( (unsigned char *) cookie, 
+      if (!libpbc_base64_decode(p, (unsigned char *) cookie, 
                                  (unsigned char *) blob, &bloblen)) {
           ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
                         "credtrans: libpbc_base64_decode() failed");
@@ -1475,14 +1479,13 @@ static int pubcookie_user(request_rec *r) {
           cfg->cred_transfer = ap_palloc(p, plainlen);
           memcpy(cfg->cred_transfer, plain, plainlen);
           cfg->cred_transfer_len = plainlen;
-          free(plain);
       }
 
       /* set a random KRB5CCNAME */
       krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d", getpid());
       if (!res) {
           /* save these creds in that file */
-          f = fopen(krb5ccname, "w");
+          f = ap_pfopen(p, krb5ccname, "w");
           if (!f) {
               ap_log_rerror(APLOG_MARK, APLOG_ERR, r,
                             "credtrans: setenv() failed");
@@ -1496,7 +1499,7 @@ static int pubcookie_user(request_rec *r) {
       }
 
       if (f) {
-          fclose(f);
+          ap_pfclose(p, f);
       }
 
       if (cred_from_trans) {

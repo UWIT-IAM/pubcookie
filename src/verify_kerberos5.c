@@ -8,13 +8,15 @@
  */
 
 /*
- * $Revision: 1.18 $
+ * $Revision: 1.19 $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+typedef void pool;
 
 /* login cgi includes */
 #include "index.cgi.h"
@@ -76,7 +78,7 @@
 
 static char thishost[BUFSIZ];
 
-static int save_tf(const char *tfname, struct credentials **credsp)
+static int save_tf(pool *p, const char *tfname, struct credentials **credsp)
 {
     FILE *f;
     struct stat sbuf;
@@ -129,7 +131,7 @@ static int save_tf(const char *tfname, struct credentials **credsp)
     return -1;
 }
 
-static int unsave_tf(const char *tfname, struct credentials *creds)
+static int unsave_tf(pool *p, const char *tfname, struct credentials *creds)
 {
     FILE *f;
 
@@ -160,13 +162,13 @@ static int unsave_tf(const char *tfname, struct credentials *creds)
     return 0;
 }
 
-static void creds_free(struct credentials *creds)
+static void creds_free(pool *p, struct credentials *creds)
 {
     if (creds->str) free(creds->str);
     if (creds) free(creds);
 }
 
-static int creds_derive(struct credentials *creds,
+static int creds_derive(pool *p, struct credentials *creds,
 			const char *app,
 			const char *target,
 			struct credentials **outcredsp)
@@ -307,7 +309,7 @@ static int creds_derive(struct credentials *creds,
 /*
  * returns 0 success; non-0 on failure
  */
-static int k5support_verify_tgt(krb5_context context, 
+static int k5support_verify_tgt(pool *p, krb5_context context, 
 				krb5_ccache ccache,
 				krb5_auth_context *auth_context,
 				const char **errstr)
@@ -388,7 +390,7 @@ static int k5support_verify_tgt(krb5_context context,
 }
 
 /* returns 0 on success; non-zero on failure */
-static int kerberos5_v(const char *userid,
+static int kerberos5_v(pool *p, const char *userid,
 		       const char *passwd,
 		       const char *service,
 		       const char *user_realm,

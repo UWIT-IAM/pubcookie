@@ -4,6 +4,18 @@
 # include "pbc_path.h"
 #endif
 
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
+#endif
+
 #ifdef HAVE_STRING_H
 # include <string.h>  /* for win32 */
 #endif /* HAVE_STRING_H */
@@ -56,7 +68,7 @@ static unsigned char decode[256] = {
   NL, NL, NL, NL, NL, NL, NL, NL, NL, NL,
   NL, NL, NL, NL, NL, NL};
 
-int libpbc_base64_encode(unsigned char *in, unsigned char *out, int size) {
+int libpbc_base64_encode(pool *p, unsigned char *in, unsigned char *out, int size) {
   unsigned int a, b, c;
 
   while(size > 0) {
@@ -89,7 +101,7 @@ int libpbc_base64_encode(unsigned char *in, unsigned char *out, int size) {
   return 1;
 }
 
-int libpbc_base64_decode(unsigned char *in, unsigned char *out, int *osizep) {
+int libpbc_base64_decode(pool *p, unsigned char *in, unsigned char *out, int *osizep) {
   unsigned int a, b, c, d;
   int size = strlen((const char *)in);
   int correct = 0;
@@ -159,6 +171,8 @@ int main(int argc, char *argv[])
     int tot = 0;
     int compare = 0;
     int verbose = 0;
+    void *p; 
+    char *ptr;
 
     if (argc > 1) {
         if ( strcmp(argv[arg], "-d") == 0 ) {
@@ -206,6 +220,14 @@ int main(int argc, char *argv[])
             inlen += BUFSIZ;
             inbuf = (char *) realloc( inbuf, inlen );
         }
+
+	ptr = inbuf + strlen(inbuf);
+        while( ptr > inbuf ) {
+            if( *ptr == '\n' || *ptr == '\r' ) 
+                *ptr = '\0';
+            ptr--;
+        }
+            
     }
 
     if ( ! decode ) {
@@ -214,7 +236,7 @@ int main(int argc, char *argv[])
         }
 
         outbuf = (char *) malloc(2 * tot );
-        ret = libpbc_base64_encode((unsigned char *) inbuf, 
+        ret = libpbc_base64_encode(p, (unsigned char *) inbuf, 
                                    (unsigned char *) outbuf, tot);
         outlen = strlen(outbuf);
 
@@ -244,7 +266,7 @@ int main(int argc, char *argv[])
     }
 
     outbuf2 = (char *) malloc(tot);
-    ret = libpbc_base64_decode( (unsigned char *) outbuf, 
+    ret = libpbc_base64_decode(p, (unsigned char *) outbuf, 
                                 (unsigned char *) outbuf2, &outlen);
 
     if (ret) {

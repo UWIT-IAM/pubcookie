@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.30 2002-11-14 20:18:11 willey Exp $
+    $Id: libpubcookie.h,v 1.31 2003-03-05 22:38:47 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -60,57 +60,11 @@ const char *get_my_hostname();
  * @param name the name of the authtype
  * @returns either PBC_CREDS_NONE or the credential id to pass in the cookie
  */
-const char libpbc_get_credential_id(const char *name);
+const char libpbc_get_credential_id(pool *p, const char *name);
 
-#ifdef APACHE1_3
-#include "httpd.h"
+int libpbc_get_crypt_key(pool *p, crypt_stuff *c_stuff, const char *peer);
 
-int libpbc_get_crypt_key_p(ap_pool *p, crypt_stuff *c_stuff, const char *peer);
-
-unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
-				   unsigned char, 
-				   unsigned char, 
-				   int,
-				   unsigned char *, 
-				   unsigned char *, 
-				   const char *peer);
-/* for now we use the last_ts field in login cookie as expire_ts */
-unsigned char *libpbc_get_cookie_with_expire_p(ap_pool *, unsigned char *, 
-					       unsigned char, 
-					       unsigned char, 
-					       int,
-					       time_t,
-					       unsigned char *, 
-					       unsigned char *, 
-					       const char *peer);
-pbc_cookie_data *libpbc_unbundle_cookie_p(ap_pool *, char *, 
-					  const char *peer);
-unsigned char *libpbc_update_lastts_p(ap_pool *, pbc_cookie_data *,
-				      const char *peer);
-void libpbc_pubcookie_init_p(ap_pool *);
-unsigned char *libpbc_alloc_init_p(ap_pool *, int);
-unsigned char *libpbc_gethostip_p(ap_pool *);
-void libpbc_free_md_context_plus_p(ap_pool *, md_context_plus *);
-
-/**
- * generates a random key for peer and writes it to the disk
- * @param peer the certificate name of the peer
- * @return PBC_OK for success, PBC_FAIL for failure
- */
-int libpbc_generate_crypt_key_p(ap_pool *, const char *peer);
-
-/**
- * writes the key 'key' to disk for peer 'peer'
- * @param a pointer to the 2048-bit key
- * @param peer the certificate name of the peer
- * @return PBC_OK for success, PBC_FAIL for failure
- */
-int libpbc_set_crypt_key_p(ap_pool *, const char *key, const char *peer);
-#else
-
-int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, const char *peer);
-
-unsigned char *libpbc_get_cookie_np(unsigned char *, 
+unsigned char *libpbc_get_cookie(pool *p, unsigned char *, 
 				    unsigned char, 
 				    unsigned char, 
 				    int,
@@ -118,7 +72,7 @@ unsigned char *libpbc_get_cookie_np(unsigned char *,
 				    unsigned char *, 
 				    const char *peer);
 /* for now we use the last_ts field in login cookie as expire_ts */
-unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *, 
+unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *, 
 						unsigned char, 
 						unsigned char, 
 						int,
@@ -126,26 +80,24 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *,
 						unsigned char *, 
 						unsigned char *, 
 						const char *peer);
-pbc_cookie_data *libpbc_unbundle_cookie_np(char *, 
+pbc_cookie_data *libpbc_unbundle_cookie(pool *p, char *, 
 					   const char *peer);
-unsigned char *libpbc_update_lastts_np(pbc_cookie_data *,
+unsigned char *libpbc_update_lastts(pool *p, pbc_cookie_data *,
 				       const char *peer);
-md_context_plus *libpbc_sign_init_np(char *);
-void libpbc_pubcookie_init_np();
-unsigned char *libpbc_alloc_init_np(int);
-unsigned char *libpbc_gethostip_np();
-void libpbc_free_md_context_plus_np(md_context_plus *);
-int libpbc_random_int();
-unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data); 
-
-
+md_context_plus *libpbc_sign_init(pool *p, char *);
+void libpbc_pubcookie_init(pool *p);
+unsigned char *libpbc_alloc_init(pool *p, int);
+unsigned char *libpbc_gethostip(pool *p);
+void libpbc_free_md_context_plus(pool *p, md_context_plus *);
+int libpbc_random_int(pool *p);
+unsigned char *libpbc_stringify_cookie_data(pool *p, pbc_cookie_data *cookie_data); 
 
 /**
  * generates a random key for peer and writes it to the disk
  * @param peer the certificate name of the peer
  * @return PBC_OK for success, PBC_FAIL for failure
  */
-int libpbc_generate_crypt_key_np(const char *peer);
+int libpbc_generate_crypt_key(pool *p, const char *peer);
 
 /**
  * writes the key 'key' to disk for peer 'peer'
@@ -153,22 +105,21 @@ int libpbc_generate_crypt_key_np(const char *peer);
  * @param peer the certificate name of the peer
  * @return PBC_OK for success, PBC_FAIL for failure
  */
-int libpbc_set_crypt_key_np(const char *key, const char *peer);
-#endif
+int libpbc_set_crypt_key(pool *p, const char *key, const char *peer);
 
-char *libpbc_time_string(time_t);
-void *libpbc_abend(const char *,...);
-int libpbc_debug(const char *,...);
-void *malloc_debug(size_t x);
-void free_debug(void *p);
-void libpbc_augment_rand_state(unsigned char *, int);
-char *libpbc_mod_crypt_key(char *, unsigned char *);
+char *libpbc_time_string(pool *p, time_t);
+void *libpbc_abend(pool *p, const char *,...);
+int libpbc_debug(pool *p, const char *,...);
+void *malloc_debug(pool *p, size_t x);
+void free_debug(pool *p, void *ptr);
+void libpbc_augment_rand_state(pool *p, unsigned char *, int);
+char *libpbc_mod_crypt_key(pool *p, char *, unsigned char *);
 
 
-int libpbc_base64_encode(unsigned char *, unsigned char *, int );
-int libpbc_base64_decode(unsigned char *, unsigned char *, int *);
-int libpbc_check_version(pbc_cookie_data *);
-int libpbc_check_exp(time_t, int);
+int libpbc_base64_encode(pool *p, unsigned char *, unsigned char *, int );
+int libpbc_base64_decode(pool *p, unsigned char *, unsigned char *, int *);
+int libpbc_check_version(pool *p, pbc_cookie_data *);
+int libpbc_check_exp(pool *p, time_t, int);
 
 enum {
     PBC_RR_FR_CODE =             0,
@@ -189,7 +140,7 @@ enum {
 /* string translations of the above reasons */
 extern const char *redirect_reason[13];
 
-int capture_cmd_output(char **cmd, char *out, int len);
+int capture_cmd_output(pool *p, char **cmd, char *out, int len);
 
 #ifdef WIN32
 #  define R_OK 4
@@ -200,7 +151,7 @@ int capture_cmd_output(char **cmd, char *out, int len);
 #  define bcopy(s, d, siz)        memcpy((d), (s), (siz))
 #  define bzero(d, siz)   memset((d), '\0', (siz))
 void syslog(int whichlog, const char *message,...);
-void pbc_log_activity(int logging_level, const char *message,...); 
+void pbc_log_activity(pool *p, int logging_level, const char *message,...); 
 //int snprintf( char *buffer, size_t count, const char *format, ... ); /* Windows version is broken */
 #define snprintf _snprintf
 #define LOG_ERR 0

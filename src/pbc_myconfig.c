@@ -18,13 +18,25 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.19 2002-11-21 23:48:21 ryanc Exp $
+    $Id: pbc_myconfig.c,v 1.20 2003-03-05 22:38:47 willey Exp $
  */
 
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
+#endif
+
+#if defined (APACHE1_3)
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
+#else
+typedef void pool;
 #endif
 
 #ifdef HAVE_STDIO_H
@@ -79,20 +91,20 @@ struct configlist {
 static struct configlist *configlist;
 static int nconfiglist;
 
-static void config_read(const char *alt_config);
-static void fatal(const char *s, int ex);
+static void config_read(pool *p, const char *alt_config);
+static void fatal(pool *p, const char *s, int ex);
 
 #ifndef WIN32
 
-int libpbc_config_init(const char *alt_config, const char *ident)
+int libpbc_config_init(pool *p, const char *alt_config, const char *ident)
 {
     const char *val;
     int umaskval = 0;
     
-    config_read(alt_config);
+    config_read(p, alt_config);
     
     /* Look up umask */
-    val = libpbc_config_getstring("umask", "022");
+    val = libpbc_config_getstring(p, "umask", "022");
     while (*val) {
         if (*val >= '0' && *val <= '7') umaskval = umaskval*8 + *val - '0';
         val++;
@@ -117,7 +129,7 @@ int libpbc_config_init(const char *alt_config, const char *ident)
     return 0;
 }
 
-const char *libpbc_config_getstring(const char *key, const char *def)
+const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 {
     int opt;
 
@@ -136,12 +148,12 @@ const char *libpbc_config_getstring(const char *key, const char *def)
 }
 
 /* output must be free'd.  (no subpointers should be free'd.) */
-char **libpbc_config_getlist(const char *key)
+char **libpbc_config_getlist(pool *p, const char *key)
 {
-    const char *tval = libpbc_config_getstring(key, NULL);
+    const char *tval = libpbc_config_getstring(p, key, NULL);
     char *val;
     char **ret;
-    char *p;
+    char *ptr;
     int c;
 
     if (tval == NULL) {
@@ -149,15 +161,15 @@ char **libpbc_config_getlist(const char *key)
     }
 
     c = 1; /* initial string */
-    for (p = strchr(tval, ' '); p != NULL; p = strchr(p + 1, ' ')) {
+    for (ptr = strchr(tval, ' '); ptr != NULL; ptr = strchr(ptr + 1, ' ')) {
 	c++;
     }
 
     /* we malloc a buffer long enough for the subpointers followed by
        the string that we modify by adding \0 */
-    ret = malloc(sizeof(char *) * (c + 2) + strlen(tval) + 1);
+    ret = pbc_malloc(p, sizeof(char *) * (c + 2) + strlen(tval) + 1);
     if (!ret) {
-	fatal("out of memory", EX_OSERR);
+	fatal(p, "out of memory", EX_OSERR);
     }
 
     /* copy the string to the end of the buffer.
@@ -167,19 +179,19 @@ char **libpbc_config_getlist(const char *key)
     strcpy(val, tval);
     c = 0;
     ret[c++] = val;
-    for (p = strchr(val, ' '); p != NULL; p = strchr(p, ' ')) {
-	*p++ = '\0';
-	if (*p == ' ') continue;
-	ret[c++] = p;
+    for (ptr = strchr(val, ' '); ptr != NULL; ptr = strchr(ptr, ' ')) {
+	*ptr++ = '\0';
+	if (*ptr == ' ') continue;
+	ret[c++] = ptr;
     }
     ret[c] = NULL;
 
     return ret;
 }
 
-int libpbc_config_getint(const char *key, int def)
+int libpbc_config_getint(pool *p, const char *key, int def)
 {
-    const char *val = libpbc_config_getstring(key, (char *)0);
+    const char *val = libpbc_config_getstring(p, key, (char *)0);
     
     if (!val) return def;
     if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
@@ -187,9 +199,9 @@ int libpbc_config_getint(const char *key, int def)
     return atoi(val);
 }
 
-int libpbc_config_getswitch(const char *key, int def)
+int libpbc_config_getswitch(pool *p, const char *key, int def)
 {
-    const char *val = libpbc_config_getstring(key, (char *)0);
+    const char *val = libpbc_config_getstring(p, key, (char *)0);
 
     if (!val) return def;
     
@@ -206,54 +218,54 @@ int libpbc_config_getswitch(const char *key, int def)
 }
 
 #define CONFIGLISTGROWSIZE 30 /* 100 */
-static void config_read(const char *alt_config)
+static void config_read(pool *p, const char *alt_config)
 {
     FILE *infile;
     int lineno = 0;
     int alloced = 0;
     char buf[4096];
-    char *p, *q, *key;
+    char *ptr, *q, *key;
     
-    infile = fopen(alt_config ? alt_config : PBC_CONFIG, "r");
+    infile = pbc_fopen(p, alt_config ? alt_config : PBC_CONFIG, "r");
     if (!infile) {
         snprintf(buf, sizeof(buf), "can't open configuration file %s: %s",
                  alt_config ? alt_config : PBC_CONFIG,
                  strerror(errno));
-        fatal(buf, EX_CONFIG);
+        fatal(p, buf, EX_CONFIG);
     }
     
     while (fgets(buf, sizeof(buf), infile)) {
         lineno++;
 	
         if (buf[strlen(buf)-1] == '\n') buf[strlen(buf)-1] = '\0';
-        for (p = buf; *p && isspace((int) *p); p++);
-        if (!*p || *p == '#') continue;
+        for (ptr = buf; *ptr && isspace((int) *ptr); ptr++);
+        if (!*ptr || *ptr == '#') continue;
 
-        key = p;
-        while (*p && (isalnum((int) *p) || *p == '-' || *p == '_' || *p == '.')) {
-            if (isupper((unsigned char) *p)) *p = tolower((unsigned char) *p);
-            p++;
+        key = ptr;
+        while (*ptr && (isalnum((int) *ptr) || *ptr == '-' || *ptr == '_' || *ptr == '.')) {
+            if (isupper((unsigned char) *ptr)) *ptr = tolower((unsigned char) *ptr);
+            ptr++;
         }
-        if (*p != ':') {
+        if (*ptr != ':') {
             snprintf(buf, sizeof(buf),
 		     "invalid option name on line %d of configuration file",
 		     lineno);
-            fatal(buf, EX_CONFIG);
+            fatal(p, buf, EX_CONFIG);
         }
-        *p++ = '\0';
+        *ptr++ = '\0';
 	
-        while (*p && isspace((int) *p)) p++;
+        while (*ptr && isspace((int) *ptr)) ptr++;
 	
         /* remove trailing whitespace */
-        for (q = p + strlen(p) - 1; q > p && isspace((int) *q); q--) {
+        for (q = ptr + strlen(ptr) - 1; q > ptr && isspace((int) *q); q--) {
             *q = '\0';
         }
         
-        if (!*p) {
+        if (!*ptr) {
             snprintf(buf, sizeof(buf),
                      "empty option value on line %d of configuration file",
                      lineno);
-            fatal(buf, EX_CONFIG);
+            fatal(p, buf, EX_CONFIG);
         }
 	
         if (nconfiglist == alloced) {
@@ -261,30 +273,30 @@ static void config_read(const char *alt_config)
 
             if (configlist == NULL) {
                 configlist = (struct configlist *)
-                    malloc(alloced*sizeof(struct configlist));
+                    pbc_malloc(p, alloced*sizeof(struct configlist));
             } else {
                 configlist = (struct configlist *)
                     realloc((char *)configlist, alloced*sizeof(struct configlist));
             }
             if (!configlist) {
-                fatal("out of memory", EX_OSERR);
+                fatal(p, "out of memory", EX_OSERR);
             }
         }
 	
-        configlist[nconfiglist].key = strdup(key);
+        configlist[nconfiglist].key = pbc_strdup(p, key);
         if (!configlist[nconfiglist].key) {
-            fatal("out of memory", EX_OSERR);
+            fatal(p, "out of memory", EX_OSERR);
         }
-        configlist[nconfiglist].value = strdup(p);
+        configlist[nconfiglist].value = pbc_strdup(p, ptr);
         if (!configlist[nconfiglist].value) {
-            fatal("out of memory", EX_OSERR);
+            fatal(p, "out of memory", EX_OSERR);
         }
         nconfiglist++;
     }
-    fclose(infile);
+    pbc_fclose(p, infile);
 }
 
-static void fatal(const char *s, int ex)
+static void fatal(pool *p, const char *s, int ex)
 {
     fprintf(stderr, "fatal error: %s\n", s);
     exit(ex);
@@ -345,7 +357,7 @@ int main(int argc, char *argv[])
 
 
 
-const char *libpbc_config_getstring(const char *key, const char *def)
+const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 {
     int opt;
     
@@ -403,7 +415,7 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 		if (RegEnumValue(hKey,nconfiglist,keyBuff,&dwkey,NULL,&type,dataBuff,&dwdata) == ERROR_SUCCESS) {
 			
 			
-			configlist[nconfiglist].key = strdup(keyBuff);
+			configlist[nconfiglist].key = pbc_strdup(p, keyBuff);
 			if (!configlist[nconfiglist].key) {
 				RegCloseKey (hKey);
 				return FALSE;
@@ -413,7 +425,7 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 
 			case REG_SZ:
 				
-				configlist[nconfiglist].value = strdup(dataBuff);
+				configlist[nconfiglist].value = pbc_strdup(p, dataBuff);
 				if (!configlist[nconfiglist].value) {
 					RegCloseKey (hKey);
 					return FALSE;
@@ -422,7 +434,7 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 				break;
 				
 			case REG_DWORD: //store DWORD as string for function spec. compatability
-				configlist[nconfiglist].value = strdup(itoa((DWORD)*dataBuff,fmtstr,10));
+				configlist[nconfiglist].value = pbc_strdup(p, itoa((DWORD)*dataBuff,fmtstr,10));
 				if (!configlist[nconfiglist].value) {
 					RegCloseKey (hKey);
 					return FALSE;

@@ -9,35 +9,35 @@
 #ifndef PBC_PATH_H
 #define PBC_PATH_H
 
-#define PBC_PATH (libpbc_config_getstring("pbc_path", "@prefix@/"))
+#define PBC_PATH (libpbc_config_getstring(p, "pbc_path", "@prefix@/"))
 /* the login server builds it's key Filenames from the hostname     */
 #if defined (WIN32)
 #  define PBC_KEY_DIR (AddSystemRoot("\\inetsrv\\pubcookie\\keys"))
 #else
-#  define PBC_KEY_DIR (libpbc_config_getstring("keydir", "@prefix@/keys"))
+#  define PBC_KEY_DIR (libpbc_config_getstring(p, "keydir", "@prefix@/keys"))
 #endif
 
 /* where the runtime configuration file lives */
 #define PBC_CONFIG "@prefix@/config"
 
 /* Where to find templates */
-#define TMPL_FNAME (libpbc_config_getstring("template_root", "@prefix@/login_templates"))
+#define TMPL_FNAME (libpbc_config_getstring(p, "template_root", "@prefix@/login_templates"))
 
 /* file to get the list of ok browsers from */
-#define OK_BROWSERS_FILE (libpbc_config_getstring("ok_browsers", "@prefix@/ok_browsers"))
+#define OK_BROWSERS_FILE (libpbc_config_getstring(p, "ok_browsers", "@prefix@/ok_browsers"))
 
 /* file to get browser information from */
-#define BROWSERS_FILE (libpbc_config_getstring("browsers", "@prefix@/browsers"))
+#define BROWSERS_FILE (libpbc_config_getstring(p, "browsers", "@prefix@/browsers"))
 
 /* getcred authz file */
-#define GETCRED_AUTHZ (libpbc_config_getstring("getcred_authz_file", "@prefix@/getcred_authz"))
+#define GETCRED_AUTHZ (libpbc_config_getstring(p, "getcred_authz_file", "@prefix@/getcred_authz"))
 
 /* The keyclient.  This is probably better defined elsewhere, but I dunno. */
 
-#define KEYCLIENT (libpbc_config_getstring("keyclient", "@prefix@/keyclient"))
+#define KEYCLIENT (libpbc_config_getstring(p, "keyclient", "@prefix@/keyclient"))
 
 /* The path to the cert db, if this is using the Netscape SDK */
 
-#define CERT_DB_PATH (libpbc_config_getstring("cert_db_path", "@prefix@/keys"))
+#define CERT_DB_PATH (libpbc_config_getstring(p, "cert_db_path", "@prefix@/keys"))
 
 #endif

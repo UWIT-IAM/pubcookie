@@ -8,13 +8,15 @@
 /**
  * initializes the security subsystem.
  * the configuration & logging subsystems are required prerequisites
+ * @param pool pionter to an Apache memory pool
  * @returns non-zero on error
  */
-int security_init(void);
+int security_init(pool *p);
 
 /**
  * libpbc_mk_priv takes 'buf', 'len', and returns 'outbuf', 'outlen',
  * an encrypted string that can only be read by 'peer'.
+ * @param pool pionter to an Apache memory pool
  * @param peer the name of the peer this is destined for.  if NULL,
  * the message will be signed with private material that is only known
  * to this host. 
@@ -25,13 +27,14 @@ int security_init(void);
  * @param outlen the length of outbuf.
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv(const char *peer, const char *buf, const int len,
+int libpbc_mk_priv(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen);
 
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
  * 'peer' is NULL, we assume that this host previously called libpbc_mk_priv
  * with NULL.
+ * @param pool Apache memory pool
  * @param peer the peer this message is destined to (the first parameter to
  * libpbc_mk_priv()).
  * @param buf a pointer to the encrypted message
@@ -41,13 +44,14 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks)
  */
-int libpbc_rd_priv(const char *peer, const char *buf, const int len,
+int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen);
 
 /**
  * libpbc_mk_safe allocates a signature and returns it to the
  * application. 'outbuf' does not contain the plaintext message; both
  * 'buf' and 'outbuf' must be sent to the other side.
+ * @param pool pionter to an Apache memory pool
  * @param peer the peer this message is being sent to; if NULL, this message
  * is destined to myself.
  * @param buf a pointer to the message to be sent
@@ -56,11 +60,12 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
  * @param outlen the length of the signature
  * @returns 0 success, non-0 on failure
  */
-int libpbc_mk_safe(const char *peer, const char *buf, const int len,
+int libpbc_mk_safe(pool *p, const char *peer, const char *buf, const int len,
 		   char **outbuf, int *outlen);
 
 /**
  * verifies a message signed with libpbc_mk_safe()
+ * @param pool pionter to an Apache memory pool
  * @param peer the peer this message was sent to; the first parameter passed
  * to libpbc_mk_safe()
  * @param buf the plaintext message
@@ -69,14 +74,15 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
  * @param siglen the length of the received signature
  * @returns 0 on success, non-0 on any failure
  */
-int libpbc_rd_safe(const char *peer, const char *buf, const int len,
+int libpbc_rd_safe(pool *p, const char *peer, const char *buf, const int len,
 		   const char *sigbuf, const int siglen);
 
 /**
  * returns the public name of this service. this is what other systems
  * should use as peer to send data here with libpbc_mk_safe()
+ * @param pool pionter to an Apache memory pool
  * @returns a constant string, which should not be modified or free()ed
  */
-const char *libpbc_get_cryptname(void);
+const char *libpbc_get_cryptname(pool *p);
 
 #endif

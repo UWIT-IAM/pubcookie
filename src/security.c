@@ -9,7 +9,7 @@
 
 #include "security.h"
 
-void printme(char *desc, char *str, int sz)
+void printme(pool *p, char *desc, char *str, int sz)
 {
     int s;
 
@@ -33,10 +33,10 @@ int main(int argc, char *argv[])
 	exit(1);
     }
 
-    libpbc_config_init(NULL, "security");
+    libpbc_config_init(p, NULL, "security");
 
     printf("initializing...\n");
-    if (security_init()) {
+    if (security_init(p)) {
 	printf("failed\n");
 	exit(1);
     }
@@ -45,32 +45,32 @@ int main(int argc, char *argv[])
     in = argv[1];
     inlen = strlen(in);
     printf("signing '%s'...\n", in);
-    if (libpbc_mk_safe(NULL, in, inlen, &outbuf, &outlen)) {
+    if (libpbc_mk_safe(p, NULL, in, inlen, &outbuf, &outlen)) {
 	printf("libpbc_mk_safe() failed\n");
 	exit(1);
     }
-    printme("sig", outbuf, outlen);
+    printme(p, "sig", outbuf, outlen);
 
     printf("verifying sig...");
-    if (libpbc_rd_safe(NULL, in, inlen, outbuf, outlen)) {
+    if (libpbc_rd_safe(p, NULL, in, inlen, outbuf, outlen)) {
 	printf("libpbc_rd_safe() failed\n");
 	exit(1);
     }
     printf("ok\n");
 
     printf("encrypting '%s'...\n", in);
-    if (libpbc_mk_priv(NULL, in, inlen, &outbuf, &outlen)) {
+    if (libpbc_mk_priv(p, NULL, in, inlen, &outbuf, &outlen)) {
 	printf("libpbc_mk_priv() failed\n");
 	exit(1);
     }
-    printme("blob", outbuf, outlen);
+    printme(p, "blob", outbuf, outlen);
 
     printf("decrypting blob...\n");
-    if (libpbc_rd_priv(NULL, outbuf, outlen, &out2buf, &out2len)) {
+    if (libpbc_rd_priv(p, NULL, outbuf, outlen, &out2buf, &out2len)) {
 	printf("libpbc_rd_priv() failed\n");
 	exit(1);
     }
-    printme("plaintext", out2buf, out2len);
+    printme(p, "plaintext", out2buf, out2len);
     if (inlen != out2len || strncmp(in, out2buf, inlen)) {
 	printf("encryption/decryption FAILED (%s %s)\n", in, out2buf);
 	exit(1);

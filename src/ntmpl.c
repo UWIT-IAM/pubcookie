@@ -26,13 +26,13 @@ static long file_size(FILE *afile)
 /*
  * return a template html file
  */
-static char *get_file_template(const char *fname)
+static char *get_file_template(pool *p, const char *fname)
 {
   char *template;
   long len, readlen;
   FILE *tmpl_file;
 
-  tmpl_file = fopen (fname,"r");
+  tmpl_file = pbc_fopen (p, fname,"r");
   if (tmpl_file == NULL) {
     pbc_log_activity(PBC_LOG_ERROR, "abend - cant open template file", fname);
     return NULL;
@@ -57,12 +57,12 @@ static char *get_file_template(const char *fname)
       pbc_log_activity(PBC_LOG_ERROR,
 		 "abend: read %d bytes when expecting %d for template file %s", 
 		 readlen, len, fname);
-      free(template);
+      pbc_free(p, template);
       return NULL;
   }
 
   template[len]=0;
-  fclose(tmpl_file);
+  pbc_fclose(p, tmpl_file);
   return template;
 }
 
@@ -75,16 +75,18 @@ static char *get_file_template(const char *fname)
  * with "%<attr>%"; the entire string is then replaced with the next
  * parameter.  the caller must pass a NULL after all attributes
  */
-void ntmpl_print_html(const char *fname, ...)
+void ntmpl_print_html(pool *p, const char *fname, ...)
 {
     const char *attr;
     const char *subst;
     va_list ap;
-    char *template = get_file_template(fname);
+    char *template = get_file_template(p, fname);
     char *t;
     char *percent;
     char candidate[256];
     int i;
+
+FILE *htmlout;
 
     t = template;
     /* look for the next possible substitution */
@@ -131,7 +133,7 @@ void ntmpl_print_html(const char *fname, ...)
     /* print out everything from the last % on */
     fputs(t, htmlout);
 
-    free(template);
+    pbc_free(p, template);
 }
 
 #ifdef TEST_NTMPL
@@ -174,6 +176,7 @@ int main(int argc, char *argv[])
     FILE *f;
     int err = 0;
     int verbose;
+    void *p;
 
     if (argc > 1 && !strcmp(argv[1], "-v")) {
         verbose++;
@@ -195,7 +198,7 @@ int main(int argc, char *argv[])
         fclose(f);
 
         /* do the substitution */
-        ntmpl_print_html("/tmp/tmpl_test",
+        ntmpl_print_html(p, "/tmp/tmpl_test",
                          "name", "Harry Bovik",
                          "none", NULL,
                          "userid", "bovik",

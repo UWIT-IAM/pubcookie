@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.37 $
+ * $Revision: 1.38 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -94,49 +94,49 @@ typedef struct browser browser_rec;
 
 /* prototypes */
 int cgiMain();
-void abend(char *);
-int cookie_test();
-void notok( void (*)() );
-void notok_no_g_or_l();
-void print_http_header();
-void print_j_test();
-void notok_need_ssl();
-void notok_no_g();
-void notok_formmultipart();
-void notok_generic();
-void notok_bad_agent();
-void print_login_page_part1(char *);
-void print_login_page_part5();
-int check_user_agent();
-void log_message(const char *, ...);
-void log_error(int, const char *, int, const char *, ...);
-void clear_error(const char *, const char *);
-void print_uwnetid_logo();
-login_rec *verify_unload_login_cookie (login_rec *);
-int create_cookie(char *, char *, char *, char, char, int, time_t, char *, 
-		  const char *host, int);
-login_rec *get_query();
-char *check_login(login_rec *, login_rec *);
-char *check_l_cookie(login_rec *, login_rec *);
-void print_redirect_page(login_rec *, login_rec *);
-char *url_encode();
-char *get_cookie_created(char *);
-char *decode_granting_request(char *, char **peerp);
-const char *login_host();
-const char *enterprise_domain();
-int set_pinit_cookie();
-int clear_pinit_cookie();
-char *get_string_arg(char *name, cgiFormResultType (*f)());
+void abend(pool *, char *);
+int cookie_test(pool *, login_rec *, login_rec *);
+void notok(pool *, void (*)() );
+void notok_no_g_or_l(pool *);
+void print_http_header(pool *);
+void print_j_test(pool *);
+void notok_need_ssl(pool *);
+void notok_no_g(pool *);
+void notok_formmultipart(pool *);
+void notok_generic(pool *);
+void notok_bad_agent(pool *);
+void print_login_page_part1(pool *,char *);
+void print_login_page_part5(pool *);
+int check_user_agent(pool *);
+void log_message(pool *,const char *, ...);
+void log_error(pool *,int, const char *, int, const char *, ...);
+void clear_error(pool *,const char *, const char *);
+void print_uwnetid_logo(pool *);
+login_rec *verify_unload_login_cookie (pool *,login_rec *);
+int create_cookie(pool *, char *, char *, char *, char, char, int, time_t, 
+		char *, const char *host, int);
+login_rec *get_query(pool *);
+char *check_login(pool *, login_rec *, login_rec *);
+char *check_l_cookie(pool *, login_rec *, login_rec *);
+void print_redirect_page(pool *, login_rec *, login_rec *);
+char *url_encode(pool *, char *);
+char *get_cookie_created(pool *, char *);
+char *decode_granting_request(pool *, char *, char **peerp);
+const char *login_host(pool *);
+const char *enterprise_domain(pool *);
+int set_pinit_cookie(pool *);
+int clear_pinit_cookie(pool *);
+char *get_string_arg(pool *, char *name, cgiFormResultType(*f)());
 
 /* print part of the HTML */
-void print_html(const char *format, ...);
+void print_html(pool *, const char *format, ...);
 /* print it from the template "fname" */
-void tmpl_print_html(const char *fpath, const char *fname,...);
+void tmpl_print_html(pool *, const char *fpath, const char *fname,...);
 
-void ntmpl_print_html(const char *fname, ...);
+void ntmpl_print_html(pool *p, const char *fname, ...);
 
 /* print part of the HTTP headers */
-void print_header(const char *format, ...);
+void print_header(pool *, const char *format, ...);
 
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"
