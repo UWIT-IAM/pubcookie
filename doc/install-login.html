@@ -399,7 +399,7 @@ service keyserver
 	wait			= no
 	user			= root
 	group			= tty
-	server			= /usr/local/pubcookie/bin/keyserver
+	server			= /usr/local/pubcookie/keyserver
 }
 </pre>
 
@@ -414,7 +414,7 @@ service keyserver
 Now run keyclient to generate a DES key for the login server:</p>
 
 <pre>
-% /usr/local/pubcookie/bin/keyclient
+% /usr/local/pubcookie/keyclient
 </pre>
 
 <p>This will cause the keyserver program to generate a new DES key for
@@ -712,7 +712,7 @@ Copyright 1999-2003, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.12 2003-05-27 18:00:16 dors Exp $
+$Id: install-login.html,v 1.13 2003-06-25 16:55:33 dors Exp $
 </pre>
 </body>
 
