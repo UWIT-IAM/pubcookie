@@ -56,8 +56,8 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
             pri = LOG_ERR;
         else if (logging_level == PBC_LOG_AUDIT)
             fac = PBC_LOG_AUDIT_FACILITY;
-
-        syslog( LOG_MAKEPRI(LOG_FAC(fac),pri), log );
+        
+        syslog( LOG_MAKEPRI(LOG_FAC(fac),pri), "%s", log );
     }
 }
 
