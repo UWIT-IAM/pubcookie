@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.45 2002-03-04 20:49:40 jteaton Exp $
+    $Id: pbc_config.h,v 1.46 2002-03-26 01:14:21 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -54,7 +54,6 @@
 #define PBC_CONFIGED
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
 #define PBC_LOGIN_URI (libpbc_config_getstring("login_uri", ""))
-#define PBC_LOGIN_PAGE (libpbc_config_getstring("login_page", "https://" PBC_LOGIN_HOST "/" PBC_LOGIN_URI))
 #define PBC_LOGIN_TEST_HOST (libpbc_config_getstring("login_test_host", "weblogintest.cac.washington.edu"))
 #define PBC_LOGIN_PROD_TEST_HOST (libpbc_config_getstring("login_prod_test_host", "webloginprodtest.cac.washington.edu"))
 #define PBC_LOGIN_TEST_PAGE (libpbc_config_getstring("login_test_page", "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI))
@@ -85,9 +84,8 @@
 #define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
 #define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
 
-#define PBC_CRED1_AUTHTYPE "uwnetid"
-#define PBC_CRED2_AUTHTYPE "-"
-#define PBC_CRED3_AUTHTYPE "securid"
+#define PBC_DEFAULT_AUTHTYPE "webiso-vanilla"
+
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
 #define PBC_DEFAULT_INACT_EXPIRE     ( 30 * 60 )
@@ -154,10 +152,25 @@ static const char *redirect_reason[] = {
 #define PBC_RR_WRONGVER_CODE        10
 #define PBC_RR_WRONGCREDS_CODE      11
 
-#define PBC_END_SESSION 1
+/* set in apache config to clear session cookie and redirect to weblogin */
+#define PBC_END_SESSION_ARG_REDIR   "redirect"
+#define PBC_END_SESSION_ARG_CLEAR_L "clearLogin"
+#define PBC_END_SESSION_ARG_ON      "On"
+#define PBC_END_SESSION_ARG_OFF     "Off"
+
+#define PBC_END_SESSION_NOPE          0
+#define PBC_END_SESSION_MASK          1
+#define PBC_END_SESSION_REDIR_MASK    2
+#define PBC_END_SESSION_CLEAR_L_MASK  4
+
+#define LOGOUT_ACTION_NOTHING 0
+#define LOGOUT_ACTION_CLEAR_L 1
+
 #define PBC_SESSION_REAUTH 1
 #define PBC_SUPER_DEBUG 1
 #define PBC_CLEAR_COOKIE "clear"
+
+#define EARLIEST_EVER "Fri, 11-Jan-1990 00:00:01 GMT"
 
 /* this is the content of the redirect page's body if there is a POST */
 
@@ -212,15 +225,16 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_REPLY "reply"            /* tags a reply from the form */
 /* new in oct 2001 */
 #define PBC_GETVAR_DURATION "duration" 
+/* new in March 2003 to support short term logout */
+#define PBC_GETVAR_LOGOUT_ACTION "logout_action"
+
 
 /* 
  things that are used both places (module and the library)
  */
 #define PBC_SIG_LEN 128
 #define PBC_CREDS_NONE    '0'
-#define PBC_CREDS_CRED1 '1'
-#define PBC_CREDS_CRED2 '2'
-#define PBC_CREDS_CRED3 '3'
+#define PBC_CREDS_DEFAULT '1'
 
 #define PBC_COOKIE_TYPE_NONE  '0'
 #define PBC_COOKIE_TYPE_G     '1'

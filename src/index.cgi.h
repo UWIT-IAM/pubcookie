@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.18 2002-03-07 22:22:26 willey Exp $
+    $Id: index.cgi.h,v 1.19 2002-03-26 01:14:21 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -114,6 +114,11 @@ cred_def	cred_defs[8];
 #define CRED_ATTR_ECHO_STARs 2		/* form field echo astrisks */
 #define CRED_ATTR_PREFILL 4		/* pre-fill form field if possilble */
 
+/* transfered out of pbc_config.h, soon to be be gone.  */
+#define PBC_CREDS_CRED1 '1'
+#define PBC_CREDS_CRED2 '2'
+#define PBC_CREDS_CRED3 '3'
+
 /* defines conditions for describing behaviour and appearance of  */
 /* login page fields 						  */
 #define FIELD_TYPE_EMPTY_ALTERABLE 0
@@ -198,7 +203,6 @@ const char *get_domain_hostname();
 #define CHECK_LOGIN_RET_SUCCESS "success"
 #define CHECK_LOGIN_RET_FAIL "fail"
 
-#define EARLIEST_EVER "Fri, 11-Jan-1990 00:00:01 GMT"
 #define PROMPT_UWNETID "<B>UW NetID:</B><BR>"
 #define PROMPT_PASSWD "<B>Password:</B><BR>"
 #define PROMPT_SECURID "<B>Securid:</B><BR>"
