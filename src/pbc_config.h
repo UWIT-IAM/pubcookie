@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.34 2001-08-10 19:51:08 willey Exp $
+    $Id: pbc_config.h,v 1.35 2001-08-22 23:07:00 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -41,10 +41,10 @@
 /* names of the login servers */
 #define PBC_CONFIGED
 #define PBC_LOGIN_HOST "weblogin.washington.edu"
-#define PBC_LOGIN_URI "/"
+#define PBC_LOGIN_URI ""
 #define PBC_LOGIN_PAGE "https://" PBC_LOGIN_HOST "/" PBC_LOGIN_URI
-#define PBC_LOGIN_TEST_PAGE PBC_LOGIN_PAGE
-#define PBC_LOGIN_TEST_HOST PBC_LOGIN_HOST
+#define PBC_LOGIN_TEST_HOST "weblogintest.cac.washington.edu"
+#define PBC_LOGIN_TEST_PAGE "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
 
 /* keys */
