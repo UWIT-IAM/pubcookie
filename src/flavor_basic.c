@@ -253,7 +253,9 @@ static login_result process_basic(login_rec *l, login_rec *c,
                                     &outbuf, &outlen)) {
                     /* save for later */
                     out64 = malloc(outlen * 4 / 3 + 20);
-                    libpbc_base64_encode(outbuf, out64, outlen);
+                    libpbc_base64_encode( (unsigned char *) outbuf,
+                                          (unsigned char *) out64,
+                                          outlen );
 
                     print_header("Set-Cookie: %s=%s; domain=%s; secure\n",
                                  PBC_CRED_COOKIENAME, out64, PBC_LOGIN_HOST);

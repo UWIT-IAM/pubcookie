@@ -23,6 +23,10 @@
 # define LOG_MAKEPRI(fac, pri) fac|pri
 #endif /* NEED_LOG_MAKEPRI */
 
+#ifdef NEED_LOG_FAC
+# define LOG_FAC(fac) fac
+#endif /* NEED_LOG_FAC */
+
 
 /**
  *Initializes the logging system.  Optional.

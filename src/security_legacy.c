@@ -489,14 +489,14 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     int r;
 
     if (len < PBC_SIG_LEN + 2) {
-	syslog(LOG_ERR, "libpbc_rd_priv() called with small length: %d", len);
-	return -1;
+        syslog(LOG_ERR, "libpbc_rd_priv() called with small length: %d", len);
+        return -1;
     }
 
     /* since i'm reading a message, i always decrypt using my key in this
-     security model. */
+       security model. */
     if (get_crypt_key(libpbc_get_cryptname(), (char *) keybuf) < 0) {
-	return -1;
+        return -1;
     }
 
     index1 = (unsigned char) buf[len - 2];
@@ -505,15 +505,15 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     /* setup ivec */
     memcpy(ivec, &(keybuf[index2]), sizeof(ivec));
     for (c = 0; c < sizeof(ivec); ++c) {
-	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
+        ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
     }
 
     /* setup key */
     memcpy(key, &keybuf[index1], sizeof(key));
     des_set_odd_parity(&key);
     if (des_set_key_checked(&key, ks)) {
-	syslog(LOG_ERR, "des_set_key_checked failed: didn't derive a good key");
-       return -1;
+        syslog(LOG_ERR, "des_set_key_checked failed: didn't derive a good key");
+        return -1;
     }
 
     /* allocate outbuf */
@@ -532,9 +532,9 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     r = libpbc_rd_safe(peer, *outbuf, *outlen, mysig, PBC_SIG_LEN);
 
     if (r) {
-	syslog(LOG_ERR, "plaintext received was %s", *outbuf);
-	free(*outbuf);
-	*outbuf = 0;
+        syslog(LOG_ERR, "plaintext received was %s", *outbuf);
+        free(*outbuf);
+        *outbuf = 0;
     }
 
     return r;

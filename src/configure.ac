@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.7 $)
+AC_REVISION($Revision: 2.8 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
@@ -122,6 +122,12 @@ AC_CHECK_HEADER([syslog.h],
                    [AC_MSG_RESULT(not found)
                     AC_DEFINE(NEED_LOG_MAKEPRI, 1,
                               [Define to 1 if your system doesn't define LOG_MAKEPRI])])
+    AC_MSG_CHECKING([for LOG_FAC in syslog.h])
+    AC_TRY_LINK([#include <syslog.h>], [ printf( "%d", LOG_FAC(1) ); ],
+                   [AC_MSG_RESULT(found) ],
+                   [AC_MSG_RESULT(not found)
+                    AC_DEFINE(NEED_LOG_FAC, 1,
+                              [Define to 1 if your system doesn't define LOG_FAC])])
     )
 
 AC_MSG_CHECKING([audit log facility])

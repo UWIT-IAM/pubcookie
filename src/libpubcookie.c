@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.36 2002-08-06 16:01:07 greenfld Exp $
+    $Id: libpubcookie.c,v 2.37 2002-08-06 22:19:21 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1054,15 +1054,15 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
 
     if (libpbc_mk_priv(peer, (const char *) cookie_string, sizeof(pbc_cookie_data), 
                        &out, &outlen)) {
-	libpbc_debug("libpbc_sign_bundle_cookie: libpbc_mk_priv failed");
-	return NULL;
+        libpbc_debug("libpbc_sign_bundle_cookie: libpbc_mk_priv failed\n");
+        return NULL;
     }
 
     cookie = (unsigned char *) libpbc_alloc_init(4 * outlen / 3 + 20);
     if (!cookie) {
-	libpbc_debug("libpbc_sign_bundle_cookie: libpbc_alloc_init failed");
-	free(out);
-	return NULL;
+        libpbc_debug("libpbc_sign_bundle_cookie: libpbc_alloc_init failed\n");
+        free(out);
+        return NULL;
     }
 
     libpbc_base64_encode( (unsigned char *) out, cookie, outlen);

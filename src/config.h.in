@@ -270,6 +270,9 @@
 /* Define to LOG_AUTH if your system doesn't define LOG_AUTHPRIV */
 #undef NEED_LOG_AUTHPRIV
 
+/* Define to 1 if your system doesn't define LOG_FAC */
+#undef NEED_LOG_FAC
+
 /* Define to 1 if your system doesn't define LOG_MAKEPRI */
 #undef NEED_LOG_MAKEPRI
 
