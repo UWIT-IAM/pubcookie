@@ -5,7 +5,11 @@
  * on all source code distributions
  */
 
-/**************************************************************
+/** @file snprintf.c
+ * snprintf()
+ *
+ * $Id: snprintf.c,v 2.4 2003-07-02 22:04:04 willey Exp $
+ *
  * Original:
  * Patrick Powell Tue Apr 11 09:48:21 PDT 1995
  * A bombproof version of doprnt (dopr) included.
@@ -57,7 +61,7 @@
  *    Split out header portions to snprintf.h and cleaned up for use in
  *    Pubcookie (see http://www.pubcookie.org)
  *
- **************************************************************/
+ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

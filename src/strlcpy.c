@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: strlcpy.c,v 2.6 2003-05-06 23:51:19 willey Exp $
+/** @file strlcpy.c
+ * strlcpy()
+ *
+ * $Id: strlcpy.c,v 2.7 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

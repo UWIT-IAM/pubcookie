@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: verify_kerberos4.c,v 1.9 2003-05-06 23:51:19 willey Exp $
+/** @file verify_kerberos4.c
+ * Kerberos 4 verifier
+ *
+ * $Id: verify_kerberos4.c,v 1.10 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

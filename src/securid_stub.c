@@ -3,8 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: securid_stub.c,v 1.12 2003-05-06 23:51:19 willey Exp $
+/** @file securid_stub.c
+ * Test app for old UW SecurID interface
+ *
+ * $Id: securid_stub.c,v 1.13 2003-07-02 22:04:04 willey Exp $
  */
 
 

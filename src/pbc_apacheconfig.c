@@ -3,8 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: pbc_apacheconfig.c,v 2.4 2003-05-06 23:51:19 willey Exp $
+/** @file pbc_apacheconfig.c
+ * Apacheconfig
+ *
+ * $Id: pbc_apacheconfig.c,v 2.5 2003-07-02 22:04:04 willey Exp $
  */
 
 

@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: flavor.c,v 1.8 2003-05-06 23:51:19 willey Exp $
+/** @file flavor.c
+ * Flavor generic code
+ *
+ * $Id: flavor.c,v 1.9 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -26,12 +29,14 @@ extern struct login_flavor login_flavor_basic;
 /* extern struct login_flavor login_flavor_uwash; */
 extern struct login_flavor login_flavor_getcred;
 
+/**
+ */
 static struct login_flavor *flavors[] = {
     &login_flavor_basic,
     &login_flavor_getcred,
 /*    &login_flavor_uwash, */
     NULL
-};
+}; /*! list of available flavors */
 
 struct login_flavor *get_flavor(pool *p, const char id)
 {

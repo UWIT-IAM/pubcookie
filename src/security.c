@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: security.c,v 1.5 2003-05-06 23:51:19 willey Exp $
+/** @file security.c
+ * Support for security structure
+ *
+ * $Id: security.c,v 1.6 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>

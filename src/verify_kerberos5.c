@@ -12,8 +12,12 @@
 
  */
 
-/*
-  $Id: verify_kerberos5.c,v 1.25 2003-07-02 01:27:02 willey Exp $
+/** @file verify_kerberos5.c
+ * Kerberos 5 Verifier
+ *
+ * Verifies users against an Kerberos5 server (or servers.)
+ *
+ * $Id: verify_kerberos5.c,v 1.26 2003-07-02 22:04:04 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

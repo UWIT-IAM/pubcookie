@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: mod_pubcookie.c,v 1.120 2003-06-03 22:59:43 jjminer Exp $
+/** @file mod_pubcookie.c
+ * Apache pubcookie module
+ *
+ * $Id: mod_pubcookie.c,v 1.121 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

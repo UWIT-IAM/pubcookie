@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
- $Id: securid_securid.c,v 1.8 2003-05-06 23:51:19 willey Exp $
+/** @file securid_securid.c
+ * Old UW SecurID proto-verifier
+ *
+ * $Id: securid_securid.c,v 1.9 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

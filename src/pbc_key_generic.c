@@ -3,8 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: pbc_key_generic.c,v 1.4 2003-05-06 23:51:19 willey Exp $
+/** @file pbc_verify.c
+ * Manually verify cookies
+ *
+ * $Id: pbc_key_generic.c,v 1.5 2003-07-02 22:04:04 willey Exp $
  */
 
 

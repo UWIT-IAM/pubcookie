@@ -3,8 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: index.cgi.c,v 1.105 2003-05-06 23:51:19 willey Exp $
+/** @file index.cgi.c
+ * Login server CGI
+ *
+ * $Id: index.cgi.c,v 1.106 2003-07-02 22:04:04 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

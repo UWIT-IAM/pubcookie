@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: what_is_my_ip.c,v 1.8 2003-05-06 23:51:19 willey Exp $
+/** @file what_is_my_ip.c
+ * Identifies IP being used by pubcookie
+ *
+ * $Id: what_is_my_ip.c,v 1.9 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

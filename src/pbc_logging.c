@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: pbc_logging.c,v 1.22 2003-05-06 23:51:19 willey Exp $
+/** @file pbc_logging.c
+ * Logging
+ *
+ * $Id: pbc_logging.c,v 1.23 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

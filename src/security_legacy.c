@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: security_legacy.c,v 1.25 2003-05-06 23:51:19 willey Exp $
+/** @file security_legacy.c
+ * Heritage message protection
+ *
+ * $Id: security_legacy.c,v 1.26 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

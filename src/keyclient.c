@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: keyclient.c,v 2.31 2003-05-06 23:51:19 willey Exp $
+/** @file keyclient.c
+ * Key administration tool for clients
+ *
+ * $Id: keyclient.c,v 2.32 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

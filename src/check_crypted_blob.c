@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: check_crypted_blob.c,v 1.9 2003-05-06 23:51:19 willey Exp $
+/** @file check_crypted_blob.c
+ * takes an encrytped blob and checks it
+ *
+ * $Id: check_crypted_blob.c,v 1.10 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

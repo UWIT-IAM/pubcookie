@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: keyserver.c,v 2.33 2003-05-06 23:51:19 willey Exp $
+/** @file keyserver.c
+ * Server side of key management structure
+ *
+ * $Id: keyserver.c,v 2.34 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

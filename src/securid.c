@@ -3,31 +3,33 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.12 2003-05-06 23:51:19 willey Exp $
-
-   function: securid  
-   args:     reason - points to a reason string
-             user - the UWNetID
-             card_id - the username for the card
-             s_prn - the prn
-             log - to extra stuff to stderr and syslog
-             type - SECURID_TYPE_NORM - normal
-                    SECURID_TYPE_NEXT - next prn was requested
-             doit - SECURID_DO_SID - yes, check prn
-                    SECURID_ONLY_CRN - no, don't check prn, only report crn
-
-   returns:  SECURID_OK - ok
-             SECURID_FAIL - fail
-             SECURID_WANTNEXT - next prn
-             SECURID_PROB - something went wrong
-             SECURID_BAILOUT - bailed out before sid check, by request
-   
-   outputs:  even without log set non-zero there will be some output to
-             syslog and stderr in some conditions.  if log is set to non-zero
-             then there will be more messages in syslog and stderr
+/** @file securid.c
+ * UW SecurID interface
+ *
+ *  function: securid  
+ *  args:     reason - points to a reason string
+ *            user - the UWNetID
+ *            card_id - the username for the card
+ *            s_prn - the prn
+ *            log - to extra stuff to stderr and syslog
+ *            type - SECURID_TYPE_NORM - normal
+ *                   SECURID_TYPE_NEXT - next prn was requested
+ *            doit - SECURID_DO_SID - yes, check prn
+ *                   SECURID_ONLY_CRN - no, don't check prn, only report crn
+ *
+ *   returns:  SECURID_OK - ok
+ *             SECURID_FAIL - fail
+ *            SECURID_WANTNEXT - next prn
+ *            SECURID_PROB - something went wrong
+ *            SECURID_BAILOUT - bailed out before sid check, by request
+ *  
+ *  outputs:  even without log set non-zero there will be some output to
+ *            syslog and stderr in some conditions.  if log is set to non-zero
+ *            then there will be more messages in syslog and stderr
+ *
+ * $Id: securid.c,v 1.13 2003-07-02 22:04:04 willey Exp $
  */
-/* -------------------------------------------------------------------- */
+                                                                                
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

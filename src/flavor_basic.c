@@ -3,19 +3,19 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    the basic flavor of logins.  expect a username and a password and
-    checks against one of the defined verifiers (see 'struct verifier'
-    and verify_*.c for possible verifiers).
-    
-    will pass l->realm to the verifier and append it to the username when
-    'append_realm' is set
-
+/** @file flavor_basic.c
+ * The basic flavor of logins
+ *
+ *   expect a username and a password and
+ *   checks against one of the defined verifiers (see 'struct verifier'
+ *   and verify_*.c for possible verifiers).
+ *   
+ *   will pass l->realm to the verifier and append it to the username when
+ *   'append_realm' is set
+ *
+ * $Id: flavor_basic.c,v 1.40 2003-07-02 22:04:04 willey Exp $
  */
 
-/*
-    $Id: flavor_basic.c,v 1.39 2003-05-16 15:06:49 willey Exp $
- */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

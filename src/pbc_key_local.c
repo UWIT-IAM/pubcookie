@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: pbc_key_local.c,v 1.8 2003-05-06 23:51:19 willey Exp $
+/** @file pub_key_local.c
+ * Old (and i think obsolete) key mgmt
+ *
+ * $Id: pbc_key_local.c,v 1.9 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

@@ -3,13 +3,14 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: flavor.h,v 1.8 2003-05-06 23:51:19 willey Exp $
- */
-
-/* a flavor specifies:
+/** @file flavor.h
+ * flavor definitions
+ *
+ * a flavor specifies:
  * - the policy of when freerides are allowed
  * - what the layout of the login page is, how login messages are printed. 
+ *
+ * $Id: flavor.h,v 1.9 2003-07-02 22:04:04 willey Exp $
  */
 
 #ifndef INCLUDED_FLAVOR_H
@@ -27,6 +28,11 @@ typedef enum {
     LOGIN_INPROGRESS = 2	/* return to login page */
 } login_result;
 
+/** flavor definition
+	a flavor defines
+	- the policy of when freerides are allowed
+        - what the layout of the login page is, how login messages are printed.
+  */
 struct login_flavor {
     /* a user readable flavor name */
     const char *name;
@@ -45,7 +51,7 @@ struct login_flavor {
        print out a login form and return accordingly. */
     login_result (*process_request)(pool *p, login_rec *l, login_rec *c, 
 				    const char **errstr);
-};
+}; 
 
 /**
  * given a flavor id, return the corresponding login_flavor

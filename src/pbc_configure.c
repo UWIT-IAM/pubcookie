@@ -3,8 +3,10 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: pbc_configure.c,v 2.2 2003-05-06 23:51:19 willey Exp $
+/** @file pbc_configure.c
+ * Configure stuff
+ *
+ * $Id: pbc_configure.c,v 2.3 2003-07-02 22:04:04 willey Exp $
  */
 
 

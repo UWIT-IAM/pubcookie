@@ -3,17 +3,18 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: pbc_verify.c,v 1.16 2003-05-06 23:51:19 willey Exp $
+/** @file pbc_verify.c
+ * Manually verify cookies
+ *
+ * args are:
+ *   cookie_type [encryption_key] [cert_file]
+ *      if you specify a cert_file you must also specifiy a crypt key
+ *
+ * cookie comes in on stdin, contenets are printed to stdout
+ *
+ * $Id: pbc_verify.c,v 1.17 2003-07-02 22:04:04 willey Exp $
  */
 
-/*                                                                            */
-/* args are:                                                                  */
-/*   cookie_type [encryption_key] [cert_file]                                 */
-/*      if you specify a cert_file you must also specifiy a crypt key         */
-/*                                                                            */
-/* cookie comes in on stdin, contenets are printed to stdout                  */
-/*                                                                            */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

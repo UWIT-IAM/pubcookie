@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-  $Id: base64.c,v 1.12 2003-05-06 23:51:19 willey Exp $
+/** @file base64.cgi.c
+ * Base64 functions
+ *
+ * $Id: base64.c,v 1.13 2003-07-02 22:04:04 willey Exp $
  */
+                                                                                
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: flavor_getcred.c,v 1.16 2003-05-06 23:51:19 willey Exp $
+/** @file flavor_getcred.c
+ * Getcred flavor
+ *
+ * $Id: flavor_getcred.c,v 1.17 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

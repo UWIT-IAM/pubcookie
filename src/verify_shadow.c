@@ -3,17 +3,18 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: verify_shadow.c,v 1.11 2003-05-06 23:51:19 willey Exp $
+/** @file verify_shadow.c
+ * /etc/shadow verifier
+ *
+ *    the shadow_verifier verifies a username and password 
+ *    against /etc/shadow.  sadly, it must be able to read
+ *    /etc/shadow.  
+ *  
+ *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
+ *  
+ * $Id: verify_shadow.c,v 1.12 2003-07-02 22:04:04 willey Exp $
  */
-
-/*
-    the shadow_verifier verifies a username and password 
-    against /etc/shadow.  sadly, it must be able to read
-    /etc/shadow.  
-  
-    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
- */
+ 
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

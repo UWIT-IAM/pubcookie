@@ -3,9 +3,12 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/* 
-    $Id: libpubcookie.c,v 2.57 2003-06-03 22:59:43 jjminer Exp $
+/** @file libpubcookie.c
+ * Core pubcookie library
+ *
+ * $Id: libpubcookie.c,v 2.58 2003-07-02 22:04:04 willey Exp $
  */
+
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

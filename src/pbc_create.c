@@ -3,17 +3,18 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*
-    $Id: pbc_create.c,v 1.17 2003-05-06 23:51:19 willey Exp $
+/** @file pbc_create.c
+ * Manually create pubcookies
+ *
+ * arguments come in via standard in and the cookie is put out on stdout
+ *
+ * args are: user appsrvid appid type creds pre_sess_token
+ *             crypt_file cert_key_file
+ *    anything too big is just truncated, no support for defaults or anything
+ *
+ * $Id: pbc_create.c,v 1.18 2003-07-02 22:04:04 willey Exp $
  */
 
-/*                                                                            */
-/* arguments come in via standard in and the cookie is put out on stdout      */
-/*                                                                            */
-/* args are: user appsrvid appid type creds pre_sess_token                    */
-/*             crypt_file cert_key_file                                       */
-/*    anything too big is just truncated, no support for defaults or anything */
-/*                                                                            */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
