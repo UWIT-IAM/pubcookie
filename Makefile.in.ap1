@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in.ap1,v 1.1 2004-04-08 21:09:06 fox Exp $
+# $Id: Makefile.in.ap1,v 1.2 2004-04-14 16:46:55 jteaton Exp $
 
 prefix=@prefix@
 srcdir=@srcdir@
@@ -22,9 +22,10 @@ AP_CFLAGS=`$(APXS) -q CFLAGS` `$(APXS) -q CFLAGS_SHLIB`
 
 MOD_DEFINES=-DAPACHE -DAPACHE1_3 -DHAVE_CONFIG_H
 
+LIBS=@LIBS@
 CPPFLAGS=$(AP_INCLUDE) @CPPFLAGS@ @DEFS@ $(MOD_DEFINES) -I.
 CFLAGS=@CFLAGS@ $(CPPFLAGS) $(AP_CFLAGS)
-LDFLAGS=@AIX_LDFLAGS@
+LDFLAGS=@AIX_LDFLAGS@ @LIBS@
 
 OBJ=@MOD_OBJ@
 
@@ -62,4 +63,5 @@ clean::
 
 a_ver:
 	@echo Making $(DISTNAME) apache module;
+	env
 
