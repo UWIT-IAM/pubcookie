@@ -14,7 +14,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.38 2003-05-14 23:45:33 willey Exp $
+    $Id: flavor_basic.c,v 1.39 2003-05-16 15:06:49 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -183,6 +183,85 @@ char * get_reason(pool *p, const char * reasonpage ) {
     return reasonhtml;
 }
 
+/* get the html for user field, static or dynamic */
+/* this really needs to be replaced by something from the template system */
+char * get_user_field(pool *p, const char * user_field_page, const char * user ){
+    char *userfieldfile;
+    const char *user_field_path = TMPL_FNAME;
+    int userfilelen;
+    int user_field_len;
+    FILE * user_field_file;
+    char * user_field_html;
+    int readlen;
+    char buf[PBC_1K];
+    char * tok1;
+    char * tok2;
+    int user_len = ( user != NULL ? strlen(user) : 0 );
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_user_field: hello");
+
+    userfilelen = strlen(user_field_path) + strlen("/") + strlen(user_field_page) + 1;
+
+    userfieldfile = malloc( userfilelen * sizeof(char) );
+
+    if ( snprintf( userfieldfile, userfilelen, "%s%s%s",
+                   user_field_path,
+                   user_field_path[strlen(user_field_path) - 1 ] == '/' ? "" : "/",
+                   user_field_page ) > userfilelen )  {
+        /* Need to do something, we would have overflowed. */
+        abend(p, "user field filename overflow!\n");
+    }
+
+    user_field_file = pbc_fopen(p, userfieldfile, "r" );
+
+    if (user_field_file == NULL) {
+        libpbc_abend(p, "Cannot open user field file %s", userfieldfile );
+    }
+
+    user_field_len = file_size(p, user_field_file);
+
+    if (user_field_len == 0)
+        return NULL;
+
+    if ( user_field_len >= sizeof(buf) ) {
+        libpbc_abend(p,  "Need bigger buffer for reading user form field file, %D not big enough", sizeof(buf) );
+    }
+
+    user_field_html = malloc( (user_field_len + 1) * sizeof( char ) + user_len );
+
+    if ( user_field_html == NULL ) {
+        /* Out of memory! */
+        libpbc_abend(p,  "Out of memory allocating to user field file" );
+    }
+
+    readlen = fread( buf, 1, user_field_len, user_field_file );
+
+    if (readlen != user_field_len) {
+        libpbc_abend(p,  "read %d when expecting %d on user field file read.",
+                      readlen, user_field_len );
+    }
+
+    pbc_fclose(p, user_field_file);
+    free(userfieldfile);
+
+    buf[user_field_len] = '\0';
+    strcpy(user_field_html, buf);
+
+    /* cheesy non-generic substitution for user field */
+    /* chop up the strings */
+    tok2 = strstr(strstr(buf, "%user%")+1, "%");
+    tok1 = strstr(user_field_html, "%user%");
+
+    /* piece them back together */
+    strcpy(tok1, (user != NULL ? user : ""));
+    strcpy(tok1+user_len, tok2+1);
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_user_field: goodbye: %s", user_field_html);
+
+    return user_field_html;
+
+}
+
 static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
@@ -198,8 +277,8 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char * getcred_hidden = NULL;
 
     char * reason_html = NULL;
+    char * user_field = NULL;
     char now[64];
-    char user_field[PBC_1K];
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
 
@@ -349,32 +428,25 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     snprintf(now, sizeof(now), "%d", time(NULL));
 
     /* if it's a reauth then the user field can't be changed */
-    if ( reason == FLB_REAUTH && l->user != NULL ) {
-        snprintf(user_field, sizeof(user_field), "%s%s%s%s%s%s%s%s",
-		"<span style=\"background: #eeeeee; color:black\"><tt>",
-		l->user,
-		"</tt></span>\n", 
-        	"<INPUT TYPE=\"hidden\" NAME=\"",
-		"user",
-		"\" VALUE=\"",
-		l->user,
-		"\">\n");
-    }
-    else {
-        char *u = l->user != NULL ? l->user : (c != NULL ? c->user: NULL);
-        
-        snprintf(user_field, sizeof(user_field), "<INPUT TYPE=\"text\" NAME=\"user\" SIZE=\"20\" VALUE=\"%s\">", u != NULL ? u : "");
-    }
-
+    if ( reason == FLB_REAUTH && l->user != NULL )
+        user_field = get_user_field(p, 
+		libpbc_config_getstring(p,  "tmpl_login_user_static",
+                                                  "login_user_static" ), 
+		l->user);
+    else
+        user_field = get_user_field(p,
+		libpbc_config_getstring(p,  "tmpl_login_user_form_field",
+                                                  "login_user_form_field" ), 
+		l->user != NULL ? l->user : (c != NULL ? c->user : NULL));
 
     /* Display the login form. */
     ntmpl_print_html(p, TMPL_FNAME,
                      libpbc_config_getstring(p, "tmpl_login", "login"),
                     "loginuri", PBC_LOGIN_URI,
                     "message", reason_html != NULL ? reason_html : "",
-                    "user_field", user_field,
                     "curtime", now, 
                     "hiddenfields", hidden_fields,
+                    "user_field", user_field != NULL ? user_field : "",
                     "getcredhidden", getcred_hidden != NULL ? getcred_hidden : "",
                     NULL
                    );
@@ -382,6 +454,9 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     /* this tags the incoming request as a form reply */
 
     print_html(p, "\n");
+
+    if (user_field != NULL)
+        free( user_field );
 
     if (reason_html != NULL)
         free( reason_html );
