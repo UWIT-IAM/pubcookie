@@ -42,12 +42,12 @@ and Apache 1.2 and later.</p>
 
 <p>This directive selects the type of user authentication applied to a
 resource. It must be accompanied by a <a href=
-"http://www.apache.org/docs/mod/core.html#require">require</a> directive when
-used with an authentication type handled by mod_pubcookie.</p>
+"http://www.apache.org/docs/mod/core.html#require">require</a> directive
+when used with an authentication type handled by mod_pubcookie.</p>
 
-<p>The type is case-insensitive and can be any string defined by <a href=
-"#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a> or supported as an
-existing core <a href=
+<p>The <tt>type</tt> is case-insensitive and can be any name defined by <a
+href= "#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a> or supported as
+an existing core <a href=
 "http://www.apache.org/docs/mod/core.html#authtype">AuthType</a> (e.g.
 Basic).</p>
 
@@ -319,11 +319,23 @@ timeout has occurred.</p>
 rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 1.77
 and higher and Apache 1.3 and later.</p>
 
-<p>This directive is <b>required</b> in mod_pubcookie 1.77 and higher. It
-defines the strings that mod_pubcookie enables as new arguments to the <a href=
-"#PubcookieAuthType">AuthType</a> directive. All users upgrading to
-mod_pubcookie 1.77 or higher will need to add this directive to their server
-config.</p>
+<p>This directive names the new authentication types added by
+mod_pubcookie to the <a href="#AuthType">AuthType</a> directive. For
+example, <tt>PubcookieAuthTypeNames EGNetID</tt> allows you to use
+<tt>AuthType EGNetID</tt>.</p>
+
+<p>The ordered list of the names maps each new authentication type
+directly to an intrinsic Pubcookie credential type: <tt>name1</tt> is
+credential type "1", <tt>name2</tt> is credential type "2", and so on.
+This is how Pubcookie ties each AuthType to a different "login flavor"
+handled by the login server. Of course, most sites have only one login
+flavor, the basic flavor, and therefore only need to specify one name.
+Note: if necessary, a value of <tt>null</tt> can be used to define an
+unused position in the ordered list of PubcookieAuthTypeNames.</p>
+
+<p>PubcookieAuthTypeNames is <b>required</b> in mod_pubcookie 1.77 and
+higher. All users upgrading to mod_pubcookie 1.77 or higher must add this
+directive to their server configuration.</p>
 
 <h3><a name="PubcookieAddlRequest">PubcookieAddlRequest directive</a></h3>
 
