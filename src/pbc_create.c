@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_create.c,v 1.2 1998-07-15 00:21:22 willey Exp $
+    $Id: pbc_create.c,v 1.3 1998-07-20 10:34:34 willey Exp $
  */
 
 #include <stdio.h>
@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
     crypt_stuff         *c_stuff;
     FILE		*fp;
 
-    // somethings for debugging
     type='1';
     creds='9';
     strcpy(appsrv_id, "appserver id is blah");
@@ -41,8 +40,10 @@ int main(int argc, char **argv) {
     cookie = libpbc_get_cookie(argv[1], type, creds, appsrv_id, app_id, ctx_plus, c_stuff);
 
     fp = fopen("out", "w");
-    if ( cookie ) 
+    if ( cookie ) {
 	fprintf(fp, "%s", cookie);
+	printf("%s\n", cookie);
+    }
     fclose(fp);
     exit(0);
 

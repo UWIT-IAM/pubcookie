@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.6 1998-07-17 16:32:42 willey Exp $
+    $Id: libpubcookie.c,v 1.7 1998-07-20 10:34:34 willey Exp $
  */
 
 #include <stdio.h>
@@ -26,15 +26,15 @@
 char *libpbc_time_string(time_t t)
 { 
     struct tm	*tm;
-    static char	buf[128];
+    static char	buf[PBC_1K];
 
     tm = localtime(&t);
-    strftime(buf, 127, "%Y/%m/%d %H:%M:%S", tm);
+    strftime(buf, sizeof(buf)-1, "%Y/%m/%d %H:%M:%S", tm);
 
     return buf;
 }
 
-/* when things fail too bandly to go on ...                                   */
+/* when things fail too badly to go on ...                                    */
 void *libpbc_abend(const char *format,...)
 {
     time_t	now;
@@ -53,13 +53,13 @@ void *libpbc_abend(const char *format,...)
 /* put some debugging info to stdout                                          */
 /*                                                                            */
 /* perhaps if your server has some other logging method you might want to     */
-/* use it her                                                                 */
+/* use it here                                                                */
 /*                                                                            */
 int libpbc_debug(const char *format,...) 
 {
     time_t      now;
     va_list     args;
-    char        format_w_time[PBC_BUF_LEN];
+    char        format_w_time[PBC_4K];
 
     va_start(args, format);
     now = time(NULL);
@@ -69,13 +69,13 @@ int libpbc_debug(const char *format,...)
     return 1;
 }
 
-/* get some dubgging into to stdout                                           */
+/* keep pumping stuff into the random state                                   */
 void libpbc_augment_rand_state(unsigned char *array, int len)
 {
 
     struct timeval 	tv; 
     struct timezone 	tz;
-    unsigned char	buf[1024];
+    unsigned char	buf[sizeof(tv.tv_usec)];
 
     gettimeofday(&tv, &tz);
     memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
@@ -93,7 +93,7 @@ void libpbc_rand_malloc()
     while ( num <= 0 ) {
         RAND_bytes(buf, PBC_RAND_MALLOC_BYTES);
         for( i=0; i<PBC_RAND_MALLOC_BYTES; i++)
-            num = num + (int)buf[i];	
+            num += (int)buf[i];	
     }
     pbc_malloc(num);
 
@@ -246,7 +246,7 @@ char *mod_crypt_key(char *in)
     struct hostent      *h;
     int			i;
     char		addr_bytes[sizeof(h->h_addr_list[0])];
-    char                hostname[PBC_BUF_LEN];
+    char                hostname[PBC_4K];
 
     gethostname(hostname, sizeof(hostname));
     if( (h = gethostbyname(hostname)) == NULL ) {
@@ -254,11 +254,8 @@ char *mod_crypt_key(char *in)
     }
     
     memcpy(addr_bytes, h->h_addr_list[0], sizeof(h->h_addr_list[0]));
-    for( i=0; i<PBC_DES_KEY_BUF; i += sizeof(h->h_addr_list[0]) ) {
-	in[i]   = (int)in[i]   ^ (int)addr_bytes[0];
-	in[i+1] = (int)in[i+1] ^ (int)addr_bytes[0+1];
-	in[i+2] = (int)in[i+2] ^ (int)addr_bytes[0+2];
-	in[i+3] = (int)in[i+3] ^ (int)addr_bytes[0+3];
+    for( i=0; i<PBC_DES_KEY_BUF; ++i ) {
+	in[i] ^= addr_bytes[i % sizeof(h->h_addr_list[0])];
     }
     
     return in;
@@ -269,10 +266,7 @@ char *mod_crypt_key(char *in)
 void libpbc_get_crypt_key(crypt_stuff *c_stuff)
 {
     FILE 		*fp;
-//    int			start = 0;
     char		*key_in;
-    des_cblock		key;
-    int			tries = 5;
 
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
@@ -284,17 +278,7 @@ void libpbc_get_crypt_key(crypt_stuff *c_stuff)
     
     fclose(fp);
 
-    key_in = mod_crypt_key(key_in);
-
-    des_string_to_key(key_in, &key);
-    memset(key_in, 0, PBC_BUF_LEN);
-
-    libpbc_augment_rand_state(key, sizeof(des_cblock));
-
-    while ( des_key_sched(&key, c_stuff->ks) && tries-- )
-	;
-    if( ! tries ) 
-	libpbc_abend("libpbc_crypt_key: Coudn't build schedule\n");
+    memcpy(c_stuff->key_a, mod_crypt_key(key_in), sizeof(c_stuff->key_a));
 
 }
 
@@ -332,10 +316,7 @@ int libpbc_verify_sig(unsigned char *sig, unsigned char *cookie_string, md_conte
 
     EVP_VerifyUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
     res = EVP_VerifyFinal(ctx_plus->ctx, sig, PBC_SIG_LEN, ctx_plus->public_key);
-    if ( res ) 
-	return res;
-    else
-        return 0;
+    return res;
 
 }
 
@@ -376,37 +357,96 @@ unsigned char *libpbc_stringify_cookie_data(pbc_cookie_data *cookie_data)
     *p = (*cookie_data).broken.creds;
     p++;
     memcpy(p, &(*cookie_data).broken.create_ts, sizeof(time_t));
-    p = p + sizeof(time_t);
+    p += sizeof(time_t);
     memcpy(p, &(*cookie_data).broken.last_ts, sizeof(time_t));
-    p = p + sizeof(time_t);
+    p += sizeof(time_t);
     return cookie_string;
 
 }
 
+/* get some indices for choosing a key and modifying ivec                     */
+int libpbc_get_crypt_index() 
+{
+    unsigned char	r_byte[1];
+    int			index;
+
+    r_byte[0] = '\0';
+    while ( r_byte[0] == '\0' ) 
+        RAND_bytes(r_byte, 1);
+    index = (int)r_byte[0] - (int)r_byte[0]/PBC_DES_INDEX_FOLDER;
+    return index;
+}
 
 /* encrypt a string                                                           */
-void libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
+int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
 {
-    int			i = 0;
-    des_cblock		ivec;
-    unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
+    int				c = 0, i = 0;
+    int				tries = 5;
+    int				index1, index2;
+    des_cblock			key;
+    des_cblock			ivec;
+    static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
+    des_key_schedule    	ks;
 
-    memcpy(&ivec, ivec_tmp, PBC_INIT_IVEC_LEN);
+    index2=libpbc_get_crypt_index();
+    memcpy(ivec, &(c_stuff->key_a[index2]), sizeof(ivec));
+    for( c=0; c<sizeof(ivec); ++c ) {
+	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
+    }
 
-    des_cfb64_encrypt(in, out, len, c_stuff->ks, &ivec, &i, DES_ENCRYPT);
+    /* find a random index into the char key array and make a key shedule */
+    des_check_key = 1;
+    memset(&key, 0, sizeof(key));
+    while ( des_key_sched(&key, ks) != 0 && --tries ) {
+        index1=libpbc_get_crypt_index();
+	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
+        des_set_odd_parity(&key);
+    }
+    if ( ! tries ) {
+       libpbc_debug("libpbc_encrypt_cookie: Coudn't find a good key\n");
+       return 0;
+    }
+
+    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
+    libpbc_augment_rand_state(ivec, sizeof(ivec));
+
+    /* stick the indices on the end of the train */
+    out[len] = (unsigned char)index1;
+    out[len+1] = (unsigned char)index2;
+    return 1;
 
 }
 
 /* decrypt a string                                                         */
-void libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
+int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
 {
-    int			i = 0;
-    des_cblock		ivec;
-    unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
+    int				c = 0, i = 0;
+    int				index1, index2;
+    des_cblock			key;
+    des_cblock			ivec;
+    static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
+    des_key_schedule    	ks;
 
-    memcpy(&ivec, ivec_tmp, PBC_INIT_IVEC_LEN);
+    /* grab those two extra btyes off the tail */
+    index1 = (int)in[len];
+    index2 = (int)in[len+1];
 
-    des_cfb64_encrypt(in, out, len, c_stuff->ks, &ivec, &i, DES_DECRYPT);
+    memcpy(ivec, &(c_stuff->key_a[index2]), sizeof(ivec));
+    for( c=0; c<sizeof(ivec); ++c ) {
+	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
+    }
+
+    /* use the supplied index into the char key array and make a key shedule */
+    memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
+    des_set_odd_parity(&key);
+    if ( des_key_sched(&key, ks) ) {
+       libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
+       return 0;
+    }
+
+    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
+
+    return 1;
 
 }
 
@@ -437,11 +477,11 @@ unsigned char *libpbc_sign_bundle_cookie(unsigned char *cookie_string,
 
     unsigned char		*cookie;
     unsigned char		*sig;
-    unsigned char		buf[PBC_BUF_LEN];
-    unsigned char		buf2[PBC_BUF_LEN];
+    unsigned char		buf[PBC_4K];
+    unsigned char		buf2[PBC_4K];
 
-    memset(&buf, 0, PBC_BUF_LEN);
-    memset(&buf2, 0, PBC_BUF_LEN);
+    memset(&buf, 0, sizeof(buf));
+    memset(&buf2, 0, sizeof(buf2));
 
     if ( ! (sig = libpbc_sign_cookie(cookie_string, ctx_plus)) ) {
         libpbc_debug("libpbc_sign_bundle_cookie: Cookie signing failed\n");
@@ -450,11 +490,12 @@ unsigned char *libpbc_sign_bundle_cookie(unsigned char *cookie_string,
     memcpy(buf, sig, PBC_SIG_LEN);
     memcpy(buf+PBC_SIG_LEN, cookie_string, sizeof(pbc_cookie_data));
 
-    // encrypt cookie
-    libpbc_encrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN);
+    /* two bytes get added on in libpbc_encrypt_cookie */
+    if ( ! libpbc_encrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN) )
+	return 0;
 
-    cookie = (unsigned char *)libpbc_alloc_init(PBC_BUF_LEN);
-    base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data));
+    cookie = (unsigned char *)libpbc_alloc_init(PBC_4K);
+    base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data) + 2);
 
     return cookie;
 }
@@ -519,14 +560,14 @@ pbc_cookie_data *libpbc_unbundle_cookie(char *in, md_context_plus *ctx_plus, cry
 {
     pbc_cookie_data	*cookie_data;
     unsigned char	sig[PBC_SIG_LEN];
-    unsigned char	buf[PBC_BUF_LEN];
-    unsigned char	buf2[PBC_BUF_LEN];
+    unsigned char	buf[PBC_4K];
+    unsigned char	buf2[PBC_4K];
 
-    memset(&buf, 0, PBC_BUF_LEN);
-    memset(&buf2, 0, PBC_BUF_LEN);
+    memset(&buf, 0, sizeof(buf));
+    memset(&buf2, 0, sizeof(buf2));
 
-    if ( strlen(in) < PBC_SIG_LEN ) {
-	libpbc_debug("libpbc_unbundle_cookie: cookie %s too short\n", in);
+    if ( strlen(in) < PBC_SIG_LEN || strlen(in) > PBC_4K ) {
+	libpbc_debug("libpbc_unbundle_cookie: malformed cookie %s\n", in);
 	return 0;
     }
 
@@ -535,8 +576,8 @@ pbc_cookie_data *libpbc_unbundle_cookie(char *in, md_context_plus *ctx_plus, cry
 	return 0;
     }
 
-    // decrypt cookie
-    libpbc_decrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN);
+    if ( ! libpbc_decrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN) )
+	return 0;
 
     /* break cookie in two */
     memcpy(sig, buf2, PBC_SIG_LEN);
@@ -570,4 +611,3 @@ unsigned char *libpbc_update_lastts(pbc_cookie_data *cookie_data, md_context_plu
     return cookie;
 
 }
-    

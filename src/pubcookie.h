@@ -1,5 +1,5 @@
 /*
-    $Id: pubcookie.h,v 1.3 1998-07-15 00:21:22 willey Exp $
+    $Id: pubcookie.h,v 1.4 1998-07-20 10:34:34 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -10,12 +10,16 @@
 #define PBC_APPSRV_ID_LEN 20
 #define PBC_APP_ID_LEN 20
 #define PBC_TOT_COOKIE_DATA 96
+#define PBC_DES_KEY_BUF 2048
 
-#define PBC_BUF_LEN 4096
+#define PBC_4K 4096
+#define PBC_1K 1024
+#define PBC_RAND_MALLOC_BYTES 8
 
 /* gotta start somewhere                                                      */
-#define PBC_INIT_IVEC "bongo4is"
+#define PBC_INIT_IVEC {0x4c,0x43,0x5f,0x98,0xbc,0xab,0xef,0xca}
 #define PBC_INIT_IVEC_LEN 8
+#define PBC_DES_INDEX_FOLDER 30
 
 typedef struct {
     unsigned char	user[PBC_USER_LEN];
@@ -40,9 +44,7 @@ typedef struct {
 } md_context_plus;
 
 typedef struct {
-    des_key_schedule	ks;
-    des_cblock		*ivec;
-    int			*num;
+    unsigned char	key_a[PBC_DES_KEY_BUF];
 } crypt_stuff;
 
 #endif /* !PUBCOOKIE_MAIN */
