@@ -20,6 +20,9 @@ template.</p>
 
 <dl>
 
+<dt><a name="copyright">copyright</a></dt>
+<dd>Your copyright string. Only used on redirect with POST page.</dd>
+
 <dt><a name="error">error</a></dt>
 <dd>Template displayed when there is an internal error.</dd>
 
@@ -32,7 +35,7 @@ too long before authenticating.</dd>
 automatic variable substitutions for: the login server URL, the reason
 for the redirect (pulled from various <tt>login_*</tt> templates), the
 user input field (also pulled from other templates), hidden fields
-maintaining state information, and GetCred hidden fields</dd>
+maintaining state information, and GetCred hidden fields.</dd>
 
 <dt><a name="login_bad_auth">login_bad_auth</a></dt>
 <dd>The error displayed when authentication failed. File containing
@@ -82,6 +85,10 @@ keystore for the application server.</dd>
 
 <dt><a name="login_user_static">login_user_static</a></dt>
 <dd>The static user field for reauthentication.</dd>
+
+<dt><a name="logo">logo</a></dt>
+<dd>HTML that includes your logo. Only used on redirect with POST
+page.</dd>
 
 <dt><a name="logout_already_weblogin">logout_already_weblogin</a></dt>
 <dd>The logout response when the user has already logged out of 
