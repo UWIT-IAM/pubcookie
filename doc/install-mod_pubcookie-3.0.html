@@ -1,112 +1,16 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN"
+<html>
 
- "http://www.w3.org/TR/REC-html40/strict.dtd">
+<head>
+<title>Pubcookie Apache Module - Install Guide 3.0b1</title>
+<link rel="stylesheet" href="pubcookie.css" type="text/css">
+</head>
 
-<HTML>
+<body>
 
-<!-- #BeginTemplate "/Templates/docs.dwt" --> 
+<h1>Pubcookie Apache Module - Install Guide 3.0b1</h1>
 
-<HEAD>
+<p><i>Included on this page:</i></p>
 
-<!-- #BeginEditable "title" --> 
-
-<TITLE>Pubcookie Apache Module - Install Guide 3.0b1</TITLE>
-
-<!-- #EndEditable --> 
-
-<LINK REL="stylesheet" HREF="/home/home.css" TYPE="text/css">
-
-<link rel="stylesheet" href="../pubcookie.css" type="text/css">
-
-</HEAD>
-
-<body bgcolor="#FFFFFF">
-
-<!-- #BeginEditable "crumbs" -->
-<!--chtml include "//pubcookie/pubcookiecrumbs.inc"-->
-<!--chtml call crumbs(docs)-->
-<!--chtml include "//pubcookie/incs/cheader.inc"-->
-<!-- #EndEditable -->
-
-<table cellpadding="0" cellspacing="0" border="0" width="100%">
-
-<tr> 
-
-<td valign=top> 
-
-<table border="0" cellspacing="0" cellpadding="10" width="100%">
-
-        <tr valign="bottom"> 
-
-          <td class="bggray" align="left"> 
-
-            <table border="0" cellspacing="0" cellpadding="0">
-
-              <tr> 
-
-                <td><a href="/pubcookie/"><img src="../img/41x35-rings-only.gif" width="41" height="35" border="0" alt="Pubcookie Homepage"></a></td>
-
-                <td valign="bottom"><img src="../img/transp.gif" width="12" height="5"></td>
-
-                <td valign="bottom"><!-- #BeginEditable "headlineDeck" --><span class="headlineDeck">Pubcookie 
-
-                  Apache Module</span><!-- #EndEditable --><br>
-                  <!-- #BeginEditable "headlineMain" --><span class="headlineMain">Installation 
-                  Guide 3.0.0-beta1</span><!-- #EndEditable --></td>
-
-              </tr>
-
-            </table>
-
-          </td>
-
-          <td class="bggray" align="right"> 
-
-            <table border="0" cellspacing="0" cellpadding="0" align="right">
-
-              <tr> 
-
-                <td align="right" class="docsMetainfoLegend">Component:&nbsp;</td>
-
-                <td class="docsMetainfo"><!-- #BeginEditable "component" -->mod_pubcookie 
-                  3.0.0b1 <!-- #EndEditable --></td>
-
-              </tr>
-
-              <tr> 
-
-                <td align="right" class="docsMetainfoLegend">Audience:&nbsp;</td>
-
-                <td class="docsMetainfo"><!-- #BeginEditable "audience" -->All<!-- #EndEditable --></td>
-
-              </tr>
-
-              <tr> 
-
-                <td align="right" class="docsMetainfoLegend">Modified:&nbsp;</td>
-
-                <td class="docsMetainfo"> 
-
-                  <!--chtml date="%B %d, %Y"-->
-
-                </td>
-
-              </tr>
-
-            </table>
-
-          </td>
-
-        </tr>
-
-        <tr> 
-
-          <td colspan="2"><!-- #BeginEditable "content" --> 
-
-            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-              
-              <tr> 
-                <td> <p><i>Included on this page:</i></p>
                   <ul>
                     <li><a href="#obj">Objectives</a></li>
                     <li><a href="#new">What's New</a></li>
@@ -412,9 +316,7 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt</pre></td>
                         <tr> 
                           <td> <pre>% ls /usr/local/pubcookie/keys<br>appserver.example.edu</pre></td>
                         </tr>
-                      </table></p>
-                      <p>Note: during configuration, this file corresponds with 
-                        the granting_key_file config variable.</p>
+                      </table>
                   </ol>
                   <h4><a name="granting" id="granting">Install Your Pubcookie 
                     Granting Certificate</a></h4>
@@ -468,7 +370,6 @@ keymgt_uri: https://weblogin.example.edu:2222
 ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
 
 # more site-specific config
-granting_key_file: /usr/local/pubcookie/keys/appserver.example.edu
 granting_cert_file: /usr/local/pubcookie/keys/pubcookie_granting.cert 
 login_uri: https://weblogin.example.edu
 login_host: weblogin.example.edu
@@ -627,33 +528,6 @@ require valid-user</pre></TD>
                         back to the test directory and you should see your "Hello 
                         world!" message. If you do, you have successfully installed 
                         and configured Pubcookie. Congratulations!</p>
-                  </ol></td>
-              </tr>
-            </table>
-
-            <!-- #EndEditable --> </td>
-
-        </tr>
-
-</table>
-
-</td>
-
-</tr>
-
-</table>
-
-<p> 
-
-<!--chtml include "//pubcookie/incs/footer.inc"-->
-
-</p>
-
+                  </ol>
 </BODY>
-
-<!-- #EndTemplate --></HTML>
-
-
-
-
-
+</HTML>
