@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.62 2001-10-18 00:44:25 willey Exp $
+    $Id: mod_pubcookie.c,v 1.63 2001-10-18 01:22:19 willey Exp $
  */
 
 /* apache includes */
@@ -65,6 +65,7 @@ typedef struct {
   int                   serial_s_sent;
   int                   super_debug;
   int                   dirdepth;
+  int                   noblank;
   char			*login;
   unsigned char		*appsrvid;
 } pubcookie_server_rec;
@@ -299,84 +300,89 @@ request_rec *top_rrec (request_rec *r) {
 }
 
 int blank_cookie(request_rec *r, char *name) {
-  const char *cookie_header; 
-  char *cookie;
-  char *ptr;
-  request_rec *mr = top_rrec (r);
-  char *c2;
-  char *name_w_eq;
-
-  /* If we've stashed the cookie, we know it's already blanked */
+    const char *cookie_header; 
+    char *cookie;
+    char *ptr;
+    request_rec *mr = top_rrec (r);
+    char *c2;
+    char *name_w_eq;
+    pubcookie_server_rec *scfg;
+    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config, &pubcookie_module);
+  
+    if (scfg->noblank) return(0);
+  
+    /* If we've stashed the cookie, we know it's already blanked */
 #ifdef APACHE1_2
-  if(table_get(mr->notes, name) ||
-      !(cookie_header = table_get(r->headers_in, "Cookie")))
-    return 0;
+    if(table_get(mr->notes, name) ||
+        !(cookie_header = table_get(r->headers_in, "Cookie")))
+        return 0;
 
-  /* if we aint got an authtype they we definately aint pubcookie */
-  /* then again, we want to always blank cookies */
-  /* if(!auth_type(r))                           */
-  /*   return DECLINED;                          */
+    /* if we aint got an authtype they we definately aint pubcookie */
+    /* then again, we want to always blank cookies */
+    /* if(!auth_type(r))                           */
+    /*   return DECLINED;                          */
 
-  /* add an equal on the end */
-  name_w_eq = pstrcat(r->pool, name, "=", NULL);
+    /* add an equal on the end */
+    name_w_eq = pstrcat(r->pool, name, "=", NULL);
 #else
-  if(ap_table_get(mr->notes, name) ||
-      !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
-    return 0;
+    if(ap_table_get(mr->notes, name) ||
+        !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
+      return 0;
 
-  /* if we aint got an authtype they we definately aint pubcookie */
-  /* then again, we want to always blank cookies */
-  /* if(!ap_auth_type(r))                        */
-  /*   return DECLINED;                          */
+    /* if we aint got an authtype they we definately aint pubcookie */
+    /* then again, we want to always blank cookies */
+    /* if(!ap_auth_type(r))                        */
+    /*   return DECLINED;                          */
 
-  /* add an equal on the end */
-  name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+    /* add an equal on the end */
+    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
 #endif
 
-  if(!(cookie = strstr(cookie_header, name_w_eq)))
-    return 0;
+    if(!(cookie = strstr(cookie_header, name_w_eq)))
+        return 0;
 
-  cookie += strlen(name_w_eq);
+    cookie += strlen(name_w_eq);
 
-  /*
-   * Because the cookie blanking affects the whole subrequest chain, we
-   * need to stash the cookie away to be used again later.  We need cookies
-   * to persist among subrequests, either because subrequests need the
-   * cookie, such as in mod_cern_meta, or because the first time fixups is
-   * run and blanks the cookies is during a subrequest itself.
-   *
-   * Because of all this, we stash in the topmost request's notes table.
-   * Note that we must use the topmost request's pool instead of our own
-   * pool!
-   */
+    /*
+     * Because the cookie blanking affects the whole subrequest chain, we
+     * need to stash the cookie away to be used again later.  We need cookies
+     * to persist among subrequests, either because subrequests need the
+     * cookie, such as in mod_cern_meta, or because the first time fixups is
+     * run and blanks the cookies is during a subrequest itself.
+     *
+     * Because of all this, we stash in the topmost request's notes table.
+     * Note that we must use the topmost request's pool instead of our own
+     * pool!
+     */
 #ifdef APACHE1_2
-  c2 = pstrdup (mr->pool, cookie);
+    c2 = pstrdup (mr->pool, cookie);
 #else
-  c2 = ap_pstrdup (mr->pool, cookie);
+    c2 = ap_pstrdup (mr->pool, cookie);
 #endif
-  if( (ptr = strchr (c2, ';')) )
-    *ptr = '\0';
+    if( (ptr = strchr (c2, ';')) )
+        *ptr = '\0';
 #ifdef APACHE1_2
-  table_set (mr->notes, name, c2);
+    table_set (mr->notes, name, c2);
 #else
-  ap_table_set (mr->notes, name, c2);
-#endif
-
-  ptr = cookie;
-  while(*ptr) {
-    if(*ptr == ';')
-      break;
-    *ptr = PBC_X_CHAR;
-    ptr++;
-  }
-
-#ifdef APACHE1_2
-  table_set(r->headers_in, "Cookie", cookie_header);
-#else
-  ap_table_set(r->headers_in, "Cookie", cookie_header);
+    ap_table_set (mr->notes, name, c2);
 #endif
 
-  return (int)ptr;
+    ptr = cookie;
+    while(*ptr) {
+        if(*ptr == ';')
+            break;
+        *ptr = PBC_X_CHAR;
+        ptr++;
+    }
+
+#ifdef APACHE1_2
+    table_set(r->headers_in, "Cookie", cookie_header);
+#else
+    ap_table_set(r->headers_in, "Cookie", cookie_header);
+#endif
+
+    return (int)ptr;
+
 }
 
 /* Herein we deal with the redirect of the request to the login server        */
@@ -1087,7 +1093,9 @@ static int pubcookie_user(request_rec *r) {
   /* do we hav a session cookie for this appid? if not check the g cookie */
   if( ! cookie_data || strncasecmp(appid(r), cookie_data->broken.appid, sizeof(cookie_data->broken.appid)-1) != 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
-      libpbc_debug("pubcookie_user: no G or S cookie; uri: %s\n", r->uri);
+
+      if( scfg->super_debug )
+        libpbc_debug("pubcookie_user: no G or S cookie; uri: %s\n", r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
       return OK;
@@ -1326,7 +1334,8 @@ static int pubcookie_typer(request_rec *r) {
   scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                             &pubcookie_module);
 
-  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG,r,"in typer, creds=0x%x",(int)cfg->creds);
+  if (scfg->super_debug)
+    ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG,r,"in typer, creds=0x%x",(int)cfg->creds);
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
   if(!ap_requires(r)) {
@@ -1763,6 +1772,22 @@ const char *set_end_session(cmd_parms *cmd, void *mconfig, int f) {
     return NULL;
 }
 
+
+/* allow admin to set a "dont blank the cookie" mode for proxy with pubcookie */
+const char *pubcookie_set_no_blank(cmd_parms *cmd, void *mconfig, char *v) {
+    server_rec *s = cmd->server;
+    pubcookie_server_rec *scfg;
+    ap_pool *p = cmd->pool;
+
+    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
+                                                   &pubcookie_module);
+
+    scfg->noblank = 1;
+
+    return NULL;
+}
+
+
 /*                                                                            */
 const char *set_super_debug(cmd_parms *cmd, void *mconfig, int f) {
     server_rec *s = cmd->server;
@@ -1820,6 +1845,8 @@ command_rec pubcookie_commands[] = {
      "Force reauthentication for new sessions and session timeouts"},
     {"PubcookieEndSession", set_end_session, NULL, OR_OPTIONS, FLAG,
      "End application session"},
+    {"PubCookieNoBlank", pubcookie_set_no_blank, NULL, RSRC_CONF, TAKE1,
+     "Do not blank cookies."},
 /* we turn off ForceReauth because it sucks anyway
     {"PubcookieForceReauth", pubcookie_force_reauth, NULL, OR_OPTIONS, TAKE1,
      "Force the reauthentication loop through the login server"},
