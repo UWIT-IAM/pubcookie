@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.16 2002-05-15 21:01:10 willey Exp $
+    $Id: libpubcookie.h,v 1.17 2002-06-05 16:52:29 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -39,6 +39,8 @@
 #if OPENSSL_VERSION_NUMBER == 0x0922
 #define OPENSSL_0_9_2B
 #endif
+
+#include "pubcookie.h"
 
 #ifdef APACHE1_3
 
@@ -119,6 +121,22 @@ void *malloc_debug(size_t x);
 void free_debug(void *p);
 void libpbc_augment_rand_state(unsigned char *, int);
 char *libpbc_mod_crypt_key(char *, unsigned char *);
+
+/**
+ * generates a random key for peer and writes it to the disk
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+int libpbc_generate_crypt_key(const char *peer);
+
+/**
+ * writes the key 'key' to disk for peer 'peer'
+ * @param a pointer to the 56-bit DES key
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+int libpbc_set_crypt_key(const char *key, const char *peer);
+
 int libpbc_encrypt_cookie(unsigned char *, 
 	                  unsigned char *, 
                           crypt_stuff *, 
@@ -132,5 +150,22 @@ int libpbc_base64_decode(unsigned char *, unsigned char *);
 int libpbc_check_version(pbc_cookie_data *);
 int libpbc_check_exp(time_t, int);
 
+enum {
+    PBC_RR_FR_CODE =             0,
+    PBC_RR_NOGORS_CODE =         1,
+    PBC_RR_BADS_CODE =           2,
+    PBC_RR_SHARDEX_CODE =        3,
+    PBC_RR_SINAEX_CODE =         4,
+    PBC_RR_DUMMYLP_CODE =        5,
+    PBC_RR_BADG_CODE =           6,
+    PBC_RR_GEXP_CODE =           7,
+    PBC_RR_WRONGAPPID_CODE =     8,
+    PBC_RR_WRONGAPPSRVID_CODE =  9,
+    PBC_RR_WRONGVER_CODE =       10,
+    PBC_RR_WRONGCREDS_CODE =     11
+};
+
+/* string translations of the above reasons */
+extern const char *redirect_reason[12];
 
 #endif /* !PUBCOOKIE_LIB */

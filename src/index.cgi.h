@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.22 $
+ * $Revision: 1.23 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -177,7 +177,7 @@ void print_redirect_page(login_rec *, login_rec *);
 int get_next_serial();
 char *url_encode();
 char *get_cookie_created(char *);
-char *decode_granting_request(char *);
+char *decode_granting_request(char *, char **peerp);
 char ride_free_zone(login_rec *, login_rec *);
 const char *login_host();
 const char *enterprise_domain();

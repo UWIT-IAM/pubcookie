@@ -26,7 +26,7 @@
  */
 
 /*
- *  $Revision: 1.50 $
+ *  $Revision: 1.51 $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -58,26 +58,19 @@
 #define PBC_LOGIN_TEST_PAGE (libpbc_config_getstring("login_test_page", "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring("enterprise_domain", ".washington.edu"))
 
-/* keys */
-#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
-#define PBC_MASTER_CRYPT_KEYFILE (PBC_PATH "m_key")
-/* lives only on login servers */
-#define PBC_L_CERTFILE (PBC_PATH "pubcookie_login.cert")
-/* lives only on login server */
-#define PBC_L_KEYFILE (PBC_PATH "pubcookie_login.key")
 /* lives only on application server */
-#define PBC_S_CERTFILE (PBC_PATH "pubcookie_session.cert")
+extern const char *PBC_S_CERTFILE;
 /* lives only on application server */
-#define PBC_S_KEYFILE (PBC_PATH "pubcookie_session.key")
-/* lives on application servers */
-#define PBC_G_CERTFILE (PBC_PATH "pubcookie_granting.cert")
+extern const char *PBC_S_KEYFILE;
+
+/* lives everywhere (on application servers & login server) */
+extern const char *PBC_G_CERTFILE;
+
 /* lives only on login server */
-#define PBC_G_KEYFILE (PBC_PATH "pubcookie_granting.key")
+extern const char *PBC_G_KEYFILE;
 
 /* the login server builds it's key Filenames from the hostname     */
-/* unless NO_HOST_BASED_KEY_FILENAMES is set then the above static  */
-/*   filenames will be used                                         */
-#define PBC_KEY_DIR PBC_PATH
+#define PBC_KEY_DIR (PBC_PATH "keys/")
 #define PBC_CRYPT_KEY_PREFIX "c_key"
 #define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login.cert"
 #define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login.key"
@@ -123,35 +116,6 @@
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_END_SESSION_REDIR_HANDLER "pubcookie-end-session-redir-handler"
-
-/* why is this user being sent back, well the redirect reason will tell ya */
-static const char *redirect_reason[] = {
-                "NONE",        			/* 0 */
-		"No G or S cookie",		/* 1 */
-		"Can't unbundle S cookie",	/* 2 */
-		"S cookie hard expired",	/* 3 */
-		"S cookie inact expired",	/* 4 */
-		"speed up that loop",		/* 5 */
-		"Can't unbundle G cookie",	/* 6 */
-		"G cookie expired",		/* 7 */
-		"Wrong appid",			/* 8 */
-		"Wrong app server id",		/* 9 */
-		"Wrong version id",		/* 10 */
-		"Wrong creds" 			/* 11 */
-};
-
-#define PBC_RR_FR_CODE              0
-#define PBC_RR_NOGORS_CODE          1
-#define PBC_RR_BADS_CODE            2
-#define PBC_RR_SHARDEX_CODE         3
-#define PBC_RR_SINAEX_CODE          4
-#define PBC_RR_DUMMYLP_CODE         5
-#define PBC_RR_BADG_CODE            6
-#define PBC_RR_GEXP_CODE            7
-#define PBC_RR_WRONGAPPID_CODE      8
-#define PBC_RR_WRONGAPPSRVID_CODE   9
-#define PBC_RR_WRONGVER_CODE        10
-#define PBC_RR_WRONGCREDS_CODE      11
 
 /* set in apache config to clear session cookie and redirect to weblogin */
 #define PBC_END_SESSION_ARG_REDIR   "redirect"
@@ -317,8 +281,11 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_stringify_cookie_data(a)    libpbc_stringify_cookie_data_p(p, a)
 #define libpbc_free_md_context_plus(a)     libpbc_free_md_context_plus_p(p, a)
 #define libpbc_free_crypt(a)               libpbc_free_crypt_p(p, a)
+#define libpbc_generate_crypt_key(a)       libpbc_generate_crypt_key_p(p, a)
+#define libpbc_set_crypt_key(a,b)          libpbc_set_crypt_key_p(p,a,b)
 
 #else
+
 #define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) \
 		libpbc_gen_granting_req_np(a,b,c,d,e,f,g,h,i,j,k)
 #define libpbc_get_cookie(a,b,c,d,e,f,g,h) \
@@ -344,6 +311,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_stringify_cookie_data(a)  libpbc_stringify_cookie_data_np(a)
 #define libpbc_free_md_context_plus(a)   libpbc_free_md_context_plus_np(a)
 #define libpbc_free_crypt(a)             libpbc_free_crypt_np(a)
+#define libpbc_generate_crypt_key(a)     libpbc_generate_crypt_key_np(a)
+#define libpbc_set_crypt_key(a,b)        libpbc_set_crypt_key_np(a,b)
 
 #endif 
 

@@ -4,13 +4,13 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.3 2002-05-31 21:39:25 jjminer Exp $
+# $Id: Makefile.login,v 1.4 2002-06-05 16:52:29 greenfld Exp $
 
 include Makefile.settings
 
 DEFINES += -DDEBUG
 
-CGIC_DIR=.
+CGIC_DIR=/usr/user/cgic1.07-pubcookie1.01
 CGIC_LIB=$(CGIC_DIR)/libcgic.a
 
 # you have your choice of "basic" and "basic"
@@ -18,10 +18,10 @@ FLAVOR=basic
 
 DEFINES += -DFLAVOR=$(FLAVOR)
 
-EXTRA_CFLAGS += -I$(CGIC_DIR)
+EXTRA_CFLAGS += -g -I$(CGIC_DIR)
 EXTRA_LIBS += -ldl
 # Socket Libraries
-EXTRA_LIBS += -lnsl -lsocket
+# EXTRA_LIBS += -lnsl -lsocket
 
 ## HAVE_KRB4 - you want the kerberos 4 verifier
 # DEFINES += -DHAVE_KRB4
@@ -39,25 +39,23 @@ EXTRA_LIBS += -lkrb5
 ## MAKE_MIRROR - mirrors everything sent to the browser
 # DEFINES += -DMAKE_MIRROR
 
-## NO_HOST_BASED_KEY_FILENAMES - the login server will form key
-## filenames from components including the hostname unless this is set
-# DEFINES += -DNO_HOST_BASED_KEY_FILENAMES
-
 # There be dragons here...
+
+PBC_PATH=-DPBC_PATH=\"$(PUBCOOKIE_DIR)/\"
 
 TEST_SRC=pbc_create.c pbc_verify.c candv.c dtest.c make_crypted_blob.c \
 		 check_crypted_blob.c
-		 
+
 TEST_OBJ=pbc_create.o pbc_verify.o candv.o dtest.o make_crypted_blob.o \
 		 check_crypted_blob.o
 
 TEST_FILES=pbc_create pbc_verify candv dtest make_crypted_blob check_crypted_blob
 
-UTIL_SRC=what_is_my_ip.c pbc_key_local.c pbc_key_generic.c
+UTIL_SRC=pbc_key_local.c pbc_key_generic.c keyserver.c keyclient.c
 
-UTIL_OBJ=what_is_my_ip.o pbc_key_local.o pbc_key_generic.o
+UTIL_OBJ=pbc_key_local.o pbc_key_generic.o keyserver.o keyclient.o
 
-UTIL_FILES=what_is_my_ip pbc_key_local pbc_key_generic
+UTIL_FILES=keyserver keyclient
 
 VERIFIERS=verify.o \
 	 	  verify_alwaystrue.o \
@@ -86,6 +84,10 @@ INDEX_SRC=index.cgi.c \
 		  $(VERIFY_SRC) \
 		  $(FLAVOR_SRC)
 
+KEYMGT_FILES=keyclient keyserver
+
+KEYMGT_SRC=keyclient.c keyserver.c
+
 INDEX_HEAD=index.cgi.h \
 		   flavor.h \
 		   verify.h
@@ -112,7 +114,7 @@ BASENAME := pubcookie_login-$(VERSION)
 
 .PHONY: all clean tests utils install ver
 
-all: ver $(INDEX_FILES) $(TEST_FILES) $(UTIL_FILES)
+all: ver $(INDEX_FILES) $(UTIL_FILES)
 
 ver:
 	@echo Making $(BASENAME);
@@ -152,6 +154,12 @@ index.cgi: $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB)
 		$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS)
 
 index.cgi.o $(VERIFIERS) flavor_$(FLAVOR).o: $(MAKEFILES) $(LIB_HEAD) $(INDEX_HEAD)
+
+keyserver: keyserver.o
+		$(CC) ${CFLAGS} -o $@ keyserver.o $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS)
+
+keyclient: keyclient.o
+		$(CC) ${CFLAGS} -o $@ keyclient.o $(LIB_OBJ) $(LDFLAGS)
 
 clean::
 	$(FORCE_RM) $(INDEX_FILES) $(INDEX_OBJ) $(TEST_OBJ) $(UTIL_OBJ) \

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.78 2002-06-03 20:50:01 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.79 2002-06-05 16:52:29 greenfld Exp $
  */
 
 /* apache includes */
@@ -1085,9 +1085,13 @@ char *get_cookie(request_rec *r, char *name) {
 }
 
 /*                                                                            */
-static void pubcookie_init(server_rec *s, pool *p) {
+static void pubcookie_init(server_rec *s, pool *p) 
+{
     pubcookie_server_rec *scfg;
     char *fname;
+    char hostname[1024];
+
+    gethostname(hostname, sizeof(hostname));
 
 #ifdef APACHE1_2
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
@@ -1097,21 +1101,14 @@ static void pubcookie_init(server_rec *s, pool *p) {
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
 #endif
+    libpbc_config_init(NULL, "mod_pubcookie");
     libpbc_pubcookie_init();
+    
+    /* read and init crypt key */
 
-    /* fix file path, read, and init crypt key */
-
-#ifdef APACHE1_2
-    fname = server_root_relative (p, 
-	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
-#else
-    fname = ap_server_root_relative (p,
-	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
-#endif
-
-    scfg->c_stuff = libpbc_init_crypt(fname);
+    scfg->c_stuff = libpbc_init_crypt(hostname);
     if(scfg->c_stuff==0) {
-        ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read init crypt file '%s'",fname);
+        ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read init crypt file for peer '%s'",fname);
 	exit(1);
     }
 

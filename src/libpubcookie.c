@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.24 2002-06-03 20:50:01 jjminer Exp $
+    $Id: libpubcookie.c,v 2.25 2002-06-05 16:52:29 greenfld Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -58,6 +58,33 @@ typedef  int pid_t;  /* win32 process ID */
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
+
+/* CONSTANTS */
+
+/* why is this user being sent back, well the redirect reason will tell ya */
+const char *redirect_reason[] = {
+    "NONE",			/* 0 */
+    "No G or S cookie",		/* 1 */
+    "Can't unbundle S cookie",	/* 2 */
+    "S cookie hard expired",	/* 3 */
+    "S cookie inact expired",	/* 4 */
+    "speed up that loop",	/* 5 */
+    "Can't unbundle G cookie",	/* 6 */
+    "G cookie expired",		/* 7 */
+    "Wrong appid",		/* 8 */
+    "Wrong app server id",	/* 9 */
+    "Wrong version id",		/* 10 */
+    "Wrong creds"		/* 11 */
+};
+
+/* lives only on application server */
+const char *PBC_S_CERTFILE = (PBC_PATH "pubcookie_session.cert");
+/* lives only on application server */
+const char *PBC_S_KEYFILE = (PBC_PATH "pubcookie_session.key");
+/* lives everywhere (on application servers & login server) */
+const char *PBC_G_CERTFILE = (PBC_PATH "pubcookie_granting.cert");
+/* lives only on login server */
+const char *PBC_G_KEYFILE = (PBC_PATH "pubcookie_granting.key");
 
 /*
  * print the passed bytes
@@ -520,33 +547,87 @@ unsigned char *libpbc_gethostip_np()
     return addr;
 }
 
-/* we only use the first four bytes of the ip (maybe someday they'll be       */
-/* longer) hopefully this code will be gone by then                           */
-/*                                                                            */
-char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
+/**
+ * generates the filename that stores the DES key
+ * @param peername the certificate name of the peer
+ * @param buf a buffer of at least 1024 characters which gets the filename
+ * @return always succeeds
+ */
+static void make_crypt_keyfile(const char *peername, char *buf)
 {
-    int			i;
-
-    for( i=0; i<PBC_DES_KEY_BUF; ++i ) {
-	in[i] ^= addr_bytes[i % 4];
+    strlcpy(buf, libpbc_config_getstring("keydir", PBC_KEY_DIR), 1024);
+    if (buf[strlen(buf)-1] != '/') {
+	strlcat(buf, "/", 1024);
     }
+    strlcat(buf, peername, 1024);
+}
     
-    return in;
+/**
+ * generates a random key for peer and writes it to the disk
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+#ifdef APACHE
+int libpbc_generate_crypt_key_p(pool *p, const char *peer)
+#else
+int libpbc_generate_crypt_key_np(const char *peer)
+#endif
+{
+    unsigned char buf[PBC_DES_KEY_BUF];
+    char keyfile[1024];
+    FILE *f;
 
+    RAND_bytes(buf, PBC_DES_KEY_BUF);
+
+    make_crypt_keyfile(peer, keyfile);
+    if (!(f = pbc_fopen(keyfile, "w"))) {
+	return PBC_FAIL;
+    }
+    fwrite(buf, sizeof(char), PBC_DES_KEY_BUF, f);
+    fclose(f);
+
+    return PBC_OK;
 }
 
-/*                                                                            */
+/**
+ * writes the key 'key' to disk for peer 'peer'
+ * @param a pointer to the PB_C_DES_KEY_BUF-sized key
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
 #ifdef APACHE
-int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *keyfile)
+int libpbc_set_crypt_key_p(pool *p, const char *key, const char *peer)
 #else
-int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
+int libpbc_set_crypt_key_np(const char *key, const char *peer)
+#endif
+{
+    char keyfile[1024];
+    FILE *f;
+
+    make_crypt_keyfile(peer, keyfile);
+    if (!(f = pbc_fopen(keyfile, "w"))) {
+	return PBC_FAIL;
+    }
+    fwrite(key, sizeof(char), PBC_DES_KEY_BUF, f);
+    fclose(f);
+
+    return PBC_OK;
+}
+
+/*                                                                           */
+#ifdef APACHE
+int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *peer)
+#else
+int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *peer)
 #endif
 {
     FILE             *fp;
     char             *key_in;
-    unsigned char    *addr;
+    char keyfile[1024];
 
 /*  libpbc_debug("libpbc_get_crypt_key\n"); */
+
+    make_crypt_keyfile(peer, keyfile);
 
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
@@ -567,28 +648,27 @@ int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
 
     pbc_fclose(fp);
 
-    addr = libpbc_gethostip();
-    memcpy(c_stuff->key_a, libpbc_mod_crypt_key(key_in, addr), sizeof(c_stuff->key_a));
+    memcpy(c_stuff->key_a, key_in, sizeof(c_stuff->key_a));
     pbc_free(key_in);
-    pbc_free(addr);
 
     return PBC_OK;
 }
 
-/*                                                                            */
+/*                                                                           */
 #ifdef APACHE
-crypt_stuff *libpbc_init_crypt_p(pool *p, char *keyfile)
+crypt_stuff *libpbc_init_crypt_p(pool *p, char *peername)
 #else
-crypt_stuff *libpbc_init_crypt_np(char *keyfile)
+crypt_stuff *libpbc_init_crypt_np(char *peername)
 #endif
 {
     crypt_stuff	*c_stuff;
+    char keyfile[1024];
 
-/*    libpbc_debug("libpbc_init_crypt: keyfile= %s\n",keyfile); */
+    libpbc_debug("libpbc_init_crypt: peername=%s\n", peername);
 
     c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
 
-    if ( libpbc_get_crypt_key(c_stuff, keyfile) == PBC_OK ) {
+    if ( libpbc_get_crypt_key(c_stuff, peername) == PBC_OK ) {
 #ifdef DEBUG_ENCRYPT_COOKIE
         libpbc_debug("read key >");
         print_hex_bytes(stderr,c_stuff->key_a,sizeof(c_stuff->key_a));
@@ -600,7 +680,7 @@ crypt_stuff *libpbc_init_crypt_np(char *keyfile)
     }
 }
 
-/*                                                                            */
+/*                                                                           */
 #ifdef APACHE
 void libpbc_free_crypt_p(pool *p, crypt_stuff *c_stuff)
 #else

@@ -27,11 +27,14 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.13 2001-08-29 18:20:29 willey Exp $
+    $Id: pubcookie.h,v 1.14 2002-06-05 16:52:29 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
 #define PUBCOOKIE_MAIN
+
+#include <time.h>
+#include <pem.h>
 
 #define PBC_USER_LEN 42
 #define PBC_VER_LEN 4

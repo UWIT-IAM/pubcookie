@@ -24,6 +24,15 @@ void usage(const char *progname) {
     exit (1);
 }
 
+char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
+{
+    int i;
+    
+    for( i=0; i<PBC_DES_KEY_BUF; ++i ) {
+       in[i] ^= addr_bytes[i % 4];
+    }
+}
+
 int main(int argc, char **argv) {
     unsigned char 	*key_buf;
     unsigned long int   addr;

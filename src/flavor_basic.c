@@ -68,7 +68,7 @@ fprintf(stderr, "print_login_page: hello\n");
     if (need_clear_greq) {
         print_header("Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
 		     PBC_G_REQ_COOKIENAME, 
-		     G_REQ_RECEIVED,
+		     PBC_CLEAR_COOKIE,
 		     PBC_ENTRPRS_DOMAIN);
     }
 

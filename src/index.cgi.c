@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.50 $
+ * $Revision: 1.51 $
  */
 
 
@@ -262,7 +262,6 @@ void print_http_header(void)
         print_header("Cache-Control: no-store, no-cache, must-revalidate\n");
         print_header("Expires: Sat, 1 Jan 2000 01:01:01 GMT\n");
         print_header("Content-Type: text/html\n");
-
 }
 
 /**
@@ -595,6 +594,10 @@ char *url_encode(char *in)
     char	*out;
     char	*p;
 
+    if (in == NULL) {
+	return NULL;
+    }
+
     if (!(out = malloc(strlen (in) * 3 + 1)) ) {
         abend("unable to allocate memory in url_encode");
     }
@@ -813,10 +816,12 @@ char *keyfile(char *prefix)
     char	*file;
     char	*host;
 
-#ifdef NO_HOST_BASED_KEY_FILENAMES
-    if (strdup(file, prefix) == NULL )
-        abend("out of memory");
-#else
+    if (debug > 3) {
+	log_message("keyfile(%s): hello", prefix);
+    }
+
+    host = get_my_hostname();
+
     /* plus one for \0 and plus one for the '.' in the format */
     file = calloc(strlen(PBC_KEY_DIR) +
                   strlen(prefix) +
@@ -824,7 +829,10 @@ char *keyfile(char *prefix)
     if (file == NULL ) 
         abend("out of memory");
     sprintf(file, "%s%s.%s", PBC_KEY_DIR, prefix, host);
-#endif
+
+    if (debug > 3) {
+	log_message("keyfile(%s): returning %s", prefix, file);
+    }
 
     return(file);
 
@@ -832,32 +840,17 @@ char *keyfile(char *prefix)
 
 char *login_private_keyfile()
 {
-#ifdef NO_HOST_BASED_KEY_FILENAMES
-    return(keyfile(PBC_L_KEYFILE));
-#else
     return(keyfile(PBC_L_PRIVKEY_FILE_PREFIX));
-#endif
-
 }
 
 char *login_public_keyfile()
 {
-#ifdef NO_HOST_BASED_KEY_FILENAMES
-    return(keyfile(PBC_L_CERTFILE));
-#else
     return(keyfile(PBC_L_PUBKEY_FILE_PREFIX));
-#endif
-
 }
 
 char *granting_private_keyfile()
 {
-#ifdef NO_HOST_BASED_KEY_FILENAMES
-    return(keyfile(PBC_G_KEYFILE));
-#else
     return(keyfile(PBC_G_PRIVKEY_FILE_PREFIX));
-#endif
-
 }
 
 /* reads the crypt key */
@@ -869,21 +862,11 @@ int init_crypt()
         return(PBC_OK);
     }
 
-#ifdef LARRY_SUCKS
     if ((c_stuff = libpbc_init_crypt(get_my_hostname())) == NULL ) {
 	return(PBC_FAIL);
     } else {
 	return(PBC_OK);
     }
-#else
-    snprintf( (char *) crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s",
-	     PBC_KEY_DIR, PBC_CRYPT_KEY_PREFIX, (char *) get_my_hostname());
-    if ((c_stuff = libpbc_init_crypt( (char *) crypt_keyfile)) == NULL) {
-	return PBC_FAIL;
-    } else {
-	return PBC_OK;
-    }
-#endif
 }
 
 int has_login_cookie()
@@ -920,16 +903,46 @@ char *get_granting_request()
 
 }
 
-char *decode_granting_request(char *in)
+char *decode_granting_request(char *in, char **peerp)
 {
-    char	*out;
+    char *out = NULL;
+    char *peer = NULL;
+    pbc_cookie_data     *cookie_data;
 
     if (debug) {
 	fprintf(stderr, "decode_granting_request: in: %s\n", in);
     }
+    if (peerp) *peerp = NULL;
 
-    out = strdup(in);    
-    libpbc_base64_decode( (unsigned char *) in,  (unsigned char *) out);
+    /* xxx check to see if 'in' is _<peer>_<base64 bundled> or just <base64> */
+    /* (bundling currently relies on signing with the login server key */
+    if (0 && in[0] == '_') {
+	char *p;
+	int len;
+
+	in++;
+
+	/* grab peername */
+	for (p = in; *p != '\0' && *p != '_'; p++) {
+	    len++;
+	}
+	if (p == '\0' || p - in > 1024) {
+	    /* xxx error error */
+	    return NULL;
+	}
+
+	*p++ = '\0';
+	peer = strdup(in);
+
+#if 0
+	libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff);
+#endif
+
+	if (peerp) *peerp = peer;
+    } else {
+	out = strdup(in);    
+	libpbc_base64_decode(in, out);
+    }
 
     if (debug) {
 	fprintf(stderr, "decode_granting_request: out: %s\n", out);
@@ -1039,8 +1052,9 @@ int get_kiosk_duration(login_rec *l)
     char	**keys;
     char	**values;
 
-    if(debug)
-        log_message("get_kiosk_duration: agent: %s", user_agent());
+    if(debug) {
+	log_message("get_kiosk_duration: agent: %s", user_agent());
+    }
 
     keys = libpbc_config_getlist("kiosk_keys");
     values = libpbc_config_getlist("kiosk_values");
@@ -1056,7 +1070,7 @@ int get_kiosk_duration(login_rec *l)
        }
     }
     /* not a kiosk */
-    return(PBC_FALSE);
+    return(PBC_FALSE); /* xxx false isn't a duration -leg */
 
 }
 
@@ -1067,14 +1081,23 @@ int get_kiosk_duration(login_rec *l)
  */
 time_t compute_l_expire(login_rec *l)
 {
-    log_message("compute_l_expire: hello");
+    time_t t;
+
+    if (debug) {
+	log_message("compute_l_expire: hello");
+    }
 
     if( (l->duration = get_kiosk_duration(l)) == PBC_FALSE )
         l->duration = 
                 libpbc_config_getint("default_l_expire",DEFAULT_LOGIN_EXPIRE);
 
-    return(time(NULL) + l->duration);
+    t = time(NULL) + l->duration;
 
+    if (debug) {
+	log_message("compute_l_expire: bye %d", t);
+    }
+
+    return t;
 }
 
 /**
@@ -1341,6 +1364,10 @@ int pinit(login_rec *l, login_rec *c)
     return(PBC_FAIL);
 
 }
+
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+/*	main line                                                          */
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
 /**
  * cgiMain: the main routine, called by libcgic
@@ -1703,8 +1730,8 @@ void notok ( void (*notok_f)() )
 
 }
 
-int set_pinit_cookie() {
-
+int set_pinit_cookie() 
+{
 #ifdef PORT80_TEST
     print_header("Set-Cookie: %s=%s; domain=%s; path=/\n", 
 #else
@@ -1806,6 +1833,9 @@ int cookie_test(login_rec *l, login_rec *c)
     /* no g_req or cleared g_req then pinit */
     if ( strstr(cookies, PBC_G_REQ_COOKIENAME) == NULL || 
          strstr(cookies, cleared_g_req) != NULL ) {
+	if (debug) {
+	    log_message("cookie_test: no g_req or empty g_req");
+	}
         pinit(l, c);
         return(PBC_FAIL);
     }
@@ -1885,9 +1915,9 @@ int check_user_agent()
     ifp = fopen(OK_BROWSERS_FILE, "r");
     if (ifp == NULL) {
         log_error(2, "system-problem", 0,
-                  "can't open ok browsers file: %s, continuing", 
-                  OK_BROWSERS_FILE);
-        return(0);
+		  "can't open ok browsers file: %s, continuing", 
+		  OK_BROWSERS_FILE);
+        return(1);
     }
 
     /* make the user agent lower case */
@@ -1930,7 +1960,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
     time_t		now;
 
     if (debug)
-	fprintf(stderr, "print_redirect_page: hello\n");
+	fprintf(stderr, "print_redirect_page: hello (pinit=%d)\n", l->pinit);
 
     if (!(redirect_dest = malloc(PBC_4K)) ) {
         abend("out of memory");
@@ -1970,6 +2000,11 @@ void print_redirect_page(login_rec *l, login_rec *c)
         return;
     }
 
+    if (debug > 3) {
+	log_message("l->user=%s l->appsrvid=%s l->appid=%s",
+		    l->user, l->appsrvid, l->appid);
+    }
+
     /* cook up them cookies */
     l_res = create_cookie(url_encode(l->user),
         url_encode(l->appsrvid),
@@ -1981,6 +2016,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         l_cookie,
         login_private_keyfile(),
         PBC_4K);
+
     g_res = create_cookie(url_encode(l->user),
         url_encode(l->appsrvid),
         url_encode(l->appid),
@@ -2013,6 +2049,10 @@ void print_redirect_page(login_rec *l, login_rec *c)
 		    l->user, l->appsrvid, l->appid);
           free(message);
           return;
+    }
+
+    if (debug > 3) {
+	fprintf(stderr, "created cookies l_res g_res\n");
     }
 
     /* create the http header line with the cookie */
@@ -2225,7 +2265,7 @@ login_rec *get_query()
         if( g_req != NULL && 
             strcmp(g_req, PBC_CLEAR_COOKIE) != 0 ) {
 
-            g_req_clear = decode_granting_request(g_req);
+            g_req_clear = decode_granting_request(g_req, NULL);
 
 	    if (debug) {
 	        fprintf(stderr, "get_query: decoded granting request: %s\n", 
@@ -2362,8 +2402,9 @@ int create_cookie(char *user_buf,
     /* local junk */
     char		*cookie_local;
 
-    if(debug)
+    if(debug) {
         fprintf(stderr, "create_cookie: hello\n"); 
+    }
     
     /* right size the args */
     strncpy( (char *) user, user_buf, sizeof(user));
@@ -2377,9 +2418,12 @@ int create_cookie(char *user_buf,
         abend("Cound not load private key file");
     }
     
-    if(debug)
-        fprintf(stderr, "create_cookie: ready to go get cookie, with expire_ts: %d\n", (int)expire); 
-    
+    if(debug) {
+        fprintf(stderr, 
+		"create_cookie: ready to go get cookie, with expire_ts: %d\n", 
+		(int)expire); 
+    }
+
     /* go get the cookie */
     cookie_local = (char *) libpbc_get_cookie_with_expire(user, type, creds, serial, 
 			             expire, appsrvid, appid, ctx_plus, 

@@ -1,11 +1,11 @@
 # -*- make -*-
 #
-#  $Id: Makefile.apxs,v 1.12 2002-05-23 19:32:59 jteaton Exp $
+#  $Id: Makefile.apxs,v 1.13 2002-06-05 16:52:29 greenfld Exp $
 
 include Makefile.settings
 
 # if the apache binaries aren't in your path
-APXS=/usr/local/apache/bin/apxs
+APXS=/usr/www/bin/apxs
 
 # some mod_pubcookie compile flags
 #  -DAPACHE1_2 - for old apaches
@@ -14,6 +14,8 @@ APXS=/usr/local/apache/bin/apxs
 #  -DPORT80_TEST - for non-ssl testing 
 #  -DNO_JIMB_SESSION_NAMES - makes session cookies all be named the same
 #  -DUSE_SECURID - UWash securid only
+PBC_PATH=-DPBC_PATH=\\\"$(PUBCOOKIE_DIR)/\\\"
+
 DEFINES += -DAPACHE1_3
 
 .PHONY: all ver
