@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.6 2002-06-13 17:49:07 jteaton Exp $
+    $Id: keyserver.c,v 2.7 2002-06-13 20:52:55 jjminer Exp $
  */
 
 #include <stdio.h>
@@ -28,19 +28,19 @@
 
 #ifndef KEYSERVER_CGIC
 
-#ifdef HAVE_GETOPT_H
-# include <getopt.h>
-#endif /* HAVE_GETOPT_H */
+# ifdef HAVE_GETOPT_H
+#  include <getopt.h>
+# endif /* HAVE_GETOPT_H */
 
-#include <openssl/crypto.h>
-#include <openssl/x509.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+# include <openssl/crypto.h>
+# include <openssl/x509.h>
+# include <openssl/pem.h>
+# include <openssl/ssl.h>
+# include <openssl/err.h>
 
 #else
-#include <cgic.h>
-#endif
+# include <cgic.h>
+#endif /* ifndef KEYSERVER_CGIC */
 
 #include "pbc_config.h"
 #include "libpubcookie.h"
@@ -77,7 +77,7 @@ void myprintf(const char *format, ...)
 	exit(1);
     }
 }
-#else
+#else /* ifndef KEYSERVER_CGIC */
 void myprintf(const char *format, ...)
 {
     va_list args;
@@ -86,7 +86,7 @@ void myprintf(const char *format, ...)
     vfprintf(stdout, format, args);
     va_end(args);
 }
-#endif
+#endif /* ifndef KEYSERVER_CGIC */
 
 
 int debug = 1;
@@ -112,8 +112,8 @@ void pushkey(const char *peer)
     int res;
 
     if (!lservers) {
-	/* only me here */
-	return;
+        /* only me here */
+        return;
     }
 
     if (gethostname(hostname, sizeof(hostname)) < 0) {
@@ -124,34 +124,34 @@ void pushkey(const char *peer)
 
     x = 0;
     for (x = 0; lservers[x] != NULL; x++) {
-	if (!strcasecmp(hostname, lservers[x])) {
-	    /* don't push the key to myself */
-	    continue;
-	}
+        if (!strcasecmp(hostname, lservers[x])) {
+            /* don't push the key to myself */
+            continue;
+        }
 
-	syslog(LOG_INFO, "setting %s's key on %s", peer, lservers[x]);
+        syslog(LOG_INFO, "setting %s's key on %s", peer, lservers[x]);
 
-	res = fork();
-	if (res < 0) {
-	    syslog(LOG_ERR, "fork(): %m");
-	    perror("fork");
-	    exit(1);
-	}
-	if (fork() == 0) {
-	    /* child */
-	    res = execl("keyclient", "keyclient", 
-			"-L", lservers[x],
-			"-k", keyfile, 
-			"-c", certfile, 
-			"-u", "-h", peer, NULL);
-	    syslog(LOG_ERR, "execl(): %m");
-	    exit(2);
-	}
-	
-	/* parent */
-	res = wait(&res);
-	syslog(LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
-	       res == 0 ? "done" : "error");
+        res = fork();
+        if (res < 0) {
+            syslog(LOG_ERR, "fork(): %m");
+            perror("fork");
+            exit(1);
+        }
+        if (fork() == 0) {
+            /* child */
+            res = execl("keyclient", "keyclient", 
+                        "-L", lservers[x],
+                        "-k", keyfile, 
+                        "-c", certfile, 
+                        "-u", "-h", peer, NULL);
+            syslog(LOG_ERR, "execl(): %m");
+            exit(2);
+        }
+
+        /* parent */
+        res = wait(&res);
+        syslog(LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
+               res == 0 ? "done" : "error");
     }
 
     free(lservers);
@@ -356,6 +356,8 @@ int main(int argc, char *argv[])
 
     /* xxx log connection information */
 
+    /* Load SSL Error Strings */
+    SSL_load_error_strings();
 
     /* initialize the OpenSSL connection */
     SSL_library_init();
@@ -409,6 +411,9 @@ int main(int argc, char *argv[])
 	peer = strstr(peer, "CN=");
 	peer += 3;
     }
+    if( strstr(peer, "/Email=") ) {
+        *(strstr(peer, "/Email=")) = '\0';
+    }
     syslog(LOG_INFO, "peer identified as %s\n", peer);
 
     /* read HTTP query */
@@ -460,7 +465,7 @@ int main(int argc, char *argv[])
     return r;
 }
 
-#else
+#else /* ifndef KEYSERVER_CGIC */
 /*
   this CGI requires client-side SSL authentication.
   make sure Apache is configured thusly in the SSL section:
@@ -539,4 +544,4 @@ int cgiMain()
     return 0;
 }
 
-#endif
+#endif /* ifndef KEYSERVER_CGIC */

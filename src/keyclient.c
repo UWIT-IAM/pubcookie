@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.5 2002-06-13 17:49:07 jteaton Exp $
+    $Id: keyclient.c,v 2.6 2002-06-13 20:52:55 jjminer Exp $
  */
 
 #include <stdio.h>
@@ -162,6 +162,9 @@ int main(int argc, char *argv[])
                 break;
         }
     }
+
+    /* Load SSL Error Strings */
+    SSL_load_error_strings();
 
     /* initialize the OpenSSL connection */
     SSL_library_init();
