@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.26 2001-09-28 16:52:22 willey Exp $
+    $Id: index.cgi.c,v 1.27 2001-10-17 16:16:14 willey Exp $
  */
 
 
@@ -167,20 +167,72 @@ static void tmpl_print_out(const char *fname,...)
 
 }
 
+/* this returns first cookie for a given name */
+int get_cookie(char *name, char *result, int max)
+{
+    char        *s;
+    char        *p;
+    char        *target;
+    char        *wkspc;
+
+    if( !(target = malloc(PBC_20K)) ) {
+        abend("out of memory");
+    }
+
+    /* get all the cookies */
+    if( !(s = getenv("HTTP_COOKIE")) ){
+        log_message("looking for %s cookie, but found no cookies", name);
+        notok(notok_no_g_or_l);
+        return(PBC_FAIL);
+    }
+
+    /* make us a local copy */
+    strncpy( target, s, PBC_20K-1 );
+
+    if( !(wkspc=strstr( target, name )) ) {
+        log_message("looking for %s cookie, but didn't find it", name);
+        return(PBC_FAIL);
+    }
+
+    /* get rid of the <name>= part from the cookie */
+    p = wkspc = wkspc + strlen(name) + 1;
+    while(*p) {
+        if( *p == ';' ) {
+            *p = '\0';
+            break;
+        }
+        p++;
+    }
+
+    strncpy( result, wkspc, max );
+
+#ifdef DEBUG
+    fprintf(stderr, "get_cookie: returning cookie: %s\n%s\n",name,result);
+#endif
+
+    free( target );
+    return( PBC_OK );
+
+}
+
 /* returns cookie for name tag                                               */
-char *get_cookie(char *name, int max)
+char *get_cookie_broken(char *name, int max)
 {
     char	*s;
     char	*p;
     char	*result;
     char	*target;
+    char	*wkspc;
 
 #ifdef DEBUG
     fprintf(stderr, "get_cookie: hello looking for %s cookie\n", name);
 #endif
 
-//    if( !(target = malloc(PBC_20K)) ) {
-    if( !(target = malloc(PBC_4K)) ) {
+    if( (result = malloc(PBC_4K)) == NULL ) {
+        abend("out of memory");
+    }
+
+    if( (target = malloc(PBC_20K)) == NULL ) {
         abend("out of memory");
     }
 
@@ -192,16 +244,15 @@ char *get_cookie(char *name, int max)
     }
 
     /* make us a local copy */
-//    strncpy( target, s, PBC_20K-1 );
-    strncpy( target, s, PBC_4K-1 );
+    strncpy( target, s, PBC_20K-1 );
 
-    if( !(result=strstr( target, name )) ) {
+    if( !(wkspc=strstr( target, name )) ) {
         log_message("looking for %s cookie, but didn't find it", name);
         return(NULL);
     }
 
     /* get rid of the <name>= part from the cookie */
-    p = result = result + strlen(name) + 1;
+    p = wkspc = wkspc + strlen(name) + 1;
     while(*p) {
         if( *p == ';' ) {
             *p = '\0';
@@ -211,8 +262,8 @@ char *get_cookie(char *name, int max)
     }
 
 //    result = wkspc;
-//    strncpy( result, wkspc, max );
-//    free( target );
+    strncpy( result, wkspc, max );
+    free( target );
 
 #ifdef DEBUG
     fprintf(stderr, "get_cookie: found cookie for %s\n", name);
@@ -230,7 +281,7 @@ char *get_string_arg(char *name, cgiFormResultType (*f)())
     cgiFormResultType 	res;
 
 #ifdef DEBUG
-    fprintf(stderr, "get_string_arg: hello\n");
+/*    fprintf(stderr, "get_string_arg: hello\n"); */
 #endif
 
     cgiFormStringSpaceNeeded(name, &length);
@@ -588,7 +639,17 @@ int get_next_serial()
 
 char *get_granting_request() 
 {
-    return(get_cookie(PBC_G_REQ_COOKIENAME, PBC_4K-1));
+    char        *cookie;
+
+    if( (cookie = malloc(PBC_4K)) == NULL ) {
+        abend("out of memory");
+    }
+
+    if( get_cookie(PBC_G_REQ_COOKIENAME, cookie, PBC_4K-1) == PBC_FAIL ) {
+        return(NULL);
+    }
+
+    return(cookie);
 
 }
 
@@ -647,8 +708,12 @@ int vector_request(login_rec *l, login_rec *c)
     char	*res;
     char	message[PBC_4K];
 
+#ifdef DEBUG
+    fprintf(stderr, "vector_request: hello\n");
+#endif
+
     if ( l->reply == FORM_REPLY ) {      /* a reply from the login page */
-        res = check_login(l);
+        res = check_login(l, c);
         if( strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
             log_message("%s Authentication failed: %s type: %c %s", l->first_kiss, l->user, l->creds, res);
             if( !strcmp(res, CHECK_LOGIN_RET_FAIL) ) {
@@ -678,7 +743,7 @@ int vector_request(login_rec *l, login_rec *c)
         return(PBC_FAIL);
     }
     /* reauth-free-zone */
-    else if( ride_free_zone(l, c) == PBC_OK ) { 
+    else if( l->ride_free_creds == PBC_CREDS_CRED1 ) { 
         return(PBC_OK);
     }
     /* session timeout requires reauth */
@@ -741,10 +806,6 @@ int cgiMain()
     /* unload the login cookie if we hav it */
     c = verify_unload_login_cookie(l);
 
-#ifdef DEBUG
-    fprintf(stderr, "cgiMain: after get_query\n");
-#endif
-
     /* log the arrival */
     log_message("%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
 		l->first_kiss, 
@@ -774,6 +835,9 @@ int cgiMain()
     if ( !l->fr ) {
         l->fr = strdup("NFR");
     }
+
+    /* check early if we get to ride free */
+    l->ride_free_creds = ride_free_zone(l, c);
 
     if( vector_request(l, c) == PBC_FAIL ) {
         exit(0);
@@ -848,7 +912,6 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     int		field1_type = 0;
     int		field2_type = 0;
     int		field3_type = 0;
-    int		ride_free = 0;
 
     log_message("%s Printing login page, reason: %s", l->first_kiss, reason);
 
@@ -865,12 +928,10 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         field1_prompt = strdup(PROMPT_UWNETID);
         field2_prompt = strdup(PROMPT_PASSWD);
         field3_prompt = strdup(PROMPT_SECURID);
-        if( ride_free_zone(l, c) == PBC_OK ) {
+        if( l->ride_free_creds == PBC_CREDS_CRED1 ) {
             log_in_with = strdup("SecurID");
-	    ride_free = 1;
         } else {
             log_in_with = strdup("UW NetID, password, and SecurID");
-	    ride_free = 0;
         }
         break;
     default:
@@ -899,6 +960,9 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
             G_REQ_RECIEVED,
             PBC_ENTRPRS_DOMAIN);
 
+#ifdef DYNAMIC_LOGIN_PAGE
+    tmpl_print_out(TMPL_FNAME "login_part1", message, reason);
+#else
     print_http_header();
 
     print_login_page_part1(focus_field);
@@ -908,7 +972,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     if(field1_prompt != NULL) {
         if( c != NULL && c->user != NULL )
             field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
-        if( ride_free == 1 ) 
+        if( l->ride_free_creds == PBC_CREDS_CRED1 )
             print_form_field(field1_prompt, 
                              "user", 
                              FIELD_ECHO_YES, 
@@ -923,7 +987,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     }
 
     if(field2_prompt != NULL) {
-        if( ride_free == 1 ) 
+        if( l->ride_free_creds == PBC_CREDS_CRED1 )
             print_form_field(field2_prompt, 
                              "pass", 
                              FIELD_ECHO_STARS, 
@@ -944,7 +1008,13 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
                              field_type, 
                              "");
 
-    print_login_page_lhs2(l);
+    print_login_page_lhs2a(l);
+#endif
+    print_login_page_hidden_stuff(l);
+#ifdef DYNAMIC_LOGIN_PAGE
+    tmpl_print_out(TMPL_FNAME "login_part2", message, reason);
+#else
+    print_login_page_lhs2b(l);
 
     print_login_page_centre();
 
@@ -953,6 +1023,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     print_login_page_expire_info();
 
     print_login_page_bottom();
+#endif
 
 }
 
@@ -1017,15 +1088,15 @@ char *check_login_securid(char *user, char *sid, int next, login_rec *l)
 }
 
 /* successful auth returns CHECK_LOGIN_RET_SUCCESS                            */
-char *check_login(login_rec *l)
+char *check_login(login_rec *l, login_rec *c)
 {
     char	*ret;
 
 #ifdef DEBUG
-    fprintf(stderr, "in check_login\n");
+    fprintf(stderr, "check_login: hello\n");
 #endif
 
-    if( !(ret = malloc(100)) ) {
+    if( !(ret = malloc(PBC_1K)) ) {
         abend("out of memory");
     }
 
@@ -1050,9 +1121,8 @@ char *check_login(login_rec *l)
 
 /* for some n seconds after authenticating we don't ask the user to */
 /* retype their credentials                                         */
-/*    returns PBC_OK for ok for free ride                           */
-/*    returns PBC_FAIL for no free ride                             */
-int ride_free_zone(login_rec *l, login_rec *c)
+/*    returns credentials ok for ride free                          */
+char ride_free_zone(login_rec *l, login_rec *c)
 {
     char	*cookie;
     time_t	t;
@@ -1066,14 +1136,14 @@ int ride_free_zone(login_rec *l, login_rec *c)
     }
 
     if (init_crypt() == PBC_FAIL) {
-        return(PBC_FAIL);
+        return(PBC_CREDS_NONE);
     }
 
     if( c == NULL )
         c = verify_unload_login_cookie(l);
 
     if( c == NULL )
-        return(PBC_FAIL);
+        return(PBC_CREDS_NONE);
 
 #ifdef DEBUG
     fprintf(stderr, "in ride_free_zone ready to look at cookie contents user: %s\n", c->user);
@@ -1082,7 +1152,7 @@ int ride_free_zone(login_rec *l, login_rec *c)
     /* look at what we got back from the cookie */
     if( ! c->user ) {
         log_error(5, "system-problem", 0, "no user from L cookie? user from g_req: %s", l->user);
-        return(PBC_FAIL);
+        return(PBC_CREDS_NONE);
     }
 
     if( (c->create_ts + RIDE_FREE_TIME) < (t=time(NULL)) ) {
@@ -1091,7 +1161,7 @@ int ride_free_zone(login_rec *l, login_rec *c)
 			c->create_ts, 
                         t,
 			c->user);
-        return(PBC_FAIL);
+        return(PBC_CREDS_NONE);
     }
     else {
         log_message("%s Yeah! Free Ride!!! login cookie created: %d now: %d user: %s",
@@ -1101,7 +1171,7 @@ int ride_free_zone(login_rec *l, login_rec *c)
 			c->user);
         l->user = c->user;
         l->creds = c->creds;
-        return(PBC_OK);
+        return(PBC_CREDS_CRED1);
     }
 
 }
@@ -1260,16 +1330,23 @@ void notok ( void (*notok_f)() )
             EARLIEST_EVER);
     }
 
+#ifdef DYNAMIC_LOGIN_PAGE
     print_http_header();
-
     print_login_page_part1(NO_FOCUS);
     print_out("<td valign=\"middle\">\n");
     print_uwnetid_logo();
+#else
+    tmpl_print_out(TMPL_FNAME "notok_part1");
+#endif
 
     notok_f();
 
+#ifdef DYNAMIC_LOGIN_PAGE
     print_out("</td>\n</tr>\n");
     print_login_page_bottom();
+#else
+    tmpl_print_out(TMPL_FNAME "notok_part2");
+#endif
 
 }
 
@@ -1395,11 +1472,16 @@ void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
 }
 
 /*	################################### more, left hand side of big table */
-void print_login_page_lhs2(login_rec *l)
+void print_login_page_lhs2a(login_rec *l)
 {
     print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Log in\">");
     print_out("</strong>\n");
-    print_login_page_hidden_stuff(l);
+
+}
+
+/*	################################### more, left hand side of big table */
+void print_login_page_lhs2b(login_rec *l)
+{
     print_out("</form>\n");
     print_out("</td>\n");
     print_out("<td width=\"9\">&nbsp;</td>\n");
@@ -1798,20 +1880,21 @@ void print_redirect_page(login_rec *l, login_rec *c)
         /*                                                               */
         /* non-post redirect area                 non-post redirect area */
         /*                                                               */
+#ifdef DYNAMIC_LOGIN_PAGE
+        tmpl_print_out(TMPL_FNAME "nonpost_redirect", REFRESH, redirect_final,redirect_final);
+#else
         print_http_header();
-
         print_out("<html><head>\n");
-
         print_out("<SCRIPT LANGUAGE=\"JavaScript\">\n");
         print_out("window.location.replace(\"%s\");\n", redirect_final);
         print_out("</SCRIPT> \n");
         print_out("<NOSCRIPT>\n");
         print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_final);
         print_out("</NOSCRIPT> \n");
-
         print_out("<BODY BGCOLOR=\"white\">");
         print_out("<!--redirecting to %s-->", redirect_final);
         print_out("</BODY></HTML>\n");
+#endif
     } /* end if post_stuff */
 
     free(g_cookie);
@@ -1901,15 +1984,15 @@ login_rec *get_query()
     }
 
 #ifdef DEBUG 
-    fprintf(stderr, "from login user: %s\n", l->user);
-    fprintf(stderr, "from login version: %s\n", l->version);
-    fprintf(stderr, "from login creds: %c\n", l->creds);
-    fprintf(stderr, "from login appid: %s\n", l->appid);
-    fprintf(stderr, "from login host: %s\n", l->host);
-    fprintf(stderr, "from login appsrvid: %s\n", l->appsrvid);
-    fprintf(stderr, "from login next_securid: %d\n", l->next_securid);
-    fprintf(stderr, "from login first_kiss: %d\n", (int)l->first_kiss);
-    fprintf(stderr, "from login post_stuff: %s\n", l->post_stuff);
+    fprintf(stderr, "get_query: from login user: %s\n", l->user);
+    fprintf(stderr, "get_query: from login version: %s\n", l->version);
+    fprintf(stderr, "get_query: from login creds: %c\n", l->creds);
+    fprintf(stderr, "get_query: from login appid: %s\n", l->appid);
+    fprintf(stderr, "get_query: from login host: %s\n", l->host);
+    fprintf(stderr, "get_query: from login appsrvid: %s\n", l->appsrvid);
+    fprintf(stderr, "get_query: from login next_securid: %d\n", l->next_securid);
+    fprintf(stderr, "get_query: from login first_kiss: %d\n", (int)l->first_kiss);
+    fprintf(stderr, "get_query: from login post_stuff: %s\n", (l->post_stuff==NULL ? "" : l->post_stuff));
 #endif
 
     return(l);
@@ -1930,8 +2013,12 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     fprintf(stderr, "verify_unload_login_cookie: hello\n");
 #endif
 
+    if( !(cookie = malloc(PBC_4K)) ) {
+        abend("out of memory");
+    }
+
     /* get the login cookie */
-    if( (cookie=get_cookie(PBC_L_COOKIENAME, PBC_4K-1)) == NULL )
+    if( (get_cookie(PBC_L_COOKIENAME, cookie, PBC_4K-1)) == PBC_FAIL )
         return((login_rec *)NULL);
 
     new = malloc(sizeof(new));
@@ -1940,12 +2027,12 @@ login_rec *verify_unload_login_cookie (login_rec *l)
 			KEY_DIR, CERT_FILE); 
     ctx_plus = libpbc_verify_init(sign_keyfile);
 
+    if (init_crypt() == PBC_FAIL) {
+        return((login_rec *)NULL);
+    }
+
     if( (cookie_data = libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff)) == NULL)
         return((login_rec *)NULL);
-
-#ifdef DEBUG
-    fprintf(stderr, "verify_unload_login_cookie: here user %s\n", new->user);
-#endif
 
     new->user = (*cookie_data).broken.user;
     new->version = (*cookie_data).broken.version;
