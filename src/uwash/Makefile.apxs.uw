@@ -1,0 +1,30 @@
+
+# if the apache binaries aren't in your path
+APXS=/usr/local/apache/bin/apxs
+# set your path to ssl libraries
+SSL_BASE=/usr/local/ssl
+
+# some mod_pubcookie compile flags
+#  -DNO_JIMB_SESSION_NAMES -DUSE_SECURID
+#  -DPORT80_TEST -DAPACHE1_3 -DAPACHE2 
+CFLAGS=-DUSE_SECURID -DAPACHE1_3 -Wall
+#CFLAGS=-DUSE_SECURID -Wall,-g
+
+INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
+#EXTRA_LDFLAGS=-I/opt/nfast/gcc/include -DNFast -L/opt/nfast/gcc/lib -lnfstub
+LIBS=$(EXTRA_LDFLAGS) -L$(SSL_BASE)/lib -lssl -lcrypto 
+
+all: mod_pubcookie.so
+
+MAKEFILE=Makefile.apxs
+GENERALHEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
+
+mod_pubcookie.so: mod_pubcookie.c libpubcookie.c ${GENERALHEAD} ${MAKEFILE}
+	$(APXS) -c $(CFLAGS) $(INCS) mod_pubcookie.c libpubcookie.c base64.c $(LIBS)
+
+install: all
+	$(APXS) -i -a -n pubcookie mod_pubcookie.so
+
+clean:
+	-rm -f mod_pubcookie.o libpubcookie.o base64.o mod_pubcookie.so so_locations
+
