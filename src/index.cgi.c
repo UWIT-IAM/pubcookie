@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.136 2004-08-20 15:55:18 willey Exp $
+ * $Id: index.cgi.c,v 1.137 2004-08-20 22:56:33 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1712,6 +1712,7 @@ int pinit(pool *p, const security_context *context, login_rec *l, login_rec *c)
 	l->appid = strdup("pinit");
 	l->version = strdup(PBC_VERSION);
 	l->uri = strdup(cgiScriptName);
+        l->appsrv_err = strdup(redirect_reason[PBC_RR_PINIT]);
 	pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
 			     "pinit: ready to print login page");
 	
