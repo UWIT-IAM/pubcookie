@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.50 2004-05-07 23:19:53 fox Exp $
+ * $Id: keyclient.c,v 2.51 2004-05-27 23:22:31 fox Exp $
  */
 
 
@@ -134,26 +134,32 @@ static void usage(void)
 }
 
 
-/* destructively returns the value of the CN */
-static char *extract_cn(char *s)
+static int verify_callback(int ok, X509_STORE_CTX * ctx)
 {
-    char *p = strstr(s, "CN=");
-    char *q;
+    X509   *err_cert;
+    int     err;
+    pool   *p = NULL;
 
-    if (p) {
-        p += 3;
-        q = strstr(p, "/Email=");
-        if (q) {
-            *q = '\0';
-        }
-        /* fix for subjects that go leaf -> root */
-        q = strchr(p, '/');
-        if (q) {
-            *q = '\0';
+    err_cert = X509_STORE_CTX_get_current_cert(ctx);
+    err = X509_STORE_CTX_get_error(ctx);
+
+    if (!ok) {
+        fprintf(stderr, "verify error:num=%d:%s\n", err,
+                         X509_verify_cert_error_string(err));
+
+        /* we want to ignore any key usage problems but no other faults */
+        switch (ctx->error) {
+        case X509_V_ERR_INVALID_PURPOSE:
+            fprintf(stderr, ".. ignoring the invalid purpose error\n");
+            ok = 1;
+            break;
+
+        default:
+            break;
         }
     }
 
-    return p;
+    return ok;
 }
 
 int main(int argc, char *argv[])
@@ -171,6 +177,8 @@ int main(int argc, char *argv[])
     int newkeyp;
     int permit;
     X509 *server_cert;
+    X509_NAME *peer_name;
+    char peer_cn[257];
     const char *keyfile;
     const char *certfile;
     const char *cafile = NULL;
@@ -339,12 +347,16 @@ int main(int argc, char *argv[])
         ERR_print_errors_fp(stderr);
         exit(1);
     }
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
+    SSL_CTX_set_verify_depth(ctx,5);
+
     if (!SSL_CTX_load_verify_locations(ctx, cafile, cadir)) {
         fprintf(stderr, "SSL_CTX_load_verify_locations failed:\n");
         ERR_print_errors_fp(stderr);
         fprintf(stderr, "(set 'ssl_ca_file' or 'ssl_ca_path'?)\n");
         exit(1);
     }
+
 
     ssl = SSL_new(ctx);
     if (!ssl) {
@@ -409,18 +421,16 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    str = X509_NAME_oneline (X509_get_subject_name (server_cert),0,0);
-    cp = extract_cn(str);
-    if (cp == NULL) {
-        fprintf(stderr, "str == NULL???\n");
+    if (X509_NAME_get_text_by_NID(X509_get_subject_name(server_cert),
+          NID_commonName, peer_cn, sizeof(peer_cn))<0) {
+        fprintf(stderr, "Couldn't get CN from server cert!\n");
         exit(1);
     }
-    if (strcasecmp(cp, keyhost) && strcasecmp(cp, cluster)) {
+    if (strcasecmp(peer_cn, keyhost) && strcasecmp(peer_cn, cluster)) {
         fprintf(stderr, "certificate presented isn't the key server: %s != %s\n",
-                cp, keyhost);
+                peer_cn, keyhost);
         exit(1);
     }
-    free(str);
 
     if (!hostname) {
         X509 *mycert;
@@ -431,13 +441,12 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-        str = X509_NAME_oneline (X509_get_subject_name (mycert),0,0);
-        hostname = extract_cn(str);
-        if (!hostname) {
-            fprintf(stderr,
-              "The %s certificate has no hostname (CN)\n", certfile);
-            exit (1);
+        if (X509_NAME_get_text_by_NID(X509_get_subject_name(mycert),
+              NID_commonName, peer_cn, sizeof(peer_cn))<0) {
+            fprintf(stderr, "Couldn't get CN from your %s cert!\n", certfile);
+            exit(1);
         }
+        hostname = strdup(peer_cn);
     }
 
     /* make the HTTP query */
