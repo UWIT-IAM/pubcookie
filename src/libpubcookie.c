@@ -18,24 +18,12 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.49 2003-03-05 22:38:47 willey Exp $
+    $Id: libpubcookie.c,v 2.50 2003-03-06 06:12:50 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
-#endif
-
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
-#else
-typedef void pool;
 #endif
 
 #if defined (WIN32)
@@ -102,6 +90,8 @@ typedef  int pid_t;  /* win32 process ID */
 # include "http_main.h"
 # include "http_protocol.h"
 # include "util_script.h"
+#else
+typedef void pool;
 #endif
 
 #ifdef OPENSSL_IN_DIR

@@ -8,6 +8,9 @@
 # include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
 
+/* Pretending we're Apache */
+typedef void pool;
+
 #include "verify.h"
 
 #ifdef HAVE_DMALLOC_H
@@ -16,7 +19,7 @@
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-static int kerberos4_v(const char *userid,
+static int kerberos4_v(pool * p, const char *userid,
 		       const char *passwd,
 		       const char *service,
 		       const char *user_realm,

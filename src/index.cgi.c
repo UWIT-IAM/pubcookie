@@ -20,16 +20,13 @@
  */
 
 /*
- * $Revision: 1.97 $
+ * $Revision: 1.98 $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
 #endif
-
-/* a pointer for an Apache memory pool is passed everywhwere */
-typedef void pool;
 
 /* LibC */
 #ifdef HAVE_ARPA_INET_H
@@ -110,6 +107,8 @@ typedef void pool;
 # error "cgic is required for building the login server"
 #endif /* HAVE_CGIC_H */
 
+/* An apache "pool" */
+typedef void pool;
 
 /* pubcookie things */
 #include "pubcookie.h"

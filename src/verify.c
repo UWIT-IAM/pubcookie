@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: verify.c,v 1.13 2002-11-14 21:12:12 jjminer Exp $
+    $Id: verify.c,v 1.14 2003-03-06 06:12:50 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -37,6 +37,9 @@
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
+
+/* Pretending we're Apache */
+typedef void pool;
 
 #include "verify.h"
 

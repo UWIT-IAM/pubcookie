@@ -12,6 +12,9 @@
 # include <stdio.h>
 #endif /* HAVE_STDIO_H */
 
+/* Pretending we're Apache */
+typedef void pool;
+
 #include "verify.h"
 
 #ifdef HAVE_DMALLOC_H
@@ -22,7 +25,7 @@
 
 extern int debug;
 
-int alwaystrue_v(const char *userid,
+int alwaystrue_v(pool * p, const char *userid,
 		 const char *passwd,
 		 const char *service,
 		 const char *user_realm,

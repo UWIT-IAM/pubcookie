@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.110 2003-03-05 22:38:47 willey Exp $
+    $Id: mod_pubcookie.c,v 1.111 2003-03-06 06:12:50 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1035,7 +1035,7 @@ static void mylog(pool *p, int logging_level, const char *msg)
         apri = APLOG_ERR;
 
     ap_log_error(APLOG_MARK, apri, NULL, "%s", msg);
-//    fprintf(stderr, msg);
+/*    fprintf(stderr, msg); */
 
 }
 

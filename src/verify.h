@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: verify.h,v 1.6 2002-08-20 20:31:18 greenfld Exp $
+    $Id: verify.h,v 1.7 2003-03-06 06:12:50 jjminer Exp $
  */
 #ifndef INCLUDED_VERIFY_H
 #define INCLUDED_VERIFY_H
@@ -67,7 +67,7 @@ struct credentials {
  *         -2 indicates a system error
 */
 /* returns 0 on success; non-zero on failure */
-typedef int plaintext_verifier(const char *userid,
+typedef int plaintext_verifier(pool * p, const char *userid,
 			       const char *passwd,
 			       const char *service,
 			       const char *user_realm,

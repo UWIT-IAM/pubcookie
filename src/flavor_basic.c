@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.30 2003-03-05 22:38:47 willey Exp $
+    $Id: flavor_basic.c,v 1.31 2003-03-06 06:12:50 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -432,7 +432,7 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
             credsp = &creds;
         }
 
-        if (v->v(l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
+        if (v->v(p, l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
             if (debug) {
                 /* xxx log realm */
                 pbc_log_activity(p,  PBC_LOG_AUDIT,
