@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 2.3 1999-05-24 22:23:43 willey Exp $
+    $Id: libpubcookie.c,v 2.4 1999-06-25 22:15:00 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -617,17 +617,29 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     des_check_key = 1;
     memset(key, 0, sizeof(key));
+#ifdef OPENSSL_0_9_2B
     while ( des_key_sched(key, ks) != 0 && --tries ) {
+#else
+    while ( des_key_sched(&key, ks) != 0 && --tries ) {
+#endif
         index1=libpbc_get_crypt_index();
 	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
+#ifdef OPENSSL_0_9_2B
         des_set_odd_parity(key);
+#else
+        des_set_odd_parity(&key);
+#endif
     }
     if ( ! tries ) {
        libpbc_debug("libpbc_encrypt_cookie: Coudn't find a good key\n");
        return 0;
     }
 
+#ifdef OPENSSL_0_9_2B
     des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_ENCRYPT);
+#else
+    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
+#endif
     libpbc_augment_rand_state(ivec, sizeof(ivec));
 
     /* stick the indices on the end of the train */
@@ -658,13 +670,22 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     /* use the supplied index into the char key array and make a key shedule */
     memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
+#ifdef OPENSSL_0_9_2B
     des_set_odd_parity(key);
     if ( des_key_sched(key, ks) ) {
+#else
+    des_set_odd_parity(&key);
+    if ( des_key_sched(&key, ks) ) {
+#endif
        libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
        return 0;
     }
 
+#ifdef OPENSSL_0_9_2B
     des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_DECRYPT);
+#else
+    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
+#endif
 
     return 1;
 
