@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.26 1999-08-23 19:15:58 willey Exp $
+    $Id: pbc_config.h,v 1.27 2000-01-27 22:16:06 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -41,11 +41,13 @@
 #define PBC_SECURID_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
-#define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
-#define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
-#define PBC_MAX_HARD_EXPIRE 12 * 60 * 60
-#define PBC_DEFAULT_EXPIRE_LOGIN 8 * 60 * 60
-#define PBC_GRANTING_EXPIRE 20
+#define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
+#define PBC_DEFAULT_INACT_EXPIRE     ( 30 * 60 )
+#define PBC_MIN_HARD_EXPIRE 	 ( 1 * 60 * 60 )
+#define PBC_MAX_HARD_EXPIRE 	( 12 * 60 * 60 )
+#define PBC_DEFAULT_HARD_EXPIRE  ( 8 * 60 * 60 )
+#define PBC_DEFAULT_EXPIRE_LOGIN ( 8 * 60 * 60 )
+#define PBC_GRANTING_EXPIRE               ( 20 )
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
@@ -113,10 +115,16 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_CREDS "three"
 #define PBC_GETVAR_VERSION "four"
 #define PBC_GETVAR_METHOD "five"
-#define PBC_GETVAR_HOST "six"
+#define PBC_GETVAR_HOST "six"    /* host portion of url, could be host:port */
 #define PBC_GETVAR_URI "seven"
 #define PBC_GETVAR_ARGS "eight"
 #define PBC_GETVAR_FR "fr"
+/* new in dec 1999 */
+#define PBC_GETVAR_REAL_HOST "hostname"  /* machine's hostname         */
+#define PBC_GETVAR_APPSRV_ERR "nine"  /* let the login server know why */
+#define PBC_GETVAR_FILE_UPLD "file"   /* for form multipart testing    */
+#define PBC_GETVAR_FLAG "flag"        /* not currently used            */
+#define PBC_GETVAR_REFERER "referer"  /* to knit together the referer  */
 
 /* 
  things that are used both places (module and the library)
