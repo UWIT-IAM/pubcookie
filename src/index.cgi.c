@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.128 2004-04-28 21:04:49 willey Exp $
+ * $Id: index.cgi.c,v 1.129 2004-07-29 00:50:39 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1837,8 +1837,10 @@ int cgiMain_init()
    init_user_agent(p);
    max_cgi_count = libpbc_config_getint(p, "max_requests_per_server", 100);
    if (max_cgi_count<0) max_cgi_count = 0;
+#ifdef WITH_FCGI
    pbc_log_activity(p, PBC_LOG_ERROR, "Pubcookie login initialized, "
             "max/process = %d\n", max_cgi_count);
+#endif
    return(0);
 }
 
@@ -2763,9 +2765,13 @@ login_rec *get_query(pool *p)
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			"get_query: from login post_stuff: %s\n", 
 			(l->post_stuff==NULL ? "" : l->post_stuff));
-    pbc_log_activity(p, PBC_LOG_AUDIT,
-                        "get_query: from login relay_uri: %s\n",
-                        (l->relay_uri==NULL ? "null" : l->relay_uri));
+    if ( l->relay_uri != NULL )
+        pbc_log_activity(p, PBC_LOG_AUDIT,
+                            "get_query: from login relay_uri: %s\n", 
+			    l->relay_uri);
+    else
+        pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+                            "get_query: from login relay_uri: %s\n", "null");
 
     return(l);
 
