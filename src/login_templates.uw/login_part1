@@ -39,7 +39,7 @@ Content-Type: text/html
 		<td><input type="text" name="user"  size="24" maxlength="8" value=""></td>
 		</tr>
 	      <tr>
-pp		<td>Andrew Password</td>
+		<td>Andrew Password</td>
 		<td><input type="password" name="pass" size="24"></td>
 		</tr>
 	      </table>

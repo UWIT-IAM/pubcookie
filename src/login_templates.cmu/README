@@ -1,7 +1,9 @@
 These files are in CVS.  Sample of editing one:
 
 cd /afs/.andrew/data/db/pubcookie/pubcookie_login_templates
-co -l 
+co -l README
+-- make edit
+ci -u README
 
 If you edit these files with a html editor (frontpage,
 dreamweaver, etc) they wont work anymore.
