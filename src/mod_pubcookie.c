@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.16 1999-01-25 04:31:00 willey Exp $
+    $Id: mod_pubcookie.c,v 1.17 1999-01-27 03:33:43 willey Exp $
  */
 
 #include "httpd.h"
@@ -89,8 +89,10 @@ unsigned char *get_app_path(pool *p, const char *path_in) {
 static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
   char 			*refresh = palloc(r->pool, PBC_1K);
+  char 			*new_cookie = palloc( r->pool, PBC_1K);
 #else
   char 			*refresh = ap_palloc(r->pool, PBC_1K);
+  char 			*new_cookie = ap_palloc( r->pool, PBC_1K);
 #endif
   char			*refresh_e;
   pubcookie_server_rec 	*scfg;
@@ -128,17 +130,28 @@ static int auth_failed(request_rec *r) {
   if ( cfg->force_reauth )
       cfg->force_reauth = NULL;
 
+  /* Send a cookie to check if browser accepts cookies */
+  /* This cookie is checked in the login script */
+  ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/",
+	  PBC_TEST_COOKIENAME, 
+	  PBC_TEST_COOKIECONTENTS,
+  	  PBC_ENTRPRS_DOMAIN);
 #ifdef APACHE1_2
+  table_add(r->headers_out, "Set-Cookie", new_cookie);
+
   refresh_e = os_escape_path(r->pool, refresh, 0);
   table_add(r->headers_out, "Refresh", refresh);
   send_http_header(r);
   rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 #else
+  ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+  
   refresh_e = ap_os_escape_path(r->pool, refresh, 0);
   ap_table_add(r->headers_out, "Refresh", refresh);
   ap_send_http_header(r);
   ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 #endif
+
   return OK;
 }
 
