@@ -1,27 +1,14 @@
 /*
 
-    Copyright 2001, University of Washington.  All rights reserved.
+    Modified Kerberos code, modified at University of Washington
     Copyright 1995,1996,1997,1998 by the Massachusetts Institute of Technology.
        All Rights Reserved.
 
 
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
-    Written by the Pubcookie Team
-
-    this is the kerberos auth portion of the pubcookie login cgi.
-
  */
 
 /*
-    $Id: index.cgi_krb.c,v 1.2 2001-05-09 20:31:27 willey Exp $
+    $Id: index.cgi_krb.c,v 1.3 2001-05-15 01:09:42 willey Exp $
  */
 
 
