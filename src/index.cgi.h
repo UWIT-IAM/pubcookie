@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.5 2000-08-25 22:08:50 willey Exp $
+    $Id: index.cgi.h,v 1.6 2000-09-25 18:04:16 willey Exp $
  */
 
 typedef struct {
@@ -28,6 +28,7 @@ typedef struct {
     char	*method;
     char	*version;
     char	creds;
+    char	creds_from_greq;
     char	*appid;
     char	*appsrvid;
     char	*fr;
