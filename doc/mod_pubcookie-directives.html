@@ -302,17 +302,20 @@ functionality.</p>
 directive</a></h3>
 
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieSessionCauseReAuth on|off<br>
+"Help"><strong>Syntax:</strong></a> PubcookieSessionCauseReAuth on | off | <i>grace-time-in-seconds</i><br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
 "Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
-and Apache 1.2 and later.</p>
+and Apache 1.2 and later. mod_pubcookie version 3.1 and above required for grace time.</p>
 
-<p>When set to <tt>on</tt>, the PubcookieSessionCauseReAuth directive overrides
-the login server's single sign-on functionality, forcing each user to re-enter
-credentials when requesting an application for the first time or when a session
-timeout has occurred.</p>
+<p>When set to <tt>on</tt>, the PubcookieSessionCauseReAuth directive causes the
+user to be reauthenticated, thus overriding single sign-on. Users must re-enter 
+valid credentials to establish an application session.</p>
+
+<p>Use a <i>grace-time-in-seconds</i> to indicate a grace time wherein no reauthentication 
+is necessary (e.g., <tt>1800</tt> for 30 minutes of grace time). This feature allows 
+an application to establish an acceptable balance between convenience and risk.</p>
 
 <h3><a name="PubcookieAuthTypeNames">PubcookieAuthTypeNames directive</a></h3>
 
