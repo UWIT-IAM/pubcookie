@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.48 2000-04-13 23:23:21 willey Exp $
+    $Id: mod_pubcookie.c,v 1.49 2000-09-25 19:24:15 willey Exp $
  */
 
 /* apache includes */
@@ -78,7 +78,7 @@ typedef struct {
   unsigned char *app_id;
   char          creds;
   char          *force_reauth;
-  char          *redirect_reason;
+  int           redir_reason_no;
 } pubcookie_dir_rec;
 
 /*                                                                            */
@@ -134,6 +134,12 @@ int put_out_post(request_rec *r) {
 #endif
     }
     return(1);
+
+}
+
+/* make-up the token to be used to bind the granting cookie and pre-session   */
+int get_pre_s_token() {
+    return(42);
 
 }
 
@@ -377,16 +383,22 @@ int blank_cookie(request_rec *r, char *name) {
 /*    if it was only that simple ...                                          */
 static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
+    char                 *tmp = palloc(r->pool, PBC_1K);
     char                 *refresh = palloc(r->pool, PBC_1K);
-    char                 *new_cookie = palloc(r->pool, PBC_4K);
+    char                 *pre_s = palloc(r->pool, PBC_1K);
+    char                 *pre_s_cookie = palloc(r->pool, PBC_1K);
+    char                 *g_req_cookie = palloc(r->pool, PBC_4K);
     char                 *g_req_contents = palloc(r->pool, PBC_4K);
     char                 *e_g_req_contents = palloc(r->pool, PBC_4K);
     const char *tenc = table_get(r->headers_in, "Transfer-Encoding");
     const char *ctype = table_get(r->headers_in, "Content-type");
     const char *lenp = table_get(r->headers_in, "Content-Length");
 #else
+    char                 *tmp = ap_palloc(r->pool, PBC_1K);
     char                 *refresh = ap_palloc(r->pool, PBC_1K);
-    char                 *new_cookie = ap_palloc(r->pool, PBC_4K);
+    char                 *pre_s = ap_palloc(r->pool, PBC_1K);
+    char                 *pre_s_cookie = ap_palloc(r->pool, PBC_1K);
+    char                 *g_req_cookie = ap_palloc(r->pool, PBC_4K);
     char                 *g_req_contents = ap_palloc(r->pool, PBC_4K);
     char                 *e_g_req_contents = ap_palloc(r->pool, PBC_4K);
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
@@ -395,7 +407,6 @@ static int auth_failed(request_rec *r) {
 #endif
     char                 *host = NULL;
     char                 *args;
-    char                 *err;
     char                 *refresh_e;
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec    *cfg;
@@ -460,13 +471,6 @@ static int auth_failed(request_rec *r) {
         host = ap_pstrdup(r->pool, ap_get_server_name(r));
 #endif
 
-    /* send app srver redirect reason to login server */
-#ifdef APACHE1_2
-    err = os_escape_path(r->pool, cfg->redirect_reason, 0);
-#else
-    err = ap_os_escape_path(r->pool, cfg->redirect_reason, 0);
-#endif
-
     /* To knit the referer history together */
 #ifdef APACHE1_2
     referer = table_get(r->headers_in, "Referer");
@@ -479,7 +483,7 @@ static int auth_failed(request_rec *r) {
     /* that gets sent up to the login server cgi, it */
     /* is our main way of communicating with it      */
     ap_snprintf(g_req_contents, PBC_4K-1, 
-          "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%c", 
+          "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%s&%s=%s&%s=%c", 
           PBC_GETVAR_APPSRVID,
           appsrv_id(r),
           PBC_GETVAR_APPID, 
@@ -505,7 +509,7 @@ static int auth_failed(request_rec *r) {
           ap_get_local_host(r->pool),
 #endif
           PBC_GETVAR_APPSRV_ERR,
-          err,
+          cfg->redir_reason_no,
           PBC_GETVAR_FILE_UPLD,
           (file_to_upld ? file_to_upld : ""),
           PBC_GETVAR_REFERER,
@@ -538,26 +542,69 @@ static int auth_failed(request_rec *r) {
 #else
     e_g_req_contents = ap_palloc (r->pool, (strlen (g_req_contents) + 3) / 3 * 4);
 #endif
-    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
-
-#ifdef PORT80_TEST
-    ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+#ifdef PHASEII
+    libpbc_encrypt_cookie(g_req_contents, tmp, scfg->c_stuff, strlen(g_req_contents));
+    base64_encode(tmp, e_g_req_contents, strlen(g_req_contents));
 #else
-    ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
+    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
+#endif
+
+    /* create whole g req cookie */
+#ifdef PORT80_TEST
+    ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+#else
+    ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
 #endif
           PBC_G_REQ_COOKIENAME, 
           e_g_req_contents,
           PBC_ENTRPRS_DOMAIN);
 
     if( scfg->super_debug )
-        libpbc_debug("super-debug: g_req length %d cookie: %s\n", strlen(new_cookie), new_cookie);
+        libpbc_debug("super-debug: g_req length %d cookie: %s\n", strlen(g_req_cookie), g_req_cookie);
+
+    /* make the pre-session cookie */
+    pre_s = libpbc_get_cookie_p(r->pool, 
+                                   "presesuser",
+                                   PBC_COOKIE_TYPE_PRE_S, 
+                                   PBC_CREDS_NONE, 
+                                   get_pre_s_token(),
+                                   (unsigned char *)appsrv_id(r), 
+                                   app_id(r), 
+                                   scfg->session_sign_ctx_plus, 
+                                   scfg->c_stuff);
+
+#ifdef APACHE1_2
+#ifdef PORT80_TEST
+      ap_snprintf(pre_s_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s;", 
+#else
+      ap_snprintf(pre_s_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s; secure", 
+#endif
+              PBC_PRE_S_COOKIENAME,
+              pre_s, 
+              get_server_name(r),
+              "/");
+
+      table_add(r->headers_out, "Set-Cookie", pre_s_cookie);
+#else
+#ifdef PORT80_TEST
+      pre_s_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s;", 
+#else
+      pre_s_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s; secure", 
+#endif
+              PBC_PRE_S_COOKIENAME,
+              pre_s, 
+              ap_get_server_name(r),
+              "/");
+
+      ap_table_add(r->headers_out, "Set-Cookie", pre_s_cookie);
+#endif
 
     if ( cfg->force_reauth )
         cfg->force_reauth = NULL;
 
     /* load and send the header */
 #ifdef APACHE1_2
-    table_add(r->headers_out, "Set-Cookie", new_cookie);
+    table_add(r->headers_out, "Set-Cookie", g_req_cookie);
 
     /* we want to make sure agents don't cache the redirect */
     table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
@@ -570,14 +617,14 @@ static int auth_failed(request_rec *r) {
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
 #ifdef PORT80_TEST
-        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
 #else
-        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
 #endif
           PBC_FORM_MP_COOKIENAME, 
           "1",
           PBC_ENTRPRS_DOMAIN);
-        table_add(r->headers_out, "Set-Cookie", new_cookie);
+        table_add(r->headers_out, "Set-Cookie", g_req_cookie);
     }
 
     refresh_e = os_escape_path(r->pool, refresh, 0);
@@ -587,7 +634,7 @@ static int auth_failed(request_rec *r) {
 #endif
     send_http_header(r);
 #else              
-    ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+    ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
   
     /* we want to make sure agents don't cache the redirect */
     ap_table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
@@ -600,14 +647,14 @@ static int auth_failed(request_rec *r) {
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
 #ifdef PORT80_TEST
-        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
 #else
-        ap_snprintf(new_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
 #endif
           PBC_FORM_MP_COOKIENAME, 
           "1",
           PBC_ENTRPRS_DOMAIN);
-        ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+        ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
     }
 
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
@@ -812,6 +859,7 @@ char *get_cookie(request_rec *r, char *name) {
 /*                                                                            */
 static void pubcookie_init(server_rec *s, pool *p) {
   pubcookie_server_rec *scfg;
+  char *fname;
 
 #ifdef APACHE1_2
   scfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
@@ -823,50 +871,65 @@ static void pubcookie_init(server_rec *s, pool *p) {
 #endif
   libpbc_pubcookie_init();
 
+  /* fix file path, read, and init crypt key */
+
+#ifdef APACHE1_2
+  fname = server_root_relative (p, 
+	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
+#else
+  fname = ap_server_root_relative (p,
+	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
+#endif
+
+  scfg->c_stuff = libpbc_init_crypt(fname);
+
+  /* read and init session public key */
+
+#ifdef APACHE1_2
+  fname = server_root_relative (p, 
+	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
+#else
+  fname = ap_server_root_relative (p,
+	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
+#endif
+
+  scfg->session_verf_ctx_plus = libpbc_verify_init(fname);
+
+  /* read and init session private key */
+
+#ifdef APACHE1_2
+  fname = server_root_relative (p,
+	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
+#else
+  fname = ap_server_root_relative (p,
+	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
+#endif
+
+  scfg->session_sign_ctx_plus = libpbc_sign_init(fname);
+
+  /* read and init granting public key */
+
+#ifdef APACHE1_2
+  fname = server_root_relative (p,
+	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
+#else
+  fname = ap_server_root_relative (p,
+	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
+#endif
+
+  scfg->granting_verf_ctx_plus = libpbc_verify_init(fname);
+
 }
 
 /*                                                                            */
 static void *pubcookie_server_create(pool *p, server_rec *s) {
   pubcookie_server_rec *scfg;
   struct stat sb;
-  char *fname;
 #ifdef APACHE1_2
   scfg = (pubcookie_server_rec *) pcalloc(p, sizeof(pubcookie_server_rec));
 #else
   scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
 #endif
-
-#ifdef APACHE1_2
-  fname = server_root_relative (p, PBC_CRYPT_KEYFILE);
-#else
-  fname = ap_server_root_relative (p, PBC_CRYPT_KEYFILE);
-#endif
-  if (stat (fname, &sb) != -1)
-    scfg->c_stuff = libpbc_init_crypt(fname);
-
-#ifdef APACHE1_2
-  fname = server_root_relative (p, PBC_S_KEYFILE);
-#else
-  fname = ap_server_root_relative (p, PBC_S_KEYFILE);
-#endif
-  if (stat (fname, &sb) != -1)
-    scfg->session_sign_ctx_plus = libpbc_sign_init(fname);
-
-#ifdef APACHE1_2
-  fname = server_root_relative (p, PBC_S_CERTFILE);
-#else
-  fname = ap_server_root_relative (p, PBC_S_CERTFILE);
-#endif
-  if (stat (fname, &sb) != -1)
-    scfg->session_verf_ctx_plus = libpbc_verify_init(fname);
-
-#ifdef APACHE1_2
-  fname = server_root_relative (p, PBC_G_CERTFILE);
-#else
-  fname = ap_server_root_relative (p, PBC_G_CERTFILE);
-#endif
-  if (stat (fname, &sb) != -1)
-    scfg->granting_verf_ctx_plus = libpbc_verify_init(fname);
 
 #ifdef APACHE1_2
   scfg->login = pstrdup(p, PBC_LOGIN_PAGE);
@@ -943,6 +1006,17 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
     cfg->app_id = ncfg->app_id ? ncfg->app_id : pcfg->app_id;
     cfg->force_reauth = ncfg->force_reauth ? ncfg->force_reauth : pcfg->force_reauth;
     return (void *) cfg;
+
+}
+
+/* make sure the creds from the cookie are adequate for the server requiremnts*/
+int check_creds(int need, int got) {
+
+    if( (need & got) == need )
+        return PBC_OK;
+    else
+        return PBC_FAIL;
+
 }
 
 /*                                                                            */
@@ -954,6 +1028,11 @@ static int pubcookie_user(request_rec *r) {
   pbc_cookie_data     *cookie_data;
   pool *p;
   char *sess_cookie_name;
+#ifdef APACHE1_2
+  char *new_cookie = palloc(r->pool, PBC_1K);
+#else
+  char *new_cookie = ap_palloc( r->pool, PBC_1K);
+#endif
 
   p = r->pool;
 
@@ -980,13 +1059,13 @@ static int pubcookie_user(request_rec *r) {
 #endif
 
   /* add creds to pubcookie record */
-  if( strcasecmp(at, PBC_NUWNETID_AUTHTYPE) == 0 ) {
-    cfg->creds = '1';
+  if( strcasecmp(at, PBC_UWNETID_AUTHTYPE) == 0 ) {
+    cfg->creds = PBC_CREDS_UWNETID;
   }
 #ifdef USE_SECURID
   /* securid must be used with uwnetid passwd */
   else if( strcasecmp(at, PBC_SECURID_AUTHTYPE) == 0 ) {
-    cfg->creds = '3';
+    cfg->creds = PBC_CREDS_UWNETID_SECURID;
   }
 #endif
   else {
@@ -994,13 +1073,12 @@ static int pubcookie_user(request_rec *r) {
     return DECLINED;
   }
   
+  if( scfg->super_debug )
+    libpbc_debug("super-debug: pubcookie_user: uri %s is authed with %c\n", r->uri, cfg->creds);
+
   if( cfg->force_reauth ) {
     cfg->failed = PBC_FORCE_REAUTH;
-#ifdef APACHE1_2
-    cfg->redirect_reason = pstrdup(p, "Force Reauth");
-#else
-    cfg->redirect_reason = ap_pstrdup(p, "Force Reauth");
-#endif
+    cfg->redir_reason_no = PBC_RR_FR_CODE;
     return OK;
   }
 
@@ -1013,11 +1091,7 @@ static int pubcookie_user(request_rec *r) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
       libpbc_debug("pubcookie_user: no G or S cookie; uri: %s\n", r->uri);
       cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-      cfg->redirect_reason = pstrdup(p, "No G or S cookie");
-#else
-      cfg->redirect_reason = ap_pstrdup(p, "No G or S cookie");
-#endif
+      cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
       return OK;
     }
     else {
@@ -1025,11 +1099,7 @@ static int pubcookie_user(request_rec *r) {
       if( ! (cookie_data = libpbc_unbundle_cookie(cookie, scfg->session_verf_ctx_plus, scfg->c_stuff)) ) {
         libpbc_debug("pubcookie_user: can't unbundle S cookie; uri: %s\n", r->uri);
         cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-        cfg->redirect_reason = pstrdup(p, "Can't unbundle S cookie");
-#else
-        cfg->redirect_reason = ap_pstrdup(p, "Can't unbundle S cookie");
-#endif
+        cfg->redir_reason_no = PBC_RR_BADS_CODE;
         return OK;
       }
       /* we tell everyone what authentication check we did */
@@ -1049,11 +1119,7 @@ static int pubcookie_user(request_rec *r) {
                 time(NULL),
                 r->uri);
         cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-        cfg->redirect_reason = pstrdup(p, "S cookie hard expired");
-#else
-        cfg->redirect_reason = ap_pstrdup(p, "S cookie hard expired");
-#endif
+        cfg->redir_reason_no = PBC_RR_SHARDEX_CODE;
         return OK;
       }
 
@@ -1067,11 +1133,7 @@ static int pubcookie_user(request_rec *r) {
                 time(NULL),
                 r->uri);
         cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-        cfg->redirect_reason = pstrdup(p, "S cookie inact expired");
-#else
-        cfg->redirect_reason = ap_pstrdup(p, "S cookie inact expired");
-#endif
+        cfg->redir_reason_no = PBC_RR_SINAEX_CODE;
         return OK;
       }
 
@@ -1082,8 +1144,56 @@ static int pubcookie_user(request_rec *r) {
 
     cfg->has_granting = 1;
 
+#ifdef APACHE1_2
+    /* clear granting cookie */
+#ifdef PORT80_TEST
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s;", 
+#else
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s; secure", 
+#endif
+       PBC_G_COOKIENAME, 
+       PBC_ENTRPRS_DOMAIN, 
+       "Fri, 01-Jan-1999 00:00:01 GMT");
+    table_add(r->headers_out, "Set-Cookie", new_cookie);
+#else
+    /* clear granting cookie */
+#ifdef PORT80_TEST
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s;", 
+#else
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s; secure", 
+#endif
+       PBC_G_COOKIENAME, 
+       PBC_ENTRPRS_DOMAIN,
+       "Fri, 01-Jan-99 00:00:01 GMT");
+    ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+#endif
+
+#ifdef APACHE1_2
+    /* clear pre session cookie */
+#ifdef PORT80_TEST
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s;", 
+#else
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s; secure", 
+#endif
+       PBC_PRE_S_COOKIENAME, 
+       get_server_name(r), 
+       "Fri, 01-Jan-1999 00:00:01 GMT");
+    table_add(r->headers_out, "Set-Cookie", new_cookie);
+#else
+    /* clear pre session cookie */
+#ifdef PORT80_TEST
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s;", 
+#else
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s; secure", 
+#endif
+       PBC_PRE_S_COOKIENAME, 
+       ap_get_server_name(r),
+       "Fri, 01-Jan-99 00:00:01 GMT");
+    ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+#endif
+
     if( scfg->super_debug )
-      libpbc_debug("super-debug: pubcookie_user: has granting!!!!; current uri is: %s\n", r->uri);
+      libpbc_debug("super-debug: pubcookie_user: has granting; current uri is: %s\n", r->uri);
 
     /* the granting cookie gets blanked too early and another login */
     /* serer loop is required, this just speeds up that loop */
@@ -1092,11 +1202,7 @@ static int pubcookie_user(request_rec *r) {
           libpbc_debug("super-debug: pubcookie_user: in the 'speed up that loop' logic; current uri is: %s\n", r->uri);
 
       cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-      cfg->redirect_reason = pstrdup(p, "'speed up that loop'");
-#else
-      cfg->redirect_reason = ap_pstrdup(p, "'speed up that loop'");
-#endif
+      cfg->redir_reason_no = PBC_RR_DUMMYLP_CODE;
       return OK;
     }
 
@@ -1105,28 +1211,22 @@ static int pubcookie_user(request_rec *r) {
       libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
       libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
       cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-      cfg->redirect_reason = pstrdup(p, "Can't unbundle G cookie");
-#else
-      cfg->redirect_reason = ap_pstrdup(p, "Can't unbundle G cookie");
-#endif
+      cfg->redir_reason_no = PBC_RR_BADG_CODE;
       return OK;
     }
 
 #ifdef APACHE1_2
+    r->connection->auth_type = pstrdup(r->pool, auth_type(r));
     r->connection->user = pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 #else
+    r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
     r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 #endif
 
     if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
-      libpbc_debug("pubcookie_user: G cookie expired; user: %s create: %ld uri: %s\n", (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
+      libpbc_debug("pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s\n", time(NULL)-(*cookie_data).broken.create_ts, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
       cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-      cfg->redirect_reason = pstrdup(p, "G cookie expired");
-#else
-      cfg->redirect_reason = ap_pstrdup(p, "G cookie expired");
-#endif
+      cfg->redir_reason_no = PBC_RR_GEXP_CODE;
       return OK;
     }
 
@@ -1136,11 +1236,7 @@ static int pubcookie_user(request_rec *r) {
   if( strncasecmp(app_id(r), (*cookie_data).broken.app_id, sizeof((*cookie_data).broken.app_id)-1) != 0 ) {
     libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s uri: %s\n", app_id(r), (*cookie_data).broken.app_id, r->uri);
     cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-    cfg->redirect_reason = pstrdup(p, "Wrong appid");
-#else
-    cfg->redirect_reason = ap_pstrdup(p, "Wrong appid");
-#endif
+    cfg->redir_reason_no = PBC_RR_WRONGAPPID_CODE;
     return OK;
   }
 
@@ -1148,11 +1244,7 @@ static int pubcookie_user(request_rec *r) {
   if( strncasecmp(appsrv_id(r), (*cookie_data).broken.appsrv_id, sizeof((*cookie_data).broken.appsrv_id)-1) != 0 ) {
     libpbc_debug("pubcookie_user: wrong app server id; current: %s cookie: %s uri: %s\n", appsrv_id(r), (*cookie_data).broken.appsrv_id, r->uri);
     cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-    cfg->redirect_reason = pstrdup(p, "Wrong app server ID");
-#else
-    cfg->redirect_reason = ap_pstrdup(p, "Wrong app server ID");
-#endif
+    cfg->redir_reason_no = PBC_RR_WRONGAPPSRVID_CODE;
     return OK;
   }
 
@@ -1160,25 +1252,19 @@ static int pubcookie_user(request_rec *r) {
   if( !pubcookie_check_version((*cookie_data).broken.version, (unsigned char *) PBC_VERSION)){
     libpbc_debug("pubcookie_user: wrong version id; module: %d cookie: %d uri: %s\n", PBC_VERSION, (*cookie_data).broken.version);
     cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-    cfg->redirect_reason = pstrdup(p, "Wrong version ID");
-#else
-    cfg->redirect_reason = ap_pstrdup(p, "Wrong version ID");
-#endif
+    cfg->redir_reason_no = PBC_RR_WRONGVER_CODE;
     return OK;
   }
 
   /* check creds */
-  if( !(cfg->creds & (*cookie_data).broken.creds) ) {
+  if( check_creds( atoi(&cfg->creds), atoi(&(*cookie_data).broken.creds) ) 
+		== PBC_FAIL ) {
     libpbc_debug("pubcookie_user: wrong creds; required: %c cookie: %c uri: %s\n", cfg->creds, (*cookie_data).broken.creds, r->uri);
     cfg->failed = PBC_BAD_AUTH;
-#ifdef APACHE1_2
-    cfg->redirect_reason = pstrdup(p, "Wrong creds");
-#else
-    cfg->redirect_reason = ap_pstrdup(p, "Wrong creds");
-#endif
+    cfg->redir_reason_no = PBC_RR_WRONGCREDS_CODE;
     return OK;
   }
+
 
   if( scfg->super_debug )
     libpbc_debug("super-debug: pubcookie_user: everything is o'tay; current uri is: %s\n", r->uri);
@@ -1232,17 +1318,6 @@ static int pubcookie_typer(request_rec *r) {
     return SERVER_ERROR;
   }
 
-  if( cfg->has_granting ) {
-    /* clear granting cookie */
-#ifdef PORT80_TEST
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s;", 
-#else
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s; secure", 
-#endif
-       PBC_G_COOKIENAME, 
-       PBC_ENTRPRS_DOMAIN, 
-       "Fri, 01-Jan-1999 00:00:01 GMT");
-    table_add(r->headers_out, "Set-Cookie", new_cookie);
 #else
   char *new_cookie = ap_palloc( r->pool, PBC_1K);
 
@@ -1260,19 +1335,9 @@ static int pubcookie_typer(request_rec *r) {
     ap_log_reason("pubcookie auth configured with no requires lines", r->uri, r);
     return SERVER_ERROR;
   }
+#endif
 
   if( cfg->has_granting ) {
-#ifdef PORT80_TEST
-    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s;", 
-#else
-    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s; secure", 
-#endif
-       PBC_G_COOKIENAME, 
-       PBC_ENTRPRS_DOMAIN,
-       "Fri, 01-Jan-99 00:00:01 GMT");
-    ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
-    /* clear granting cookie */
-#endif
     first_time_in_session = 1;
     cfg->has_granting = 0;
   }
@@ -1363,16 +1428,14 @@ static int pubcookie_hparse(request_rec *r)
                 ++nextcookie;
         }
         /* the module might be run on the login server don't blank g req */
-        if ( strncasecmp (c, PBC_G_REQ_COOKIENAME, 
-                         sizeof (PBC_G_REQ_COOKIENAME) - 1) &&
-               ( !strncasecmp (c, PBC_G_COOKIENAME, 
-                         sizeof (PBC_G_COOKIENAME) - 1) ||
-                 !strncasecmp (c, PBC_S_COOKIENAME, 
-                         sizeof (PBC_S_COOKIENAME) - 1) )) {
-            char *s = strchr (c, '=');
+        if( strncasecmp(c, PBC_G_REQ_COOKIENAME, sizeof(PBC_G_REQ_COOKIENAME) - 1) &&
+               ( !strncasecmp(c, PBC_G_COOKIENAME, sizeof(PBC_G_COOKIENAME) - 1) ||
+                 !strncasecmp(c, PBC_PRE_S_COOKIENAME, sizeof(PBC_PRE_S_COOKIENAME) - 1) ||
+                 !strncasecmp(c, PBC_S_COOKIENAME, sizeof(PBC_S_COOKIENAME) - 1) )) {
+            char *s = strchr(c, '=');
             if (s) {
                 *s = '\0';
-                get_cookie (r, c);
+                get_cookie(r, c);
             }
         }
     }
@@ -1555,17 +1618,19 @@ const char *pubcookie_set_g_certf(cmd_parms *cmd, void *mconfig, char *v) {
     pubcookie_server_rec *scfg;
 
 #ifdef APACHE1_2
-    pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->g_certfile = server_root_relative (cmd->pool, v);
 #else
-    ap_pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->g_certfile = ap_server_root_relative (cmd->pool, v);
 #endif
-    scfg->granting_verf_ctx_plus = libpbc_verify_init(scfg->g_certfile);
+
+#ifdef APACHE1_2
+    scfg->g_certfile = pstrdup(cmd->pool, v);
+#else
+    scfg->g_certfile = ap_pstrdup(cmd->pool, v);
+#endif
+
     return NULL;
 }
 
@@ -1575,17 +1640,19 @@ const char *pubcookie_set_s_keyf(cmd_parms *cmd, void *mconfig, char *v) {
     pubcookie_server_rec *scfg;
 
 #ifdef APACHE1_2
-    pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->s_keyfile = server_root_relative (cmd->pool, v);
 #else
-    ap_pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->s_keyfile = ap_server_root_relative (cmd->pool, v);
 #endif
-    scfg->session_sign_ctx_plus = libpbc_sign_init(scfg->s_keyfile);
+
+#ifdef APACHE1_2
+    scfg->s_keyfile = pstrdup(cmd->pool, v);
+#else
+    scfg->s_keyfile = ap_pstrdup(cmd->pool, v);
+#endif
+
     return NULL;
 }
 
@@ -1595,17 +1662,19 @@ const char *pubcookie_set_s_certf(cmd_parms *cmd, void *mconfig, char *v) {
     pubcookie_server_rec *scfg;
 
 #ifdef APACHE1_2
-    pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->s_certfile = server_root_relative (cmd->pool, v);
 #else
-    ap_pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->s_certfile = ap_server_root_relative (cmd->pool, v);
 #endif
-    scfg->session_verf_ctx_plus = libpbc_verify_init(scfg->s_certfile);
+
+#ifdef APACHE1_2
+    scfg->s_certfile = pstrdup(cmd->pool, v);
+#else
+    scfg->s_certfile = ap_pstrdup(cmd->pool, v);
+#endif
+
     return NULL;
 }
 
@@ -1613,19 +1682,22 @@ const char *pubcookie_set_s_certf(cmd_parms *cmd, void *mconfig, char *v) {
 const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
     server_rec *s = cmd->server;
     pubcookie_server_rec *scfg;
+    struct stat sb;
 
 #ifdef APACHE1_2
-    pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->crypt_keyfile = server_root_relative (cmd->pool, v);
 #else
-    ap_pool *p = cmd->pool;
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
-    scfg->crypt_keyfile = ap_server_root_relative (cmd->pool, v);
 #endif
-    scfg->c_stuff = libpbc_init_crypt(scfg->crypt_keyfile);
+
+#ifdef APACHE1_2
+    scfg->crypt_keyfile = pstrdup(cmd->pool, v);
+#else
+    scfg->crypt_keyfile = ap_pstrdup(cmd->pool, v);
+#endif
+
     return NULL;
 }
 
