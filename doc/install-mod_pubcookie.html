@@ -322,13 +322,12 @@ $ pico config</pre></td>
                     <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
                       <tr> 
                         <td> <pre># ssl config
-ssl_key_file: /etc/httpd/conf/ssl.key/server.key
-ssl_cert_file: /etc/httpd/conf/ssl.crt/server.crt
+<a href="config.html#ssl_key_file">ssl_key_file</a>: /etc/httpd/conf/ssl.key/server.key
+<a href="config.html#ssl_cert_file">ssl_cert_file</a>: /etc/httpd/conf/ssl.crt/server.crt
 
 # keyclient-specific config
-keymgt_uri: https://weblogin.example.edu:2222
-ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
-</pre></td>
+<a href="config.html#keymgt_uri">keymgt_uri</a>: https://weblogin.example.edu:2222
+<a href="config.html#ssl_ca_file">ssl_ca_file</a>: /etc/httpd/conf/ssl.crt/ca-bundle.crt </pre></td>
                       </tr>
                     </table></p>
                     <p>Notes:</p>
@@ -877,27 +876,29 @@ templates are installed in your DocumentRoot.</p>
 <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
 <TR> 
 <TD><pre># pubcookie relay config
-<a href="config.html#login_uri">login_uri</a>: https://login.example.edu/
-<a href="config.html#login_host">login_host</a>: login.example.edu
+<a href="config.html#relay_login_uri">relay_login_uri</a>: https://login.example.edu/
 <a href="config.html#relay_template_path">relay_template_path</a>: /var/www/html/pcrelay/templates/
-<a href="config.html#relay_uri">relay_uri</a>: https://appserver.example.edu/pcrelay/
 </pre></TD>
 </TR>
 </TABLE></p>
 
 <li><p>Now, when you configure the module, specify the relay cgi
-as your login server:</p></li>
+as your login server with your enterprise domain as a query string 
+argument:</p></li>
 
 <p> 
 <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
 <TR> 
-<TD><pre>PubcookieLogin https://appserver.example.edu/pcrelay/
-</pre></TD>
+<TD><pre>PubcookieLogin https://appserver.example.edu/pcrelay/?domain=.example.edu </pre></TD>
 </TR>
 </TABLE></p>
 
 <p>The module will redirect users to the relay; the relay will
 handle getting them to the remote login server and back again.</p>
+
+<p>Note: The relay accepts the <tt>domain</tt> argument to allow a single
+relay to serve multiple domains. In its absense, the relay will fall back
+to reading the <tt>enterprise_domain</tt> variable.</p>
 
 </ol>
 

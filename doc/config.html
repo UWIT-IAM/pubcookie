@@ -261,6 +261,10 @@ ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password</pre>
 <dd> flavor_getcred uses this file to determine which application are authorized to request
      what credentials.</dd> 
 
+<dt> <a name="relay_login_uri">relay_login_uri</a> <i>string</i></dt>
+<dd> The full URI used by the relay cgi for its login cgi.</dd>
+<dd> Example: <i>https://login.example.edu/</i></dd>
+
 <dt> <a name="relay_template_path">relay_template_path</a> <i>string</i></dt>
 <dd> Path and directory, with trailing slash, to the <tt>templates</tt> directory
      used by the relay cgi. The path is defined by setting the relay cgi's 
@@ -268,8 +272,10 @@ ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password</pre>
 <dd> Example: <i>/var/www/html/relay/templates/</i></dd>
 
 <dt> <a name="relay_uri">relay_uri</a> <i>full-uri</i></dt>
-<dd> The full URI of the relay cgi. Configured in the application server's
-     <tt>config</tt> file.</dd>
+<dd> Obsolete. This variable was removed in Pubcookie 3.1.1, as the 
+     relay can determine its URI by the request. In Pubcookie 3.1.0, 
+     it defines the full URI of the relay cgi. Configured in the 
+     application server's <tt>config</tt> file.</dd>
 <dd> Example: <i>https://appserver.example.edu/pcrelay/</i></dd>
 
 </dl>
