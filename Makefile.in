@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.3 2002-08-15 23:47:15 jjminer Exp $
+# $Id: Makefile.in,v 1.4 2002-08-15 23:52:52 jjminer Exp $
 
 @SET_MAKE@
 
@@ -242,7 +242,7 @@ $(LIB_OBJ): $(LIB_HEAD)
 test:: verify
 	./verify alwaystrue nobody nothing
 
-verify: $(VERIFY_SRC)
+verify: $(VERIFY_SRC) $(LIB_OBJ) cgic/libcgic.a
 	$(CC) $(CFLAGS) -g -o verify -DTEST_VERIFY $(VERIFY_SRC) $(LDFLAGS) $(LOGINLIBS) $(LIB_OBJ)
 
 tests: $(TEST_FILES)
