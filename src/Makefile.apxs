@@ -3,13 +3,9 @@
 APXS=apxs
 # set your path to ssl libraries
 SSL_BASE=openssl
-# set your path to RSAref library
-RSA_BASE=rsaref
 
 CFLAGS=-DAPACHE1_3 -DUSE_SECURID
 INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
-# remember RSAref?
-#LIBS=-L$(SSL_BASE) -lssl -lcrypto -lRSAglue -L$(RSA_BASE) -lrsaref
 LIBS=-L$(SSL_BASE) -lssl -lcrypto 
 
 all: mod_pubcookie.so
