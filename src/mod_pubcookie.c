@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.142 2004-04-28 21:06:05 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.143 2004-05-03 19:42:41 willey Exp $
  */
 
 
@@ -1319,68 +1319,69 @@ static void pubcookie_init(server_rec *main_s, pool *pconf)
 
     pbc_log_init(p, "mod_pubcookie", NULL, &mylog, NULL, NULL);
 
-  /* initialize each virtual server */
-
-  for (s = main_s; s != NULL; s=s->next) {
-
-#ifdef APACHE2
-    pc_pool_list->s = s; 
-    pc_pool_list->p = p; 
-#else
-    current_server_rec = s;
-#endif
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
-                                                   &pubcookie_module);
     ap_add_version_component(
 #ifdef APACHE2
             p,
 #endif
             ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION_STRING, NULL));
 
-    /* bail if PubcookieAuthTypes not set */
-    if( scfg->authtype_names == NULL ) {
-        ap_log_error(PC_LOG_EMERG, s, 
+    /* initialize each virtual server */
+
+    for (s = main_s; s != NULL; s=s->next) {
+
+#ifdef APACHE2
+      pc_pool_list->s = s; 
+      pc_pool_list->p = p; 
+#else
+      current_server_rec = s;
+#endif
+      scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
+                                                   &pubcookie_module);
+      /* bail if PubcookieAuthTypes not set */
+      if( scfg->authtype_names == NULL ) {
+          ap_log_error(PC_LOG_EMERG, s, 
 		"PubCookieAuthTypeNames configuration directive must be set!");
-	PC_INIT_FAIL;
-    }
+	  PC_INIT_FAIL;
+      }
 
-    if (ap_table_get(scfg->configlist, "ssl_key_file") == NULL) {
-        ap_log_error(PC_LOG_EMERG, s, 
+      if (ap_table_get(scfg->configlist, "ssl_key_file") == NULL) {
+          ap_log_error(PC_LOG_EMERG, s, 
 		"PubCookieSessionKeyFile configuration directive must be set!");
-	PC_INIT_FAIL;
-    }
-    if (ap_table_get(scfg->configlist, "ssl_cert_file") == NULL) {
-        ap_log_error(PC_LOG_EMERG, s, 
+	  PC_INIT_FAIL;
+      }
+      if (ap_table_get(scfg->configlist, "ssl_cert_file") == NULL) {
+          ap_log_error(PC_LOG_EMERG, s, 
 		"PubCookieSessionCertFile configuration directive must be set!");
-	PC_INIT_FAIL;
-    }
+	  PC_INIT_FAIL;
+      }
 
-    if (ap_table_get(scfg->configlist, "granting_cert_file") == NULL) {
-        ap_log_error(PC_LOG_EMERG, s, 
+      if (ap_table_get(scfg->configlist, "granting_cert_file") == NULL) {
+          ap_log_error(PC_LOG_EMERG, s, 
             "PubCookieGrantingCertFile configuration directive not set, using %s/%s", 
              PBC_KEY_DIR, "pubcookie_granting.cert");
-    }
+      }
 
-    /* libpubcookie initialization */
-    ap_log_error(PC_LOG_DEBUG, s, "pubcookie_init: libpbc");
-    libpbc_pubcookie_init(p, &scfg->sectext);
+      /* libpubcookie initialization */
+      ap_log_error(PC_LOG_DEBUG, s, "pubcookie_init: libpbc");
+      libpbc_pubcookie_init(p, &scfg->sectext);
 
-    if (!scfg->login) {
-        /* if the user didn't explicitly configure a login server,
-           let's default to PBC_LOGIN_URI */
-        scfg->login = ap_pstrcat(p, PBC_LOGIN_URI, NULL);
-        ap_log_error(PC_LOG_DEBUG, s,
+      if (!scfg->login) {
+          /* if the user didn't explicitly configure a login server,
+             let's default to PBC_LOGIN_URI */
+          scfg->login = ap_pstrcat(p, PBC_LOGIN_URI, NULL);
+          ap_log_error(PC_LOG_DEBUG, s,
                      "pubcookie_init(): login from PBC_LOGIN_URI: %s",
                      scfg->login);
-    }
+      }
 
+    } /* end of per-server loop */
 
-  } /* end of per-server loop */
 #ifdef APACHE2
-  pc_pool_list->p = NULL;  /* clear */
+    pc_pool_list->p = NULL;  /* clear */
 #endif
-  ap_log_error(PC_LOG_DEBUG, s, "pubcookie_init: bye");
-  PC_INIT_OK;
+    ap_log_error(PC_LOG_DEBUG, s, "pubcookie_init: bye");
+    PC_INIT_OK;
+
 }
 
 /*                                                                            */
