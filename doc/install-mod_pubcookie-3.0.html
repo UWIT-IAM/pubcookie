@@ -7,7 +7,7 @@
 
 <body>
 
-<h1>Pubcookie Apache Module - Install Guide 3.0.0 RC1</h1>
+<h1>Pubcookie Apache Module - Install Guide 3.0.0</h1>
 
                 <p>Note: Documentation can contain bugs too. The
                    <a href="http://www.pubcookie.org/docs/install-mod_pubcookie-3.0.html">online 
@@ -20,6 +20,7 @@
                     <li><a href="#new">What's New</a></li>
                     <li><a href="#upgrading">Upgrading</a></li>
                     <li><a href="#pre">Prerequisites</a></li>
+                    <li><a href="#req">System Requirements</a></li>
                     <li><a href="#build">Build Pubcookie</a></li>
                     <li><a href="#install">Install Pubcookie</a></li>
                     <li><a href="#granting">Install Granting Certificate</a></li>
@@ -34,7 +35,7 @@
                   <p>This guide helps you install mod_pubcookie on Apache 1.3.x.
                      Objectives include:</p>
                   <ul>
-                    <li>how to build and install mod_pubcookie 3.0.0 RC1 on 
+                    <li>how to build and install mod_pubcookie 3.0.0 on 
                       Apache 1.3.x</li>
                     <li>how to use the Pubcookie keyclient to obtain an encryption 
                       key</li>
@@ -45,12 +46,22 @@
                   </ul>
 
                   <h4><a name="new"></a>What's New</h4>
+                  <p>Significant changes since mod_pubcookie-3.0.0-rc1:</p>
+                  <ul>
+                    <li> 
+                      <p>All per-application configuration directives are now enabled
+                       via <tt>AllowOverride AuthConfig</tt> in httpd.conf. Thus, the 
+                       legal context for some directives has changed and may require
+                       require minor adjustments. Refer to the <a href="#httpd">Configure 
+                       Apache</a> section for details.</p>
+                    </li>
+                  </ul>
                   <p>Significant changes since mod_pubcookie-3.0.0-beta3:</p>
                   <ul>
                     <li> 
                       <p>mod_pubcookie is now configured by Apache config files and 
                        server directives only. See <a href="#httpd">Configure Apache</a>. 
-                       keyclient continues to use the Pubcookie config 
+                       The keyclient command-line utility continues to use the Pubcookie config 
                        file for its configuration.</p>
                     </li>
                   </ul>
@@ -79,12 +90,19 @@
                     </li>
                   </ul>
                   <h4><a name="upgrading"></a>Upgrading</h4>
-                  <p>Upgrading from mod_pubcookie-3.0.0-beta3:</p>
+                  <p>Upgrading from mod_pubcookie-3.0.0-rc1 or 3.0.0-beta3:</p>
                   <ul>
+                    <li>
+                      <p>If you define PubcookieInactiveExpire in httpd.conf, 
+                        make sure it is defined within a &lt;Directory&gt; or &lt;Location&gt;
+                        block directive. Refer to the <a href="#httpd">Configure Apache</a>
+                        section for an example.</p>
+                    </li>
                     <li> 
                       <p>If you are upgrading from mod_pubcookie-3.0.0-beta3, you will
                         need to reconfigure mod_pubcookie using Apache config files and
-                        server directives. See <a href="#httpd">Configure Apache</a>.</p>
+                        server directives. Refer to the <a href="#httpd">Configure 
+                        Apache</a> section for details.</p>
                     </li>
                     <li> 
                       <p>The Pubcookie config file is no longer used to configure the
@@ -133,7 +151,8 @@
                       site's Pubcookie keyserver.</p>
                     </li> 
                   </ul>
-                  <p>System requirements for your Apache server:</p>
+                  <h4><a name="req">System Requirements</a></h4>
+                  <p>System requirements for your Apache server include:</p>
                   <ul>
                     <li>Unix platform 
                     <li>Accurate system time 
@@ -192,7 +211,7 @@
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0-rc1.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE></p>
                       
@@ -229,7 +248,7 @@
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0-rc1.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE></p>
                     <li> 
@@ -238,7 +257,7 @@
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0-rc1/src/mod_pubcookie.a</pre></TD>
+                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0/src/mod_pubcookie.a</pre></TD>
                         </TR>
                       </TABLE></p>
                       <p>Or, if you use a src level Configure script, add an AddModule 
@@ -255,7 +274,7 @@
                       <p>
 		      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% cd pubcookie-3.0.0-rc1
+                          <TD> <pre>% cd pubcookie-3.0.0
 % ./configure
 % make keyclient</pre></TD>
                         </TR>
@@ -437,8 +456,6 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                   <p>The Pubcookie module is initially configured by directives
                     in the Apache config files. In this section you will 
                     add the necessary directives to your httpd.conf file.</p>
-                  <p>Note: This is where the most significant changes have been
-                  made to the installation process since 3.0.0-beta3.</p>
                   <ol>
                     <li> 
                       <p>Edit your Apache server configuration file (httpd.conf), 
