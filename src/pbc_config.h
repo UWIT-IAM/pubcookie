@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.22 1999-07-08 22:54:21 willey Exp $
+    $Id: pbc_config.h,v 1.23 1999-07-22 22:52:48 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -9,9 +9,19 @@
 #define APACHE
 #endif
 
-/* 
- things that came from the module
- */
+/* why is it PBC_NUWNETID_AUTHTYPE and not PBC_UWNETID_AUTHTYPE ???  */
+#define PBC_NUWNETID_AUTHTYPE "uwnetid"
+#define PBC_SECURID_AUTHTYPE "securid"
+#define PBC_REFRESH_TIME 0
+#define PBC_ENTRPRS_DOMAIN ".washington.edu"
+#define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
+#define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
+#define PBC_MAX_HARD_EXPIRE 12 * 60 * 60
+#define PBC_DEFAULT_EXPIRE_LOGIN 8 * 60 * 60
+#define PBC_GRANTING_EXPIRE 20
+#define PBC_BAD_AUTH 1
+#define PBC_BAD_USER 2
+#define PBC_FORCE_REAUTH 3
 
 /* the cookies; l, g, and s have the same format g request and pre s
    are different internally
@@ -21,38 +31,33 @@
 #define PBC_G_REQ_COOKIENAME "pubcookie_g_req"
 #define PBC_S_COOKIENAME "pubcookie_s"
 #define PBC_PRE_S_COOKIENAME "pubcookie_p_res"
-#define PBC_TEST_COOKIENAME "pubcookie_test_cookie"
-#define PBC_TEST_COOKIECONTENTS "yes"
 
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
+
+/* this is the content of the redirect page's body if there is a POST */
 
 #define PBC_POST_NO_JS_HTML1 "<HTML><HEAD></HEAD>\n \
 <BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n \
 <CENTER>\n \
 <FORM METHOD=\"POST\" ACTION=\""
-/* url of login page */
+         /* url of login page */
 #define PBC_POST_NO_JS_HTML2 "\" NAME=\"query\">\n \
 <INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\""
-/* packages POST stuff */
+         /* packages POST stuff */
 #define PBC_POST_NO_JS_HTML3 "\">\n \
 <TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520><TR><TD WIDTH=300 VALIGN=\"MIDDLE\"> <IMG SRC=\""
-/* UWnetID logdo url */
+         /* UWnetID logdo url */
 #define PBC_POST_NO_JS_HTML4 "\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\"> \n \
-<SCRIPT LANGUAGE=\"JavaScript\"> \
+<SCRIPT LANGUAGE=\"JavaScript\">\n\
 document.write(\"<P>Your browser should move to the next page in a few seconds.  If it doesn't, please click the button to continue.<P>\")\n \
-</SCRIPT> \
-<NOSCRIPT> \
-<P>You do not have Javascript turned on, please click the button to continue.<P>\n \
-</NOSCRIPT> \
-</TABLE>\n \
+</SCRIPT> <NOSCRIPT> \
+<P>You do not have Javascript turned on, please click the button to continue.<P>\n </NOSCRIPT>\n</TABLE>\n \
 <INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\""
-/* button text (PBC_POST_NO_JS_BUTTON) */
-#define PBC_POST_NO_JS_HTML5 "\">\n \
-</FORM>\n"
-/* copyright (PBC_HTML_COPYRIGHT) */
-#define PBC_POST_NO_JS_HTML6 "</CENTER>\n \
-</BODY></HTML>\n"
+	/* button text (PBC_POST_NO_JS_BUTTON) */
+#define PBC_POST_NO_JS_HTML5 "\">\n </FORM>\n"
+	/* copyright (PBC_HTML_COPYRIGHT) */
+#define PBC_POST_NO_JS_HTML6 "</CENTER>\n </BODY></HTML>\n"
 
 #define PBC_HTML_COPYRIGHT "<P><address>&#169; 1999 University of Washington</address><P>\n" 
 #define PBC_POST_NO_JS_BUTTON "Click here to continue"
@@ -67,20 +72,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 #define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
 #endif
-
-#define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
-#define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
-#define PBC_MAX_HARD_EXPIRE 12 * 60 * 60
-#define PBC_DEFAULT_EXPIRE_LOGIN 8 * 60 * 60
-#define PBC_GRANTING_EXPIRE 20
-#define PBC_BAD_AUTH 1
-#define PBC_BAD_USER 2
-#define PBC_FORCE_REAUTH 3
-/* why is it PBC_NUWNETID_AUTHTYPE and not PBC_UWNETID_AUTHTYPE ???  */
-#define PBC_NUWNETID_AUTHTYPE "uwnetid"
-#define PBC_SECURID_AUTHTYPE "securid"
-#define PBC_REFRESH_TIME 0
-#define PBC_ENTRPRS_DOMAIN ".washington.edu"
 
 /* 
  for the GET line to the login server
@@ -97,7 +88,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_FR "fr"
 
 /* 
- things that are used both places
+ things that are used both places (module and the library)
  */
 #define PBC_SIG_LEN 128
 #define PBC_CREDS_NONE    '0'
@@ -150,6 +141,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 #endif
 
+/* macros to support older version of apache */
+
 #ifdef APACHE1_2
 #define pbc_malloc(x) palloc(p, x)
 #define pbc_free(x) libpbc_void(x)
@@ -184,6 +177,12 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #ifndef pbc_fclose
 #define pbc_fclose(x) fclose(x)
 #endif
+
+/* 
+   macros to support passing extra args when compiling w/ apache
+ */
+
+/* p is the memory pool in apache */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
 #define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) libpbc_gen_granting_req_p(p, a,b,c,d,e,f,g,h,i,j,k,l)
