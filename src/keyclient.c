@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.11 2002-06-27 23:33:46 jteaton Exp $
+    $Id: keyclient.c,v 2.12 2002-06-28 20:51:19 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -200,8 +200,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
     if (!SSL_CTX_load_verify_locations(ctx, cafile, cadir)) {
-        fprintf(stderr, "SSL_CTX_load_verify_locations:\n");
+        fprintf(stderr, "SSL_CTX_load_verify_locations failed:\n");
         ERR_print_errors_fp(stderr);
+        fprintf(stderr, "(set 'ssl_ca_file' or 'ssl_ca_path'?)\n");
         exit(1);
     }
 
