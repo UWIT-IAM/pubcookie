@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.17 2001-01-26 21:27:09 willey Exp $
+    $Id: index.cgi.c,v 1.18 2001-03-28 21:19:47 willey Exp $
  */
 
 
@@ -217,15 +217,13 @@ char *url_encode(char *in)
     char	*out;
     char	*p;
 
-    if( !(out = malloc(PBC_4K)) ) {
+    if( !(out = malloc(strlen (in) * 3 + 1)) ) {
         abend("out of memory");
     }
 
-    strncpy(out, in, PBC_4K);
-
     p = out;
-    while( *p ) {
-        switch(*p) {
+    while( *in ) {
+        switch(*in) {
         case ' ':
             *p = '+';
             break;
@@ -262,10 +260,47 @@ char *url_encode(char *in)
         case '?':
             *p = '%'; *(++p) = '3'; *(++p) = 'F';
             break;
+	default:
+	    *p = *in;
+	    break;
         }
         p++;
+        in++;
+    }
+    *p = '\0';
+    return(out);
+
+}
+
+char *string_encode(char *in)
+{
+    char	*out;
+    char	*p;
+
+    if( !(out = malloc(strlen (in) * 5 + 1)) ) {
+        abend("out of memory");
     }
 
+    p = out;
+    while( *in ) {
+        switch(*in) {
+	case '&':
+	    *p = '&'; *(++p) = 'a'; *(++p) = 'm'; *(++p) = 'p'; *(++p) = ';';
+	    break;
+	case '<':
+	    *p = '&'; *(++p) = 'l'; *(++p) = 't'; *(++p) = ';';
+	    break;
+	case '>':
+	    *p = '&'; *(++p) = 'g'; *(++p) = 't'; *(++p) = ';';
+	    break;
+	default:
+	    *p = *in;
+	    break;
+        }
+        p++;
+        in++;
+    }
+    *p = '\0';
     return(out);
 
 }
@@ -400,13 +435,13 @@ char *get_domain_hostname()
     strncpy(host, getenv ("HTTP_HOST"), strlen(host));
 
     if( !host )
-        return ("weblogin.cac.washington.edu");
+        return ("weblogin.washington.edu");
 
     /* if this is a test server use the test name */
-    if ( !strncmp(host,"pcookiel3",9) || !strncmp(host,"weblogintest",12) )
+    if ( !strncmp(host,"weblogintest",12) )
         return ("weblogintest.cac.washington.edu");
     else
-        return ("weblogin.cac.washington.edu");
+        return ("weblogin.washington.edu");
 
 }
 
@@ -1079,7 +1114,7 @@ void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
         print_out("<!-- %s -->\n\n", reason);
 
     /* open the form */
-    print_out("\n<form method=\"POST\" action=\"/\" enctype=\"application/x-www-form-urlencoded\" name=\"query\">\n");
+    print_out("\n<form method=\"POST\" action=\"/\" enctype=\"application/x-www-form-urlencoded\" name=\"query\" autocomplete=\"off\">\n");
 
     /* text before the for fields */
     if( message != NULL && strcmp(message, PRINT_LOGIN_PLEASE) ) {
@@ -1118,7 +1153,7 @@ void print_login_page_rhs()
 {
     print_out("<td width=\"250\" valign=\"MIDDLE\">\n");
     print_out("<p>\n");
-    print_out("<a href=\"http://www.washington.edu/computing/uwnetid/create/\">Need a UW NetID?</a>\n");
+    print_out("<a href=\"https://uwnetid.washington.edu/newid/\">Need a UW NetID?</a>\n");
     print_out("</p>\n");
     print_out("<p>\n");
     print_out("<a href=\"http://www.washington.edu/computing/uwnetid/password/forget.html\">Forget your password?</a>\n");
@@ -1207,7 +1242,7 @@ void print_login_page_expire_info()
     print_out("<td colspan=\"5\" align=\"center\">\n");
     print_out("<p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>\n");
     print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>\n");
-    print_out("Close all Web browser windows and Web-enabled applications when you are finished.</p>\n");
+    print_out("<a href=\"http://www.washington.edu/computing/web/logout.html\">Completely exit your Web browser when you are finished.</a></p>\n");
     print_out("</td>\n");
     print_out("</tr>\n");
 
@@ -1278,8 +1313,10 @@ void print_redirect_page(login_rec *l)
     char		g_set_cookie[PBC_1K];
     char		l_set_cookie[PBC_1K];
     char		clear_g_req_cookie[PBC_1K];
+/* these are used anymore due to the commenting out some code
     char		*post_stuff_lower = NULL;
     char		*p = NULL;
+ */
     int			g_res, l_res;
     int			limitations_mentioned = 0;
     char		*submit_value = NULL;
@@ -1365,7 +1402,7 @@ void print_redirect_page(login_rec *l)
 		l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
 
     if( l->args ) {
-        args_enc = strdup(l->args);    
+        args_enc = calloc (1, strlen (l->args));
 	base64_decode(l->args, args_enc);
         snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
     } 
@@ -1409,6 +1446,8 @@ void print_redirect_page(login_rec *l)
 
         /* depending on whether-or-not there is a SUBMIT field in the form */
         /* use the correct javascript to autosubmit the POST */
+/* for some unknown reason this is commented-out */
+/*
         post_stuff_lower = strdup(l->post_stuff);
         for(p=post_stuff_lower; *p != '\0'; p++)
             *p = tolower(*p);
@@ -1416,6 +1455,8 @@ void print_redirect_page(login_rec *l)
             print_out("document.query.submit.click()");
         else
             print_out("document.query.submit");
+*/
+	print_out("document.query.submit()");
 
         print_out("\">\n");
 
@@ -1435,23 +1476,23 @@ void print_redirect_page(login_rec *l)
 
             /* if there is a " in the value string we have to put */
             /* in a TEXTAREA object that will be visible          */
-            if( strstr(c->value, "\"") ) {
+            if( strstr(c->value, "\"") || strstr(c->value, "\r") || strstr(c->value, "\n") ) {
                 if( ! limitations_mentioned ) {
                     print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
                     limitations_mentioned++;
                 }
                 print_out("<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n", c->attr);
-                print_out("%s</textarea>", c->value);
+                print_out("%s</textarea>", string_encode (c->value));
                 print_out("<P>\n");
             }
             else {
                 /* we don't want to cover other people's submits */
                 if ( !strcmp(c->attr, "submit") )  {
-                    submit_value = c->value;
+                    submit_value = string_encode (c->value);
                 }
                 else {
                     print_out("<input type=\"hidden\" ");
-		    print_out("name=\"%s\" value='%s'>\n", c->attr, c->value);
+		    print_out("name=\"%s\" value=\"%s\">\n", c->attr, c->value);
                 }
     	    }
 
