@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.15 1999-02-26 22:35:49 willey Exp $
+    $Id: pbc_config.h,v 1.16 1999-02-26 23:19:28 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -21,6 +21,8 @@
 #define PBC_G_REQ_COOKIENAME "pubcookie_g_req"
 #define PBC_S_COOKIENAME "pubcookie_s"
 #define PBC_PRE_S_COOKIENAME "pubcookie_p_res"
+#define PBC_TEST_COOKIENAME "pubcookie_test_cookie"
+#define PBC_TEST_COOKIECONTENTS "yes"
 
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
