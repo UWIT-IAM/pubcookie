@@ -1,5 +1,8 @@
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
+
 /*
-    $Id: pubcookie.h,v 1.6 1999-01-25 04:33:21 willey Exp $
+    $Id: pubcookie.h,v 1.7 1999-08-11 23:01:17 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
