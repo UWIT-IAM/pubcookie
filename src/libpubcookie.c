@@ -2,7 +2,7 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: libpubcookie.c,v 2.5 1999-08-11 23:00:35 willey Exp $
+    $Id: libpubcookie.c,v 2.6 1999-08-17 01:27:20 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -253,8 +253,13 @@ void libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
     if( ! (key_fp = pbc_fopen(keyfile, "r")) )
         libpbc_abend("libpbc_get_private_key: Could not open keyfile: %s\n", keyfile);
 
+#ifdef PRE_OPENSSL_094
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
                         PEM_STRING_EVP_PKEY, key_fp, NULL, NULL)) )
+#else
+    if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
+                        PEM_STRING_EVP_PKEY, key_fp, NULL, NULL, NULL)) )
+#endif
         libpbc_abend("libpbc_get_private_key: Could not read keyfile: %s\n", keyfile);
 
     pbc_fclose(key_fp);
@@ -282,8 +287,13 @@ void libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
     if( ! (fp = pbc_fopen(certfile, "r")) )
 	libpbc_abend("libpbc_get_public_key: Could not open keyfile: %s\n", certfile);
 
+#ifdef PRE_OPENSSL_094
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
 	                PEM_STRING_X509, fp, NULL, NULL)) )
+#else
+    if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
+	                PEM_STRING_X509, fp, NULL, NULL, NULL)) )
+#endif
         libpbc_abend("libpbc_get_public_key: Could not read cert file: %s\n", certfile);
 
     if( ! (key = X509_extract_key(x509)) )
