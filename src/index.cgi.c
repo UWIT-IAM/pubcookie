@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.92 $
+ * $Revision: 1.93 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -268,16 +268,15 @@ void tmpl_print_html(const char *fpath, const char *fname,...) {
     /* TODO: 
      * '/' should probably not be used here.  We should use an OS-Neutral path
      * seperator.
-     *
-     * Note that this also assumes that there _ISN'T_ a '/' at the end of the
-     * path.  that should probably be dealt-with.
      */
 
     len = strlen(fpath) + strlen("/") + strlen(fname) + 1;
 
     templatefile = malloc( len * sizeof(char) );
 
-    if ( snprintf( templatefile, len, "%s/%s", fpath, fname ) > len )  {
+    if ( snprintf( templatefile, len, "%s%s%s", fpath,
+                   fpath[strlen(fpath) - 1 ] == '/' ? "" : "/",
+                   fname ) > len )  {
         /* Need to do something we would have overflowed.  I don't know how that
          * could happen, but it's bad. */
         abend("Template file overflow!\n");
