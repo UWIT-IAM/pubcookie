@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.12 2004-03-31 16:53:57 fox Exp $
+ * $Id: pbc_apacheconfig.c,v 2.13 2004-08-10 23:09:04 fox Exp $
  */
 
 
@@ -112,13 +112,28 @@ typedef apr_table_t table;
 
 const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *def)
 {
-    server_rec *sr = find_server_from_pool(p);
-    pubcookie_server_rec *scfg =
-       (pubcookie_server_rec *) ap_get_module_config(sr->module_config,
-                                                   &pubcookie_module);
+    server_rec *sr;
+    request_rec *rr;
+    pubcookie_server_rec *scfg;
+    table *configlist;
+    const char *ret;
 
-    table * configlist = scfg->configlist;
-    const char * ret;
+    /* If the pool is from config then it has the server record.
+       If the pool is from the request, then it has the request record. */
+
+    if (!(sr=find_server_from_pool(p))) {
+       rr = find_request_from_pool(p);
+       if (!rr) {
+         printf("gstr could not find: %s\n", key);
+          return (def);
+       }
+       printf("gstr using request rec\n");
+       sr = rr->server;
+    }
+
+    scfg = (pubcookie_server_rec *) ap_get_module_config(sr->module_config,
+                                                   &pubcookie_module);
+    configlist = scfg->configlist;
 
     if ( key == NULL ) return def;
 

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.10 2004-07-15 23:05:55 willey Exp $
+    $Id: mod_pubcookie.h,v 2.11 2004-08-10 23:09:04 fox Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -72,6 +72,7 @@
 char *make_session_cookie_name(pool *, char *, unsigned char *);
 static int load_keyed_directives(request_rec *r, char *key);
 server_rec *find_server_from_pool(pool *p);
+request_rec *find_request_from_pool(pool *p);
 
 module pubcookie_module;
 
@@ -88,28 +89,27 @@ typedef struct {
 typedef struct {
   int           inact_exp;
   int           hard_exp;
-  int           failed;
-  int           has_granting;
   int           non_ssl_ok;
   unsigned char *appid;
-  char          creds;
   char          *end_session;
-  int           redir_reason_no;
-  char          *stop_message;
   int           session_reauth;
-  pbc_cookie_data *cookie_data;
   unsigned char *addl_requests;
-  char          *user;
-
-    /* for flavor_getcred */
-    char *cred_transfer;
-    int cred_transfer_len;
-
-
   int strip_realm;
   char *accept_realms;
   table *keydirs;
   int noprompt;
 } pubcookie_dir_rec;
+
+typedef struct {
+  int           failed;
+  int           redir_reason_no;
+  int           has_granting;
+  char          *user;
+  char          creds;
+  pbc_cookie_data *cookie_data;
+  char          *stop_message;
+  char *cred_transfer;
+  int cred_transfer_len;
+} pubcookie_req_rec;
 
 #endif /* INCLUDED_MOD_PUBCOOKIE_H */
