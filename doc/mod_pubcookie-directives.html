@@ -27,6 +27,7 @@ directives, you must do the same for other Pubcookie directives. Otherwise,
 <li><a href="#PubcookieSessionKeyfile">PubcookieSessionKeyfile</a></li>
 <li><a href="#PubcookieSessionCertfile">PubcookieSessionCertfile</a></li>
 <li><a href="#PubcookieCryptKeyfile">PubcookieCryptKeyfile</a></li>
+<li><a href="#PubcookieKeyDir">PubcookieKeyDir</a></li>
 <li><a href="#PubcookieEndSession">PubcookieEndSession</a></li>
 <li><a href="#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a></li>
 <li><a href="#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a></li>
@@ -267,6 +268,19 @@ cookies.</p>
 
 <p>The default is /usr/local/pubcookie/c_key which is defined as
 PBC_CRYPT_KEYFILE in pbc_config.h.</p>
+
+<h3><a name="PubcookieKeyDir">PubcookieKeyDir directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieCryptKeyfile <em>filename</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
+Apache 1.2 and later<br>
+</p>
+
+<p>The location of shared keys for encrypting/decrypting cookies.</p>
 
 <h3><a name="PubcookieEndSession">PubcookieEndSession directive</a></h3>
 

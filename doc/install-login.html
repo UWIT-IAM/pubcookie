@@ -823,6 +823,15 @@ kerberos5_service_name: pubcookie
 kerberos5_keytab: /usr/local/pubcookie/keys/pubcookie.keytab
 </pre>
 
+<p>Enable the <tt>append_realm</tt> variable if you want the
+Kerberos authentication realm to be appended to the user name 
+after authentication but before issuing cookies (i.e., target
+servers will receive <i>user@REALM</i>.)
+
+<p>Use the <tt>default_realm</tt> variable to define a default  
+Kerberos authentication realm to pass to the verifier when 
+none is submitted via the login form.</p>
+
 <p>To authenticate responses from your Kerberos server, the login server and
 Kerberos server must share a service key. You can use an existing service key
 or generate a new one with the help of your Kerberos administrator. Keep in
@@ -961,7 +970,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.20 2004-03-30 23:48:52 dors Exp $
+$Id: install-login.html,v 1.21 2004-04-27 23:03:04 dors Exp $
 </pre>
 </body>
 

@@ -1,17 +1,8 @@
-# 1 is a good starting point
-logging_level: 1
+# ssl config
+ssl_key_file: /etc/httpd/conf/ssl.key/server.key
+ssl_cert_file: /etc/httpd/conf/ssl.crt/server.crt
 
-# other site-specific config
-granting_cert_file: /usr/local/pubcookie/keys/pubcookie_granting.cert 
-login_uri: https://login.example.edu/
-enterprise_domain: .example.edu
+# keyclient-specific config
+keymgt_uri: https://weblogin.example.edu:2222
+ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
 
-# inetd must be configured to invoke keyserver on port 2222
-keymgt_uri: https://login.example.edu:2222
-
-# this allows any username/password combination to successfully authenticate
-basic_verifier: alwaystrue
-
-# location of the SSL keypair
-ssl_key_file: /usr/www/conf/ssl.key/server.key
-ssl_cert_file: /usr/www/conf/ssl.crt/server.crt
