@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.60 2001-09-10 21:11:38 willey Exp $
+    $Id: mod_pubcookie.c,v 1.61 2001-10-09 21:52:56 willey Exp $
  */
 
 /* apache includes */
@@ -676,7 +676,7 @@ static int auth_failed(request_rec *r) {
         put_out_post(r);
         rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
         rprintf(r, "%s", scfg->login);
-        rprintf(r, "%s", PBC_UWNETID_LOGO);
+        rprintf(r, "%s", PBC_WEBISO_LOGO);
         rprintf(r, "%s", PBC_POST_NO_JS_HTML4);
         rprintf(r, "%s", PBC_POST_NO_JS_BUTTON);
         rprintf(r, "%s", PBC_POST_NO_JS_HTML5);
@@ -689,7 +689,7 @@ static int auth_failed(request_rec *r) {
         put_out_post(r);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
         ap_rprintf(r, "%s", scfg->login);
-        ap_rprintf(r, "%s", PBC_UWNETID_LOGO);
+        ap_rprintf(r, "%s", PBC_WEBISO_LOGO);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML4);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_BUTTON);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML5);
@@ -736,32 +736,6 @@ static int is_pubcookie_auth(pubcookie_dir_rec *cfg) {
   }
   else {
     return FALSE;
-  }
-}
-
-/* a is from the cookie                                                       */
-/* b is from the module                                                       */
-static int pubcookie_check_version(unsigned char *a, unsigned char *b) {
-  
-  if( a[0] == b[0] && a[1] == b[1] )
-    return 1;
-  if( a[0] == b[0] && a[1] != b[1] ) {
-    libpbc_debug("Minor version mismatch cookie: %s your version: %s\n", a, b);
-    return 1;
-  }
-
-  return 0;
-
-}
-
-/* check and see if whatever has timed out                                    */
-static int pubcookie_check_exp(time_t fromc, int exp) {
-
-  if( (fromc + exp) > time(NULL) ) {
-    return 1;
-  }
-  else {
-    return 0;
   }
 }
 
@@ -1066,13 +1040,13 @@ static int pubcookie_user(request_rec *r) {
 #endif
 
   /* add creds to pubcookie record */
-  if( strcasecmp(at, PBC_UWNETID_AUTHTYPE) == 0 ) {
-    cfg->creds = PBC_CREDS_UWNETID;
+  if( strcasecmp(at, PBC_CRED1_AUTHTYPE) == 0 ) {
+    cfg->creds = PBC_CREDS_CRED1;
   }
 #ifdef USE_SECURID
   /* securid must be used with uwnetid passwd */
-  else if( strcasecmp(at, PBC_SECURID_AUTHTYPE) == 0 ) {
-    cfg->creds = PBC_CREDS_UWNETID_SECURID;
+  else if( strcasecmp(at, PBC_CRED3_AUTHTYPE) == 0 ) {
+    cfg->creds = PBC_CREDS_CRED3;
   }
 #endif
   else {
@@ -1133,7 +1107,7 @@ static int pubcookie_user(request_rec *r) {
       r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 #endif
 
-      if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, cfg->hard_exp) ) {
+      if( libpbc_check_exp((*cookie_data).broken.create_ts, cfg->hard_exp) == PBC_FAIL ) {
         libpbc_debug("S cookie hard expired; user: %s cookie timestamp: %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
                 (*cookie_data).broken.create_ts, 
@@ -1147,7 +1121,7 @@ static int pubcookie_user(request_rec *r) {
 
 
       if( cfg->inact_exp != -1 &&
-          ! pubcookie_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp) ) {
+          libpbc_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp) == PBC_FAIL ) {
         libpbc_debug("S cookie inact expired; user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
                 (*cookie_data).broken.create_ts, 
@@ -1236,7 +1210,7 @@ static int pubcookie_user(request_rec *r) {
     r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 #endif
 
-    if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
+    if( libpbc_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) == PBC_FAIL ) {
       libpbc_debug("pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s\n", time(NULL)-(*cookie_data).broken.create_ts-PBC_GRANTING_EXPIRE, (*cookie_data).broken.user, (*cookie_data).broken.create_ts, r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_GEXP_CODE;
@@ -1262,7 +1236,7 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check version id */
-  if( !pubcookie_check_version((*cookie_data).broken.version, (unsigned char *) PBC_VERSION)){
+  if( libpbc_check_version(cookie_data) == PBC_FAIL ) {
     libpbc_debug("pubcookie_user: wrong version id; module: %d cookie: %d uri: %s\n", PBC_VERSION, (*cookie_data).broken.version);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGVER_CODE;
