@@ -13,7 +13,7 @@
  */
 
 /*
-  $Id: verify_kerberos5.c,v 1.22 2003-05-06 23:51:19 willey Exp $
+  $Id: verify_kerberos5.c,v 1.23 2003-06-10 17:28:00 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -325,6 +325,8 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
     krb5_keyblock *keyblock = NULL;
     krb5_error_code k5_retcode;
     int result = -1;
+    char *sname = (char *)libpbc_config_getstring(p, "kerberos5_service_name", 
+			"host");
 
     krb5_keytab keytab;
     krb5_pointer keytabname;
@@ -334,7 +336,7 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
 	*errstr = NULL;
     }
 
-    if (krb5_sname_to_principal(context, NULL, NULL,
+    if (krb5_sname_to_principal(context, NULL, sname, 
 				KRB5_NT_SRV_HST, &server)) {
 	*errstr = "krb5_sname_to_principal() failed";
 	return -1;
@@ -367,7 +369,7 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
     /* hopefully this will correctly zero out the packet */
     memset(&packet, 0, sizeof(packet));
 #endif
-    k5_retcode = krb5_mk_req(context, auth_context, 0, "host", 
+    k5_retcode = krb5_mk_req(context, auth_context, 0, sname, 
 			     thishost, NULL, ccache, &packet);
     if (*auth_context) {
 	krb5_auth_con_free(context, *auth_context);
