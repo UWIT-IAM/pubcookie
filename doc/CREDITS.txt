@@ -44,6 +44,7 @@
      * MIT Kerberos
      * Microsoft IIS
      * mod_ssl
+     * NSF Middleware Initiative (**)
      * OpenLDAP
      * Sun ONE Directory SDK
      * OpenSSL
@@ -59,4 +60,6 @@
    removed. Modifications may also be submitted to the author for
    inclusion in the main cgic distribution.
 
-
+   (**) Any opinions, findings and conclusions or recommendations
+   expressed in this material are those of the author(s) and do not
+   necessarily reflect the views of the National Science Foundation (NSF).
