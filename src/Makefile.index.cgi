@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.15 2002-04-01 22:43:27 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.16 2002-04-02 00:30:31 willey Exp $
 #
 
 # your compiler here
@@ -37,7 +37,7 @@ CGIC=/usr/local/lib/libcgic.a
 # extra library dirs (for authentication modules and such)
 EXTRA_LIB_DIRS=
 # extra libraries (for authentication modules and suc)
-EXTRA_LIBS=-lkrb5 -lexpat
+EXTRA_LIBS=-lkrb5
 
 # choose your compile flags.
 # some options are: DEBUG - voluminious debug info
