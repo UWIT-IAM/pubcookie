@@ -26,22 +26,21 @@ static int init_basic(void)
     vname = libpbc_config_getstring("basic_verifier", NULL);
 
     if (!vname) {
-	fprintf(stderr, "flavor_basic: no verifier configured\n");
+      pbc_log_activity(PBC_LOG_ERROR, 
+			 "flavor_basic: no verifier configured\n");
 	return -1;
     }
 
     v = get_verifier(vname);
 
     if (!v || !v->v) {
-	fprintf(stderr, "flavor_basic: verifier not found: %s\n", vname);
+      pbc_log_activity(PBC_LOG_ERROR, 
+		 "flavor_basic: verifier not found: %s\n", vname);
 	v = NULL;
 	return -1;
     }
-
-    if (debug) {
-       fprintf(stderr, "init_basic: using %s verifier\n", vname);
-    }
-
+    pbc_log_activity(PBC_LOG_DEBUG_LOW,
+		     "init_basic: using %s verifier\n", vname);
     return 0;
 }
 
@@ -53,9 +52,7 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
     int need_clear_greq = 1;
     char message_out[1024];
 
-    if (debug) {
-	fprintf(stderr, "print_login_page: hello\n");
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello\n");
     assert(errstr);
 
     /* set the cookies */
@@ -245,7 +242,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
 	    if (!*errstr) {
 		*errstr = "authentication failed";
 	    }
-	    log_message("flavor_basic: login failed: %s", *errstr);
+	    pbc_log_activity(PBC_LOG_AUDIT,
+			     "flavor_basic: login failed: %s", *errstr);
 
 	    /* make sure 'l' reflects that */
 	    l->user = NULL;	/* in case wrong username */
@@ -254,7 +252,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
 	}
     } else if (l->session_reauth) {
 	*errstr = "reauthentication required";
-	log_message("flavor_basic: %s", *errstr);
+	pbc_log_activity(PBC_LOG_AUDIT,
+			 "flavor_basic: %s", *errstr,l->user);
 
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
@@ -264,7 +263,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
        has expired. */
     } else if (l->check_error) {
 	*errstr = l->check_error;
-	log_message("flavor_basic: %s", *errstr);
+	pbc_log_activity(PBC_LOG_ERROR,"flavor_basic: %s", *errstr);
 
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
@@ -272,19 +271,21 @@ static login_result process_basic(login_rec *l, login_rec *c,
     /* if l->check_error is NULL, then 'c' must be set and must
        contain the login cookie information */
     } else if (!c) {
-	log_message("flavor_basic: check_error/c invariant violated");
+	pbc_log_activity(PBC_LOG_ERROR,
+			 "flavor_basic: check_error/c invariant violated");
 	abort();
 
     /* make sure the login cookie represents credentials for this flavor */
     } else if (c->creds != PBC_BASIC_CRED_ID) {
 	*errstr = "cached credentials wrong flavor";
-	log_message("flavor_basic: %s", *errstr);
+	pbc_log_activity(PBC_LOG_ERROR,"flavor_basic: %s", *errstr);
 
 	print_login_page(l, c, errstr);
 	return LOGIN_INPROGRESS;
 
     } else { /* valid login cookie */
-	log_message("flavor_basic: free ride");
+      pbc_log_activity(PBC_LOG_AUDIT,
+			 "flavor_basic: free ride", l->user);
 	return LOGIN_OK;
     }
 }
