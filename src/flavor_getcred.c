@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.23 2004-02-19 23:07:02 fox Exp $
+ * $Id: flavor_getcred.c,v 1.24 2004-03-02 16:14:44 dors Exp $
  */
 
 
@@ -96,11 +96,11 @@ static int check_authz(pool *p, const char *server, const char *target)
 
     lineno = 0;
     while (++lineno && fgets(buf, sizeof(buf), f)) {
-        char *p, *q;
+        char *s, *q;
         int c;
 
-        p = strchr(buf, '\n');
-        if (!p) {
+        s = strchr(buf, '\n');
+        if (!s) {
             pbc_log_activity(p, PBC_LOG_ERROR,
                              "ridiculous line in %s, line %d, skipping", 
                              fname, lineno);
@@ -112,22 +112,22 @@ static int check_authz(pool *p, const char *server, const char *target)
             }
             continue;
         }
-        *p = '\0'; /* get rid of \n */
+        *s = '\0'; /* get rid of \n */
 
         /* 'buf' should now look like <server> <cred> {OK,NO,ASK} */
-        p = buf;
-        while (*p && !isspace(*p)) p++;
-        if (!*p) {
+        s = buf;
+        while (*s && !isspace(*s)) s++;
+        if (!*s) {
             pbc_log_activity(p, PBC_LOG_ERROR,
                              "malformed line in %s, line %d, skipping", 
                              fname, lineno);
             continue;
         }
-        *p++ = '\0';
-        while (*p && isspace(*p)) p++;
+        *s++ = '\0';
+        while (*s && isspace(*s)) s++;
         
         /* p points at <cred> */
-        q = p;
+        q = s;
         while (*q && !isspace(*q)) q++;
         if (!*q) {
             pbc_log_activity(p, PBC_LOG_ERROR,
@@ -148,7 +148,7 @@ static int check_authz(pool *p, const char *server, const char *target)
         }
 
         /* see if p matches target */
-        if (fnmatch(p, target, 0) != 0) {
+        if (fnmatch(s, target, 0) != 0) {
             continue;
         }
 

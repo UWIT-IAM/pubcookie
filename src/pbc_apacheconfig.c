@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.10 2004-02-19 23:07:03 fox Exp $
+ * $Id: pbc_apacheconfig.c,v 2.11 2004-03-02 16:14:44 dors Exp $
  */
 
 
@@ -165,7 +165,7 @@ const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *
     ret = ap_table_get(configlist, key);
   
     if (ret) { 
-        ap_log_error(PC_LOG_DEBUG,  NULL, "found %s with value %s", ret);
+        ap_log_error(PC_LOG_DEBUG,  NULL, "found %s with value %s", key, ret);
         return ret;
     } 
     ap_log_error(PC_LOG_DEBUG,  NULL, "failed to find %s, returning default %s", key, def);

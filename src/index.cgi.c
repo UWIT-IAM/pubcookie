@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.118 2004-02-19 23:07:02 fox Exp $
+ * $Id: index.cgi.c,v 1.119 2004-03-02 16:14:44 dors Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -934,21 +934,21 @@ char *decode_granting_request(pool *p, char *in, char **peerp)
     /* xxx check to see if 'in' is _<peer>_<base64 bundled> or just <base64> */
     /* (bundling currently relies on signing with the login server key */
     if (0 && in[0] == '_') {
-        char *p;
+        char *s;
         int len;
 
         in++;
 
         /* grab peername */
-        for (p = in; *p != '\0' && *p != '_'; p++) {
+        for (s = in; *s != '\0' && *s != '_'; s++) {
             len++;
         }
-        if (p == '\0' || p - in > 1024) {
+        if (s == '\0' || s - in > 1024) {
             /* xxx error error */
             return NULL;
         }
 
-        *p++ = '\0';
+        *s++ = '\0';
         peer = strdup(in);
 
 #if 0
