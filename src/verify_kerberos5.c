@@ -13,7 +13,7 @@
  */
 
 /*
-  $Id: verify_kerberos5.c,v 1.23 2003-06-10 17:28:00 willey Exp $
+  $Id: verify_kerberos5.c,v 1.24 2003-06-10 23:02:10 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -345,7 +345,7 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
     keytabname = (krb5_pointer) libpbc_config_getstring(p, "kerberos5_keytab",
                                                         NULL);
     if (keytabname) {
-	if (krb5_kt_resolve(context, keytabname, &keytab)) {
+	if ( (k5_retcode = krb5_kt_resolve(context, keytabname, &keytab)) ) {
 	    *errstr = "unable to resolve keytab";
 	    goto fini;
 	}
@@ -353,8 +353,8 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
 	keytab = NULL;
     }
 
-    if (krb5_kt_read_service_key(context, keytabname, server, 0,
-				 0, &keyblock)) {
+    if ( (k5_retcode = krb5_kt_read_service_key(context, keytabname, server, 0,
+				 0, &keyblock)) ) {
         *errstr = "unable to read service key";
 	goto fini;
     }
@@ -392,6 +392,10 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
     result = 0;
  fini:
     krb5_free_principal(context, server);
+
+    if(k5_retcode)
+        pbc_log_activity(p, PBC_LOG_ERROR,
+		        "k5support_verify_tgt: %s", error_message(k5_retcode));
 
     return result;
 }
