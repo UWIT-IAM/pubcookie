@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.64 2001-10-18 01:41:03 willey Exp $
+    $Id: mod_pubcookie.c,v 1.65 2001-10-27 18:07:14 willey Exp $
  */
 
 /* apache includes */
@@ -559,9 +559,9 @@ static int auth_failed(request_rec *r) {
 
     /* create whole g req cookie */
 #ifdef PORT80_TEST
-    ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+    ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/;",
 #else
-    ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
+    ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/; secure",
 #endif
           PBC_G_REQ_COOKIENAME, 
           e_g_req_contents,
@@ -583,9 +583,9 @@ static int auth_failed(request_rec *r) {
 
 #ifdef APACHE1_2
 #ifdef PORT80_TEST
-      ap_snprintf(pre_s_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s;", 
+      ap_snprintf(pre_s_cookie, PBC_1K-1, "%s=%s; domain=%s; path=%s;", 
 #else
-      ap_snprintf(pre_s_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s; secure", 
+      ap_snprintf(pre_s_cookie, PBC_1K-1, "%s=%s; domain=%s; path=%s; secure", 
 #endif
               PBC_PRE_S_COOKIENAME,
               pre_s, 
@@ -595,9 +595,9 @@ static int auth_failed(request_rec *r) {
       table_add(r->headers_out, "Set-Cookie", pre_s_cookie);
 #else
 #ifdef PORT80_TEST
-      pre_s_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s;", 
+      pre_s_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=%s;", 
 #else
-      pre_s_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s; secure", 
+      pre_s_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=%s; secure", 
 #endif
               PBC_PRE_S_COOKIENAME,
               pre_s, 
@@ -625,9 +625,9 @@ static int auth_failed(request_rec *r) {
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
 #ifdef PORT80_TEST
-        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/;",
 #else
-        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/; secure",
 #endif
           PBC_FORM_MP_COOKIENAME, 
           "1",
@@ -655,9 +655,9 @@ static int auth_failed(request_rec *r) {
     if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
 #ifdef PORT80_TEST
-        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/;",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/;",
 #else
-        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s path=/; secure",
+        ap_snprintf(g_req_cookie, PBC_4K-1, "%s=%s; domain=%s; path=/; secure",
 #endif
           PBC_FORM_MP_COOKIENAME, 
           "1",
@@ -1154,9 +1154,9 @@ static int pubcookie_user(request_rec *r) {
 #ifdef APACHE1_2
     /* clear granting cookie */
 #ifdef PORT80_TEST
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s;", 
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s; path=/; expires=%s;", 
 #else
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s; secure", 
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s; path=/; expires=%s; secure", 
 #endif
        PBC_G_COOKIENAME, 
        PBC_ENTRPRS_DOMAIN, 
@@ -1165,9 +1165,9 @@ static int pubcookie_user(request_rec *r) {
 #else
     /* clear granting cookie */
 #ifdef PORT80_TEST
-    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s;", 
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s; path=/; expires=%s;", 
 #else
-    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s; secure", 
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s; path=/; expires=%s; secure", 
 #endif
        PBC_G_COOKIENAME, 
        PBC_ENTRPRS_DOMAIN,
@@ -1178,9 +1178,9 @@ static int pubcookie_user(request_rec *r) {
 #ifdef APACHE1_2
     /* clear pre session cookie */
 #ifdef PORT80_TEST
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s;", 
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s; path=/; expires=%s;", 
 #else
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s; secure", 
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s; path=/; expires=%s; secure", 
 #endif
        PBC_PRE_S_COOKIENAME, 
        get_server_name(r), 
@@ -1189,9 +1189,9 @@ static int pubcookie_user(request_rec *r) {
 #else
     /* clear pre session cookie */
 #ifdef PORT80_TEST
-    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s;", 
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s; path=/; expires=%s;", 
 #else
-    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; expires=%s; secure", 
+    new_cookie = ap_psprintf(r->pool, "%s=; domain=%s; path=/; expires=%s; secure", 
 #endif
        PBC_PRE_S_COOKIENAME, 
        ap_get_server_name(r),
@@ -1364,9 +1364,9 @@ static int pubcookie_typer(request_rec *r) {
     if( cfg->end_session == PBC_END_SESSION ) {  /* clear session cookie */
 
 #ifdef PORT80_TEST
-      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=/; expires=%s;", 
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=/; expires=%s;", 
 #else
-      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=/; expires=%s; secure", 
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=/; expires=%s; secure", 
 #endif
          make_session_cookie_name(r->pool, appid(r)), 
 	 PBC_CLEAR_COOKIE,
@@ -1390,9 +1390,9 @@ static int pubcookie_typer(request_rec *r) {
 
 #ifdef APACHE1_2
 #ifdef PORT80_TEST
-      ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s;", 
+      ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s; path=%s;", 
 #else
-      ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s; secure", 
+      ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s; path=%s; secure", 
 #endif
               make_session_cookie_name(r->pool, appid(r)),
               cookie, 
@@ -1402,9 +1402,9 @@ static int pubcookie_typer(request_rec *r) {
       table_add(r->headers_out, "Set-Cookie", new_cookie);
 #else
 #ifdef PORT80_TEST
-      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s;", 
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=%s;", 
 #else
-      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s; secure", 
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=%s; secure", 
 #endif
               make_session_cookie_name(r->pool, appid(r)),
               cookie, 
