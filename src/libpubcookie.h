@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.37 2003-07-03 04:25:21 willey Exp $
+    $Id: libpubcookie.h,v 1.38 2003-08-19 21:19:07 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -63,7 +63,12 @@ pbc_cookie_data *libpbc_unbundle_cookie(pool *p, char *,
 unsigned char *libpbc_update_lastts(pool *p, pbc_cookie_data *,
 				       const char *peer);
 md_context_plus *libpbc_sign_init(pool *p, char *);
-void libpbc_pubcookie_init(pool *p);
+#ifdef WIN32
+int
+#else
+void 
+#endif
+libpbc_pubcookie_init(pool *p);
 unsigned char *libpbc_alloc_init(pool *p, int);
 unsigned char *libpbc_gethostip(pool *p);
 void libpbc_free_md_context_plus(pool *p, md_context_plus *);
@@ -132,7 +137,9 @@ int capture_cmd_output(pool *p, char **cmd, char *out, int len);
 #  define bzero(d, siz)   memset((d), '\0', (siz))
 #  define snprintf _snprintf
 #  define LOG_ERR 0
-#  define LOG_DEBUG 1
+#  define LOG_DEBUG 3
+#  define LOG_WARN 1
+#  define LOG_INFO 2
 #endif
 
 

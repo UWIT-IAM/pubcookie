@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.60 2003-07-03 04:25:21 willey Exp $
+ * $Id: libpubcookie.c,v 2.61 2003-08-19 21:19:07 ryanc Exp $
  */
 
 
@@ -276,7 +276,12 @@ void libpbc_augment_rand_state(pool *p, unsigned char *array, int len)
 /*                                                                            */
 /* any general startup stuff goes here                                        */
 /*                                                                            */
-void libpbc_pubcookie_init(pool *p)
+#ifdef WIN32
+int 
+#else
+void 
+#endif
+libpbc_pubcookie_init(pool *p)
 {
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
@@ -288,8 +293,14 @@ void libpbc_pubcookie_init(pool *p)
 
     if (security_init(p)) {
         pbc_log_activity(p, PBC_LOG_ERROR, "security_init failed");
+#ifndef WIN32
         exit(1);
     }
+#else
+		return FALSE;
+	}
+	return TRUE;
+#endif
 
 }
 
