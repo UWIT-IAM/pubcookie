@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.66 $
+ * $Revision: 1.67 $
  */
 
 
@@ -153,7 +153,7 @@ void print_html(const char *format, ...)
 
     va_start(args, format);
     vfprintf(htmlout, format, args);
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, format, args);
+    pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, format, args);
 
     if (mirror) {
 	vfprintf(mirror, format, args);
@@ -174,7 +174,7 @@ void print_header(const char *format, ...)
 
     va_start(args, format);
     vfprintf(headerout, format, args);
-    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, format, args);
+    pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, format, args);
 
     if (mirror) {
 	vfprintf(mirror, format, args);
@@ -200,7 +200,7 @@ void tmpl_print_html(const char *fname,...)
   va_end(args);
 
   fprintf(htmlout, "%s", buf);
-  pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, buf);
+  pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, buf);
 
   if (mirror) {
       fprintf(mirror,"%s",buf);
@@ -331,8 +331,8 @@ int get_cookie(char *name, char *result, int max)
 
     strncpy(result, wkspc, max);
     pbc_log_activity(PBC_LOG_DEBUG_LOW, 
-			 "get_cookie: returning cookie: %s\n%s\n",
-			 name, result);
+		     "get_cookie: returning cookie: %s=%s",
+		     name, result);
     free(target);
     return(PBC_OK);
 
@@ -1350,6 +1350,8 @@ int cgiMain()
     login_rec *c = NULL;   /* only from login cookie */
     const char *mirrorfile;
 
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...");
+
     /* the html and headers are written to tmpfiles then 
      * transmitted to the browser when complete
      */
@@ -1362,6 +1364,8 @@ int cgiMain()
     mirrorfile = libpbc_config_getstring("mirrorfile", NULL);
 
     libpbc_pubcookie_init();
+
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "cgiMain() done initializing...");
 
     /* always print out the standard headers */
     print_http_header();
@@ -1421,12 +1425,12 @@ int cgiMain()
 
     /* check the user agent */
     if (!check_user_agent()) {
-        pbc_log_activity(PBC_LOG_AUDIT
-		    "%s bad agent: %s user: %s client_addr: %s",
-                    l->first_kiss, 
-                    user_agent(), 
-                    l->user == NULL ? "(null)" : l->user, 
-                    cgiRemoteAddr);
+        pbc_log_activity(PBC_LOG_AUDIT,
+			 "%s bad agent: %s user: %s client_addr: %s",
+			 l->first_kiss, 
+			 user_agent(), 
+			 l->user == NULL ? "(null)" : l->user, 
+			 cgiRemoteAddr);
         notok(notok_bad_agent);
 	goto done;
     }
@@ -1450,13 +1454,13 @@ int cgiMain()
     
     if (vector_request(l, c) == PBC_OK ) {
         /* the reward for a hard days work */
-        pbc_log_activity(PBC_LOG_AUDIT
-		    "%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
-                    l->first_kiss, 
-                    l->user == NULL ? "(null)" : l->user, 
-                    cgiRemoteAddr, 
-                    l->host, 
-                    l->appid);
+        pbc_log_activity(PBC_LOG_AUDIT,
+    "%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
+			 l->first_kiss, 
+			 l->user == NULL ? "(null)" : l->user, 
+			 cgiRemoteAddr, 
+			 l->host, 
+			 l->appid);
     
         /* generate the cookies and print the redirect page */
         print_redirect_page(l, c);
@@ -1521,7 +1525,7 @@ char *check_l_cookie(login_rec *l, login_rec *c)
         return("no_creds");
     }
 
-    pbc_log_activity(PBC_LOG_VERBOSE, 
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
 		     "check_l_cookie: done dorking with creds\n");
 
     l_version = c->version; g_version = l->version;
@@ -1531,7 +1535,7 @@ char *check_l_cookie(login_rec *l, login_rec *c)
         return("wrong major version");
     }
     if (*(l_version+1) != *(g_version+1) ) {
-        pbc_log_activity(PBC_LOG_DEBUT_LOW,
+        pbc_log_activity(PBC_LOG_DEBUG_LOW,
 			 "%s warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l->first_kiss, l_version, g_version, l->host);
     }
 
@@ -1697,7 +1701,8 @@ int cookie_test(login_rec *l, login_rec *c)
         return(PBC_FAIL);
     }
     
-    pbc_log_activity("cookie_test: cookies: %s", cookies);
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, 
+		     "cookie_test: cookies: %s", cookies);
 
     /* we don't currently handle form-multipart */
     /* the formmultipart cookie is set by the module */

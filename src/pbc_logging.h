@@ -5,6 +5,7 @@
 #define PBC_LOG_AUDIT 1
 #define PBC_LOG_DEBUG_LOW 2
 #define PBC_LOG_DEBUG_VERBOSE 3
+#define PBC_LOG_DEBUG_OUTPUT 5
 
 /**
  *Initializes the logging system.  Optional.
