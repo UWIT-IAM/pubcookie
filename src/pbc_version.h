@@ -19,19 +19,31 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.39 2002-08-15 22:50:06 jjminer Exp $
+    $Id: pbc_version.h,v 1.40 2002-08-16 15:33:37 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
 #define PUBCOOKIE_VERSION
 
-/* The cookie version */
+/* The cookie version - Needs to stick around a while */
 #define PBC_VERSION "a5"
- 
-/* The apache module version */
-#define PBC_PUBID "1.76"
 
-/* The login server version */
-#define PBC_LOGIN_VERSION "1.35"
+/*
+ * Someday the cookie version will be the major version or something like that.
+ */
+
+#define PBC_VERSION_MAJOR "3"
+#define PBC_VERSION_MINOR "0"
+#define PBC_VERSION_PATCH "0"
+
+/* beta or final, so the code knows what it is, should it care. */
+#define PBC_VERSION_RELEASE "beta"
+
+/*
+ * Please note that if you change the version string here, you should change it
+ * in configure.ac and re-run autoconf and autoheader.
+ */
+
+#define PBC_VERSION_STRING "3.0.0 pre-beta1"
 
 #endif /* !PUBCOOKIE_VERSION */

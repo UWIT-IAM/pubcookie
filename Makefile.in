@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.6 2002-08-16 00:28:45 jjminer Exp $
+# $Id: Makefile.in,v 1.7 2002-08-16 15:33:37 jjminer Exp $
 
 @SET_MAKE@
 
@@ -14,11 +14,10 @@
 MAKE_LOGIN=@MAKE_LOGIN@$(MAKE)
 MAKE_APACHE=@MAKE_APACHE@$(MAKE)
 
-# Begin Makefile.settings.in
-
 CC=@CC@
 
 prefix=@prefix@
+srcdir=@srcdir@
 
 PUBCOOKIE_DIR=$(prefix)
 KEY_DIR=$(PUBCOOKIE_DIR)/keys
@@ -50,11 +49,9 @@ LOGINLIBS=@LOGINLIBS@ -lcgic
 
 APXS=@APXS@
 
-# End Makefile.settings.in
-
 CONFIGURE_TMP_FILES=config.status config.log src/config.h Makefile src/pbc_path.h
 
-CONFIGURE_FILES=configure configure.ac Makefile.in install-sh
+CONFIGURE_FILES=configure configure.ac Makefile.in install-sh stamp-h.in
 
 SRC_CONFIGURE_FILES=src/config.h.in src/pbc_path.h.in
 
@@ -150,20 +147,42 @@ CGIC_FILES=cgic/Makefile.in \
 		   cgic/testform.html \
 		   cgic/CHANGES
 
-L_VERSION := `$(AWK) '/PBC_LOGIN_VERSION/{print $$3}' src/pbc_version.h | $(SED) 's/"//g'`
-L_BASENAME := pubcookie_login-$(L_VERSION)
+VERSION := `$(AWK) -F\" '/PBC_VERSION_STRING/{print $$2}' src/pbc_version.h | $(SED) "s/ /-/g" `
 
-.PHONY: all clean install dist login_server apache_module
+# " ` (Satisfying Vim)
+
+BASENAME := pubcookie
+DISTNAME := $(BASENAME)-$(VERSION)
+
+.PHONY: all clean install dist login_server apache_module ver
 
 all: Makefile @login_server@ @apache_module@
 
-Makefile: Makefile.in
+$(srcdir)/configure: configure.ac
+	cd $(srcdir) && autoconf
+
+# autoheader might not change config.h.in, so touch a stamp file.
+$(srcdir)/src/config.h.in: stamp-h.in
+$(srcdir)/stamp-h.in: configure.ac
+	cd $(srcdir) && autoheader
+	echo timestamp > $(srcdir)/stamp-h.in
+
+src/config.h: stamp-h
+stamp-h: src/config.h.in config.status
 	./config.status
 
-login_server: Makefile l_ver $(INDEX_FILES) $(KEYMGT_FILES)
+Makefile: Makefile.in config.status
+	./config.status
+
+config.status: configure
+	./config.status --recheck
+
+
+
+login_server: l_ver $(INDEX_FILES) $(KEYMGT_FILES)
 
 l_ver:
-	@echo Making $(L_BASENAME);
+	@echo Making $(DISTNAME) login server;
 
 candv:	src/candv.o $(LIB_OBJ)
 	$(CC) $(CFLAGS) -o $@ src/candv.o $(LIB_OBJ) $(LDFLAGS)
@@ -201,7 +220,7 @@ index.cgi: cgic/libcgic.a $(LIB_OBJ) $(INDEX_OBJ)
 cgic/libcgic.a:
 	(cd cgic; make)
 
-$(INDEX_OBJ): Makefile $(LIB_HEAD) $(INDEX_HEAD)
+$(INDEX_OBJ): $(LIB_HEAD) $(INDEX_HEAD) src/config.h
 
 keyserver: src/keyserver.o $(LIB_OBJ)
 	$(CC) $(CFLAGS) -o $@ src/keyserver.o $(LIB_OBJ) $(LDFLAGS) $(LIBS)
@@ -274,20 +293,17 @@ distclean:: clean
 
 APACHE_DEFINES= -DAPACHE1_3
 
-apache_module: Makefile a_ver mod_pubcookie.so keyclient
-
-A_VERSION :=`$(AWK) '/PBC_PUBID/{print $$3}' src/pbc_version.h | sed 's/"//g'`
-A_BASENAME := mod_pubcookie-$(A_VERSION)
+apache_module: a_ver mod_pubcookie.so keyclient
 
 a_ver:
-	@echo Making $(A_BASENAME)
+	@echo Making $(DISTNAME) apache module;
 
-mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD)
+mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) src/config.h
 	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) $(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 
 # Dist stuff
 
-DISTNAME=pubcookie-$(A_VERSION)-$(L_VERSION)
+# DISTNAME=pubcookie-$(A_VERSION)-$(L_VERSION)
 
 dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)

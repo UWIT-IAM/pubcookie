@@ -1,12 +1,14 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.3 $)
-AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
+AC_REVISION($Revision: 1.4 $)
+AC_INIT(Pubcookie, [3.0.0 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
 
 # Set default prefix to /usr/local/pubcookie
 AC_PREFIX_DEFAULT(/usr/local/pubcookie)
+  
+AC_MSG_NOTICE([Configuring for $PACKAGE_STRING])
 
 if test "x$enable_apache" = "x"; then
     enable_apache=yes
@@ -291,4 +293,5 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname getspnam gettimeofday \
                 strstr uname strlcpy strlcat])
 
 AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
+AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
 AC_OUTPUT

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.96 2002-08-15 22:50:06 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.97 2002-08-16 15:33:37 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1054,7 +1054,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
     ap_add_version_component(
-            ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION, "/", PBC_PUBID, NULL));
+            ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION_STRING, NULL));
     /* sanity checks */
 
     /* bail if PubcookieAuthTypes not set */
