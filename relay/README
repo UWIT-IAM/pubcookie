@@ -1,21 +1,20 @@
 
 This is the pubcookie relay.  
 
-Build: e.g. 
+Build & install:
  
   (build the pubcookie login server first)
   (then, e.g.)
 
-  $ ./configure --prefix=/usr/local/apache/htodcs/PCRELAY \
-               --with-pubcookie=.. \
-               --with-webtpl=/usr/local/webtpl
+  $ ./configure --prefix=/usr/local/apache/htodcs/PCRELAY 
   $ make
   $ make install
 
-(For the webtpl library, see:  http://staff.washington.edu/fox/webtpl)
+(You will need the webtpl library,
+ see:  http://staff.washington.edu/fox/webtpl)
 
 
-Use;
+Run;
 
 
   Configure your remote applications to use the relay uri as a login server.

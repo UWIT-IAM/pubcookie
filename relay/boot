@@ -1,4 +1,5 @@
-# these commands rebuild Makefile.in and configure
-# aclocal
-# autoconf
-# automake --foreign --add-missing
+set -x
+aclocal
+autoconf
+automake --foreign --add-missing --ignore-deps
+

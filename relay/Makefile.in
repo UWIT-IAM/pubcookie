@@ -115,9 +115,8 @@ DEFAULT_INCLUDES =  -I. -I$(srcdir)
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-depcomp = $(SHELL) $(top_srcdir)/../depcomp
-am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/index.cgi.Po
+depcomp =
+am__depfiles_maybe =
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -126,9 +125,8 @@ CFLAGS = @CFLAGS@
 DIST_SOURCES = index.cgi.c
 DATA = $(tpl_DATA)
 
-DIST_COMMON = README ../depcomp ../install-sh ../missing \
-	../mkinstalldirs Makefile.am Makefile.in aclocal.m4 configure \
-	configure.in
+DIST_COMMON = README ../install-sh ../missing ../mkinstalldirs \
+	Makefile.am Makefile.in aclocal.m4 configure configure.in
 SOURCES = index.cgi.c
 
 all: all-am
@@ -140,7 +138,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  Makefile
+	  $(AUTOMAKE) --foreign  --ignore-deps Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)
 
@@ -185,23 +183,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/index.cgi.Po@am__quote@
-
-distclean-depend:
-	-rm -rf ./$(DEPDIR)
-
 .c.o:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
 
 .c.obj:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `cygpath -w $<`
-CCDEPMODE = @CCDEPMODE@
 uninstall-info-am:
 tplDATA_INSTALL = $(INSTALL_DATA)
 install-tplDATA: $(tpl_DATA)
@@ -383,8 +369,8 @@ clean-am: clean-cgiPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-distclean-am: clean-am distclean-compile distclean-depend \
-	distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -417,12 +403,12 @@ uninstall-am: uninstall-cgiPROGRAMS uninstall-info-am uninstall-tplDATA
 
 .PHONY: GTAGS all all-am check check-am clean clean-cgiPROGRAMS \
 	clean-generic dist dist-all dist-gzip distcheck distclean \
-	distclean-compile distclean-depend distclean-generic \
-	distclean-tags distcleancheck distdir dvi dvi-am info info-am \
-	install install-am install-cgiPROGRAMS install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip install-tplDATA \
-	installcheck installcheck-am installdirs maintainer-clean \
+	distclean-compile distclean-generic distclean-tags \
+	distcleancheck distdir dvi dvi-am info info-am install \
+	install-am install-cgiPROGRAMS install-data install-data-am \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip install-tplDATA installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic tags uninstall uninstall-am \
 	uninstall-cgiPROGRAMS uninstall-info-am uninstall-tplDATA
