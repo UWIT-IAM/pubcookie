@@ -30,6 +30,7 @@
                     <li><a href="#logout">Logout Configuration</a></li>
                     <li><a href="#relay">Cross-Domain Relay Configuration</a></li>
                     <li><a href="#vhosts">Virtual Host Configuration</a></li>
+                    <li><a href="#clusters">Clustered Host Configuration</a></li>
                     <li><a href="#debug">Troubleshooting</a></li>
                     <li><a href="#A">Appendix A: How to Enable SSL</a></li>
                     <li><a href="#B">Appendix B: Configuration For Abbreviated Domain Names</a></li>
@@ -42,7 +43,7 @@
                   <ul>
                     <li><p>Build and install the module for use with either Apache 1.3 or 2.0;</p></li>
                     <li><p>Use the Pubcookie keyclient to obtain a symmetric encryption key from your
-                      local Pubcookie keyserver and retrieve your site's Pubcookie granting certificate;</p></li>
+                      local Pubcookie keyserver and retrieve your site's Pubcookie "granting" certificate;</p></li>
                     <li><p>Configure the module by adding directives to Apache's httpd.conf;</p></li>
                     <li><p>Start Apache and test the module to confirm that authentication is working.</p></li>
                   </ul>
@@ -92,6 +93,11 @@
                         may have to obtain it manually. Ask your administrator which method to use.</p>
                     </li> 
                   </ul>
+
+                  <p>Note: one additional suggestion for more advanced uses. Review the sections on
+                    <a href="#vhosts">virtual host configuration</a> or <a href="#clusters">clustered host 
+                    configuration</a> now if either of those scenarios apply. The information will help you think 
+                    about and tailor the simple case instructions while you go through them.</p>
 
                   <h4><a name="req">System Requirements</a></h4>
 
@@ -349,7 +355,7 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                       <p> 
                       <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
                         <tr> 
-                          <td> <pre>$ keyclient</pre></td>
+                          <td> <pre>$ ./keyclient</pre></td>
                         </tr>
                       </table>
                       </p>
@@ -405,7 +411,7 @@ appserver.example.edu</pre></td>
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
                           <TD> <pre>$ cd /usr/local/pubcookie
-$ keyclient -G keys/pubcookie_granting.cert</pre></TD>
+$ ./keyclient -G keys/pubcookie_granting.crt</pre></TD>
                         </TR>
                       </TABLE></p>
                       <p>If keyclient cannot download your "granting" certificate, your keyserver
@@ -487,7 +493,7 @@ AddModule mod_pubcookie.c
 # Pubcookie configuration section
 #
 
-PubcookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.cert
+PubcookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.crt
 PubcookieSessionKeyFile /etc/httpd/conf/ssl.key/appserver.key
 PubcookieSessionCertFile /etc/httpd/conf/ssl.crt/appserver.crt
 PubcookieLogin https://weblogin.example.edu/
@@ -508,7 +514,7 @@ PubcookieInactiveExpire -1
                       <p>Notes:</p>
                       <ul>
                       <li>
-                        <p>Those are the recommended server config directives. They're not all required to
+                        <p>These are the recommended server config directives. They're not all required to
                         initialize the module. But it's a good exercise to configure them explicitly.</p>
                       </li>
                       <li>
@@ -546,6 +552,7 @@ PubcookieInactiveExpire -1
                         key requires a passphrase.</p>
                       </li>
                     </ul>
+
                       <p>To learn more about each directive, consult the module's <a 
                       href="mod_pubcookie-directives.html">run-time configuration directives</a> reference.</p>
 
@@ -807,6 +814,26 @@ href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKey
 and <a href="mod_pubcookie-directives.html#PubcookieSessionCertFile">PubcookieSessionCertFile</a>
 directives for each virtual host. It may be acceptable to use defaults
 for all other module settings.</p>
+
+<h4><a name="clusters">Clustered Host Configuration</a></h4>
+
+<p>System administrators frequently cluster together several hosts 
+configured identically to provide redundancy (either for performance or 
+stability). In this section, we're assuming that you have a set of 
+machines with an identical SSL certificate and key on them.</p>
+
+<p>For instance, a site might have 15 webmail servers named 
+<i>webmail1.example.edu</i> through <i>webmail15.example.edu</i>
+with 15 unique IP addresses. As cluster peers, they're each equipped
+with the same SSL keypair for <i>webmail.example.edu</i>. A load-based DNS rotary 
+or Cisco Load Director might control the IP address for the
+<i>webmail.example.edu</i> name itself.</p>
+
+<p>To support such a cluster, use <tt>keyclient</tt> on one host,
+say <i>webmail1.example.edu</i>, to generate a <tt>webmail.example.edu</tt> 
+DES key. Then use <tt>keyclient -d</tt> on all other webmail hosts
+to download the existing application key to the remaining servers.
+This way, they all use the same key.</p>
 
 <h4><a name="debug">Troubleshooting</a></h4>
 
