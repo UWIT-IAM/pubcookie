@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.11 2002-08-15 22:50:06 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.12 2002-10-18 22:16:31 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -353,7 +353,6 @@ static int ldap_v( const char *userid,
     while ( (got_error == -2)
             && (ldap_uri_list != NULL)
             && (ldap_uri_list[i] != NULL) ) {
-
         char *ldap_uri_in = ldap_uri_list[i];
         char *ldap_uri;
         int len, num;

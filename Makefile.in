@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.13 2002-10-17 15:58:30 jjminer Exp $
+# $Id: Makefile.in,v 1.14 2002-10-18 22:16:30 jjminer Exp $
 
 @SET_MAKE@
 
@@ -47,7 +47,10 @@ LOGINLIBS=@LOGINLIBS@ -lcgic
 
 APXS=@APXS@
 
-CONFIGURE_TMP_FILES=config.status config.log src/config.h Makefile src/pbc_path.h stamp-h
+CONFIGURE_TMP_FILES=config.status config.log src/config.h Makefile \
+					src/pbc_path.h stamp-h
+
+CONFIGURE_TMP_DIRS=autom4te.cache
 
 CONFIGURE_FILES=configure configure.ac Makefile.in install-sh stamp-h.in
 
@@ -159,6 +162,7 @@ DISTNAME := $(BASENAME)-$(VERSION)
 all: Makefile @login_server@ @apache_module@
 
 $(srcdir)/configure: configure.ac
+	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
 	cd $(srcdir) && autoconf
 
 # autoheader might not change config.h.in, so touch a stamp file.
@@ -290,6 +294,7 @@ clean::
 
 distclean:: clean
 	$(FORCE_RM) $(CONFIGURE_TMP_FILES)
+	$(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
 	(cd cgic; $(MAKE) distclean)
 
 # APXS Stuff.

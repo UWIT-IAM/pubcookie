@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.23 2002-08-21 18:29:26 greenfld Exp $
+    $Id: flavor_basic.c,v 1.24 2002-10-18 22:16:31 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -207,6 +207,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
     struct credentials *creds = NULL;
     struct credentials **credsp = NULL;
 
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n" );
+
     /* make sure we're initialized */
     assert(v != NULL);
     assert(l != NULL);
@@ -306,6 +308,9 @@ static login_result process_basic(login_rec *l, login_rec *c,
                 creds = NULL;
             }
 
+            pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                             "process_basic: good login, goodbye\n" );
+
             return LOGIN_OK;
         } else {
             /* authn failed! */
@@ -313,12 +318,16 @@ static login_result process_basic(login_rec *l, login_rec *c,
                 *errstr = "authentication failed";
             }
             pbc_log_activity(PBC_LOG_AUDIT,
-                             "flavor_basic: login failed for %s: %s", l->user,
+                             "flavor_basic: login failed for %s: %s", 
+                             l->user == NULL ? "(null)" : l->user,
                              *errstr);
 
             /* make sure 'l' reflects that */
             l->user = NULL;	/* in case wrong username */
             print_login_page(l, c, errstr);
+
+            pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                             "process_basic: login in progress, goodbye\n" );
             return LOGIN_INPROGRESS;
         }
     } else if (l->session_reauth) {
@@ -326,6 +335,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
         pbc_log_activity(PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
 
         print_login_page(l, c, errstr);
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
         /* l->check_error will be set whenever we couldn't decode the
@@ -336,6 +347,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
         pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
         print_login_page(l, c, errstr);
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
         /* if l->check_error is NULL, then 'c' must be set and must
@@ -351,11 +364,15 @@ static login_result process_basic(login_rec *l, login_rec *c,
         pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
         print_login_page(l, c, errstr);
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
     } else { /* valid login cookie */
         pbc_log_activity(PBC_LOG_AUDIT,
                          "flavor_basic: free ride", l->user);
+        pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
+                         "process_basic: free ride, goodbye\n" );
         return LOGIN_OK;
     }
 }
