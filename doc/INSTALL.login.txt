@@ -17,7 +17,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.13 2002-06-05 16:53:17 greenfld Exp $
+    $Id: INSTALL.login.txt,v 1.14 2002-06-07 18:13:29 greenfld Exp $
  */
 
 
@@ -173,6 +173,22 @@ basic_verifier - the verifier to use for the "basic" flavor
 keymgt_uri - the location of the "keyserver" CGI.  See "Key
       Management" below.
 
+The following options should refer to the same files that your web
+server uses for SSL.  At least one of 'ssl_ca_file' and 'ssl_ca_path'
+should be specified.  
+
+ssl_key_file - the location of the SSL key
+ssl_cert_file - the location of the SSL certificate 
+
+If your institution uses a single CA without any intermediate
+certificates, set 'ssl_ca_file' to the path of the CA's certificate.
+If your institution uses multiple CAs or intermediate certificates,
+you'll need a directory ('ssl_ca_path') contain those certificates
+named via their OpenSSL hashes.
+
+ssl_ca_file - the location of a single CA
+ssl_ca_path - a directory containing files named after their OpenSSL hash
+
 7. Localization
 
 The design of the login cgi preceded consideration of external use of
@@ -228,13 +244,11 @@ from inetd.
 
 Add a line like the following to the login server's inetd.conf:
 
-2222    stream  tcp     nowait  root    /usr/www/pubcookie/bin/keyserver keyserver -c /usr/www/conf/ssl.key/server.key -C /usr/www/conf/cacert.pem
+2222    stream  tcp     nowait  root    /usr/www/pubcookie/bin/keyserver keyserver
 
 where "/usr/www/pubcookie/bin/keyserver" is where the keyserver binary
-is installed, "/usr/www/conf/ssl.key/server.key" is the PEM encoded
-SSL server key/certificate used by your web server, and
-"/usr/www/conf/cacert.pem" is the PEM encoded certificate of the CA
-who has signed your SSL certificate.
+is installed.  Make sure that your "pubcookie/config" file is
+correctly configured.
 
 After adding this line, restart inetd.
 
@@ -242,7 +256,7 @@ After adding this line, restart inetd.
 
 Now run keyclient to generate a DES key for the login server:
 
-% /usr/www/pubcookie/bin/keyclient -c /usr/www/conf/ssl.key/server.key
+% /usr/www/pubcookie/bin/keyclient
 
 This will cause the keyserver program to generate a new DES key for
 the login server to use to provide confidentiality for the login
@@ -254,9 +268,11 @@ Generating DES keys for the application servers is just as easy as
 above---in fact, the exact same command works.
 
 It is important that the application server's SSL certicate is signed
-by the same certificate authority specified in the "-C" parameter to
-keyserver in inetd.conf.
+by the same certificate authority as is configured in the login
+server's config file.
 
+Remember that the application server will also need a correct 'config'
+file.
 
 *************************************************
    UPGRADING
@@ -274,7 +290,7 @@ keyserver in inetd.conf.
 * How do I configure multiple login servers?
 
 
-* How do I configure multiple application hosts?
+* How do I configure multiple redundant application hosts?
 
 
 
