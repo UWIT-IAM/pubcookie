@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.58 2005-02-07 22:26:37 willey Exp $
+ * $Id: keyserver.c,v 2.59 2005-02-24 20:11:49 willey Exp $
  */
 
 
@@ -427,10 +427,23 @@ static int test_peer (char *host, X509 * ccert)
 
     for (an = altnames; *an; an++) {
         if (!strcmp (host, *an)) {
-            pbc_log_activity (p, PBC_LOG_ERROR, "peer ok by altname");
+            pbc_log_activity (p, PBC_LOG_AUDIT, "peer ok by altname");
             free (altnames);
             return (1);
         }
+        if (**an == '*') {
+            int nc;
+            char *cp;
+            for (nc = 0, cp = *an; cp; cp = strchr (cp + 1, '.'), nc++);
+            if (!strcmp
+                (*an + 1, host + (strlen (host) - strlen (*an + 1)))) {
+                pbc_log_activity (p, PBC_LOG_AUDIT,
+                                  "peer ok by wildcard altname");
+                free (altnames);
+                return (1);
+            }
+        }
+
     }
     free (altnames);
     return (0);
