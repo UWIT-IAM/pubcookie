@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.16 1999-06-25 22:16:32 willey Exp $
+# $Id: Makefile,v 1.17 1999-07-08 22:54:06 willey Exp $
 #
 
 CC=gcc
@@ -14,7 +14,7 @@ MISC=README CHANGES Makefile Makefile.tmpl Makefile.apxs pubcookie_granting.cert
 BASENAME=pubcookie
 #sed -e '/^#define PBC_VERSION/!d' -e '/^#define PBC_VERSION/s/^#define PBC_VERSION "\(a2\)".*$/\1/' pbc_version.h` \
 
-VERSION=a5reebok2
+VERSION=a5release1
 DIR_NAME=$(BASENAME)-$(VERSION)
 TARFILE=$(BASENAME)-$(VERSION).tar
 
