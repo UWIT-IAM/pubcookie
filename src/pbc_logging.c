@@ -19,6 +19,10 @@
 # include <syslog.h>
 #endif /* HAVE_SYSLOG_H */
 
+#include "libpubcookie.h"
+#include "pbc_myconfig.h"
+#include "pbc_logging.h"
+
 #ifdef NEED_SYSLOG_NAMES
 
 typedef struct _code {
@@ -58,10 +62,6 @@ CODE facilitynames[] =
 };
 
 #endif /* NEED_SYSLOG_NAMES */
-
-#include "libpubcookie.h"
-#include "pbc_myconfig.h"
-#include "pbc_logging.h"
 
 static void mylog(int logging_level, const char *mymsg);
 
