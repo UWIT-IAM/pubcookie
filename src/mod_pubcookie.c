@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.61 2001-10-09 21:52:56 willey Exp $
+    $Id: mod_pubcookie.c,v 1.62 2001-10-18 00:44:25 willey Exp $
  */
 
 /* apache includes */
@@ -77,6 +77,7 @@ typedef struct {
   int           non_ssl_ok;
   unsigned char *appid;
   char          creds;
+  int		end_session;
   char          *force_reauth;
   int           redir_reason_no;
   int           session_reauth;
@@ -996,6 +997,7 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
     cfg->appid = ncfg->appid ? ncfg->appid : pcfg->appid;
     cfg->force_reauth = ncfg->force_reauth ? ncfg->force_reauth : pcfg->force_reauth;
     cfg->session_reauth = ncfg->session_reauth ? ncfg->session_reauth : pcfg->session_reauth;
+    cfg->end_session = ncfg->end_session ? ncfg->end_session : pcfg->end_session;
     return (void *) cfg;
 
 }
@@ -1340,14 +1342,29 @@ static int pubcookie_typer(request_rec *r) {
     cfg->has_granting = 0;
   }
 
+  /* if the inactivity timeout is turned off don't send a session cookie 
+     everytime, but be sure to send a session cookie if it's the first time
+     in the app
+   */
+
   if(!cfg->failed) {
     if (scfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: no failure\n");
-    /* if the inactivity timeout is turned off don't send a session cookie 
-       everytime, but be sure to send a session cookie if it's the first time
-       in the app
-     */
-    if( cfg->inact_exp > 0 || first_time_in_session ) {
+
+    if( cfg->end_session == PBC_END_SESSION ) {  /* clear session cookie */
+
+#ifdef PORT80_TEST
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=/; expires=%s;", 
+#else
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=/; expires=%s; secure", 
+#endif
+         make_session_cookie_name(r->pool, appid(r)), 
+	 PBC_CLEAR_COOKIE,
+         ap_get_server_name(r),
+         "Fri, 01-Jan-99 00:00:01 GMT");
+      ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+    }
+    else if( cfg->inact_exp > 0 || first_time_in_session ) {
       request_rec *rmain = main_rrec (r);
 
       /* make session cookie */
@@ -1734,6 +1751,18 @@ const char *set_session_reauth(cmd_parms *cmd, void *mconfig, int f) {
     return NULL;
 }
 
+/* sets flag to dump session cookies                                          */
+const char *set_end_session(cmd_parms *cmd, void *mconfig, int f) {
+    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+
+    if(f != 0)
+        cfg->end_session = PBC_END_SESSION;
+    else
+        cfg->end_session = 0;
+
+    return NULL;
+}
+
 /*                                                                            */
 const char *set_super_debug(cmd_parms *cmd, void *mconfig, int f) {
     server_rec *s = cmd->server;
@@ -1789,6 +1818,8 @@ command_rec pubcookie_commands[] = {
      "Turn on super debugging."},
     {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_OPTIONS, FLAG,
      "Force reauthentication for new sessions and session timeouts"},
+    {"PubcookieEndSession", set_end_session, NULL, OR_OPTIONS, FLAG,
+     "End application session"},
 /* we turn off ForceReauth because it sucks anyway
     {"PubcookieForceReauth", pubcookie_force_reauth, NULL, OR_OPTIONS, TAKE1,
      "Force the reauthentication loop through the login server"},
