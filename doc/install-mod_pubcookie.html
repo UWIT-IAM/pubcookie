@@ -290,14 +290,14 @@ keyclient*      keys/</pre></TD>
 
 		  <h4><a name="keyclient">Run Keyclient</a></h4>
 
-                  <p>Pubookie solves the problem of securely
-                    distributing symmetric encryption keys to participating servers by using a keyserver. 
-                    This section describes how to configure and run the Pubcookie keyclient utility 
-                    to request a key from your local keyserver.</p>
+                  <p>Pubookie solves the problem of securely distributing symmetric encryption keys by 
+                    introducing a keyserver. Participating servers make secure SSL/TLS connections to 
+                    keyserver to obtain a key. This section describes how to configure and run the
+                    Pubcookie keyclient utility to request a key from your local keyserver.</p>
 
-                  <p>Tip: Ask your keyserver administrator for advice about configuring keyclient,
-                    particularly regarding which Certificate Authority can verify the keyserver's 
-                    SSL certificate.</p>
+                  <p>Tip: Ask your keyserver administrator for advice about configuring the keyclient. It's
+                    particularly important to know the Certificate Authority that signed (and therefore can 
+                    verify) the keyserver's certificate.</p>
 
                   <p><b>To configure the keyclient:</b></p>
 
@@ -332,19 +332,14 @@ $ pico config</pre></td>
                     </table></p>
                     <p>Notes:</p>
                       <ul>
-                        <!-- P3.1 keyclient seems to support encrypted keys so lets comment this out for now
-                        <li><p>The keyclient cannot read encrypted RSA private keys; that is, to 
-                           run keyclient, your <tt>ssl_key_file</tt> cannot require a passphrase 
-                           to decrypt the private key.</p></li>
-                        -->
                         <li><p>To negotiate the SSL/TLS connection to your keyserver, the SSL 
                            certificate used by the keyclient (i.e., <tt>ssl_cert_file</tt>) 
                            must be signed by a Certificate Authority trusted by your site's keyserver.</p></li>
-                        <li><p>Likewise, the certificate presented by the keyserver to the keyclient
+                        <li><p>Likewise, the certificate presented by the keyserver 
                            must be signed by a CA trusted by your keyclient; that is, it will be
                            verified using the CA root certificates define by <tt>ssl_ca_file</tt>  
-                           or <tt>ssl_ca_path</tt>. Ask your administrator if they recommend or require 
-                           specific CAs.</p></li>
+                           or <tt>ssl_ca_path</tt>. Ask your site administrator what CA root certificate
+                           should be used to verify your keyserver certificate.</p></li>
                       </ul>
                     <li> 
                       <p>Save the changes to your config file.</p>
@@ -370,19 +365,21 @@ Set crypt key for appserver.example.edu</pre>
                       </table> 
                     <p>Notes:</p>
                       <ul>
-                        <!-- P3.1 we think it can read encrypted keys 
-                        <li><p>The keyclient cannot read encrypted RSA private keys. 
-                           If reading your key (i.e., <tt>ssl_key_file</tt>) normally 
-                           requires a passphrase, then keyclient will fail, complaining that it 
-                           "couldn't parse the session key". To work around this contraint, make a 
-                           temporary, unencrypted copy of your private key.</p>
-                        -->
                         <li><p>The keyclient uses the installation prefix by default to determine
                            the path to your keys directory. You can override this using the <tt>keydir</tt>
                            config file variable.</p></li>
                         <li><p>The key's filename is derived from your certificate's Common Name field.</p></li>
+                        <li><p>If you use a wild card certificate (e.g., the CN is <i>*.subdomain.example.edu</i>), 
+                           use the <tt>-H &lt;hostname&gt;</tt> keyclient option to specify your actual server name (e.g., <tt>-H
+                           host.subdomain.example.edu</tt>).</p></li>
+                        <li><p>Likewise, if your server name is one of several names in your certificate's 
+                           Subject Alt Name field, use the <tt>-H &lt;hostname&gt;</tt> keyclient option to specify 
+                           the server name that should be used for the key request.</p></li>
+                        <li><p>If keyclient says "<tt>NO you (appserver.example.edu) are not authorized 
+                          for keys</tt>", contact your local site administrator to learn how to register
+                          your application server.</p></li>
                       </ul>
-                      <p>If keyclient fails, note any error messages and refer 
+                      <p>If keyclient fails for any other reason, note any error messages and refer 
                         to the <a href="#debug">Troubleshooting</a> section below.</p>
                     <li>
                     <p>List the contents of your keys directory to 
@@ -404,7 +401,6 @@ appserver.example.edu</pre></td>
                           href="mod_pubcookie-directives.html#PubcookieCryptKeyFile">PubcookieCryptKeyFile</a>
                           directive.</p></li>
                       </ul>
-
                   </ol>
 
                   <h4><a name="granting">To download your site's Pubcookie "granting" certificate:</a></h4>
@@ -424,14 +420,18 @@ $ ./keyclient -G keys/pubcookie_granting.cert
 Granting cert saved to keys/pubcookie_granting.cert</pre></TD>
                         </TR>
                       </TABLE></p>
-                      <p>If keyclient cannot download your "granting" certificate, your keyserver
-                         may not support this retrieval method and you'll have to obtain a copy manually.</p>
+                      <p>Notes:</p>
+                      <ul>
+                        <li><p>If you use a wild card certificate or a Subject Alt Name, use the same 
+                          <tt>-H</tt> option used to request your encryption key.</p></li>
+                        <li><p>During configuration, this certificate corresponds with 
+                          the <a href="mod_pubcookie-directives.html#PubcookieGrantingCertFile">PubcookieGrantingCertFile</a>
+                          directive in httpd.conf.</p></li>
+                      </ul>
 		    </li> 
-
 		  </ol>
-                  <p>Note: During configuration, this certificate corresponds with 
-                    the <a href="mod_pubcookie-directives.html#PubcookieGrantingCertFile">PubcookieGrantingCertFile</a>
-                    directive in httpd.conf.</p>
+                  <p>If keyclient cannot download your "granting" certificate, your keyserver
+                  may not support this retrieval method and you'll have to obtain a copy manually.</p>
 
                   <h4><a name="config"></a>Configuration (httpd.conf)</h4>
 

@@ -389,9 +389,8 @@ which hosts can request keys, you can do so by defining a
 <h4><a name="keymgmt">Key Management Methodology</a></h4>
 
 <p>This section describes how symmetric encryption keys are 
-managed by the keyserver, which issues keys to participating servers,
-including all login servers and application servers, upon
-request by the keyclient.</p>
+managed by the Pubcookie keyserver. It issues keys to all participating 
+servers, including all login servers and application servers.</p>
 
 <p><b>The keystore:</b><br />
 A master copy of each 2048-byte DES key is stored on 
@@ -412,43 +411,63 @@ total 204
 
 <p><b>New key generation:</b><br />
 New keys are generated and issued by the keyserver upon request. Running 
-keyclient on a host initiates the request. If they keyclient host is 
+keyclient on a host initiates the request. If the keyclient host is 
 authorized, and the keyclient and keyserver trust each other, the 
 request is fulfilled.</p>
 
-<p><b>Keyclient host authorization:</b><br />
-The keyserver performs authorization on keyclient requests when
-<tt>keyserver_client_list</tt> is set. Otherwise, it will issue keys
-to any keyclient with a verifiable SSL certificate.</p>
+<p><b>New keyclient host authorization:</b><br />
+If the <tt>keyserver_client_list</tt> config variable is set, keyserver 
+performs authorization on all keyclient requests. If it is not set,
+keyserver will issue keys to any trusted keyclient.</p>
 
-<p>When keyclient authorization is enabled, authorization is based on the
+<p>When authorization is enabled, grant-or-deny decisions are based on the
 presence a host in the keystore. If keyserver finds a host in the
 keystore, then that host can request a key. This seems like a catch-22:
 <i>to create a new host key in the keystore, the key must already exist
-in the keystore</i>. But it's not, becuase site administrators can use
+in the keystore</i>. But it's not: site administrators can use
 the keyclient's "permit" option to authorize new servers to request keys.
 For example:</p>
 
 <pre>$ keyclient -P new.example.edu
 Host new.example.edu is permitted</pre>
 
-<p>This can be done manually or by some kind of automated web-based
-registration service. The <tt>keyserver_client_list</tt> defines which
-hosts are authorized to use the permit option, allowing you to authorize
-new hosts without necessarily having to log in to the login server to do
-so.</p>
+<p>This can be done manually by the login server administrator or by 
+some kind of automated web-based registration service. The 
+<tt>keyserver_client_list</tt> defines which hosts are authorized to use 
+the permit option, allowing you to authorize new hosts without necessarily 
+having to log in to the login server to do so.</p>
 
-<p><b>SSL/TLS mutual authentication</b><br />
-Pubcookie uses elements of public-key infrastructure (PKI) for mutual 
-server authentication and data privacy in the SSL/TLS connection between
-keyclient and keyserver. This is where the trusted Certificat Authority 
-certificates come in.</p>
+<p><b>Trust: SSL/TLS mutual authentication</b><br />
+Pubcookie uses elements of Public-Key Infrastructure (PKI) and SSL/TLS 
+for mutual server authentication and data privacy between keyclient and 
+keyserver. Trust is anchored by the Certificate Authorities used to sign,
+issue, and verify the certificates exchanged during keyclient connections.
 
-<p>The keyclient must verify your keyserver SSL certificate. And the
-keyserver must verify each keyclient's SSL certificate. To do so, they
-both use <tt>ssl_ca_file</tt> or <tt>ssl_ca_path</tt> to find trusted CA
-root certificates (to which you can add your own institutional CA if you
-have one) to verify the peer certificates.</p>
+<p>Mutual authentication means the keyclient and keyserver must identify
+each other. The keyclient must verify the SSL certificate presented by the
+keyserver. Likewise, the keyserver must verify the SSL certificates presented
+by keyclients. To do so, they both require trusted CA root certificates to do
+the verification. This is configured via <tt>ssl_ca_file</tt> or 
+<tt>ssl_ca_path</tt>, which might point to your own institutional CA root
+certificate or pehaps the CA root certificate bundle that comes with
+OpenSSL, whatever you happen to be basing your trust policy on.</p>
+
+<p><b>Working with untrusted keyclients:</b><br />
+An untrusted keyclient is one using a SSL certificate signed by a Certificate
+Authority the keyserver doesn't trust. To allow such keyclients to request keys
+without having to obtain another certificate, there's a workaround. The login
+server administrator can cache the keyclient's SSL certificate (public key) in
+the keystore. The keyserver can then use the public key itself to verify the 
+keyclient. As a result, an otherwise untrusted keyclient can request keys without
+changing the overall CA trust policy and configuration.</p>
+
+<p>Note: the keyclient's <tt>-U cert_file</tt> option will upload a certificate
+to the keyserver, e.g.:</p>
+
+<pre>$ ./keyclient -U untrusted.example.edu.crt</pre>
+
+<p>This command can only be run from a trusted host, i.e. in the 
+<tt>keyserver_client_list</tt> list.</p>
 
 <h4><a name="keyclient">Run Keyclient For Login Server</a></h4>
 
@@ -943,7 +962,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.29 2004-12-04 00:41:25 dors Exp $
+$Id: install-login.html,v 1.30 2004-12-05 16:45:13 dors Exp $
 </pre>
 </body>
 
