@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.6 2002-06-13 20:52:55 jjminer Exp $
+    $Id: keyclient.c,v 2.7 2002-06-25 14:41:18 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -205,11 +205,12 @@ int main(int argc, char *argv[])
 
     if (!keyhost) {
         keyhost = strdup(keymgturi);
-        if (!strncmp(keyhost, "https://", 8)) keyhost += 8;
-        p = strchr(keyhost, '/');
-        if (p) {
-            *p = '\0';
-        }
+    }
+
+    if (!strncmp(keyhost, "https://", 8)) keyhost += 8;
+    p = strchr(keyhost, '/');
+    if (p) {
+        *p = '\0';
     }
 
     p = strchr(keyhost, ':');

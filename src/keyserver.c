@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.8 2002-06-13 21:09:22 jjminer Exp $
+    $Id: keyserver.c,v 2.9 2002-06-25 14:41:18 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -25,6 +25,8 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #ifndef KEYSERVER_CGIC
 
@@ -92,6 +94,8 @@ void myprintf(const char *format, ...)
 int debug = 1;
 const char *keyfile = "server.pem";
 const char *certfile = "server.pem";
+const char *cadir = NULL;
+const char *cafile = NULL;
 
 enum optype {
     NOOP,
@@ -108,6 +112,7 @@ void pushkey(const char *peer)
 {
     char **lservers = libpbc_config_getlist("login_servers");
     char hostname[1024];
+    char *lservername, *p;
     int x;
     int res;
 
@@ -124,10 +129,27 @@ void pushkey(const char *peer)
 
     x = 0;
     for (x = 0; lservers[x] != NULL; x++) {
-        if (!strcasecmp(hostname, lservers[x])) {
+        /* login_servers (should?  might?) contain a URI */
+
+        /* break out the hostname and see if that is us */
+        lservername = strdup(lservers[x]);
+        if (!strncmp(lservername, "https://", 8)) lservername += 8;
+        p = strchr(lservername, '/');
+        if (p) {
+            *p = '\0';
+        }
+        p = strchr(lservername, ':');
+        if (p) {
+            *p = '\0';
+        }
+
+        if (!strcasecmp(hostname, lservername)) {
             /* don't push the key to myself */
+            free(lservername);
             continue;
         }
+
+        free(lservername);
 
         syslog(LOG_INFO, "setting %s's key on %s", peer, lservers[x]);
 
@@ -143,15 +165,19 @@ void pushkey(const char *peer)
                         "-L", lservers[x],
                         "-k", keyfile, 
                         "-c", certfile, 
+                        (cadir != NULL) ? "-D" : "", 
+                        (cadir != NULL) ? cadir : "",
+                        (cafile != NULL) ? "-C" : "",
+                        (cafile != NULL) ? cafile : "",
                         "-u", "-h", peer, NULL);
             syslog(LOG_ERR, "execl(): %m");
             exit(2);
         }
 
         /* parent */
-        res = wait(&res);
+        wait(&res);
         syslog(LOG_INFO, "setting %s's key on %s: %s", peer, lservers[x], 
-               res == 0 ? "done" : "error");
+               WEXITSTATUS(res) == 0 ? "done" : "error");
     }
 
     free(lservers);
@@ -300,8 +326,6 @@ int main(int argc, char *argv[])
 {
     int c;
     int filetype = SSL_FILETYPE_PEM;
-    const char *cafile = NULL;
-    const char *cadir = NULL;
     char *peer = NULL;
     char *p;
     char buf[2048];
@@ -422,7 +446,6 @@ int main(int argc, char *argv[])
 	ERR_print_errors_fp(stderr);
 	exit(1);
     }
-
     for (p = buf; *p != '\0'; p++) {
 	/* look for 'genkey' */
 	if (*p == '?' && !strncmp(p+1, "genkey=yes", 10)) {
@@ -438,7 +461,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* look for 'setkey' */
-	else if (*p == '?' && !strncmp(p+1, "setkey", 7)) {
+	else if (*p == '?' && !strncmp(p+1, "setkey", 6)) {
 	    char *q;
 
 	    p++; /* ? */
