@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.35 2003-04-20 00:17:13 jjminer Exp $
+# $Id: Makefile.in,v 1.36 2003-04-20 16:17:14 jjminer Exp $
 
 @SET_MAKE@
 
@@ -319,15 +319,18 @@ install: $(KEY_DIR) @install_login@ @install_apache@
 install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
-	-@$(TEST) ! -f $(TEMPLATE_DIR)/login && \
+	-$(TEST) ! -f $(TEMPLATE_DIR)/login && \
 		$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
 	$(INSTALL_OTHER) $(LOGIN_IMAGES) $(TEMPLATE_DIR).default/images
-	-@$(TEST) ! -f $(LOGIN_IMG_DIR)/check.gif && \
+	-$(TEST) ! -f $(LOGIN_IMG_DIR)/check.gif && \
 		$(INSTALL_OTHER) $(LOGIN_IMAGES) $(LOGIN_IMG_DIR)
 	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
-	-@$(TEST) "x$(CERT_DB_SOURCE)" != "x" && \
+	-$(TEST) "x$(CERT_DB_SOURCE)" != "x" && \
 		$(INSTALL_OTHER) $(CERT_DB_SOURCE)/cert7.db $(CERT_DB_SOURCE)/key3.db \
 						 $(CERT_DB_DIR)
+	$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)
+	-$(TEST) ! -f $(PUBCOOKIE_DIR)/config && \
+		$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)/config
 
 install-apache: apache_module
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
