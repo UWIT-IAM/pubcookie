@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.123 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: index.cgi.c,v 1.124 2004-04-07 05:24:12 jteaton Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1812,6 +1812,8 @@ int cgiMain()
     /* we pass a pointer around that is an Apache memory pool if we're
        using apache, here we just pass a void pointer */
     void *p = NULL;
+
+    cgiMain_init();
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
               "cgiMain() Hello (%d)\n", cgi_count++);

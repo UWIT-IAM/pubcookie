@@ -17,7 +17,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.32 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: verify_kerberos5.c,v 1.33 2004-04-07 05:24:12 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -281,7 +281,7 @@ static int creds_derive(pool *p, struct credentials *creds,
 {
     krb5_context context;
     char tfname[40];
-    char tfname_target[40];
+    char tfname_target[50];
     krb5_ccache ccache;
     krb5_ccache ccache_target;
     int i = 0;
@@ -290,7 +290,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     assert(creds != NULL);
     assert(l->host != NULL && target_array != NULL);
 
-    snprintf(tfname, sizeof(tfname), "/tmp/k5cc_%d_%s@%s", getpid(), l->user, l->realm);
+    snprintf(tfname, sizeof(tfname), "/tmp/k5cc_%d_%s", getpid(), l->user);
     snprintf(tfname_target, sizeof(tfname_target), "%s_target", tfname);
 
     /* unpack 'creds' into a ticket file */
