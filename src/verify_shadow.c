@@ -7,11 +7,12 @@
  */
 
 #include <stdlib.h>
+#include "verify.h"
+
+#ifdef HAVE_SHADOW
 #include <shadow.h>
 #include <crypt.h>
 #include <string.h>
-
-#include "verify.h"
 
 static int shadow_v(const char *userid,
 		    const char *passwd,
@@ -60,5 +61,22 @@ static int shadow_v(const char *userid,
     *errstr=("username/password pair is incorrect");
     return -1;
 }
+
+#else /* HAVE_SHADOW */
+
+static int shadow_v(const char *userid,
+		    const char *passwd,
+		    const char *service,
+		    const char *user_realm,
+		    struct credentials **creds,
+		    const char **errstr)
+{
+    if (creds) *creds = NULL;
+
+    *errstr = "shadow verifier not implemented";
+    return -1;
+}
+
+#endif /* HAVE_SHADOW */
 
 verifier shadow_verifier = { "shadow", &shadow_v, NULL, NULL };

@@ -28,7 +28,7 @@ verifier *get_verifier(const char *name)
 	v++;
     }
 
-    if ((*v)->v) return (*v);
+    if ( *v && (*v)->v) return (*v);
     else return NULL;
 }
 
@@ -46,55 +46,55 @@ int main(int argc, char *argv[])
     struct credentials *creds;
 
     if (argc < 3) {
-	fprintf(stderr, "%s <verifier> <user> <pass> [realm] [service]\n", 
-		argv[0]);
-	exit(1);
+        fprintf(stderr, "%s <verifier> <user> <pass> [realm] [service]\n", 
+                argv[0]);
+        exit(1);
     }
 
     v = get_verifier(argv[1]);
     if (!v) {
-	printf("no such verifier: %s\n", argv[1]);
-	exit(1);
+        printf("no such verifier: %s\n", argv[1]);
+        exit(1);
     }
-    
+
     if (r = v->v(argv[2], argv[3], 
-		 argc > 4 ? argv[5] : NULL, 
-		 argc > 3 ? argv[4] : NULL,
-		 &creds, &errstr)) {
-	printf("verifier failed: %d %s\n", r, errstr);
-	return r;
+                 argc > 4 ? argv[5] : NULL, 
+                 argc > 3 ? argv[4] : NULL,
+                 &creds, &errstr)) {
+        printf("verifier failed: %d %s\n", r, errstr);
+        return r;
     }
-	
+
     printf("success!\n");
     if (creds) {
-	int s;
-	struct credentials *newcreds;
+        int s;
+        struct credentials *newcreds;
 
-	printf("got creds, size %d:\n", creds->sz);
-	for (s = 0; s < creds->sz; s++) {
-	    if (isprint(creds->str[s])) putchar(creds->str[s]);
-	    else putchar('.');
-	}
-	putchar('\n');
+        printf("got creds, size %d:\n", creds->sz);
+        for (s = 0; s < creds->sz; s++) {
+            if (isprint(creds->str[s])) putchar(creds->str[s]);
+            else putchar('.');
+        }
+        putchar('\n');
 
 
-	printf("\n"
-	       "attempting to get imap/cyrus.andrew.cmu.edu credential...\n");
+        printf("\n"
+               "attempting to get imap/cyrus.andrew.cmu.edu credential...\n");
 
-	if (!v->cred_derive(creds, "vtest", "imap/cyrus.andrew.cmu.edu",
-			    &newcreds) &&
-	    newcreds) {
-	    printf("got newcreds, size %d:\n", newcreds->sz);
-	    for (s = 0; s < newcreds->sz; s++) {
-		if (isprint(newcreds->str[s])) putchar(newcreds->str[s]);
-		else putchar('.');
-	    }
-	    putchar('\n');
-	} else {
-	    printf("failed.\n");
-	}
+        if (!v->cred_derive(creds, "vtest", "imap/cyrus.andrew.cmu.edu",
+                            &newcreds) &&
+            newcreds) {
+            printf("got newcreds, size %d:\n", newcreds->sz);
+            for (s = 0; s < newcreds->sz; s++) {
+                if (isprint(newcreds->str[s])) putchar(newcreds->str[s]);
+                else putchar('.');
+            }
+            putchar('\n');
+        } else {
+            printf("failed.\n");
+        }
     }
-    
+
     return 0;
 }
 
