@@ -41,4 +41,4 @@ char* pbc_create_log_message(char *info, char *user, char *app_id);
  */
 void pbc_log_close();
 
-#endif INCLUDED_PBC_LOGGING_H
+#endif /* INCLUDED_PBC_LOGGING_H */
