@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.11 1999-08-23 19:14:51 willey Exp $
+    $Id: libpubcookie.h,v 1.12 2000-09-25 18:05:28 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -60,7 +60,6 @@ unsigned char *libpbc_update_lastts_p(pool *, pbc_cookie_data *,
 md_context_plus *libpbc_sign_init_p(pool *, char *);
 md_context_plus *libpbc_verify_init_p(pool *, char *);
 void libpbc_pubcookie_init_p(pool *);
-void libpbc_pubcookie_exit_p(pool *);
 unsigned char *libpbc_alloc_init_p(pool *, int);
 unsigned char *libpbc_gethostip_p(pool *);
 crypt_stuff *libpbc_init_crypt_p(pool *, char *);
@@ -87,7 +86,6 @@ unsigned char *libpbc_update_lastts_p(ap_pool *, pbc_cookie_data *,
 md_context_plus *libpbc_sign_init_p(ap_pool *, char *);
 md_context_plus *libpbc_verify_init_p(ap_pool *, char *);
 void libpbc_pubcookie_init_p(ap_pool *);
-void libpbc_pubcookie_exit_p(ap_pool *);
 unsigned char *libpbc_alloc_init_p(ap_pool *, int);
 unsigned char *libpbc_gethostip_p(ap_pool *);
 crypt_stuff *libpbc_init_crypt_p(ap_pool *, char *);
@@ -113,7 +111,6 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *,
 md_context_plus *libpbc_sign_init_np(char *);
 md_context_plus *libpbc_verify_init_np(char *);
 void libpbc_pubcookie_init_np();
-void libpbc_pubcookie_exit_np();
 unsigned char *libpbc_alloc_init_np(int);
 unsigned char *libpbc_gethostip_np();
 crypt_stuff *libpbc_init_crypt_np(char *);
