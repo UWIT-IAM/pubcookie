@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.15 2004-08-18 00:53:10 willey Exp $
+ * $Id: ntmpl.c,v 1.16 2004-08-19 19:21:32 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -75,25 +75,25 @@ static long file_size(pool *p, FILE *afile)
 /*
  * return a template html file
  */
-static char *get_file_template(pool *p, const char * fpath, const char *fname)
+static char *get_file_template(pool *p, const char * fpath, const char *fname, int sub_len, long *outlen)
 {
     char *templatefile;
     char *template = NULL;
-    long len, readlen;
+    long readlen;
     FILE *tmpl_file;
 
     /* +2 for the "/" between and the trailing null */
-    len = strlen(fpath) + strlen(fname) + 2;
-    templatefile = (char *) malloc(len * sizeof(char));
+    *outlen = strlen(fpath) + strlen(fname) + 2;
+    templatefile = (char *) malloc(*outlen * sizeof(char));
     if (templatefile == NULL) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
                          "unable to malloc %d bytes for template filename %s", 
-                         len, fname);
+                         *outlen, fname);
         goto done;
     }
-    if ( snprintf(templatefile, len, "%s%s%s", fpath,
+    if ( snprintf(templatefile, *outlen, "%s%s%s", fpath,
                   fpath[strlen(fpath) - 1 ] == '/' ? "" : "/",
-                  fname) > len)  {
+                  fname) > *outlen)  {
        pbc_log_activity(p, PBC_LOG_ERROR, 
 		       "template filename overflow");
        goto done;
@@ -109,31 +109,32 @@ static char *get_file_template(pool *p, const char * fpath, const char *fname)
         return NULL;
     }
 
-    len=file_size(p, tmpl_file);
-    if (len==0) {
+    *outlen=file_size(p, tmpl_file);
+    if (*outlen==0) {
         goto done;
     }
 
-    template = (char *) malloc((len+1) * sizeof (char));
+    /* add in the length of the substitution text if there is such */
+    template = (char *) malloc( ((*outlen+1) + sub_len) * sizeof (char) );
     if (template == NULL) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
 		       "unable to malloc %d bytes for template file %s", 
-		       len+1, fname);
+		       *outlen+1, fname);
         goto done;
     }
 
     *template=0;
-    readlen = fread(template, 1, len, tmpl_file);
-    if (readlen != len) {
+    readlen = fread(template, 1, *outlen, tmpl_file);
+    if (readlen != *outlen) {
         pbc_log_activity(p, PBC_LOG_ERROR,
 		 "read %d bytes when expecting %d for template file %s", 
-		 readlen, len, fname);
+		 readlen, *outlen, fname);
         pbc_free(p, template);
         template = NULL;
         goto done;
     }
 
-    template[len]=0;
+    template[*outlen++]=0;
 
     pbc_fclose(p, tmpl_file);
 
@@ -160,11 +161,15 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
     const char *attr;
     const char *subst;
     va_list ap;
-    char *template = get_file_template(p, fpath, fname);
+    long len;
+    char *template = get_file_template(p, fpath, fname, 0, &len);
     char *t;
     char *percent;
     char candidate[256];
     int i;
+    const char func[] = "ntmpl_print_html";
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello", func);
 
     memset(candidate, 0, 256);
 
@@ -222,6 +227,9 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
         fputs(t, mirror);
 
     pbc_free(p, template);
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye", func);
+
 }
 
 /* in the absense of a better template library create html from sub-templates
@@ -230,77 +238,40 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
 char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
 {
     char *field_html = NULL;   /* net result */
-    char *fieldfile;
-    int filelen;
-    int field_len;
-    FILE *field_file;
-    char buf[PBC_1K];
-    int len = PBC_1K;
-    int current_len;
-    va_list ap;
+    char *buf;
+    long len;
+    va_list ap, ap2;
     char *t;
     char *percent;
     int i;
-    char candidate[PBC_1K];
+    char candidate[256];
     const char *attr;
     const char *subst;
     char func[] = "ntmpl_sub_template";
+    int subst_len = 0;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello", func);
 
-    filelen = strlen(fpath) + strlen("/") + strlen(fname) + 1;
+    memset(candidate, 0, 256);
 
-    fieldfile = malloc( filelen *sizeof(char) );
+    /* get lengths of substitution text */
+    va_start(ap2, fname);
+    while ( va_arg(ap2, const char *) != NULL ) {
+        subst_len += strlen(va_arg(ap2, const char *));
+    }
+    va_end(ap2);
 
-    if ( snprintf( fieldfile, filelen, "%s%s%s",
-                   fpath,
-                   fpath[strlen(fpath) - 1 ] == '/' ? "" : "/",
-                   fname ) > filelen )  {
-        /* Need to do something, we would have overflowed. */
-        abend(p, "field filename overflow!\n");
+    /* pull file into a string */
+    field_html = get_file_template(p, fpath, fname, subst_len, &len);
+    
+    buf = (char *)malloc(len * sizeof(char));
+    if (buf == NULL) {
+        pbc_log_activity(p, PBC_LOG_ERROR, "unable to malloc buffer");
+        goto done;
     }
 
-    field_file = pbc_fopen(p, fieldfile, "r" );
-
-    if (field_file == NULL) {
-        pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "%s: Cannot open sub-template file %s", 
-			 func, fieldfile);
-        return(NULL);
-    }
-
-    field_len = file_size(p, field_file);
-
-    if (field_len == 0)
-        return NULL;
-
-    if ( field_len >= sizeof(buf) ) {
-        pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "%s: Need bigger buffer for reading sub-template file, %D not big enough", func, sizeof(buf));
-        return(NULL);
-    }
-
-    field_html = malloc( (field_len + 1) * sizeof( char ) + len );
-
-    if ( field_html == NULL ) {
-        /* Out of memory! */
-        libpbc_abend(p,  "Out of memory allocating to field file" );
-    }
-
-    current_len = fread( buf, 1, field_len, field_file );
-
-    if (current_len != field_len) {
-        libpbc_abend(p,  "read %d when expecting %d on field file read.",
-                      current_len, field_len );
-    }
-
-    pbc_fclose(p, field_file);
-    if (fieldfile != NULL)
-        free(fieldfile);
-
-    buf[field_len] = '\0';
-    current_len = len;
-    strcpy(field_html, buf);
+    /* keep track of length to make doubly sure we don't overflow */
+    len -= strlen(field_html);
 
     t = field_html;
     /* look for the next possible substitution */
@@ -332,7 +303,7 @@ char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
 
         if (attr != NULL && subst != NULL) {
             
-            if ( current_len - strlen(subst) < 0 ) {
+            if ( len - strlen(subst) < 0 ) {
                 pbc_log_activity(p, PBC_LOG_ERROR, 
                          "%s: not enough room in buffer for substitutions", 
                          func);
@@ -349,7 +320,7 @@ char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
             /* move to the trailing % */
             percent = percent+(int)strlen(subst);
 
-            current_len -= strlen(subst);
+            len -= strlen(subst);
             
         }
         /* skip after the % */
@@ -357,6 +328,9 @@ char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
     }
 
 done: 
+    if ( buf != NULL )
+        pbc_free(p, buf);
+
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
                 func, field_html);
 
