@@ -37,4 +37,11 @@ status_part1
 status_part2
    xxx
 
-$Id: README,v 1.4 2002-06-04 02:34:34 greenfld Exp $
+error
+   displayed when the login flavor has decided that not only has this
+   authentication failed, but further authentications are extremely
+   likely to fail. you might want to include a "try again" link on
+   this page, but might also want to instruct users to call for more
+   information.
+
+$Id: README,v 1.5 2002-06-25 22:22:28 greenfld Exp $
