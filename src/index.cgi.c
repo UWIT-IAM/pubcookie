@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.31 2001-10-31 01:18:50 willey Exp $
+    $Id: index.cgi.c,v 1.32 2001-11-08 22:47:36 willey Exp $
  */
 
 
@@ -746,10 +746,6 @@ int vector_request(login_rec *l, login_rec *c)
         print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_NO_L, NO_CLEAR_LOGIN, YES_CLEAR_GREQ);
         return(PBC_FAIL);
     }
-    /* reauth-free-zone */
-    else if( l->ride_free_creds == PBC_CREDS_CRED1 ) { 
-        return(PBC_OK);
-    }
     /* session timeout requires reauth */
     else if( l->session_reauth == PBC_SESSION_REAUTH ) { 
         print_login_page(l, c, PRINT_LOGIN_PLEASE, LOGIN_REASON_SESS_REAUTH, NO_CLEAR_LOGIN, YES_CLEAR_GREQ);
@@ -942,25 +938,35 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     log_message("%s Printing login page, reason: %s", l->first_kiss, reason);
 
     switch (l->creds) {
-    case '1':
+    case PBC_CREDS_CRED1:
         field1_prompt = strdup(PROMPT_UWNETID);
         field2_prompt = strdup(PROMPT_PASSWD);
-        log_in_with = strdup("UW NetID and password");
-        focus_field = strdup("user");
+        if( (c!=NULL && c->user!=NULL) || (l!=NULL && l->user!=NULL) ) {
+            log_in_with = strdup("UW NetID password");
+            focus_field = strdup("pass");
+        }
+        else {
+            log_in_with = strdup("UW NetID and password");
+            focus_field = strdup("user");
+        }
         break;
-    case '2':
-        field1_prompt = NULL;
-        break;
-    case '3':
+    case PBC_CREDS_CRED3:
         field1_prompt = strdup(PROMPT_UWNETID);
         field2_prompt = strdup(PROMPT_PASSWD);
         field3_prompt = strdup(PROMPT_SECURID);
         if( l->ride_free_creds == PBC_CREDS_CRED1 ) {
             log_in_with = strdup("SecurID");
             focus_field = strdup("securid");
-        } else {
-            log_in_with = strdup("UW NetID, password, and SecurID");
-            focus_field = strdup("user");
+        } 
+        else {
+            if( (c!=NULL && c->user!=NULL) || (l!=NULL && l->user!=NULL) ) {
+                log_in_with = strdup("password, and SecurID");
+                focus_field = strdup("pass");
+            }
+            else {
+                log_in_with = strdup("UW NetID, password, and SecurID");
+                focus_field = strdup("user");
+            }
         }
         break;
     default:
@@ -1002,8 +1008,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
             G_REQ_RECIEVED,
             PBC_ENTRPRS_DOMAIN);
 
-    /* need to come back and fix the cursor focus stuff */
-    tmpl_print_out(TMPL_FNAME "login_part1", "", reason, message_out);
+    tmpl_print_out(TMPL_FNAME "login_part1", focus, reason, message_out);
 
 #ifndef FORM_FIELDS_IN_TMPL
     if(field1_prompt != NULL) {
@@ -1015,7 +1020,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
             field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
             prefilled_user = strdup(l->user);
         }
-        if( l->ride_free_creds == PBC_CREDS_CRED1 )
+        if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3)
             print_form_field(field1_prompt, 
                              "user", 
                              FIELD_ECHO_YES, 
@@ -1030,7 +1035,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     }
 
     if(field2_prompt != NULL) {
-        if( l->ride_free_creds == PBC_CREDS_CRED1 )
+        if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3)
             print_form_field(field2_prompt, 
                              "pass", 
                              FIELD_ECHO_STARS, 
