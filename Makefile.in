@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.36 2003-04-20 16:17:14 jjminer Exp $
+# $Id: Makefile.in,v 1.37 2003-05-14 23:38:52 jjminer Exp $
 
 @SET_MAKE@
 
@@ -317,20 +317,48 @@ keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 install: $(KEY_DIR) @install_login@ @install_apache@
 
 install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
-	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
-	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
-	-$(TEST) ! -f $(TEMPLATE_DIR)/login && \
-		$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
-	$(INSTALL_OTHER) $(LOGIN_IMAGES) $(TEMPLATE_DIR).default/images
-	-$(TEST) ! -f $(LOGIN_IMG_DIR)/check.gif && \
-		$(INSTALL_OTHER) $(LOGIN_IMAGES) $(LOGIN_IMG_DIR)
-	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
-	-$(TEST) "x$(CERT_DB_SOURCE)" != "x" && \
-		$(INSTALL_OTHER) $(CERT_DB_SOURCE)/cert7.db $(CERT_DB_SOURCE)/key3.db \
-						 $(CERT_DB_DIR)
+	@for file in $(INDEX_FILES); do \
+		echo $(INSTALL_BIN) $$file $(LOGIN_DIR); \
+		$(INSTALL_BIN) $$file $(LOGIN_DIR); \
+	done
+	@for file in $(LOGIN_TEMPLATES); do \
+		echo $(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default; \
+		$(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default; \
+	done
+	@for file in $(LOGIN_TEMPLATES); do \
+		bfile=`basename $$file`; \
+		$(TEST) ! -f $(TEMPLATE_DIR)/$$bfile && \
+		 	echo $(INSTALL_OTHER) $$file $(TEMPLATE_DIR) && \
+			$(INSTALL_OTHER) $$file $(TEMPLATE_DIR); \
+		true; \
+	done
+	@for file in $(LOGIN_IMAGES); do \
+		echo $(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default/images; \
+		$(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default/images; \
+	done
+	@for file in $(LOGIN_IMAGES); do \
+		bfile=`basename $$file`; \
+		$(TEST) ! -f $(LOGIN_IMG_DIR)/$$bfile && \
+			echo $(INSTALL_OTHER) $$file $(LOGIN_IMG_DIR) && \
+			$(INSTALL_OTHER) $$file $(LOGIN_IMG_DIR); \
+		true; \
+	done
+	@for file in $(KEYMGT_FILES); do \
+		echo $(INSTALL_BIN) $$file $(PUBCOOKIE_DIR); \
+		$(INSTALL_BIN) $$file $(PUBCOOKIE_DIR); \
+	done
+	@for file in $(CERT_DB_SOURCE)/cert7.db $(CERT_DB_SOURCE)/key3.db; do \
+		$(TEST) "x$(CERT_DB_SOURCE)" != "x" && \
+			echo $(INSTALL_OTHER) $$file $(CERT_DB_DIR) && \
+			$(INSTALL_OTHER) $$file $(CERT_DB_DIR); \
+		true; \
+	done
 	$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)
-	-$(TEST) ! -f $(PUBCOOKIE_DIR)/config && \
-		$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)/config
+	@$(TEST) ! -f $(PUBCOOKIE_DIR)/config && \
+		echo $(INSTALL_OTHER) doc/config.login.sample \
+			 $(PUBCOOKIE_DIR)/config && \
+		$(INSTALL_OTHER) doc/config.login.sample $(PUBCOOKIE_DIR)/config; \
+		true
 
 install-apache: apache_module
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
