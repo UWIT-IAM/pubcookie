@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.24 2002-08-01 00:17:58 willey Exp $
+    $Id: libpubcookie.h,v 1.25 2002-08-06 16:00:12 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -53,7 +53,7 @@
 
 #include "pubcookie.h"
 
-char *get_my_hostname();
+const char *get_my_hostname();
 
 /** 
  * find the credential id value for an authtype name
@@ -65,7 +65,7 @@ const char libpbc_get_credential_id(const char *name);
 #ifdef APACHE1_3
 #include "httpd.h"
 
-int libpbc_get_crypt_key_p(ap_pool *p, crypt_stuff *c_stuff, char *peer);
+int libpbc_get_crypt_key_p(ap_pool *p, crypt_stuff *c_stuff, const char *peer);
 
 unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
 				   unsigned char, 
@@ -87,8 +87,6 @@ pbc_cookie_data *libpbc_unbundle_cookie_p(ap_pool *, char *,
 					  const char *peer);
 unsigned char *libpbc_update_lastts_p(ap_pool *, pbc_cookie_data *,
 				      const char *peer);
-md_context_plus *libpbc_sign_init_p(ap_pool *, char *);
-md_context_plus *libpbc_verify_init_p(ap_pool *, char *);
 void libpbc_pubcookie_init_p(ap_pool *);
 unsigned char *libpbc_alloc_init_p(ap_pool *, int);
 unsigned char *libpbc_gethostip_p(ap_pool *);
@@ -112,7 +110,7 @@ int libpbc_generate_crypt_key_p(ap_pool *, const char *peer);
 int libpbc_set_crypt_key_p(ap_pool *, const char *key, const char *peer);
 #else
 
-int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *peer);
+int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, const char *peer);
 
 unsigned char *libpbc_get_cookie_np(unsigned char *, 
 				    unsigned char, 
@@ -135,7 +133,6 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *,
 unsigned char *libpbc_update_lastts_np(pbc_cookie_data *,
 				       const char *peer);
 md_context_plus *libpbc_sign_init_np(char *);
-md_context_plus *libpbc_verify_init_np(char *);
 void libpbc_pubcookie_init_np();
 unsigned char *libpbc_alloc_init_np(int);
 unsigned char *libpbc_gethostip_np();
