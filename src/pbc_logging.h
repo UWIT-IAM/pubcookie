@@ -15,6 +15,8 @@
 # define LOG_MAKEPRI(fac, pri) fac|pri
 #endif
 
+#include <stdarg.h>
+
 /**
  *Initializes the logging system.  Optional.
  */
