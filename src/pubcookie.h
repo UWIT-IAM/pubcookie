@@ -27,7 +27,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.12 2001-08-23 21:16:43 willey Exp $
+    $Id: pubcookie.h,v 1.13 2001-08-29 18:20:29 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -46,9 +46,6 @@
 #define PBC_SHORT_STRING 128
 #define PBC_RAND_MALLOC_BYTES 8
 
-#define OK 1
-#define FAIL 0
-
 #define PBC_X_STRING "XXXXXXXXXXXXX"
 #define PBC_XS_IN_X_STRING 13
 #define PBC_X_CHAR 'X'
@@ -62,8 +59,8 @@
 typedef struct {
     unsigned char	user[PBC_USER_LEN];
     unsigned char	version[PBC_VER_LEN];
-    unsigned char	appsrv_id[PBC_APPSRV_ID_LEN];
-    unsigned char	app_id[PBC_APP_ID_LEN];
+    unsigned char	appsrvid[PBC_APPSRV_ID_LEN];
+    unsigned char	appid[PBC_APP_ID_LEN];
     unsigned char	type;
     unsigned char	creds;
     int			serial;
