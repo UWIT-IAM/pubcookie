@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.42 2004-05-13 22:45:36 ryanc Exp $
+ * $Id: security_legacy.c,v 1.43 2004-07-29 00:23:51 jteaton Exp $
  */
 
 
@@ -326,8 +326,11 @@ int security_init(pool *p, security_context **contextp)
     /* test g_keyfile */
     if (access(g_keyfile, R_OK | F_OK)) {
         /* this is only a problem for login servers */
-        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-		"security_init: couldn't find granting keyfile (try setting granting_key_file?)");
+#ifdef LOGIN_SERVER
+        pbc_log_activity(p, PBC_LOG_ERROR,
+		"security_init: couldn't find granting keyfile (try setting granting_key_file?): tried %s", g_keyfile);
+        return -1;
+#endif
         g_keyfile = NULL;
     }
 

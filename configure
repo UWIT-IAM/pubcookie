@@ -9563,7 +9563,7 @@ s/^[^=]*=[ 	]*$//;
 }'
 fi
 
-DEFS=-DHAVE_CONFIG_H
+DEFS=-DHAVE_CONFIG_H 
 
 ac_libobjs=
 ac_ltlibobjs=

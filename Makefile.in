@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.58 2004-06-16 17:26:30 fox Exp $
+# $Id: Makefile.in,v 1.59 2004-07-29 00:23:51 jteaton Exp $
 
 @SET_MAKE@
 
@@ -47,7 +47,7 @@ CHMOD=@CHMOD@
 TEST=@TEST@
 
 LIBS=@LIBS@
-CPPFLAGS=@CPPFLAGS@ @DEFS@ -I$(builddir)/src @CGIC_INC@
+CPPFLAGS=@CPPFLAGS@ @DEFS@ -DLOGIN_SERVER -I$(builddir)/src @CGIC_INC@
 CFLAGS=@CFLAGS@ $(CPPFLAGS)
 LDFLAGS=@LDFLAGS@ $(LIBS)
 LOGINLIBS=@LOGINLIBS@ @CGIC_LIB@
@@ -273,7 +273,7 @@ all: $(builddir)/Makefile @login_server@ keyclient @apache_module@
 
 
 .c.o:
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(srcdir)/aclocal.m4
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
