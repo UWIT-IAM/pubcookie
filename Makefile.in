@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.31 2003-04-19 21:22:03 jjminer Exp $
+# $Id: Makefile.in,v 1.32 2003-04-19 21:25:48 jjminer Exp $
 
 @SET_MAKE@
 
@@ -312,6 +312,8 @@ install: $(KEY_DIR) @install_login@ @install_apache@
 install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
+	-test ! -f $(TEMPLATE_DIR)/login && \
+		$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
 	$(INSTALL_OTHER) $(LOGIN_IMAGES) $(TEMPLATE_DIR).default/images
 	-test ! -f $(LOGIN_IMG_DIR)/check.gif && \
 		$(INSTALL_OTHER) $(LOGIN_IMAGES) $(LOGIN_IMG_DIR)
