@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.16 1999-02-26 23:19:28 willey Exp $
+    $Id: pbc_config.h,v 1.17 1999-04-06 00:02:34 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -33,10 +33,11 @@
 #define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
 #define PBC_MAX_HARD_EXPIRE 12 * 60 * 60
 #define PBC_DEFAULT_EXPIRE_LOGIN 8 * 60 * 60
-#define PBC_GRANTING_EXPIRE 60
+#define PBC_GRANTING_EXPIRE 20
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
+/* why the hell is it PBC_NUWNETID_AUTHTYPE and not PBC_UWNETID_AUTHTYPE ???  */
 #define PBC_NUWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
@@ -63,7 +64,7 @@
 #define PBC_CREDS_NONE    '0'
 #define PBC_CREDS_UWNETID '1'
 #define PBC_CREDS_SECURID '2'
-#define PBC_CREDS_MCIS    '3'
+#define PBC_CREDS_UWNETID_SECURID '3'
 
 #define PBC_COOKIE_TYPE_NONE '0'
 #define PBC_COOKIE_TYPE_G    '1'
@@ -119,6 +120,7 @@
 #endif
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
+#define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) libpbc_gen_granting_req_p(p, a,b,c,d,e,f,g,h,i,j,k,l)
 #define libpbc_get_cookie(a,b,c,d,e,f,g,h) libpbc_get_cookie_p(p, a,b,c,d,e,f,g,h)
 #define libpbc_unbundle_cookie(a,b,c)  libpbc_unbundle_cookie_p(p, a,b,c)
 #define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_p(p, a,b,c)
@@ -140,6 +142,7 @@
 #define libpbc_stringify_cookie_data(a) 	   libpbc_stringify_cookie_data_p(p, a)
 
 #else
+#define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) libpbc_gen_granting_req_np(a,b,c,d,e,f,g,h,i,j,k)
 #define libpbc_get_cookie(a,b,c,d,e,f,g,h) libpbc_get_cookie_np(a,b,c,d,e,f,g,h)
 #define libpbc_unbundle_cookie(a,b,c)    libpbc_unbundle_cookie_np(a,b,c)
 #define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_np(a,b,c)
