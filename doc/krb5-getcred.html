@@ -10,7 +10,7 @@
 <h1>Kerberos Credential Passing</h1>
 
 <p>Note: Documentation can contain bugs too. The <a
-href="http://www.pubcookie.org/docs/getcred.html">online version of
+href="http://www.pubcookie.org/docs/krb5-getcred.html">online version of
 this document</a> is always the most up-to-date version. </p>
 
 <p><i>Included on this page:</i></p>
@@ -31,15 +31,18 @@ meaningful for sites with Kerberos 5 underpinings.
 
 <h4><a name="build">Build GetCred Flavor</a></h4>
 
-<p>[fixme: need instructions for building flavor_getcred along side of 
-flavor_basic.]</p>
+<p>Support for the "getcred" login flavor comes for free; you don't
+actually have to do anything to build it in. But it won't do anything
+without the <a href="install-login.html#krb5">Kerberos 5 verifier</a>, so
+be sure to build it in using the <tt>--enable-krb5</tt> configure
+option.</p>
 
 <h4><a name="config">Configuration</h4>
 
-<p>To enable Kerberos credential passing, add the
+<p>To enable Kerberos credential passing in the login cgi, add the
 <tt>save_credentials</tt> variable to your config file and adjust the
-<tt>default_realm</tt> and <tt>append_realm</tt> variables as needed.
-For example:</p>
+<tt>default_realm</tt> and <tt>append_realm</tt> variables as needed. For
+example:</p>
 
 <pre># kerberos verifier config
 basic_verifier: kerberos_v5
@@ -116,14 +119,14 @@ sent to the login server and to get both IMAP and SMTP tickets,
 presumably so they can read and send mail authenticated thru the
 webmail application.</p>
 
-<p>The Kebereros tickets passed from the "getcred" flavor are
-unencrypted and unbundled by the module. Then they're cached
-temporarily in a file in /tmp. The <b>KRB5CCNAME</b> environment
-variable (think "cached credential") points to this file. Applications
-can retrieve the service ticket(s) from this file and pass them as
-credential to authenticate to the appropriate service(s). Once the
-request has been handled the temporarily credentials are removed by the
-module.</p>
+<p>Kebereros tickets passed via the "getcred" flavor are stored in a
+separate Pubcookie session cookie on the application server. They are
+exposed to an application by means of a temporary file whose location is
+defined by the KRB5CCNAME environment variable (usually
+<tt>/tmp/k5cc_(pid)_(userid)</tt>). An application can retrieve the service
+ticket from this file and pass it as a credential to authenticate to
+appropriate services. Once the request has been handled the temporarily
+cached credentials are removed by the module.</p>
 
 <hr>
 <p>
@@ -131,7 +134,7 @@ Copyright 2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: krb5-getcred.html,v 1.1 2004-05-16 19:51:45 dors Exp $
+$Id: krb5-getcred.html,v 1.2 2004-12-03 23:12:00 dors Exp $
 </pre>
 </body>
 
