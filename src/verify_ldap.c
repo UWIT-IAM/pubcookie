@@ -1,5 +1,9 @@
-/*
- * $Id: verify_ldap.c,v 1.3 2002-05-31 21:39:25 jjminer Exp $
+/** @file verify_ldap.c
+ * LDAP Verifier
+ *
+ * Verifies users against an LDAP server (or servers.)
+ * 
+ * $Id: verify_ldap.c,v 1.4 2002-06-09 22:54:18 jjminer Exp $
  */
 
 #ifdef HAVE_LDAP
@@ -18,11 +22,20 @@
 
 #include "verify.h"
 
+/** The debug level */
 extern int debug;
 
 /* Caution! Results must be free()d! */
 
-char * gen_key( const char * prefix, char * suffix ) {
+/**
+ * Generates the name for the config file key
+ * @param prefix char *
+ * @param suffix char *
+ * @retval malloc()d string (must be free()d!)
+ */
+
+char * gen_key( const char * prefix, char * suffix )
+{
     char * result;
     size_t len;
     int num;
@@ -47,7 +60,17 @@ char * gen_key( const char * prefix, char * suffix ) {
 
 }
 
-int do_bind( LDAP *ld, char * user, const char * password, const char ** errstr ) {
+/**
+ * Actually does an LDAP Bind
+ * @param ld LDAP *
+ * @param user char *
+ * @param password char *
+ * @param errstr const char **
+ * @retval 0 for sucess, nonzero on failure.
+ */
+
+int do_bind( LDAP *ld, char * user, const char * password, const char ** errstr )
+{
 
     int rc;
 
@@ -57,32 +80,45 @@ int do_bind( LDAP *ld, char * user, const char * password, const char ** errstr 
     rc = ldap_simple_bind_s (ld, user, password );
 
     if ( rc != LDAP_SUCCESS) {
-        if (debug)
+        if (debug) {
             fprintf(stderr, "do_bind: failed - %s\n", ldap_err2string(rc));
+        }
         *errstr  = "Bind failed -- auth failed";
         return -1;
-    } else 
-        if ( debug )
+    } else if ( debug ) {
             fprintf( stderr, "do_bind: bind successful\n");
+    }
 
-    if (debug)
+    if (debug) {
         fprintf( stderr, "do_bind: bye!\n" );
+    }
 
     return 0;
 }
 
+/**
+ * Connects to an LDAP Server
+ * @param ld LDAP **
+ * @param ldap_port int
+ * @param dn char *
+ * @param pwd char *
+ * @param errstr const char **
+ * @retval 0 for sucess, nonzero on failure.
+ */
 
 int ldap_connect( LDAP ** ld, 
                   char * ldap_server, 
                   int ldap_port, 
                   char * dn, 
                   char * pwd,
-                  const char ** errstr ) {
+                  const char ** errstr )
+{
 
     int rc;
 
-    if (debug)
+    if (debug) {
         fprintf( stderr, "ldap_connect: hello\n" );
+    }
 
     /* lookup DN for username using an anonymous bind */
     *ld = ldap_init(ldap_server, ldap_port);
@@ -103,8 +139,9 @@ int ldap_connect( LDAP ** ld,
         return -2;
     }
 
-    if (debug)
+    if (debug) {
         fprintf( stderr, "ldap_connect: bye!\n" );
+    }
 
     return 0;
 }
@@ -112,12 +149,24 @@ int ldap_connect( LDAP ** ld,
 /* Do the search, get the matching Dn. */
 /* Careful!  You have to free() the dn!  */
 
+/**
+ * Gets the DN of an object.
+ * @param ld LDAP *
+ * @param searchbase char *
+ * @param attr char *
+ * @param val const char *
+ * @param dn char ** - malloc()d (must be free()d)
+ * @param errstr const char **
+ * @retval 0 for sucess, nonzero on failure.
+ */
+
 int get_dn( LDAP * ld, 
             char * searchbase, 
             char * attr, 
             const char * val, 
             char ** dn,
-            const char ** errstr ) {
+            const char ** errstr )
+{
     char * ldap_filter;
 
     int len;
@@ -127,8 +176,9 @@ int get_dn( LDAP * ld,
 
     LDAPMessage * results, * entry;
 
-    if( debug )
+    if( debug ) {
         fprintf( stderr, "get_dn: hello\n" );
+    }
 
     *dn = NULL;
 
@@ -142,16 +192,19 @@ int get_dn( LDAP * ld,
 
     ldap_filter = calloc( len, sizeof(char) );
 
-    if ( ldap_filter == NULL )
+    if ( ldap_filter == NULL ) {
         return -1;
+    }
 
     num = snprintf( ldap_filter, len, "(%s=%s)", attr, val );
 
-    if ( num >= len )
+    if ( num >= len ) {
         return -1;
+    }
 
-    if (debug)
+    if (debug) {
         fprintf( stderr, "get_dn: Created filter: %s\n", ldap_filter );
+    }
 
     err = ldap_search_s( ld, searchbase, LDAP_SCOPE_SUBTREE,
                          ldap_filter, NULL, 0, &results );
@@ -165,8 +218,9 @@ int get_dn( LDAP * ld,
 
     num_entries = ldap_count_entries(ld, results);
 
-    if (debug)
+    if (debug) {
         fprintf( stderr, "get_dn: Found %d Entries\n", num_entries );
+    }
 
     if (num_entries != 1) {
         ldap_msgfree(results);
@@ -185,8 +239,9 @@ int get_dn( LDAP * ld,
 
     *dn = ldap_get_dn(ld, entry);
 
-    if (debug)
+    if (debug) {
         fprintf( stderr, "get_dn: Got DN: \"%s\"\n", *dn );
+    }
     
     if (*dn == NULL) {
         ldap_msgfree(results);
@@ -199,17 +254,29 @@ int get_dn( LDAP * ld,
     ldap_msgfree( results );
     ldap_msgfree( entry );
 
-    if( debug )
+    if( debug ) {
         fprintf( stderr, "get_dn: bye!\n" );
+    }
 
     return 0;
 }
+
+/**
+ * Actually verifies the user against the LDAP server
+ * @param userid const char *
+ * @param passwd const char *
+ * @param service const char *
+ * @param user_realm const char *
+ * @param errstr const char **
+ * @retval 0 on success, nonzero on failure
+ */
 
 int ldap_verifier( const char *userid,
                    const char *passwd,
                    const char *service,
                    const char *user_realm,
-                   const char **errstr) {
+                   const char **errstr )
+{
     int   got_error = -2;
     int   i = 0;
 
@@ -219,13 +286,15 @@ int ldap_verifier( const char *userid,
     char  **ldap_uid_attribute_list;
     char *key = NULL;
 
-    if ( debug )
+    if ( debug ) {
         fprintf( stderr, "ldap_verifier: hello\n" );
+    }
 
     /* What should we do when the realm is null? I'm defaulting to "ldap" */
 
-    if( user_realm == NULL )
+    if( user_realm == NULL ) {
         user_realm = "ldap";
+    }
 
     key = gen_key(user_realm, "server");
     ldap_server_list = libpbc_config_getlist(key);
@@ -276,9 +345,10 @@ int ldap_verifier( const char *userid,
             ldap_port = atoi( ldap_port_str );
 
         if (debug) {
-            fprintf( stderr, "ldap_verifier: server: %s port: %d\n", ldap_server, ldap_port );
-            fprintf( stderr, "ldap_verifier: search base: %s uid: %s\n", ldap_search_base, 
-                     ldap_uid_attribute );
+            fprintf( stderr, "ldap_verifier: server: %s port: %d\n",
+                     ldap_server, ldap_port );
+            fprintf( stderr, "ldap_verifier: search base: %s uid: %s\n",
+                     ldap_search_base, ldap_uid_attribute );
         }
 
         if (userid == NULL || passwd == NULL) {
@@ -312,14 +382,18 @@ int ldap_verifier( const char *userid,
         i++;
     }
 
-    if( ldap_search_base_list != NULL )
+    if( ldap_search_base_list != NULL ) {
         free(ldap_search_base_list);
-    if( ldap_server_list != NULL )
+    }
+    if( ldap_server_list != NULL ) {
         free(ldap_server_list);
-    if( ldap_uid_attribute_list != NULL )
+    }
+    if( ldap_uid_attribute_list != NULL ) {
         free(ldap_uid_attribute_list);
-    if( ldap_port_list != NULL )
+    }
+    if( ldap_port_list != NULL ) {
         free(ldap_port_list);
+    }
 
     if( debug ) {
         fprintf( stderr, "ldap_verifier: bye!\n" );
@@ -332,11 +406,11 @@ int ldap_verifier( const char *userid,
 
 #else /* HAVE_LDAP */
 
-int ldap_verifier(const char *userid,
-			const char *passwd,
-			const char *service,
-			const char *user_realm,
-			const char **errstr)
+int ldap_verifier( const char *userid,
+                   const char *passwd,
+                   const char *service,
+                   const char *user_realm,
+                   const char **errstr )
 {
     *errstr = "ldap not implemented";
     return -1;
