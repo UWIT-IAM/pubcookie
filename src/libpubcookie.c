@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.12 2000-08-16 19:27:18 willey Exp $
+    $Id: libpubcookie.c,v 2.13 2000-09-25 17:59:47 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -460,7 +460,7 @@ unsigned char *libpbc_gethostip_np()
 }
 
 /* we only use the first four bytes of the ip (maybe someday they'll be       */
-/* longer) but it doesn't matter here.                                        */
+/* longer) hopefully this code will be gone by then                           */
 /*                                                                            */
 char *libpbc_mod_crypt_key(char *in, unsigned char *addr_bytes)
 {
@@ -651,6 +651,13 @@ int libpbc_get_crypt_index()
 }
 
 /* encrypt a string                                                           */
+/*                                                                            */
+/* using DES cfp64 (Cipher Feed Back mode)                                    */
+/*                                                                            */
+/* two indexes are chosed and passed with the encryped blob                   */
+/*   one is an index into the blob of key bits another is an index into       */
+/*   the possible initialization vectors                                      */
+/*                                                                            */
 int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
 {
     int				c = 0, i = 0;
@@ -663,6 +670,9 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     des_key_schedule    	ks;
     int				save_des_check_key;
 
+    /* ... later, Steve reflects that keeping the ivec secret is not needed  */
+    /* so why don't we just pass the ivec instead of this index into a small */
+    /* array of possible ivecs? ...                                          */
     index2=libpbc_get_crypt_index();
     memcpy(ivec, &(c_stuff->key_a[index2]), sizeof(ivec));
     for( c=0; c<sizeof(ivec); ++c ) {
