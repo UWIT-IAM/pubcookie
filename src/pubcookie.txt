@@ -110,6 +110,12 @@ the module listing to one of the Configuration files and run one of the
 Configure scripts.
 7 - If the Configuration goes file then you should be able to do a make
 and eventually get an apache web daemon.
+8 - A key/cert pairs should be generated for the server.
+9 - A granting certificate and encryption key will have to be gotten
+from pubcookie@u.
+10 - Edit configuration files to add locations of key files etc.
+11 - After getting keys and editting configuration you should be able to
+start the server and use pubcookie
 
 If are going to use apxs, after you install apache you should
 look at /usr/local/apache/sbin/apxs and check the link line.  On the
@@ -150,6 +156,19 @@ RSAref		see ftp://www.rsa.com/rsaref/README for the hoops you have to
                 jump through to get the software
 Apache-SSL	http://www.apache-ssl.org/
 mod_ssl		http://www.engelschall.com/sw/mod_ssl
+
+Sample .htaccess
+----------------
+
+This example uses ExternalAuthorize with is available on www.washington.edu.
+Pubcookie does not do authorization.
+
+AuthType UWNetID
+PubCookieAppID "webinfo_Test_1"
+ExternalAuthorize true
+require user xxx
+
+Currently UWNetID is the only authentication method available
 
 Apache Directives
 -----------------
@@ -224,6 +243,6 @@ Descriptions of Some Logged Error Messages
 	the cookie was no good (couldn't be decrypted, too short, signature
 	verifyication failed, etc.)
 
-$Id: pubcookie.txt,v 1.2 1999-01-09 00:10:35 willey Exp $
+$Id: pubcookie.txt,v 1.3 1999-01-09 01:08:40 willey Exp $
 
 
