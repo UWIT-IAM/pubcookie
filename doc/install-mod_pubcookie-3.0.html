@@ -472,13 +472,17 @@ and filenames appropriately. For a definition of each directive,
 refer to the <a href="mod_pubcookie-directives.html">configuration
 directives</a> reference.</p>
 
-<p>Note: the <a href=
+<p>The <a href=
 "mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
-directive is new in mod_pubcookie 1.77 and it is required. It
-defines the strings that mod_pubcookie enables as additional
-arguments to the <a href=
-"mod_pubcookie-directives.html#PubcookieAuthType">AuthType</a>
-directive.</p>
+directive is required. It names the authentication types that
+mod_pubcookie adds to the <a href=
+"mod_pubcookie-directives.html#PubcookieAuthType">AuthType</a> directive.
+A single name is sufficient if your login server is configured with just
+the "basic flavor" of handling requests. If you did not deploy your login
+server, contact the people who did for recommendations on how to
+configured PubcookieAuthTypeNames according to the "login flavors"  
+available to you.</p>
+
 </li>
 
 <li>
