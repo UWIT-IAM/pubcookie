@@ -22,6 +22,8 @@ directives, you must do the same for other Pubcookie directives. Otherwise,
 <li><a href="#PubcookieDirDepthforAppID">PubcookieDirDepthforAppID</a></li>
 <li><a href="#PubcookieAppSrvID">PubcookieAppSrvID</a></li>
 <li><a href="#PubcookieLogin">PubcookieLogin</a></li>
+<li><a href="#PubcookieLoginMethod">PubcookieLoginMethod</a></li>
+<li><a href="#PubcookiePostURL">PubcookiePostURL</a></li>
 <li><a href="#PubcookieDomain">PubcookieDomain</a></li>
 <li><a href="#PubcookieGrantingCertfile">PubcookieGrantingCertfile</a></li>
 <li><a href="#PubcookieSessionKeyfile">PubcookieSessionKeyfile</a></li>
@@ -181,9 +183,34 @@ Apache 1.2 and later.</p>
 
 <p>The location of the login cgi on the pubcookie login server.</p>
 
-<p>The default is <a href=
-"https://weblogin.washington.edu/">https://weblogin.washington.edu/</a> which
-is defined as PBC_LOGIN_URI in pbc_config.h.</p>
+<h3><a name="PubcookieLoginMethod">PubcookieLoginMethod directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieLoginMethod GET | POST<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
+3.2.0 and higher and Apache 1.2 and later.</p>
+
+<p>Sets the browser messaging method. GET is the classic cookie-based 
+approach. POST is the HTTP POST approach. Default is GET.</p>
+
+<p>All versions prior to 3.2.0 use the GET method.</p>
+
+<h3><a name="PubcookiePostURL">PubcookiePostURL directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookiePostURL <em>post-reply-url</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
+3.2.0 and higher and Apache 1.2 and later.</p>
+
+<p>Sets the POST reply URL for consuming assertions sent from the login
+server when the POST login method is used. Default is
+<tt>/PubCookie.reply</tt>.</p>
 
 <h3><a name="PubcookieDomain">PubcookieDomain directive</a></h3>
 
