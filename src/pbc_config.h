@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.77 2003-04-14 23:54:51 ryanc Exp $
+    $Id: pbc_config.h,v 1.78 2003-05-02 22:53:06 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -144,6 +144,9 @@
 #define LOGOUT_ACTION_CLEAR_L_NO_APP 2
 
 #define PBC_SESSION_REAUTH 1
+#define PBC_SESSION_REAUTH_NO 0
+#define PBC_UNSET_SESSION_REAUTH -1
+
 #define PBC_SUPER_DEBUG 1
 #define PBC_CLEAR_COOKIE "clear"
 #define PBC_SET "set"

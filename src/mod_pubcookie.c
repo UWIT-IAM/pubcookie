@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.116 2003-05-01 20:09:03 willey Exp $
+    $Id: mod_pubcookie.c,v 1.117 2003-05-02 22:53:06 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -785,7 +785,8 @@ static int auth_failed_handler(request_rec *r) {
           PBC_GETVAR_REFERER,
           referer,
           PBC_GETVAR_SESSION_REAUTH,
-          cfg->session_reauth,
+          (cfg->session_reauth == PBC_UNSET_SESSION_REAUTH ?
+			PBC_SESSION_REAUTH_NO : cfg->session_reauth),
 	  PBC_GETVAR_PRE_SESS_TOK,
           pre_sess_tok,
           PBC_GETVAR_FLAG,
@@ -1095,6 +1096,7 @@ static void *pubcookie_dir_create(pool *p, char *dirspec) {
 
   cfg->inact_exp = PBC_UNSET_INACT_EXPIRE;
   cfg->hard_exp = PBC_UNSET_HARD_EXPIRE;
+  cfg->session_reauth = PBC_UNSET_SESSION_REAUTH;
   cfg->addl_requests = NULL;
 
   return (void *)cfg;
@@ -1138,11 +1140,12 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
     cfg->hard_exp = (ncfg->hard_exp == PBC_UNSET_HARD_EXPIRE)
 			? pcfg->hard_exp : ncfg->hard_exp;
 
+    cfg->session_reauth = (ncfg->session_reauth == PBC_UNSET_SESSION_REAUTH)
+		? pcfg->session_reauth : ncfg->session_reauth;
+
     /* life is much easier if the default value is zero or NULL */
     cfg->appid = ncfg->appid ? 
 		ncfg->appid : pcfg->appid;
-    cfg->session_reauth = ncfg->session_reauth ? 
-		ncfg->session_reauth : pcfg->session_reauth;
     cfg->end_session = ncfg->end_session ? 
 		ncfg->end_session : pcfg->end_session;
 
@@ -1947,7 +1950,7 @@ const char *set_session_reauth(cmd_parms *cmd, void *mconfig, int f) {
     if(f != 0)
         cfg->session_reauth = PBC_SESSION_REAUTH;
     else
-        cfg->session_reauth = 0;
+        cfg->session_reauth = PBC_SESSION_REAUTH_NO;
 
     return NULL;
 }
