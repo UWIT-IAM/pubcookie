@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.44 2002-09-27 17:44:56 greenfld Exp $
+    $Id: libpubcookie.c,v 2.45 2002-10-01 19:19:17 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -179,32 +179,6 @@ static void print_hex_bytes(FILE *f,void *s_in,int len)
   }
 }
 
-/* dummy des stub */
-#define zzdes_cfb64_encrypt(xin,xout,xlen,xks,xivec,xi,xdirection) memcpy(xout,xin,len)
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-/* really has more to do with aligning the buffers */
-static unsigned char cfb_iv[8]={0x12,0x34,0x56,0x78,0x90,0xab,0xcd,0xef};
-static unsigned char cfb_tmp[8];
-
-static void xdes_cfb64_encrypt(const unsigned char *in,unsigned char *out,long length,des_key_schedule schedule,des_cblock *ivec,int *num,int enc)
-{
-#ifdef RUBBISH
-  while(length-- > 0)
-    *out++ = (*in++)^1;
-#endif
-
-  long long xin[4200];
-  long long xout[4200];
-
-  memcpy(&xin,in,length);
-  memcpy(cfb_tmp,cfb_iv,sizeof(cfb_iv));
-  des_cfb64_encrypt(&xin,&xout,length,schedule,&cfb_tmp,num,enc);
-  memcpy(out,&xout,length);
-}
-#define des_cfb64_encrypt xdes_cfb64_encrypt
-#endif
-
 /* get a nice pretty log time                                                 */
 char *libpbc_time_string(time_t t)
 { 
@@ -217,37 +191,15 @@ char *libpbc_time_string(time_t t)
     return buf;
 }
 
-#if defined (WIN32)
-extern int Debug_Trace;
-extern FILE *debugFile;  /* from PubcookieFilter */
-#endif
-
 /* when things fail too badly to go on ...                                    */
 void *libpbc_abend(const char *format,...)
 {
-    time_t	now;
-    va_list	args;
-    char	format_w_time[PBC_1K];
-#if defined (WIN32)
-    char        buff[PBC_4K];
-#endif
+    va_list args;
     
     va_start(args, format);
-    now = time(NULL);
-#if defined (_GNU_SOURCE)
-    snprintf(format_w_time, sizeof(format_w_time), "%s: ABEND: %s", libpbc_time_string(now), format);
-#else
-    sprintf(format_w_time, "%s: ABEND: %s", libpbc_time_string(now), format);
-#endif
-#if defined (WIN32)
-    vsprintf(buff, format_w_time, args);
-    OutputDebugString(buff);  /* win32 debugging */
-    if ( debugFile )
-        fprintf(debugFile,"%s",buff);
-#else
-    vfprintf(stderr,format_w_time, args);
-#endif
+    pbc_vlog_activity(PBC_LOG_ERROR, format, args);
     va_end(args);
+
 #if defined (WIN32)
     return NULL;
 #else
@@ -261,33 +213,14 @@ void *libpbc_abend(const char *format,...)
 /* perhaps if your server has some other logging method you might want to     */
 /* use it here                                                                */
 /*                                                                            */
-int libpbc_debug(const char *format,...) 
+int libpbc_debug(const char *format, ...) 
 {
-    time_t      now;
-    va_list     args;
-    char        format_w_time[PBC_4K];
-#if defined (WIN32)
-    char        buff[PBC_4K];
-#endif
+    va_list args;
 
     va_start(args, format);
-    now = time(NULL);
-#if defined (_GNU_SOURCE)
-    snprintf(format_w_time, sizeof(format_w_time)-1, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
-#else
-    sprintf(format_w_time, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
-#endif
-#if defined (WIN32)
-    if ( Debug_Trace ) {
-	vsprintf(buff, format_w_time, args);
-	OutputDebugString(buff);  /* win32 debugging */
-	if ( debugFile )
-	    fprintf(debugFile,"%s",buff);
-	}
-#else
-    vfprintf(stderr, format_w_time, args);
-#endif
+    pbc_vlog_activity(PBC_LOG_DEBUG_VERBOSE, format, args);
     va_end(args);
+
     return 1;
 }
 
@@ -730,39 +663,6 @@ int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, const char *peer)
     return PBC_OK;
 }
 
-/*                                                                           */
-#ifdef APACHE
-crypt_stuff *libpbc_init_crypt_p(pool *p, char *peername)
-#else
-crypt_stuff *libpbc_init_crypt_np(char *peername)
-#endif
-{
-    crypt_stuff	*c_stuff;
-
-    c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
-
-    if ( libpbc_get_crypt_key(c_stuff, peername) == PBC_OK ) {
-#ifdef DEBUG_ENCRYPT_COOKIE
-        libpbc_debug("read key >");
-        print_hex_bytes(stderr,c_stuff->key_a,sizeof(c_stuff->key_a));
-#endif
-        return c_stuff;
-    } else {
-	libpbc_free_crypt(c_stuff);
-	return NULL;
-    }
-}
-
-/*                                                                           */
-#ifdef APACHE
-void libpbc_free_crypt_p(pool *p, crypt_stuff *c_stuff)
-#else
-void libpbc_free_crypt_np(crypt_stuff *c_stuff)
-#endif
-{
-    pbc_free(c_stuff);  
-}
-
 unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, unsigned len)
 {
     int			seg_len;
@@ -835,130 +735,6 @@ int libpbc_get_crypt_index()
         RAND_bytes(r_byte, 1);
     index = (int)r_byte[0] - (int)r_byte[0]/PBC_DES_INDEX_FOLDER;
     return index;
-}
-
-/* encrypt a string                                                           */
-/*                                                                            */
-/* using DES cfp64 (Cipher Feed Back mode)                                    */
-/*                                                                            */
-/* two indexes are chosed and passed with the encryped blob                   */
-/*   one is an index into the blob of key bits another is an index into       */
-/*   the possible initialization vectors                                      */
-/*                                                                            */
-int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
-{
-    int				c = 0, i = 0;
-    int				tries = 5;
-    int				index1 = 0; 
-    int				index2 = 0;
-    des_cblock			key;
-    des_cblock			ivec;
-    static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
-    des_key_schedule    	ks;
-
-    /* ... later, Steve reflects that keeping the ivec secret is not needed  */
-    /* so why don't we just pass the ivec instead of this index into a small */
-    /* array of possible ivecs? ...                                          */
-    index2=libpbc_get_crypt_index();
-    memcpy(ivec, &(c_stuff->key_a[index2]), sizeof(ivec));
-    for( c=0; c<sizeof(ivec); ++c ) {
-	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
-    }
-
-    /* find a random index into the char key array and make a key shedule */
-
-/*  libpbc_debug("libpbc_encrypt_cookie: before setting des_check_key= %d\n",des_check_key); */
-
-    memset(key, 0, sizeof(key));
-    while ( des_set_key_checked(&key, ks) < 0 && --tries ) {
-        index1=libpbc_get_crypt_index();
-	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-        des_set_odd_parity(&key);
-    }
-
-    if ( ! tries ) {
-       libpbc_debug("libpbc_encrypt_cookie: Couldn't find a good key\n");
-       return 0;
-    }
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-    fprintf(stderr,"index1=%d index2=%d len=%ld key=",index1,index2,len);
-    print_hex_bytes(stderr,key,sizeof(key));
-    fprintf(stderr," ivec=");
-    print_hex_bytes(stderr,ivec,sizeof(ivec));
-    fprintf(stderr," in=");
-    print_hex_bytes(stderr,in,len+2);
-    fprintf(stderr,"\n");
-#endif
-
-    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
-    libpbc_augment_rand_state(ivec, sizeof(ivec));
-
-    /* stick the indices on the end of the train */
-    out[len] = (unsigned char)index1;
-    out[len+1] = (unsigned char)index2;
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-    fprintf(stderr,"out=");
-    print_hex_bytes(stderr,out,len+2);
-    fprintf(stderr,"\n");
-#endif
-
-    return 1;
-
-}
-
-/* decrypt a string                                                         */
-int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
-{
-    int				c = 0, i = 0;
-    int				index1 = 0;
-    int				index2 = 0;
-    des_cblock			key;
-    des_cblock			ivec;
-    static unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
-    des_key_schedule    	ks;
-
-    /* libpbc_debug("libpbc_decrypt_cookie: hello\n"); */
-
-    /* grab those two extra btyes off the tail */
-    index1 = (int)in[len];
-    index2 = (int)in[len+1];
-
-    memcpy(ivec, &(c_stuff->key_a[index2]), sizeof(ivec));
-    for( c=0; c<sizeof(ivec); ++c ) {
-	ivec[c] ^= ivec_tmp[i % sizeof(ivec_tmp)];
-    }
-
-    /* use the supplied index into the char key array and make a key shedule */
-    memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-
-    des_set_odd_parity(&key);
-    if ( des_set_key_checked(&key, ks) ) {
-       libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
-       return 0;
-    }
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-    fprintf(stderr,"index1=%d index2=%d len=%ld key=",index1,index2,len);
-    print_hex_bytes(stderr,key,sizeof(key));
-    fprintf(stderr," ivec=");
-    print_hex_bytes(stderr,ivec,sizeof(ivec));
-    fprintf(stderr," in=");
-    print_hex_bytes(stderr,in,len+2);
-    fprintf(stderr,"\n");
-#endif
-
-    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-    fprintf(stderr,"out=");
-    print_hex_bytes(stderr,out,len);
-    fprintf(stderr,"\n");
-#endif
-
-    return 1;
-
 }
 
 /* put stuff in the cookie structure                                          */
@@ -1101,9 +877,10 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
-    libpbc_populate_cookie_data(cookie_data, user, type, creds, pre_sess_token, expire, appsrvid, appid);
+    libpbc_populate_cookie_data(cookie_data, user, type, creds, 
+                                pre_sess_token, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
-	pbc_free(cookie_data);
+    pbc_free(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, peer);
     pbc_free(cookie_string);
 
