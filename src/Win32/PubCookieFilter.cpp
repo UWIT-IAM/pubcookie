@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.45 2005-03-24 00:40:54 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.46 2005-03-24 19:29:13 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -200,6 +200,8 @@ VOID create_source(pubcookie_dir_rec *p, const char *source) {
 
 	SetRegString(hKey,"EventMessageFile", AddSystemRoot(p, "\\inetsrv\\pubcookie\\pbc_messages.dll"));
 	SetRegDWORD(hKey,"TypesSupported",7);
+
+	free(dataBuff);
 
 	RegCloseKey(hKey);
 
@@ -749,7 +751,9 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name)
 		ptr++;
 	}
 	
-    cookie = (char *)pbc_malloc(p, strlen(cookie_header)+1);
+	cookie = (char *)pbc_malloc(p, strlen(cookie_header)+1);
+
+
 	if (!cookie) {
 		filterlog(p, LOG_ERR,"[Get_Cookie] Error allocating memory");
 		return NULL;
@@ -1097,7 +1101,8 @@ void Add_Header_Values(HTTP_FILTER_CONTEXT* pFC,
 
 }  /* Add_Header_Values */
 
-bool MakeSecContext(pubcookie_dir_rec *p)
+bool MakeSecContext(HTTP_FILTER_CONTEXT* pFC,			
+					pubcookie_dir_rec *p)
 {
 
     /* the granting certificate */
@@ -1109,8 +1114,8 @@ bool MakeSecContext(pubcookie_dir_rec *p)
 
 	//GetUserName(username,&usize);
 	//filterlog(p, LOG_DEBUG,"Creating security context for user: %s ",username);
-
-	p->sectext = (security_context *)pbc_malloc(p, sizeof(security_context));
+	//Use AllocMem so this gets freed eventually
+	p->sectext = (security_context *)pFC->AllocMem(pFC,sizeof(security_context),0);
 
 	p->sectext->sess_key  = default_context->sess_key;
 	p->sectext->sess_cert = default_context->sess_cert;
@@ -1185,6 +1190,8 @@ bool MakeSecContext(pubcookie_dir_rec *p)
     pbc_fclose(p, fp);
     if (g_certfile != NULL)
         pbc_free(p, g_certfile);
+
+	free(cryptkeyfile);
     
     return true;
 }
@@ -1328,7 +1335,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	}
 
 	// Fill in security context
-	if (!MakeSecContext(p)) {
+	if (!MakeSecContext(pFC, p)) {
 		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error creating security context");
 		p->failed = PBC_BAD_GRANTING_CERT;
 		return OK;
@@ -1779,6 +1786,8 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	/* Slower but safer to let IIS handle this malloc */
 	pFC->pFilterContext = pFC->AllocMem(pFC,sizeof(pubcookie_dir_rec),0);
 
+
+
 	if (!pFC->pFilterContext) {
 		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error allocating memory");
 		return SF_STATUS_REQ_ERROR;
@@ -2137,7 +2146,8 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 	if ( p ) {
 		if (strlen(p->user) > 0) {
 			dwBuffSize=1024;
-			pszNewClient = (char *)pFC->AllocMem(pFC,dwBuffSize,0);
+			
+			pszNewClient = (char *)pFC->AllocMem(pFC,dwBuffSize,0);		
 			strncpy(pszNewClient,(PBC_CLIENT_LOG_FMT), dwBuffSize);
 			ReplaceToken("%w",pLogInfo->pszClientUserName,pszNewClient, dwBuffSize);
 			ReplaceToken("%p",p->user, pszNewClient, dwBuffSize);
@@ -2604,6 +2614,7 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
    FreeKeyList(hKeyList);
   }
 
+  free(uport);
   free(p);
   return retcode;
 }
