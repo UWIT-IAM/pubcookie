@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.56 $
+ * $Revision: 1.57 $
  */
 
 
@@ -798,17 +798,6 @@ void close_mirror_file()
     if (mirror) {
 	fclose(mirror);
     }
-}
-
-char *get_my_hostname() 
-{
-    struct utsname	myname;
-
-    if ( uname(&myname) < 0 )
-        log_error(2, "system-problem", 0, "problem doing uname lookup");
-
-    return(strdup(myname.nodename));
-
 }
 
 const char *login_host() 
@@ -2019,7 +2008,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         PBC_COOKIE_TYPE_L,
         l->creds,
         serial,
-	(c == NULL || c->expire_ts == 0 ? compute_l_expire(l) : c->expire_ts),
+	(c == NULL || c->expire_ts < time(NULL) ? compute_l_expire(l) : c->expire_ts),
         l_cookie,
         login_private_keyfile(),
         PBC_4K);

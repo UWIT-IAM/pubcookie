@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.25 2002-06-05 16:52:29 greenfld Exp $
+    $Id: libpubcookie.c,v 2.26 2002-06-13 17:41:39 jteaton Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -58,6 +58,7 @@ typedef  int pid_t;  /* win32 process ID */
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
+#include "strlcpy.h"
 
 /* CONSTANTS */
 
@@ -85,6 +86,17 @@ const char *PBC_S_KEYFILE = (PBC_PATH "pubcookie_session.key");
 const char *PBC_G_CERTFILE = (PBC_PATH "pubcookie_granting.cert");
 /* lives only on login server */
 const char *PBC_G_KEYFILE = (PBC_PATH "pubcookie_granting.key");
+
+char *get_my_hostname()
+{
+    struct utsname      myname;
+
+    if ( uname(&myname) < 0 )
+        return NULL;
+
+    return(strdup(myname.nodename));
+
+}
 
 /*
  * print the passed bytes
@@ -562,6 +574,7 @@ static void make_crypt_keyfile(const char *peername, char *buf)
     strlcat(buf, peername, 1024);
 }
     
+#include <syslog.h>
 /**
  * generates a random key for peer and writes it to the disk
  * @param peer the certificate name of the peer

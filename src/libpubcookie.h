@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.18 2002-06-11 20:18:48 greenfld Exp $
+    $Id: libpubcookie.h,v 1.19 2002-06-13 17:41:39 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -42,7 +42,10 @@
 
 #include "pubcookie.h"
 
+char *get_my_hostname();
+
 #ifdef APACHE1_3
+int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *peer);
 
 unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
 	                         unsigned char, 
@@ -78,6 +81,7 @@ void libpbc_free_md_context_plus_p(ap_pool *, md_context_plus *);
 void libpbc_free_crypt_p(ap_pool *, crypt_stuff *);
 
 #else
+int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *peer);
 
 unsigned char *libpbc_get_cookie_np(unsigned char *, 
 	                         unsigned char, 
