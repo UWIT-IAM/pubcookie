@@ -2,18 +2,14 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_create.c,v 1.11 2001-08-29 18:18:59 willey Exp $
+    $Id: pbc_create.c,v 1.12 2001-11-28 22:36:41 willey Exp $
  */
 
-/* this is not meant to be user friendly, no friendlyness for anyone          */
-/*   but us and we have the src code                                          */
 /*                                                                            */
-/* the big news is that arguments come in on stdin not the command line!!!!   */
+/* arguments come in via standard in and the cookie is put out on stdout      */
 /*                                                                            */
-/* args are: user appsrvid appid type creds serial crypt_file cert_key_file */
-/*    (anything too big is just truncated)                                    */
-/*      since i'm lazy the argments aren't at all parsed, if you              */
-/*	want to specify a cert_file you must also specifiy a crypt key        */
+/* args are: user appsrvid appid type creds serial crypt_file cert_key_file   */
+/*    anything too big is just truncated, no support for defaults or anything */
 /*                                                                            */
 
 #include <stdio.h>

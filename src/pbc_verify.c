@@ -2,14 +2,15 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_verify.c,v 1.10 2001-08-29 18:18:59 willey Exp $
+    $Id: pbc_verify.c,v 1.11 2001-11-28 22:36:41 willey Exp $
  */
 
 /*                                                                            */
 /* args are:                                                                  */
 /*   cookie_type [encryption_key] [cert_file]                                 */
-/*      since i'm lazy the argments aren't at all parsed, if you              */
-/*	want to specify a cert_file you must also specifiy a crypt key        */
+/*      if you specify a cert_file you must also specifiy a crypt key         */
+/*                                                                            */
+/* cookie comes in on stdin, contenets are printed to stdout                  */
 /*                                                                            */
 
 #include <stdio.h>
