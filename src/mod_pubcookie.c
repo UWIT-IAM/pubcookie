@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.19 1999-02-10 04:23:44 willey Exp $
+    $Id: mod_pubcookie.c,v 1.20 1999-02-19 20:17:46 willey Exp $
  */
 
 #include "httpd.h"
@@ -85,16 +85,27 @@ unsigned char *get_app_path(pool *p, const char *path_in) {
 
 }
 
+request_rec *main_rrec (request_rec *r) {
+    request_rec *mr = r;
+
+    for (;;) {
+	while (mr->main)
+	    mr = mr->main;
+	while (mr->prev)
+	    mr = mr->prev;
+	if (! mr->main)
+	    break;
+    }
+    return mr;
+}
+
 int blank_cookie(request_rec *r, char *name) {
   const char *cookie_header; 
   char *cookie;
   char *ptr;
-  request_rec *mr;
+  request_rec *mr = main_rrec (r);
   char *c2;
 
-  mr = r;
-  while (mr->main)
-    mr = mr->main;
   /* If we've stashed the cookie, we know it's already blanked */
 #ifdef APACHE1_2
   if(table_get(mr->notes, name) ||
@@ -159,13 +170,16 @@ static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
   char 			*refresh = palloc(r->pool, PBC_1K);
   char 			*new_cookie = palloc( r->pool, PBC_1K);
+  char 			*args = palloc( r->pool, PBC_1K);
 #else
   char 			*refresh = ap_palloc(r->pool, PBC_1K);
   char 			*new_cookie = ap_palloc( r->pool, PBC_1K);
+  char 			*args = ap_palloc( r->pool, PBC_1K);
 #endif
   char			*refresh_e;
   pubcookie_server_rec 	*scfg;
   pubcookie_rec 	*cfg;
+  request_rec		*mr = main_rrec (r);
 
 #ifdef APACHE1_2
   cfg = (pubcookie_rec *) get_module_config(r->per_dir_config, 
@@ -182,18 +196,34 @@ static int auth_failed(request_rec *r) {
   /* reset these dippy flags */
   cfg->failed = 0;
 
+  /* deal with GET args */
+  if ( r->args )
+      base64_encode(r->args, args, strlen(r->args));
+  else
+      strcpy(args, "");
+
   r->content_type = "text/html";
   ap_snprintf(refresh, PBC_1K-1, 
-	  "%d;URL=%s?one=%s&two=%s&three=%c&four=%s&five=%s&six=%s&seven=%s&fr=%s", 
+	  "%d;URL=%s?%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s", 
 	  PBC_REFRESH_TIME, 
 	  PBC_LOGIN_PAGE, 
+	  PBC_GETVAR_APPSRVID,
 	  (scfg->appsrv_id ? scfg->appsrv_id : (unsigned char *) r->server->server_hostname),
+	  PBC_GETVAR_APPID, 
 	  (cfg->app_id ? cfg->app_id : get_app_path(r->pool, r->filename)),
+	  PBC_GETVAR_CREDS, 
 	  cfg->creds, 
+	  PBC_GETVAR_VERSION, 
 	  PBC_VERSION, 
+	  PBC_GETVAR_METHOD, 
 	  r->method, 
+	  PBC_GETVAR_HOST, 
 	  r->server->server_hostname, 
-	  r->uri,
+	  PBC_GETVAR_URI, 
+	  mr->uri,
+	  PBC_GETVAR_ARGS, 
+	  args,
+	  PBC_GETVAR_FR, 
 	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
 
   if ( cfg->force_reauth )
@@ -284,12 +314,9 @@ static int pubcookie_check_exp(time_t fromc, int exp, int def) {
 char *get_cookie(request_rec *r, char *name) {
   const char *cookie_header; 
   char *cookie, *ptr;
-  request_rec *mr;
+  request_rec *mr = main_rrec (r);
 
   /* get cookies */
-  mr = r;
-  while (mr->main)
-    mr = mr->main;
 #ifdef APACHE1_2
   if( (cookie_header = table_get(mr->notes, name)) )
     return pstrdup(r->pool, cookie_header);
