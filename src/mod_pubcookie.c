@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.111 2003-03-06 06:12:50 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.112 2003-03-24 22:52:56 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -56,6 +56,7 @@
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
+#include "security.h"
 
 /* system stuff */
 #ifdef HAVE_TIME_H
@@ -412,7 +413,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
          the first time since our cred cookie doesn't expire (which is poor
          and why we need cookie extensions) */
         /* encrypt */
-        if (libpbc_mk_priv(NULL, cfg->cred_transfer, cfg->cred_transfer_len,
+        if (libpbc_mk_priv(r->pool, NULL, cfg->cred_transfer,
+                           cfg->cred_transfer_len,
                            &blob, &bloblen)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, r,
                           "credtrans: libpbc_mk_priv() failed");
@@ -1465,7 +1467,7 @@ static int pubcookie_user(request_rec *r) {
   
       /* decrypt cookie. if credtrans is set, then it's from login server
        to me. otherwise it's from me to me. */
-      if (!res && libpbc_rd_priv(cred_from_trans ? 
+      if (!res && libpbc_rd_priv(p, cred_from_trans ? 
                                     ap_get_server_name(r) : NULL, 
                                  blob, bloblen, 
                                  &plain, &plainlen)) {

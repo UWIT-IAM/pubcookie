@@ -576,7 +576,7 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv: hello\n");
 
     sig_len = EVP_PKEY_size(peer ? g_pub : sess_pub);
-    mysig = (unsigned char *) pbc_malloc(p, sig_len);
+    mysig = (char *) pbc_malloc(p, sig_len);
 
     if (len < sig_len + 2) {
       pbc_log_activity(p, PBC_LOG_ERROR,

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.22 2003-03-24 21:28:14 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.23 2003-03-24 22:52:56 jjminer Exp $
  */
 
 
@@ -75,6 +75,7 @@ typedef void pool;
 #include "pbc_myconfig.h"
 #include "snprintf.h"
 #include "pubcookie.h"
+#include "libpubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
@@ -139,7 +140,7 @@ const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 
     for (opt = 0; opt < nconfiglist; opt++) {
         if (configlist[opt].key == NULL ) {
-            libpbc_abend( "Option key suddenly became NULL!  Somebody fudged a pointer!" );
+            libpbc_abend( p, "Option key suddenly became NULL!  Somebody fudged a pointer!" );
         }
         if ( *key == configlist[opt].key[0] &&
             !strcmp(key, configlist[opt].key))

@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: flavor_getcred.c,v 1.12 2003-03-24 21:28:14 jjminer Exp $
+    $Id: flavor_getcred.c,v 1.13 2003-03-24 22:52:56 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -254,7 +254,7 @@ static login_result process_getcred(pool *p, login_rec *l, login_rec *c,
 	    exit(1);
 	}
 
-	if (get_cookie(PBC_CRED_COOKIENAME, cookie, sizeof(cookie)-1) != PBC_OK) {
+	if (get_cookie(p, PBC_CRED_COOKIENAME, cookie, sizeof(cookie)-1) != PBC_OK) {
 	    pbc_log_activity(p, PBC_LOG_ERROR, 
                              "flavor_getcred: couldn't retrieve cookie %s",
                              PBC_CRED_COOKIENAME);

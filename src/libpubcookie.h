@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.32 2003-03-07 19:19:17 ryanc Exp $
+    $Id: libpubcookie.h,v 1.33 2003-03-24 22:52:56 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -120,6 +120,8 @@ int libpbc_base64_encode(pool *p, unsigned char *, unsigned char *, int );
 int libpbc_base64_decode(pool *p, unsigned char *, unsigned char *, int *);
 int libpbc_check_version(pool *p, pbc_cookie_data *);
 int libpbc_check_exp(pool *p, time_t, int);
+
+void libpbc_void(pool *p, void *thing);
 
 enum {
     PBC_RR_FR_CODE =             0,

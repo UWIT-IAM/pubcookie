@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.27 $)
+AC_REVISION($Revision: 1.28 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -68,6 +68,29 @@ if test "$GCC" = "yes"; then
     LIBS="$LIBS -lgcc";
     LDFLAGS="$LDFLAGS -L`dirname $GCC_LIB`"
 fi
+
+# Check to see if this is the Sun Workshop compiler.
+
+AC_MSG_CHECKING([for Sun Workshop Compiler])
+AC_TRY_RUN( [ 
+    #include <stdlib.h>
+
+    #ifndef __SUNPRO_C
+    # define __SUNPRO_C 0
+    #endif
+
+    int main() {
+        exit( __SUNPRO_C == 0 );
+    }
+    ],
+    [ AC_MSG_RESULT([yes])
+    AC_DEFINE( SUN_WORKSHOP, 1,
+    [Define to 1 if the Compiler is Sun Workshop] )
+    SUN_WORKSHOP=1
+    ],
+    [ AC_MSG_RESULT([no])
+    ]
+)
 
 AC_PROG_CC_STDC
 AC_PROG_INSTALL
@@ -394,7 +417,7 @@ AC_ARG_WITH(ldap-lib-dir,
 
     AC_CHECK_HEADERS([lber.h])
     AC_CHECK_HEADERS([ldap.h],,,[#include <lber.h>])
-    
+
     AC_MSG_CHECKING([if LDAP API is OpenLDAP])
     AC_TRY_RUN( [ 
     #include <ldap.h>
@@ -413,7 +436,7 @@ AC_ARG_WITH(ldap-lib-dir,
                   LDAP_OPENLDAP=0
                 ],
                 AC_MSG_WARN( "Cross-Compiling not supported."  ) )
-    
+
     if test "$LDAP_OPENLDAP" = "1"; then
         AC_CHECK_LIB(lber, ber_init)
         AC_CHECK_LIB(ldap, ldap_init)
@@ -505,11 +528,20 @@ if test "$enable_dmalloc" = "yes"; then
     AC_CHECK_HEADERS([dmalloc.h],,,[ ])
     AC_CHECK_LIB(dmalloc, dmalloc_shutdown)
 
-    if test "x$GCC" = "x"; then
+
+    if test "x$SUN_WORKSHOP" != "x"; then
+        # Sun Workshop Compiler is annoying!
         OLDCC=$CC
         CC="$CC -Xc"
-        AC_TRY_COMPILE( [], [], [], CC=$OLDCC )
+        OLDCPPFLAGS=$CPPFLAGS
+        CPPFLAGS="$CPPFLAGS -D__EXTENSIONS__"
+        AC_TRY_COMPILE( [], [], [], [
+            CC=$OLDCC
+            CPPFLAGS=$CPPFLAGS
+            ]
+        )
     fi
+
 fi
 
 fi # End of stuff we skip if we're not enabling the login server.
