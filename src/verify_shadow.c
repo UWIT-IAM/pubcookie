@@ -12,7 +12,7 @@
  *  
  *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  *  
- * $Id: verify_shadow.c,v 1.16 2004-11-22 19:04:42 willey Exp $
+ * $Id: verify_shadow.c,v 1.17 2004-12-22 22:13:44 willey Exp $
  */
  
 
@@ -21,12 +21,24 @@
 # include "pbc_path.h"
 #endif
 
+typedef void pool;
+
+/* login cgi includes */
+#include "index.cgi.h"
+#include "verify.h"
+#include "pbc_config.h"
+#include "pbc_configure.h"
+#include "pbc_myconfig.h"
+#include "pbc_logging.h"
+#include "snprintf.h"
+
 #ifdef HAVE_STDLIB_H
 # include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
 
-/* Pretending we're Apache */
-typedef void pool;
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
 
 #include "verify.h"
 
@@ -75,8 +87,7 @@ static int shadow_v(pool * p, const char *userid,
        return -1;
     }
 
-
-    pwfile = fopen(SHADOW_PATH, "r");
+    pwfile = pbc_fopen(p, SHADOW_PATH, "r");
     setspent();
     while (shadow = fgetspent(pwfile))
        if (strcmp(userid, shadow->sp_namp) == 0)
