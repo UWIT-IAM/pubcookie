@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.135 2004-08-19 21:45:24 willey Exp $
+ * $Id: index.cgi.c,v 1.136 2004-08-20 15:55:18 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2459,7 +2459,7 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
             l->first_kiss,
             l->user, 
             redirect_final,
-	    l->appsrv_err_string);
+            l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
 
     /* now blat out the redirect page */
     if( l->pinit == PBC_FALSE ) { /* don't need a G cookie for a pinit */
