@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.152 2004-08-18 19:32:23 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.153 2004-08-18 19:43:50 fox Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -2858,10 +2858,10 @@ static int login_reply_handler(request_rec *r)
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec    *cfg;
     table *args = ap_make_table(r->pool, 5);
-    const char *greply;
+    const char *greply, *pdata;
     char *arg;
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
-    const char *post_data;
+    char *post_data;
     char *gr_cookie;
     const char *r_url;
     pool *p = r->pool;
@@ -2893,7 +2893,7 @@ static int login_reply_handler(request_rec *r)
        if (((post_data_len=strtol(lenp, NULL, 10))>0) &&
             (post_data_len<MAX_POST_DATA) &&
             ((post_data = get_post_data(r, post_data_len)))) {
-          scan_args(args, (char *)post_data);
+          scan_args(args, post_data);
        }
     }
 
@@ -2921,11 +2921,12 @@ static int login_reply_handler(request_rec *r)
     ap_send_http_header(r);
 
     /* see if we do GET or POST */
-    post_data = ap_table_get(args, PBC_GETVAR_POST_STUFF);
-    if (post_data&&*post_data) {
+    pdata = ap_table_get(args, PBC_GETVAR_POST_STUFF);
+    if (pdata&&*pdata) {
       char *a, *v;
       int needclick = 0;
 
+      post_data = ap_pstrdup(p, pdata);
       if (strstr(post_data, "submit=")) needclick = 1;
       printf("relay is post, click=%d\n", needclick);
 
