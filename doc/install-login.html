@@ -16,7 +16,7 @@
 <li><a href="#implementation">Implementation</a></li>
 <li><a href="#authsvcs">Authentication Services</a></li>
 <li><a href="#apacheconfig">Apache Configuration</a></li>
-<li><a href="#build">Build the Pubcookie login server</a></$
+<li><a href="#build">Build the Pubcookie login server</a></li>
 <li><a href="#runtime">Run-time Configuration</a></li>
 <li><a href="#localization">Localization</a></li>
 <li><a href="#moreconfig">More Configuration</a></li>
@@ -27,19 +27,19 @@
 <li><a href="#oldtools">Old Debugging Tools</a></li>
 </ul>
 
-<h4><a href="intro">Introduction</a></h2>
+<h4><a name="intro">Introduction</a></h2>
 
 <p>
 The Pubcookie login server has two primary functions: to authenticate
 users and to issue authentication tokens (granting cookies) consumed by
 Pubcookie-enabled target application servers.  Authentication occurs
-either by checking user-provided credentials via a backend authentication
-service (Kerberos, SecurID, ...) or by verifying a token that was created
+either by verifying user-provided credentials via a backend authentication
+service (Kerberos, SecurID, ...) or by checking a token that was created
 on a previous visit to the login server.  Example code to interface to an
 authentication system is provided.
 </p>
 
-<h4><a href="implementation">Implementation</a></h4>
+<h4><a name="implementation">Implementation</a></h4>
 
 <p>
 The Pubcookie login server uses a CGI program to handle all HTTP
@@ -59,22 +59,18 @@ Apache web server software. Other web server software which supports CGI
 and SSL should also work, but this supposition has not been tested.
 </p>
 
-<h4><a href="authsvcs">Authentication services</a></h4>
+<h4><a name="authsvcs">Authentication services</a></h4>
 
 <p>
-The login cgi has a very simple interface for talking to backend
-authentication services. 
-</p>
-
-<p>
-Most sites will want to use the "basic" login flavor, which supports
-username/paassword single-sign-on authentication.  (Currently no other
-flavors exist!)
+Most sites will want to use the login cgi's "basic" login flavor, which 
+supports username/password single-sign-on authentication and a simple 
+pluggable interface for talking to backend authentication services. 
+(Currently no other flavors exist!)
 </p>
 
 <p>
 The basic login flavor supports many different verifiers.  Some of the
-ones shipped with pubcookie as of this writing are:
+ones shipped with Pubcookie as of this writing are:
 </p>
 
 <ul>
@@ -92,7 +88,7 @@ configuration</a>).  Some verifiers will allow or require further
 customization; see the section referring to that verifier.
 </p>
 
-<h4><a href="apacheconfig">Apache Configuration</a></h4>
+<h4><a name="apacheconfig">Apache Configuration</a></h4>
 
 <h5>Choosing the location of your login page</h5>
 
@@ -136,10 +132,10 @@ DirectoryIndex index.html index.cgi
 <p>If this is the configuration you choose, make sure there isn't an
 index.html file in the same directory as the index.cgi binary.</p>
 
-<h5>Explicit specification of login CGI</h5>
+<h5>Explicit specification of login cgi</h5>
 
 <p>
-The login CGI is not name dependant and can be deployed as index.cgi,
+The login cgi is not name dependant and can be deployed as index.cgi,
 login.cgi, or some other CGI file if you like.  In can also be put in any
 subdirectory you wish.</p>
 
@@ -174,7 +170,7 @@ commented out.</p>
 AddHandler cgi-script .cgi
 </pre>
 
-<h4><a href="build">Build the Pubcookie login server</a></h4>
+<h4><a name="build">Build the Pubcookie login server</a></h4>
 
 <p>
 This has been made easier with autoconf. (Thanks Jon Miner, University 
@@ -188,21 +184,21 @@ $ make install
 
 <p>
 This sequence will build and install the <tt>index.cgi</tt>,
-<tt>keyserver</tt>, and keyclient binaries, using the default
+<tt>keyserver</tt>, and <tt>keyclient</tt> binaries, using the default
 directory prefix (<tt>/usr/local/pubcookie</tt>, henceforth called
-<tt>{PUBCOOKIE_DIR}</tt>) and "alwaystrue" verifier.</p>
+<tt>{PUBCOOKIE_DIR}</tt>), along with the "alwaystrue" verifier.</p>
 
 <p>
-To build the login server with other verifiers enabled
-(e.g. "kerberos_v5", "ldap", or "shadow") look at the configure
-options and adjust accordingly:
+To build other verifiers (e.g. "kerberos_v5", "ldap", or "shadow") 
+along with the login cgi look at the configure options and adjust 
+accordingly:
 </p>
 
 <pre>
 $ ./configure --help
 </pre>
 
-<h4><a name="runtime">Run-time configuration</a></h4>
+<h4><a name="runtime">Run-time Configuration</a></h4>
 
 <p>
 Most configuration of the login server can be done at run-time via
@@ -210,8 +206,8 @@ Pubcookie's <tt>config</tt> file. It is located at
 <tt>{PUBCOOKIE_DIR}/config</tt> and has "attr: value" lines
 throughout.  A sample configuration file is included as <a
 href="config.sample"><tt>config.sample</tt></a>. A complete
-explanation of all available options is available <a
-href="config.html">in the config documentation</a>.
+explanation of all available configuration variables is 
+available <a href="config.html">in the config documentation</a>.
 </p>
 
 <p>
@@ -224,34 +220,34 @@ Some of the more notable variables are:
   the number, the more debugging output that is generated.</dd>
 
 <dt> login_host </dt>
-<dd> the hostname of login server </dd>
+<dd> The hostname of login server.</dd>
 
 <dt> login_uri </dt>
-<dd> the complete URI of the login cgi </dd>
+<dd> The complete URI of the login cgi.</dd>
 
 <dt> enterprise_domain </dt>
-<dd> the domain under which all hosts will live.  must be at least a
- second level domain (e.g. <tt>example.edu</tt>) </dd>
+<dd> The domain under which all hosts will live.  Must be at least a
+ second level domain (e.g. <tt>example.edu</tt>).</dd>
 
 <dt> basic_verifier </dt>
-<dd> the verifier to use for the "basic" flavor </dd>
+<dd> The verifier to use for the "basic" login flavor.</dd>
 
 <dt> keymgt_uri </dt>
-<dd> the location of the "keyserver" CGI.  See the <a href="#keymgt">Key
+<dd> The location of the "keyserver" CGI.  See the <a href="#keymgt">Key
 Management</a> section.</dd>
 
 </dl>
 
 <p>
-The following options should refer to the same files that your web
-server uses for SSL.    </p>
+The following configuration variables should refer to the same files 
+that your web server uses for SSL.</p>
 
 <dl compact="compact">
 <dt> ssl_key_file </dt>
-<dd> the location of the SSL key</dd>
+<dd> The location of the SSL key.</dd>
 
-<dt>ssl_cert_file </dt>
-<dd>the location of the SSL certificate </dd>
+<dt> ssl_cert_file </dt>
+<dd> The location of the SSL certificate.</dd>
 </dl>
 
 <p>
@@ -263,60 +259,58 @@ those certificates named via their OpenSSL hashes. At least one of
 <tt>ssl_ca_file</tt> and <tt>ssl_ca_path</tt> should be specified.</p>
 
 <dl compact="compact">
-<dt>ssl_ca_file</dt>
-<dd>the location of a single CA</dd>
+<dt> ssl_ca_file</dt>
+<dd> The location of a single CA.</dd>
 
-<dt>ssl_ca_path</dt>
-<dd>a directory containing files named after their OpenSSL hash</dd>
+<dt> ssl_ca_path</dt>
+<dd> A directory containing files named after their OpenSSL hash.</dd>
 </dl>
 
 <p>See <a href="config.html">config.html</a> for a full list of attributes.</p>
 
-<h4><a name="localization">Localization</a></h4>
+<h4><a name="localization">Localization: Login Page Templates</a></h4>
 
 <p>
-The design of the login cgi preceded consideration of external use of
-Pubcookie, so there is much work to be done to improve flexibility and
-make it less specific to the University of Washington.
+Localization is carried out via your config file variables (see above), 
+a set of page templates, and an ok_browsers file (see below). This section
+describes the login page templates.
+
+<p>
+The login cgi serves up pages based on a set of HTML templates.
+By default, these templates reside in <tt>{PUBCOOKIE_DIR}/login_templates</tt>, 
+but the location can be set by changing <tt>template_root</tt> in your config 
+file. Generic templates are installed by default in
+<tt>{PUBCOOKIE_DIR}/login_templates.default</tt>.  They should be
+copied to <tt>{PUBCOOKIE_DIR}/login_templates</tt> and they will 
+serve as a starting point for further localization.
 </p>
 
 <p>
-However, preliminary work has been done with login templates (specifying
-the look of each page the login CGI serves up) and the run-time
-configuration file.  These pages by default live in
-<tt>{PUBCOOKIE_DIR}/login_templates</tt>, but the location can be set by
-changing <tt>template_root</tt> in <tt>{PUBCOOKIE_DIR}/config</tt>. 
-Generic templates are installed by default in
-<tt>{PUBCOOKIE_DIR}/login_templates.default</tt>.  These should be
-copied to <tt>{PUBCOOKIE_DIR}/login_templates</tt> and should serve as a
-starting point.
+Note: For reference and comparison purposes, copies of CMU and 
+Washington's login templates (of some vintage) are provided in this
+source distribution. See <tt>src/login_templates.cmu</tt> and 
+<tt>src/login_templates.uw</tt>, respectively.
 </p>
 
 <p>
-Copies of CMU and Washington's templates (of some vintage) are provided
-in <tt>src/login_templates.cmu</tt> and <tt>src/login_templates.uw</tt>
-(respectively) in the source distribution for reference.
-</p>
-
-<p>
-The name of all template files can be set via the
+The name of each template file can be set via the
 <tt>{PUBCOOKIE_DIR}/config</tt> file.  The name for each config
-attribute is tmpl_{default_file_name}, and they are relative to the
+variable is tmpl_{default_file_name}, and they are located relative to the
 <tt>template_root</tt>.  (For example, the attribute that controls the
 name of the login page is <tt>tmpl_login</tt>.)
 
-<p>
-We are in the process of reworking the template files to make them more user-friendly.  The list below will be updated as work progresses.
-</p>
+<h5>Template Files (incomplete)</h5>
 
-<p>Template Files (incomplete)</p>
+<p> We are in the process of reworking the template files to make them 
+more user-friendly.  The list below will be updated as work progresses.</p>
+
 <dl compact="compact">
  <dt>login</dt>
  <dd>The Login HTML page.
   <ol>Paramters
    <li>Login Server URL</li>
    <li>The reason for the redirect (pulled from the <tt>login_*</tt>
-    snippits)</li>
+    snippets)</li>
    <li>Hidden fields maintaining state</li>
    <li>GetCred Hidden fields</li>
   </ol>
@@ -342,27 +336,26 @@ We are in the process of reworking the template files to make them more user-fri
  </dd>
 </dl>
 
-<h4><a name="moreconfig">More configuration: User agent blocking via
+<h4><a name="moreconfig">More Configuration: User agent blocking via
 ok_browsers file</a></h4>
 
 <p>
 The <tt>{PUBCOOKIE_DIR}/ok_browsers</tt> file contains a list of acceptable
 browsers.  The idea behind ok_browsers is to block browsers that
 either have a known security flaw (i.e. don't forget cookies when they
-should) or don't work with Pubcookie (i.e. Opera which doesn't do
-domain level cookie scoping correctly).  IE and Netscape are the only
-two browser families that are known to work with Pubcookie.
+should) or don't work with Pubcookie.
 </p>
 
 <p>
-So far we've been too chicken to really use the 'ok_browsers'
-functionality to block browsers that we know don't work.  For now our
-ok_browsers has a single line: "Mozilla". Since both Netscape and IE
-claim to be Mozilla that covers the only two browsers known to work
-with Pubcookie. Proceed according to your own policy.
+Note: At the University of Washington, we've so far been too chicken to 
+really use the 'ok_browsers' functionality to block browsers that we know 
+don't work.  Our ok_browsers file has a single line: "Mozilla". This 
+pattern matches most of the browsers we support and/or encounter; mainly 
+MS Internet Explorer, Netscape, and Mozilla. Proceed according to your own 
+policy.
 </p>
 
-<h4><a name="keymgt">Key management</a></h4>
+<h4><a name="keymgt">Key Management</a></h4>
 
 <p>
 <tt>{PUBCOOKIE_DIR}/keys</tt> is the location of the keystore that the login
@@ -472,7 +465,7 @@ server's config file.</p>
 Remember that the application server will also need a correct 'config'
 file.</p>
 
-<h4><a href="upgrading">Upgrading</a></h4>
+<h4><a name="upgrading">Upgrading</a></h4>
 
 <h5>Upgrading from pre-3.0 pubcookie</h5>
 
@@ -506,7 +499,7 @@ href="#keymgt">Key management</a> section above.</p></li>
 
 </ul>
 
-<h4><a name="advconfig">Advanced configuration</a></h4>
+<h4><a name="advconfig">Advanced Configuration</a></h4>
 
 <h5>Redundant login servers</h5>
 
@@ -530,7 +523,7 @@ a <tt>webmail.example.edu</tt> DES key. Use <tt>keyclient -d</tt> on
 all other webmail machines (<tt>webmail2.example.edu</tt>, etc.) to
 download an identical application key to the remaining servers.</p>
 
-<h4><a href="security">Security considerations</a></h4>
+<h4><a name="security">Security Considerations</a></h4>
 
 <h5>Login server security</h5>
 
@@ -543,7 +536,7 @@ to the login server can steal all cookies
 
 <h5>Other stuff</h5>
 
-<h4><a href="oldtools">Old Tools That Might Be Handy for Debugging</a></h4>
+<h4><a name="oldtools">Old Tools That Might Be Handy for Debugging</a></h4>
 
 <p>
 <tt>pbc_create</tt> creates a pubcookie cookie, convenient for
@@ -587,11 +580,11 @@ last_ts: 1006986719
 
 <hr>
 <p>
-Copyright 1999-2002, University of Washington.  All rights reserved.<br>
+Copyright 1999-2003, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.6 2002-12-16 19:40:26 dors Exp $
+$Id: install-login.html,v 1.7 2003-01-22 23:00:50 dors Exp $
 </pre>
 </body>
 
