@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.14 2001-04-13 21:11:50 willey Exp $
+    $Id: libpubcookie.c,v 2.15 2001-04-13 22:13:13 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -932,6 +932,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_p(pool *p, char *in, md_context_plus *ct
 pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, crypt_stuff *c_stuff) 
 #endif
 {
+    int			i;
     pbc_cookie_data	*cookie_data;
     unsigned char	sig[PBC_SIG_LEN];
     unsigned char	buf[PBC_4K];
@@ -970,8 +971,12 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
         return cookie_data;
     }
     else {
-        /* show the unencrypted cookie contents */
-        libpbc_debug("libpbc_unbundle_cookie: username from decrypted blob: %s\n", (*cookie_data).broken.user);
+        /* show the the unencrypted cookie contents */
+        for( i=0; i < sizeof(pbc_cookie_data)-1; i++) 
+            if( ((*cookie_data).string)[i] == '\0' )
+                ((*cookie_data).string)[i] = ' ';
+        ((*cookie_data).string)[sizeof(pbc_cookie_data)] = '\0';
+        libpbc_debug("libpbc_unbundle_cookie: decrypted blob: %s\n", (*cookie_data).string);
         /* either the decryption yielded the wrong stuff or the verify failed */
 	libpbc_debug("libpbc_unbundle_cookie: sig verify failed\n");
         return NULL;
