@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_verify.c,v 1.5 1998-07-28 23:03:57 willey Exp $
+    $Id: pbc_verify.c,v 1.6 1998-07-31 21:08:13 willey Exp $
  */
 
 /*                                                                            */
@@ -22,6 +22,9 @@ int main(int argc, char **argv) {
     unsigned char       type;
 
     fgets(in, sizeof(in), stdin);
+
+    if ( argc != 2 )
+	exit(1);
 
     type = argv[1][0];
     if ( type == PBC_COOKIE_TYPE_G )
