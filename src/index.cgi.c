@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.139 2004-08-23 22:05:47 willey Exp $
+ * $Id: index.cgi.c,v 1.140 2004-09-01 21:13:36 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -130,6 +130,73 @@ FILE *headerout;
 
 /* do we want debugging? */
 int debug;
+
+/* Cookies are secure except for one exception */
+#ifdef PORT80_TEST
+static char *secure_cookie = "";
+#else
+static char *secure_cookie = "; secure";
+#endif
+
+/* Cookies to the app that may be sent via form are stored here. */
+typedef struct {
+  char *name;
+  char *value;
+  char *exp;
+} cookie_list_t;
+cookie_list_t *cookie_list;
+int            n_cookie_list = 0;
+
+void add_app_cookie(char *name, char *value, char *exp)
+{
+   int i;
+   for (i=0;i<n_cookie_list;i++) {
+     if (!strcmp(cookie_list[i].name, name)) {
+          free(cookie_list[i].value);
+          if (cookie_list[i].exp) free(cookie_list[i].exp);
+          cookie_list[i].value = strdup(value);
+          cookie_list[n_cookie_list].exp = exp? strdup(exp): NULL;
+          return;
+     }
+   }
+   if (n_cookie_list) cookie_list = (cookie_list_t *)
+       realloc(cookie_list, sizeof(cookie_list_t)*(n_cookie_list+1));
+   else cookie_list = (cookie_list_t *) malloc(sizeof(cookie_list_t));
+   cookie_list[n_cookie_list].name = strdup(name);
+   cookie_list[n_cookie_list].value = strdup(value);
+   cookie_list[n_cookie_list].exp = exp? strdup(exp): NULL;
+   n_cookie_list++;
+}
+static void clear_app_cookies()
+{
+   int i;
+   if (n_cookie_list) {
+      for (i=0;i<n_cookie_list;i++) {
+          free(cookie_list[i].name);
+          free(cookie_list[i].value);
+          if (cookie_list[i].exp) free(cookie_list[i].exp);
+      }
+      free(cookie_list);
+      n_cookie_list = 0;
+   }
+}
+static void send_app_cookies(pool *p)
+{
+   int i;
+   char         exp[128];
+   
+   for (i=0;i<n_cookie_list;i++) {
+      if (cookie_list[i].exp) snprintf(exp, 127, "; expires=%s", cookie_list[i].exp);
+      else exp[0] = '\0';
+      print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/%s%s\n", 
+          cookie_list[i].name,
+          cookie_list[i].value,
+          enterprise_domain(p),
+          exp, secure_cookie);
+   }
+   clear_app_cookies();
+}
+
 
 /* These limit the number of requests a fastcgi-server will handle.
    Have no effect on the standalone server. */
@@ -675,12 +742,7 @@ int expire_login_cookie(pool *p, const security_context *context, login_rec *l, 
                  l_cookie,
                  login_host(p),
                  LOGIN_DIR,
-#ifdef PORT80_TEST
-                 ""
-#else
-        "; secure"
-#endif
-        );
+                 secure_cookie);
 
     if (l_cookie != NULL)
         free(l_cookie);
@@ -704,14 +766,8 @@ int clear_login_cookie(pool *p) {
             login_host(p), 
             LOGIN_DIR, 
             EARLIEST_EVER,
-#ifdef PORT80_TEST
-                 ""
-#else
-                     "; secure"
-#endif
-                     );
-
-                 return(PBC_OK);
+            secure_cookie);
+    return(PBC_OK);
 
 }
 
@@ -721,18 +777,7 @@ int clear_login_cookie(pool *p) {
  */
 int clear_greq_cookie(pool *p) {
 
-    print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
-            PBC_G_REQ_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            enterprise_domain(p),
-            EARLIEST_EVER,
-#ifdef PORT80_TEST
-                 ""
-#else
-        "; secure"
-#endif
-        );
-
+    add_app_cookie(PBC_G_REQ_COOKIENAME, PBC_CLEAR_COOKIE, EARLIEST_EVER);
     return(PBC_OK);
 
 }
@@ -2062,11 +2107,7 @@ void notok (pool *p, notok_event event, char *reason)
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), 
 					 PBC_FORM_MP_COOKIENAME) ) {
-        print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n", 
-		     PBC_FORM_MP_COOKIENAME, 
-		     PBC_CLEAR_COOKIE,
-                     enterprise_domain(p), 
-		     EARLIEST_EVER);
+        add_app_cookie(PBC_FORM_MP_COOKIENAME, PBC_CLEAR_COOKIE, EARLIEST_EVER);
     }
  
     switch(event) {
@@ -2098,6 +2139,7 @@ void notok (pool *p, notok_event event, char *reason)
             break;
     }
 
+    send_app_cookies(p);
     ntmpl_print_html(p, TMPL_FNAME,
     	 libpbc_config_getstring(p, "tmpl_notok", "notok"),
 	 "subtext", (subtext == NULL ? "<BR>" : subtext), 
@@ -2116,13 +2158,7 @@ int set_pinit_cookie(pool *p)
                  PBC_PINIT_COOKIENAME,
                  PBC_SET,
                  login_host(p),
-#ifdef PORT80_TEST
-                 ""
-#else
-        "; secure"
-#endif
-        );
-
+                 secure_cookie);
     return(PBC_OK);
 }
 
@@ -2133,13 +2169,7 @@ int clear_pinit_cookie(pool *p) {
                  PBC_CLEAR_COOKIE,
                  login_host(p),
                  EARLIEST_EVER,
-#ifdef PORT80_TEST
-                 ""
-#else
-        "; secure"
-#endif
-        );
-
+                 secure_cookie);
     return(PBC_OK);
 
 }
@@ -2404,31 +2434,20 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
     }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "created cookies l_res g_res\n");
+    if (l->pinit==PBC_FALSE) add_app_cookie(PBC_G_COOKIENAME, g_cookie, NULL);
     if (l->relay_uri) pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
              "This is a relay request from %s\n", l->relay_uri);
 
 
-    /* create the http header line with the cookie */
-    snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
-#ifdef PORT80_TEST
-		"Set-Cookie: %s=%s; domain=%s; path=/", 
-#else
-		"Set-Cookie: %s=%s; domain=%s; path=/; secure", 
-#endif
-		PBC_G_COOKIENAME,
-		g_cookie,
-		enterprise_domain(p));
-
+    /* create the login cookie header*/
+    
     snprintf( l_set_cookie, sizeof(l_set_cookie)-1, 
-#ifdef PORT80_TEST
-		"Set-Cookie: %s=%s; domain=%s; path=%s", 
-#else
-		"Set-Cookie: %s=%s; domain=%s; path=%s; secure", 
-#endif
+		"Set-Cookie: %s=%s; domain=%s; path=%s%s", 
 		PBC_L_COOKIENAME,
 		l_cookie,
 		login_host(p),
-		LOGIN_DIR);
+		LOGIN_DIR,
+                secure_cookie);
 
     /* whip up the url to send the browser back to */
     if (!strcmp(l->fr, "NFR") )
@@ -2465,17 +2484,14 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
             redirect_final,
             l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
 
-    /* now blat out the redirect page */
-    if( l->pinit == PBC_FALSE ) { /* don't need a G cookie for a pinit */
-        if (!l->relay_uri) print_header(p, "%s\n", g_set_cookie);
-    } else {
-        set_pinit_cookie(p);
-    }
+    /* Send local cookies */
+    if( l->pinit == PBC_TRUE ) set_pinit_cookie(p);
     if (*l->user) print_header(p, "%s\n", l_set_cookie);
-    clear_greq_cookie(p);
+    if (!l->relay_uri) clear_greq_cookie(p);
 
     /* incase we have a relay */
     if ( l->relay_uri ) {
+        int i;
         print_html(p, "<HTML>");
         print_html(p, "<body onLoad=\"document.relay.submit()\">\n");
         print_html(p, "<form method=post action=\"%s\" name=relay>",
@@ -2484,10 +2500,14 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
              l->post_stuff?l->post_stuff:"");
         print_html(p, "<input type=hidden name=get_args value=\"%s\">",
              l->args?args_enc:"");
-        print_html(p, "<input type=hidden name=pubcookie_g value=\"%s\">",
-             g_cookie);
         print_html(p, "<input type=hidden name=redirect_url value=\"%s\">",
              redirect_dest);
+        /* Add the 'cookies' */
+        for (i=0;i<n_cookie_list;i++) {
+           print_html(p, "<input type=hidden name=\"%s\" value=\"%s\">",
+             cookie_list[i].name, cookie_list[i].value);
+        }
+        clear_app_cookies(p);
   /**
         print_html(p, "<p align=center><input type=submit name=go value=\"Continue\">");
    **/
@@ -2496,6 +2516,7 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
 
     /* incase we have a post */
     } else if ( l->post_stuff ) {
+        send_app_cookies(p);
         /* cgiParseFormInput will extract the arguments from the post */
         /* make them available to subsequent cgic calls */
         if (cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
@@ -2596,7 +2617,7 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
         print_html(p, "</BODY></HTML>\n");
     }
     else {
-        /* non-post redirect area                 non-post redirect area */
+        send_app_cookies(p);
 
         /* the refresh header should go into the template as soon as it's*/
         /* been tested                                                   */

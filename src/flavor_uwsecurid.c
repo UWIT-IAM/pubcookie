@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.8 2004-07-31 01:01:24 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.9 2004-09-01 21:13:36 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -469,11 +469,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     }
 
     if (need_clear_greq) {
-        print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
-                     PBC_G_REQ_COOKIENAME, 
-                     PBC_CLEAR_COOKIE,
-                     PBC_ENTRPRS_DOMAIN);
-
+        add_app_cookie(PBC_G_REQ_COOKIENAME, PBC_CLEAR_COOKIE, NULL);
     }
 
     /* get the config about whether to use static user fields */

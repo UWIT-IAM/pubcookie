@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.63 2004-08-19 00:34:43 willey Exp $
+ * $Id: flavor_basic.c,v 1.64 2004-09-01 21:13:36 fox Exp $
  */
 
 
@@ -245,11 +245,7 @@ static int print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     }
 
     if (need_clear_greq) {
-        print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
-                     PBC_G_REQ_COOKIENAME, 
-                     PBC_CLEAR_COOKIE,
-                     PBC_ENTRPRS_DOMAIN);
-
+        add_app_cookie(PBC_G_REQ_COOKIENAME, PBC_CLEAR_COOKIE, NULL);
     }
 
     switch (reason) {

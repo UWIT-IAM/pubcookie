@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.153 2004-08-18 19:43:50 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.154 2004-09-01 21:13:36 fox Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -1883,9 +1883,11 @@ int pubcookie_user(request_rec *r, pubcookie_server_rec *scfg,
             /* save these creds in that file */
 #ifdef APACHE2
             apr_file_open(&f, krb5ccname,
-                 APR_CREATE|APR_WRITE|APR_TRUNCATE, 0644, p);
+                 APR_CREATE|APR_WRITE|APR_TRUNCATE, 
+                   APR_UREAD|APR_UWRITE|APR_GREAD, p);
 #else
             f = ap_pfopen(p, krb5ccname, "w");
+            chmod(krb5ccname, S_IRUSR|S_IWUSR);
 #endif
             if (!f) {
                 ap_log_rerror(PC_LOG_ERR, r,
@@ -2858,11 +2860,11 @@ static int login_reply_handler(request_rec *r)
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec    *cfg;
     table *args = ap_make_table(r->pool, 5);
-    const char *greply, *pdata;
+    const char *greply, *creply, *pdata;
     char *arg;
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
     char *post_data;
-    char *gr_cookie;
+    char *gr_cookie, *cr_cookie;
     const char *r_url;
     pool *p = r->pool;
 
@@ -2909,14 +2911,24 @@ static int login_reply_handler(request_rec *r)
        ap_send_http_header(r);
     }
 
-    gr_cookie = ap_psprintf(p,
-                 "%s=%s; domain=%s; path=/;%s",
+    creply = ap_table_get(args, PBC_CRED_TRANSFER_COOKIENAME);
+
+    /* Build the redirection */ 
+
+    gr_cookie = ap_psprintf(p, "%s=%s; domain=%s; path=/;%s",
        PBC_G_COOKIENAME, greply, 
        PBC_ENTRPRS_DOMAIN,
        secure_cookie);
-
-
     ap_table_add(r->headers_out, "Set-Cookie", gr_cookie);
+
+    if (creply) {
+      cr_cookie = ap_psprintf(p, "%s=%s; domain=%s; path=/;%s",
+         PBC_CRED_TRANSFER_COOKIENAME, creply, 
+         PBC_ENTRPRS_DOMAIN,
+         secure_cookie);
+      ap_table_add(r->headers_out, "Set-Cookie", cr_cookie);
+    }
+
 
     ap_send_http_header(r);
 

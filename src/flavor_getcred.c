@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.29 2004-04-07 15:29:01 jteaton Exp $
+ * $Id: flavor_getcred.c,v 1.30 2004-09-01 21:13:36 fox Exp $
  */
 
 
@@ -342,23 +342,17 @@ static login_result process_getcred(pool *p, const security_context *context,
     for (i = 0, j = 0;
          i < strlen(out64) && j < PBC_TRANSCRED_MAX_COOKIES;
          i += PBC_TRANSCRED_MAX_COOKIE_LENGTH, j++) {
+       char *ckname;
        strncpy(cookiestr, out64+i, PBC_TRANSCRED_MAX_COOKIE_LENGTH);
 
        /* set cookie(s) */
-       if (j == 0) {
-          /* compatibality mode */
-          print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
-   		 PBC_CRED_TRANSFER_COOKIENAME,
-   		 cookiestr,
-		 enterprise_domain(p));
-       } else {
-          /* set cookie(s) */
-          print_header(p, "Set-Cookie: %s%d=%s; domain=%s; path=/; secure\n",
-   		 PBC_CRED_TRANSFER_COOKIENAME,
-                 j,
-   		 cookiestr,
-		 enterprise_domain(p));
+       if (j == 0) ckname = PBC_CRED_TRANSFER_COOKIENAME;
+       else {
+          ckname = (char*) malloc(strlen(PBC_CRED_TRANSFER_COOKIENAME)+16);
+          sprintf(ckname, "%s%d", PBC_CRED_TRANSFER_COOKIENAME, j);
        }
+       add_app_cookie(ckname, cookiestr, NULL);
+       if (j) free(ckname);
     }
 
     if (j == PBC_TRANSCRED_MAX_COOKIES) {
