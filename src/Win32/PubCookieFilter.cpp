@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.42 2005-02-15 05:18:27 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.43 2005-02-26 22:49:44 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -602,7 +602,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	return (Redirect(pFC,szTemp));
 #else
 	// POST directly to login server
-	snprintf(szTemp,1024,"https://%s/%s?login_uri=%s&domain=%s",p->appsrvid,PBC_POST_NAME,p->Login_URI,p->Enterprise_Domain);
+	snprintf(szTemp,1024,"https://%s/%s?login_uri=%s",p->appsrvid,PBC_POST_NAME,p->Login_URI);
 	p->Relay_URI = strdup(szTemp);
 	Add_Post_Data(pFC, e_g_req_contents);
 	free(p->Relay_URI);
