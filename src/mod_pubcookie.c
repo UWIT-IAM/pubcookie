@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.67 2001-11-14 00:16:20 willey Exp $
+    $Id: mod_pubcookie.c,v 1.68 2001-11-27 03:19:13 willey Exp $
  */
 
 /* apache includes */
@@ -63,7 +63,6 @@ typedef struct {
   int                   serial_g_seen;
   int                   serial_s_seen;
   int                   serial_s_sent;
-  int                   super_debug;
   int                   dirdepth;
   int                   noblank;
   char			*login;
@@ -80,9 +79,74 @@ typedef struct {
   char          creds;
   int		end_session;
   char          *force_reauth;
+  int           super_debug;
   int           redir_reason_no;
   int           session_reauth;
 } pubcookie_dir_rec;
+
+void dump_server_rec(pubcookie_server_rec *scfg) {
+    libpbc_debug("super-debug: dump_server_rec:
+		g_certfile: %s
+		s_keyfile: %s
+		s_certfile: %s
+		crypt_keyfile: %s
+		session_sign_ctx_plus: %s
+		session_verf_ctx_plus: %s
+		granting_verf_ctx_plus: %s
+		c_stuff: %s
+		serial_g_seen: %d
+		serial_s_seen: %d
+		serial_s_sent: %d
+		dirdepth: %d
+		noblank: %d
+		login: %s
+		appsrvid: %s\n", 
+  		(scfg->g_certfile == NULL ? "" : scfg->g_certfile),
+  		(scfg->s_keyfile == NULL ? "" : scfg->s_keyfile),
+  		(scfg->s_certfile == NULL ? "" : scfg->s_certfile),
+  		(scfg->crypt_keyfile == NULL ? "" : scfg->crypt_keyfile),
+  		(scfg->session_sign_ctx_plus == NULL ? "unset" : "set"),
+  		(scfg->session_verf_ctx_plus == NULL ? "unset" : "set"),
+  		(scfg->granting_verf_ctx_plus == NULL ? "unset" : "set"),
+  		(scfg->c_stuff == NULL ? "unset" : "set"),
+		scfg->serial_g_seen, 
+		scfg->serial_s_seen, 
+		scfg->serial_s_sent, 
+		scfg->dirdepth, 
+		scfg->noblank, 
+  		(scfg->login == NULL ? "" : scfg->login),
+  		(scfg->appsrvid == NULL ? "" : (char *)scfg->appsrvid));
+
+}
+
+void dump_dir_rec(pubcookie_dir_rec *cfg) {
+    libpbc_debug("super-debug: dump_dir_rec:
+		inact_exp: %d
+                hard_exp: %d
+                failed: %d
+                has_granting: %d
+                non_ssl_ok: %d
+		appid: %s
+                creds: %c
+		super_debug: %d
+                end_session: %d
+                force_reauth: %s
+                redir_reason_no: %d
+                session_reauth: %d\n",
+  		cfg->inact_exp,
+  		cfg->hard_exp,
+  		cfg->failed,
+  		cfg->has_granting,
+  		cfg->non_ssl_ok,
+  		(cfg->appid == NULL ? "" : (char *)cfg->appid),
+  		cfg->creds,
+		cfg->super_debug, 
+  		cfg->end_session,
+  		(cfg->force_reauth == NULL ? "" : cfg->force_reauth),
+  		cfg->redir_reason_no,
+  		cfg->session_reauth);
+
+}
 
 /*                                                                            */
 int put_out_post(request_rec *r) {
@@ -272,7 +336,6 @@ unsigned char *appsrvid(request_rec *r)
                                          &pubcookie_module);
 #endif
 
-
     if( scfg->appsrvid )
         return(scfg->appsrvid);
     else
@@ -444,7 +507,7 @@ static int auth_failed(request_rec *r) {
         args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
 #endif
         base64_encode(r->args, args, strlen(r->args));
-        if( scfg->super_debug ) {
+        if( cfg->super_debug ) {
             libpbc_debug("super-debug: GET args before encoding length %d, string: %s\n", strlen(r->args), r->args);
             libpbc_debug("super-debug: GET args after encoding length %d, string: %s\n", strlen(args), args);
         }
@@ -525,7 +588,7 @@ static int auth_failed(request_rec *r) {
           PBC_GETVAR_FLAG,
           misc_flag);
 
-    if( scfg->super_debug )
+    if( cfg->super_debug )
         libpbc_debug("super-debug: g_req before encoding length %d, string: %s\n", strlen(g_req_contents), g_req_contents);
 
     /* setup the client pull */
@@ -567,7 +630,7 @@ static int auth_failed(request_rec *r) {
           e_g_req_contents,
           PBC_ENTRPRS_DOMAIN);
 
-    if( scfg->super_debug )
+    if( cfg->super_debug )
         libpbc_debug("super-debug: g_req length %d cookie: %s\n", strlen(g_req_cookie), g_req_cookie);
 
     /* make the pre-session cookie */
@@ -725,6 +788,7 @@ static int auth_failed(request_rec *r) {
     }
 
     return OK;
+
 }
 
 /*                                                                            */
@@ -937,7 +1001,7 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
 #else
   scfg->login = ap_pstrdup(p, PBC_LOGIN_PAGE);
 #endif
-  scfg->dirdepth = 0;
+  scfg->dirdepth = PBC_DEFAULT_DIRDEPTH;
 
   return (void *) scfg;
 }
@@ -951,12 +1015,14 @@ static void *pubcookie_dir_create(pool *p, char *dirspec) {
   cfg = (pubcookie_dir_rec *) ap_pcalloc(p, sizeof(pubcookie_dir_rec));
 #endif
 
-  cfg->inact_exp = cfg->inact_exp ? cfg->inact_exp : PBC_DEFAULT_INACT_EXPIRE;
-  cfg->hard_exp = cfg->hard_exp ? cfg->hard_exp : PBC_DEFAULT_HARD_EXPIRE;
+  cfg->inact_exp = PBC_UNSET_INACT_EXPIRE;
+  cfg->hard_exp = PBC_UNSET_HARD_EXPIRE;
 
   return (void *) cfg;
+
 }
 
+/*                                                                            */
 static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
     pubcookie_server_rec *scfg;
     pubcookie_server_rec *pscfg = (pubcookie_server_rec *)parent;
@@ -968,8 +1034,8 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
     scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
 #endif
 
-    scfg->login = nscfg->login ? nscfg->login : pscfg->login;
-    scfg->appsrvid = nscfg->appsrvid ? nscfg->appsrvid : pscfg->appsrvid;
+    scfg->login = (nscfg->login == NULL) ? nscfg->login : pscfg->login;
+    scfg->appsrvid = (nscfg->appsrvid == NULL) ? nscfg->appsrvid : pscfg->appsrvid;
     scfg->dirdepth = nscfg->dirdepth ? nscfg->dirdepth : pscfg->dirdepth;
     scfg->noblank = nscfg->noblank ? nscfg->noblank : pscfg->noblank;
 
@@ -986,30 +1052,51 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
     return (void *)scfg;
 }
 
+/*                                                                            */
 static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
     pubcookie_dir_rec *cfg;
     pubcookie_dir_rec *pcfg = (pubcookie_dir_rec *) parent;
     pubcookie_dir_rec *ncfg = (pubcookie_dir_rec *) newloc;
 
-    /* failed doesn't get merged b/c is single use */
-    /* has_granting doesn't get merged b/c is single use */
+    /* cfg->failed doesn't get merged b/c is single use */
+    /* cfg->has_granting doesn't get merged b/c is single use */
 #ifdef APACHE1_2
     cfg = (pubcookie_dir_rec *) pcalloc(p, sizeof(pubcookie_dir_rec));
 #else
     cfg = (pubcookie_dir_rec *) ap_pcalloc(p, sizeof(pubcookie_dir_rec));
 #endif
 
-    cfg->inact_exp = ncfg->inact_exp ? ncfg->inact_exp : pcfg->inact_exp;
-    cfg->inact_exp = cfg->inact_exp ? cfg->inact_exp : PBC_DEFAULT_INACT_EXPIRE;
+    cfg->inact_exp = (ncfg->inact_exp == PBC_UNSET_INACT_EXPIRE)
+			? pcfg->inact_exp : ncfg->inact_exp;
+    cfg->hard_exp = (ncfg->hard_exp == PBC_UNSET_HARD_EXPIRE)
+			? pcfg->hard_exp : ncfg->hard_exp;
 
-    cfg->hard_exp = ncfg->hard_exp ? ncfg->hard_exp : pcfg->hard_exp;
-    cfg->hard_exp = cfg->hard_exp ? cfg->hard_exp : PBC_DEFAULT_HARD_EXPIRE;
-
+    /* life is much easier if the default value is zero or NULL */
     cfg->appid = ncfg->appid ? ncfg->appid : pcfg->appid;
     cfg->force_reauth = ncfg->force_reauth ? ncfg->force_reauth : pcfg->force_reauth;
     cfg->session_reauth = ncfg->session_reauth ? ncfg->session_reauth : pcfg->session_reauth;
     cfg->end_session = ncfg->end_session ? ncfg->end_session : pcfg->end_session;
+    cfg->super_debug = ncfg->super_debug ? ncfg->super_debug : pcfg->super_debug;
     return (void *) cfg;
+
+}
+
+/* the bestest way to deal with default values for things that go thru the    */
+/* create/merge gauntlet is to wait until you're ready to use them and then   */
+/* see if they've been explicitly set                                         */
+void pubcookie_dir_defaults(pubcookie_dir_rec *cfg) {
+
+    if( cfg->inact_exp == PBC_UNSET_INACT_EXPIRE )
+        cfg->inact_exp = PBC_DEFAULT_INACT_EXPIRE;
+    if( cfg->hard_exp == PBC_UNSET_INACT_EXPIRE )
+        cfg->hard_exp = PBC_DEFAULT_INACT_EXPIRE;
+
+}
+
+/* when there is stuff in the server rec with non-zero defaults put them here */
+void pubcookie_server_defaults(pubcookie_server_rec *scfg) {
+
+    ;
 
 }
 
@@ -1052,6 +1139,10 @@ static int pubcookie_user(request_rec *r) {
                                             &pubcookie_module);
 #endif
 
+  /* get defaults for unset args */
+  pubcookie_dir_defaults(cfg);
+  pubcookie_server_defaults(scfg);
+
   /* add creds to pubcookie record */
   if( strcasecmp(at, PBC_CRED1_AUTHTYPE) == 0 ) {
     cfg->creds = PBC_CREDS_CRED1;
@@ -1067,7 +1158,7 @@ static int pubcookie_user(request_rec *r) {
     return DECLINED;
   }
   
-  if( scfg->super_debug )
+  if( cfg->super_debug )
     libpbc_debug("super-debug: pubcookie_user: uri %s is authed with %c\n", r->uri, cfg->creds);
 
   if( cfg->force_reauth ) {
@@ -1076,7 +1167,13 @@ static int pubcookie_user(request_rec *r) {
     return OK;
   }
 
-  if( scfg->super_debug )
+    /* maybe dump the directory and server recs */
+    if( cfg->super_debug ) {
+        dump_server_rec(scfg);
+        dump_dir_rec(cfg);
+    }
+
+  if( cfg->super_debug )
     libpbc_debug("super-debug: pubcookie_user: about to look for some cookies; current uri: %s\n", r->uri);
 
   sess_cookie_name = make_session_cookie_name(p, appid(r));
@@ -1099,7 +1196,7 @@ static int pubcookie_user(request_rec *r) {
   if( ! cookie_data || strncasecmp(appid(r), cookie_data->broken.appid, sizeof(cookie_data->broken.appid)-1) != 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
 
-      if( scfg->super_debug )
+      if( cfg->super_debug )
         libpbc_debug("pubcookie_user: no G or S cookie; uri: %s\n", r->uri);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
@@ -1134,13 +1231,12 @@ static int pubcookie_user(request_rec *r) {
         return OK;
       }
 
-
       if( cfg->inact_exp != -1 &&
           libpbc_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp) == PBC_FAIL ) {
         libpbc_debug("S cookie inact expired; user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n", 
                 (*cookie_data).broken.user, 
-                (*cookie_data).broken.create_ts, 
-                cfg->inact_exp, 
+                (*cookie_data).broken.last_ts, 
+                cfg->inact_exp,
                 time(NULL),
                 r->uri);
         cfg->failed = PBC_BAD_AUTH;
@@ -1203,13 +1299,13 @@ static int pubcookie_user(request_rec *r) {
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 #endif
 
-    if( scfg->super_debug )
+    if( cfg->super_debug )
       libpbc_debug("super-debug: pubcookie_user: has granting; current uri is: %s\n", r->uri);
 
     /* the granting cookie gets blanked too early and another login */
     /* server loop is required, this just speeds up that loop */
     if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
-      if( scfg->super_debug )
+      if( cfg->super_debug )
           libpbc_debug("super-debug: pubcookie_user: in the 'speed up that loop' logic; current uri is: %s\n", r->uri);
 
       cfg->failed = PBC_BAD_AUTH;
@@ -1267,7 +1363,7 @@ static int pubcookie_user(request_rec *r) {
   }
 
 
-  if( scfg->super_debug )
+  if( cfg->super_debug )
     libpbc_debug("super-debug: pubcookie_user: everything is o'tay; current uri is: %s\n", r->uri);
 
   return OK;
@@ -1291,13 +1387,13 @@ int pubcookie_auth (request_rec *r) {
                                             &pubcookie_module);
 #endif
 
-  if (scfg->super_debug)
+  if (cfg->super_debug)
     libpbc_debug("super-debug: pubcookie_auth: in\n", cfg->failed);
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
 
   if(cfg->failed) {  /* pubcookie_user has failed so pass to typer */
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_auth: failed with %d\n", cfg->failed);
     return OK;
   }
@@ -1339,7 +1435,7 @@ static int pubcookie_typer(request_rec *r) {
   scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                             &pubcookie_module);
 
-  if (scfg->super_debug)
+  if (cfg->super_debug)
     ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG,r,"in typer, creds=0x%x",(int)cfg->creds);
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
@@ -1350,7 +1446,7 @@ static int pubcookie_typer(request_rec *r) {
 #endif
 
   if( cfg->has_granting ) {
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: coming in with granting\n");
     first_time_in_session = 1;
     cfg->has_granting = 0;
@@ -1362,7 +1458,7 @@ static int pubcookie_typer(request_rec *r) {
    */
 
   if(!cfg->failed) {
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: no failure\n");
 
     if( cfg->end_session == PBC_END_SESSION ) {  /* clear session cookie */
@@ -1421,22 +1517,22 @@ static int pubcookie_typer(request_rec *r) {
     }
     return DECLINED;
   } else if(cfg->failed == PBC_BAD_AUTH) {
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: bad auth\n");
     r->handler = PBC_AUTH_FAILED_HANDLER;
     return OK;
   } else if (cfg->failed == PBC_BAD_USER) {
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: bad user\n");
     r->handler = PBC_BAD_USER_HANDLER;
     return OK;
   } else if(cfg->failed == PBC_FORCE_REAUTH) {
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: force reauth\n");
     r->handler = PBC_AUTH_FAILED_HANDLER;
     return OK;
   } else {
-    if (scfg->super_debug)
+    if (cfg->super_debug)
       libpbc_debug("super-debug: pubcookie_typer: unknown failure\n");
     return DECLINED;
   }
@@ -1491,7 +1587,7 @@ const char *pubcookie_set_inact_exp(cmd_parms *cmd, void *mconfig, char *v) {
     if((cfg->inact_exp = atoi(v)) < 0 && cfg->inact_exp != -1 ) {
         return "PUBCOOKIE: Could not convert inactivity expire parameter to nonnegative number.";
     }
-    
+
     /* how to turn off inactivity checking */
     if( cfg->inact_exp == -1 ) {
         return NULL;
@@ -1795,20 +1891,12 @@ const char *pubcookie_set_no_blank(cmd_parms *cmd, void *mconfig, char *v) {
 
 /*                                                                            */
 const char *set_super_debug(cmd_parms *cmd, void *mconfig, int f) {
-    server_rec *s = cmd->server;
-    pubcookie_server_rec *scfg;
-#ifdef APACHE1_2
-    scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
-                                                   &pubcookie_module);
-#else
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
-                                                   &pubcookie_module);
-#endif
+    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
 
     if(f != 0)
-        scfg->super_debug = PBC_SUPER_DEBUG;
+        cfg->super_debug = PBC_SUPER_DEBUG;
     else
-        scfg->super_debug = 0;
+        cfg->super_debug = 0;
 
     return NULL;
 }
