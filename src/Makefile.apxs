@@ -5,13 +5,14 @@ APXS=/usr/local/apache/bin/apxs
 SSL_BASE=/usr/local/ssl
 
 # some mod_pubcookie compile flags
-#  -DNO_JIMB_SESSION_NAMES -DUSE_SECURID
-#  -DPORT80_TEST -DAPACHE1_3 -DAPACHE2 
-CFLAGS=-DUSE_SECURID -DAPACHE1_3 
-#CFLAGS=-DUSE_SECURID -Wall,-g
+#  -DAPACHE1_3 - for old apaches
+#  -DAPACHE2 - for 2.x apaches
+#  -DPORT80_TEST - for non-ssl testing 
+#  -DNO_JIMB_SESSION_NAMES - makes session cookies all be named the same
+#  -DUSE_SECURID - UWash securid only
+CFLAGS=-DAPACHE2 -Wall
 
 INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
-#EXTRA_LDFLAGS=-I/opt/nfast/gcc/include -DNFast -L/opt/nfast/gcc/lib -lnfstub
 LIBS=$(EXTRA_LDFLAGS) -L$(SSL_BASE)/lib -lssl -lcrypto 
 
 all: mod_pubcookie.so
