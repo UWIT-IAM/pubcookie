@@ -15,7 +15,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.20 2002-08-16 18:35:40 dors Exp $
+    $Id: INSTALL.login.txt,v 1.21 2002-08-16 20:02:45 dors Exp $
  */
 
 
@@ -137,73 +137,42 @@ commented out.
 
 AddHandler cgi-script .cgi
 
-5. Compiling
+5. Build the Pubcookie login server
 
-5.1 Compile time configuration
+This has been made easier with autoconf. (Thanks Jon Miner, University 
+of Wisconsin!) To build a barebones login server, run:
 
-You should look at "Makefile.settings". You may need to set:
+$ ./configure --enable-login --disable-apache
+$ make
 
-SSL_BASE and/or SSL_OTHER_INC_DIR/SSL_OTHER_LIB_DIR
-    the location of the OpenSSL libraries & headers
+This will build the index.cgi, keyserver, and keyclient binaries, using 
+the default directory prefix (/usr/local/pubcookie, henceforth called
+{PUBCOOKIE_DIR}) and "alwaystrue" verifier.
 
-EXTRA_CFLAGS / EXTRA_LDFLAGS / EXTRA_LIBS
-    other things your system might need
+To build the login server with other verifiers enabled (e.g. Kerberos 5, 
+LDAP, or Shadow) look at the configure options and adjust accordingly:
 
-PUBCOOKIE_DIR
-    the root directory of your Pubcookie installation (where Pubcookie
-    related files will be placed)
-
-You may also have to edit "Makefile.login":
-
-CGIC_DIR
-    where you compiled CGIC
-
-DEFINES += -DHAVE_<verifier>
-    Each verifier will have its own section; comment out that section
-    to enable that verifier. (Many verifiers require external
-    libraries.)
-
-5.2 Building the binaries
-
-Note: it is assumed you have already set up a system running Apache with 
-mod_ssl and have noted the location where OpenSSL is installed.
-
-The login cgi uses the CGIC library for some functions.  This library is
-included with the Pubcookie distribution.  Pubcookie uses a modified CGIC
-library.  Currently cgic comes in a separate tar file and is compiled
-separately.  The Pubcookie modifications should not affect other expected
-uses of cgic, the modifications simply make some cgic-internal functions
-available externally.
- 
-To compile cgic, untar the pubcookie_cgic.tar.gz into a separate
-directory. Check the Makefile for installation specific stuff and type
-'make'.  libcgic.a and cgic.h can be put in the pubcookie install
-directory or other locations you please.
-
-Once cgic is compiled, build index.cgi with "make index.cgi".  This
-will build "login.cgi", "keyclient", and "keyserver" in addition to
-some other utilities useful for debugging.  You may have to edit the
-start of "Makefile.settings" to point to where you have installed cgic
-and OpenSSL.  (You may need to edit "Makefile.login"; if you do, it's
-a bug and you should report it so we can fix it.)
+$ ./configure --help
 
 6. Run-time configuration:
 
-Most configuration can be done at run-time via the "config" file. It
-is located at {PUBCOOKIE_DIR}/config as "attr: value"
-lines.  A sample configuration file is included as "config.sample".
+Most configuration of the login server can be done at run-time via
+Pubcookie's "config" file. It is located at {PUBCOOKIE_DIR}/config and has
+"attr: value" lines throughout.  A sample configuration file is included
+as "config.sample".
 
-Some of the more notable attributes are:
+Some of the more notable variables are:
 
-debug (integer) - Non-zero value enables debug logging.  The higher
-      the number, the more debugging output that is generated.
-login_host - the hostname of login server
-login_uri - the complete URI of the login cgi
+debug (integer)   - Non-zero value enables debug logging.  The higher
+                    the number, the more debugging output that is 
+                    generated.
+login_host        - the hostname of login server
+login_uri         - the complete URI of the login cgi
 enterprise_domain - the domain under which all hosts will live.  must be 
-	at least a second level domain (e.g. somewhere.edu)
-basic_verifier - the verifier to use for the "basic" flavor
-keymgt_uri - the location of the "keyserver" CGI.  See "Key
-      Management" below.
+                    at least a second level domain (e.g. somewhere.edu)
+basic_verifier    - the verifier to use for the "basic" flavor
+keymgt_uri        - the location of the "keyserver" CGI.  See "Key
+                    Management" below.
 
 The following options should refer to the same files that your web
 server uses for SSL.  At least one of 'ssl_ca_file' and 'ssl_ca_path'
@@ -213,10 +182,10 @@ ssl_key_file - the location of the SSL key
 ssl_cert_file - the location of the SSL certificate 
 
 If your institution uses a single CA without any intermediate
-certificates, set 'ssl_ca_file' to the path of the CA's certificate.
-If your institution uses multiple CAs or intermediate certificates,
-you'll need a directory ('ssl_ca_path') contain those certificates
-named via their OpenSSL hashes.
+certificates, set 'ssl_ca_file' to the path of the CA's certificate. If
+your institution uses multiple CAs or intermediate certificates, you'll
+need a directory ('ssl_ca_path') contain those certificates named via
+their OpenSSL hashes.
 
 ssl_ca_file - the location of a single CA
 ssl_ca_path - a directory containing files named after their OpenSSL hash
@@ -255,21 +224,31 @@ with Pubcookie. Proceed according to your own policy.
 {PUBCOOKIE_DIR}/keys is the location of the keystore that the login
 cgi uses.  The login cgi makes use of several different keys.
 
-9.1 Generate keypairs for the login server
+9.1 Generate or reuse keypairs for the login server
 
-The pubcookie_login key is used to secure the login cookie.  These
-files are kept exclusively on the login server.
+The pubcookie_login key and certificate are used to secure the "login
+cookie" that maintains the single sign-on session with the login server.  
+These files are kept exclusively on the login server. Note: you can reuse
+your existing private key and SSL server certificate rather than 
+generating a new keypair. 
 
-% openssl req -new -x509 -nodes -out /usr/www/pubcookie/keys/pubcookie_login.cert.<hostname> -newkey rsa:1024 -keyout /usr/www/pubcookie/keys/pubcookie_login.key.<hostname>
+$ openssl req -new -x509 -nodes -out /usr/local/pubcookie/keys/pubcookie_login.cert.<hostname> -newkey rsa:1024 -keyout /usr/local/pubcookie/keys/pubcookie_login.key.<hostname>
 
-The pubcookie_granting key is used to secure the granting response
-(the authentication assertion from login server to application
-server).  The key is kept exclusively on the login server; the
-certificate must be distributed to every application server.
+The corresponding config file attr are ssl_cert_file and ssl_key_file.
 
-% openssl req -new -x509 -nodes -out /usr/www/pubcookie/keys/pubcookie_granting.cert.<hostname> -newkey rsa:1024 -keyout /usr/www/pubcookie/keys/pubcookie_granting.key.<hostname>
+9.2 Generate granting keypair for authentication assertions
 
-9.2 Configure keyserver on the login server
+Next, the pubcookie_granting keypair is needed to secure authentication
+assertions sent from login server to application servers, as represented
+by the "granting cookie".  The key is kept exclusively on the login
+server; the certificate must be distributed to every application server.
+
+$ openssl req -new -x509 -nodes -out /usr/local/pubcookie/keys/pubcookie_granting.cert.<hostname> -newkey rsa:1024 -keyout /usr/local/pubcookie/keys/pubcookie_granting.key.<hostname>
+
+The corresponding config file attr are granting_cert_file and
+granting_key_file.
+
+9.3 Configure keyserver on the login server
 
 "keyserver" is a program that maintains DES keys.  Unfortunately, due
 to subtleties in the key usage constraints, it is unable to run as a
@@ -278,9 +257,9 @@ from inetd.
 
 Add a line like the following to the login server's inetd.conf:
 
-2222    stream  tcp     nowait  root    /usr/www/pubcookie/bin/keyserver keyserver
+2222    stream  tcp     nowait  root    /usr/local/pubcookie/bin/keyserver keyserver
 
-where "/usr/www/pubcookie/bin/keyserver" is where the keyserver binary
+where "/usr/local/pubcookie/bin/keyserver" is where the keyserver binary
 is installed.  Make sure that your "pubcookie/config" file is
 correctly configured.
 
@@ -299,7 +278,7 @@ service keyserver
 	wait			= no
 	user			= root
 	group			= tty
-	server			= /usr/www/pubcookie/bin/keyserver
+	server			= /usr/local/pubcookie/bin/keyserver
 }
 ---cut here---
 
@@ -309,7 +288,7 @@ After adding this line, restart inetd.
 
 Now run keyclient to generate a DES key for the login server:
 
-% /usr/www/pubcookie/bin/keyclient
+% /usr/local/pubcookie/bin/keyclient
 
 This will cause the keyserver program to generate a new DES key for
 the login server to use to provide confidentiality for the login
