@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.4 2000-09-30 16:42:48 willey Exp $
+/* $Id: securid.c,v 1.5 2001-10-18 22:33:58 willey Exp $
 
    function: securid  
    args:     reason - points to a reason string
@@ -30,8 +30,8 @@
 #include <syslog.h>
 #include <stdlib.h>
 
-#include "mgoapi.h"
-#include "securid.h"
+#include <mgoapi.h>
+#include <securid.h>
 
 void securid_cleanup () 
 {
