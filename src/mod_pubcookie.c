@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.83 2002-06-26 14:53:39 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.84 2002-06-26 20:56:36 willey Exp $
  */
 
 /* apache includes */
@@ -155,29 +155,6 @@ int put_out_post(request_rec *r) {
    int retval;
 
    /* checkout http_protocols.c for reading the body info */
-#ifdef APACHE1_2
-   if ((retval = setup_client_block(r, REQUEST_CHUNKED_ERROR)))
-        return retval;
-
-   if (should_client_block(r)) {
-        int len_read;
-
-        hard_timeout("copy script args", r);
-
-        while ((len_read =
-                get_client_block(r, argsbuffer, HUGE_STRING_LEN)) > 0) {
-            reset_timeout(r);
-            if (rwrite(argsbuffer, len_read, r) < len_read) {
-                /* something went wrong writing, chew up the rest */
-                while (get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
-                    /* dump it */
-                }
-                break;
-            }
-        }
-
-        kill_timeout(r);
-#else
    if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
         return retval;
 
@@ -199,7 +176,6 @@ int put_out_post(request_rec *r) {
         }
 
         ap_kill_timeout(r);
-#endif
     }
     return(1);
 
@@ -218,26 +194,9 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
     pool *p = r->pool;
     pubcookie_server_rec *scfg;
 
-#ifdef APACHE1_2
-    scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
+    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
-#else
-    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
-                                         &pubcookie_module);
-#endif
 
-#ifdef APACHE1_2
-    if( scfg->dirdepth ) {
-        if( scfg->dirdepth < count_dirs(path) )
-            truncate = scfg->dirdepth;
-        else
-            truncate = count_dirs(path);
-        path_out = make_dirstr(p, path, truncate);
-    }
-    else {
-        path_out = make_dirstr(p, path, count_dirs(path));
-    }
-#else
     if( scfg->dirdepth ) {
         if( scfg->dirdepth < ap_count_dirs(path) )
             truncate = scfg->dirdepth;
@@ -248,7 +207,6 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
     else {
         path_out = ap_make_dirstr(p, path, ap_count_dirs(path));
     }
-#endif
 
     return (unsigned char *) path_out;
 
@@ -335,54 +293,15 @@ unsigned char *appid(request_rec *r)
     pubcookie_dir_rec		*cfg;
     request_rec 		*rmain = main_rrec (r);
 
-#ifdef APACHE1_2
-    cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
+    cfg=(pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
-    scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
+    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
-#else
-    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
-                                         &pubcookie_module);
-    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
-                                         &pubcookie_module);
-#endif
 
     if( cfg->appid )
         return(cfg->appid);
     else
-#ifdef APACHE1_2
-    {
-	char *uri = pstrdup (r->pool, rmain->unparsed_uri);
-	char *c = uri;
-	/* go past the scheme */
-	while (*c && *c != ':' && *c != '/' && *c != '?' && *c != '#')
-	    ++c;
-	if (*c == '?' || *c == '#') {
-	    /* we didn't find a scheme, but did find query or frag - done */
-	    *c = '\0';
-	} else if (*c == '/') {
-	    /* no scheme, look for query or frag */
-	    while (*c && *c != '?' && *c != '#')
-		++c;
-	    *c = '\0';
-	} else if (*c && *c++ == ':' && *c++ == '/' && *c++ == '/') {
-	    /* looks like a scheme, go past site */
-	    while (*c && *c != '/' && *c != '?' && *c != '#')
-		++c;
-	    if (*c == '/') {
-		/* found the site, chop it and the scheme off */
-		uri = c;
-		/* now look for query or frag */
-		while (*c && *c != '?' && *c != '#')
-		    ++c;
-		*c = '\0';
-	    }
-	}
-        return get_app_path(r, uri);
-    }
-#else
         return get_app_path(r, rmain->parsed_uri.path);
-#endif
 
 }
 
@@ -392,27 +311,16 @@ unsigned char *appsrvid(request_rec *r)
     pubcookie_server_rec	*scfg;
     pubcookie_dir_rec		*cfg;
 
-#ifdef APACHE1_2
-    cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
+    cfg=(pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
-    scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
+    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
-#else
-    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
-                                         &pubcookie_module);
-    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
-                                         &pubcookie_module);
-#endif
 
     if( scfg->appsrvid )
         return(scfg->appsrvid);
     else
         /* because of multiple passes through don't use r->hostname() */
-#ifdef APACHE1_2
-        return (unsigned char *) pstrdup(r->pool, get_server_name(r));
-#else
         return (unsigned char *) ap_pstrdup(r->pool, ap_get_server_name(r));
-#endif
 
 }
 
@@ -592,19 +500,6 @@ int blank_cookie(request_rec *r, char *name) {
     if (scfg->noblank) return(0);
   
     /* If we've stashed the cookie, we know it's already blanked */
-#ifdef APACHE1_2
-    if(table_get(mr->notes, name) ||
-        !(cookie_header = table_get(r->headers_in, "Cookie")))
-        return 0;
-
-    /* if we aint got an authtype they we definately aint pubcookie */
-    /* then again, we want to always blank cookies */
-    /* if(!auth_type(r))                           */
-    /*   return DECLINED;                          */
-
-    /* add an equal on the end */
-    name_w_eq = pstrcat(r->pool, name, "=", NULL);
-#else
     if(ap_table_get(mr->notes, name) ||
         !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
       return 0;
@@ -616,7 +511,6 @@ int blank_cookie(request_rec *r, char *name) {
 
     /* add an equal on the end */
     name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
-#endif
 
     if(!(cookie = strstr(cookie_header, name_w_eq)))
         return 0;
@@ -634,18 +528,10 @@ int blank_cookie(request_rec *r, char *name) {
      * Note that we must use the topmost request's pool instead of our own
      * pool!
      */
-#ifdef APACHE1_2
-    c2 = pstrdup (mr->pool, cookie);
-#else
     c2 = ap_pstrdup (mr->pool, cookie);
-#endif
     if( (ptr = strchr (c2, ';')) )
         *ptr = '\0';
-#ifdef APACHE1_2
-    table_set (mr->notes, name, c2);
-#else
     ap_table_set (mr->notes, name, c2);
-#endif
 
     ptr = cookie;
     while(*ptr) {
@@ -655,11 +541,7 @@ int blank_cookie(request_rec *r, char *name) {
         ptr++;
     }
 
-#ifdef APACHE1_2
-    table_set(r->headers_in, "Cookie", cookie_header);
-#else
     ap_table_set(r->headers_in, "Cookie", cookie_header);
-#endif
 
     return (int)ptr;
 
@@ -668,18 +550,6 @@ int blank_cookie(request_rec *r, char *name) {
 /* Herein we deal with the redirect of the request to the login server        */
 /*    if it was only that simple ...                                          */
 static int auth_failed(request_rec *r) {
-#ifdef APACHE1_2
-    char                 *tmp = palloc(r->pool, PBC_1K);
-    char                 *refresh = palloc(r->pool, PBC_1K);
-    char                 *pre_s = palloc(r->pool, PBC_1K);
-    char                 *pre_s_cookie = palloc(r->pool, PBC_1K);
-    char                 *g_req_cookie = palloc(r->pool, PBC_4K);
-    char                 *g_req_contents = palloc(r->pool, PBC_4K);
-    char                 *e_g_req_contents = palloc(r->pool, PBC_4K);
-    const char *tenc = table_get(r->headers_in, "Transfer-Encoding");
-    const char *ctype = table_get(r->headers_in, "Content-type");
-    const char *lenp = table_get(r->headers_in, "Content-Length");
-#else
     char                 *tmp = ap_palloc(r->pool, PBC_1K);
     char                 *refresh = ap_palloc(r->pool, PBC_1K);
     char                 *pre_s = ap_palloc(r->pool, PBC_1K);
@@ -690,7 +560,6 @@ static int auth_failed(request_rec *r) {
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
     const char *ctype = ap_table_get(r->headers_in, "Content-type");
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
-#endif
     char                 *host = NULL;
     char                 *args;
     char                 *refresh_e;
@@ -701,17 +570,10 @@ static int auth_failed(request_rec *r) {
     char                 *file_to_upld = NULL;
     const char           *referer;
 
-#ifdef APACHE1_2
-    cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
+    cfg=(pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
-    scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
+    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
-#else
-    cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
-                                         &pubcookie_module);
-    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
-                                         &pubcookie_module);
-#endif
 
     if( cfg->super_debug )
         libpbc_debug("super-debug: auth_failed: hello\n");
@@ -721,11 +583,7 @@ static int auth_failed(request_rec *r) {
 
     /* deal with GET args */
     if ( r->args ) {
-#ifdef APACHE1_2
-        args = pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
-#else
         args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
-#endif
         libpbc_base64_encode( (unsigned char *) r->args, (unsigned char *) args, strlen(r->args));
         if( cfg->super_debug ) {
             libpbc_debug("super-debug: GET args before encoding length %d, string: %s\n", strlen(r->args), r->args);
@@ -733,11 +591,7 @@ static int auth_failed(request_rec *r) {
         }
     }
     else
-#ifdef APACHE1_2
-        args = pstrdup(r->pool, "");
-#else
         args = ap_pstrdup(r->pool, "");
-#endif
 
     r->content_type = "text/html";
 
@@ -746,26 +600,15 @@ static int auth_failed(request_rec *r) {
     if ( r->server->port != 80 )
         if ( r->server->port != 443 )
             /* because of multiple passes through don't use r->hostname() */
-#ifdef APACHE1_2
-            ap_snprintf(host, PBC_1K-1, "%s:%d", get_server_name(r), r->server->port);
-#else
-            host = ap_psprintf(r->pool, "%s:%d", ap_get_server_name(r), r->server->port);
-#endif
+            host = ap_psprintf(r->pool, 
+			"%s:%d", ap_get_server_name(r), r->server->port);
 
     if ( ! host ) 
         /* because of multiple passes through on www don't use r->hostname() */
-#ifdef APACHE1_2
-        host = pstrdup(r->pool, get_server_name(r));
-#else
         host = ap_pstrdup(r->pool, ap_get_server_name(r));
-#endif
 
     /* To knit the referer history together */
-#ifdef APACHE1_2
-    referer = table_get(r->headers_in, "Referer");
-#else
     referer = ap_table_get(r->headers_in, "Referer");
-#endif
 
     /* make the granting request */
     /* the granting request is a cookie that we set  */
@@ -790,11 +633,7 @@ static int auth_failed(request_rec *r) {
           PBC_GETVAR_ARGS, 
           args,
           PBC_GETVAR_REAL_HOST,
-#ifdef APACHE1_2
-          get_local_host(r->pool),
-#else
           ap_get_local_host(r->pool),
-#endif
           PBC_GETVAR_APPSRV_ERR,
           cfg->redir_reason_no,
           PBC_GETVAR_FILE_UPLD,
@@ -1038,8 +877,6 @@ static void pubcookie_init(server_rec *s, pool *p) {
 
     libpbc_pubcookie_init();
     
-    /* read and init crypt key */
-
     /* bail if PubcookieAuthTypes not set */
     if( scfg->authtype_names == NULL ) {
         ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
@@ -1764,13 +1601,8 @@ const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
     server_rec *s = cmd->server;
     pubcookie_server_rec *scfg;
 
-#ifdef APACHE1_2
-    scfg = (pubcookie_server_rec *) get_module_config(s->module_config,
-                                                   &pubcookie_module);
-#else
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
-#endif
 
     return NULL;
 }
@@ -1792,11 +1624,7 @@ const char *set_session_reauth(cmd_parms *cmd, void *mconfig, int f) {
 const char *set_end_session(cmd_parms *cmd, void *mconfig, char *v) {
     pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
 
-#ifdef APACHE1_2
-    cfg->end_session = pstrdup(cmd->pool, v);
-#else
     cfg->end_session = ap_pstrdup(cmd->pool, v);
-#endif
 
     return NULL;
 
