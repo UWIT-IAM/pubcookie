@@ -133,7 +133,7 @@ login cgi:</p>
 <dd> The DNS domain under which all participating hosts will live.  Must be at
      least a second level domain; used to scope "granting" cookies sent between 
      the login server and application servers. Servers outside this domain must
-     use a Pubcookie relay to authenticate users.</dd> 
+     use the Pubcookie relay cgi to authenticate users.</dd> 
 <dd> Example: <i>example.edu</i> or <i></i></dd>
 
 <dt> <a name="kiosk">kiosk</a> <i>special</i></dt>
@@ -260,6 +260,17 @@ ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password</pre>
 <dt> <a name="getcred_authz_file">getcred_authz_file</a> <i>string</i></dt> 
 <dd> flavor_getcred uses this file to determine which application are authorized to request
      what credentials.</dd> 
+
+<dt> <a name="relay_template_path">relay_template_path</a> <i>string</i></dt>
+<dd> Path and directory, with trailing slash, to the <tt>templates</tt> directory
+     used by the relay cgi. The path is defined by setting the relay cgi's 
+     configuration <tt>--prefix</tt> option.</dd>
+<dd> Example: <i>/var/www/html/relay/templates/</i></dd>
+
+<dt> <a name="relay_uri">relay_uri</a> <i>full-uri</i></dt>
+<dd> The full URI of the relay cgi. Configured in the application server's
+     <tt>config</tt> file.</dd>
+<dd> Example: <i>https://appserver.example.edu/pcrelay/</i></dd>
 
 </dl>
 

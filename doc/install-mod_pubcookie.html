@@ -16,7 +16,7 @@
 
                 <p><i>Included on this page:</i></p>
                   <ul>
-                    <li><a href="#obj">Objectives</a></li>
+                    <li><a href="#overview">Overview</a></li>
                     <li><a href="#new">What's New</a></li>
                     <li><a href="#upgrading">Upgrading</a></li>
                     <li><a href="#pre">Prerequisites</a></li>
@@ -799,7 +799,95 @@ PubcookieEndSession clearLogin
 
 <h4><a name="relay">Cross-Domain Relay Configuration</a></h4>
 
-<p>TBD</p>
+<p>Pubcookie 3.1.0 adds the ability to authenticate across DNS domains
+using a separate, standalone <i>relay cgi</i> that you install on your
+application server.</p>
+
+<p>The relay cgi uses HTTP <tt>POST</tt> to transfer the 
+Pubcookie authentication request and assertion to and from the remote
+Pubcookie login server. You configure the module to use the relay cgi
+as your login server, and you configure the relay cgi with the location
+of the remote login server. Here are the steps:</p>
+
+<ol>
+
+<li><p>Build and install the module as you would normally, 
+stopping short of the usual configuration stage. The relay cgi
+relies on the module having already been built.</p></li>
+
+<li><p>Change to the <tt>relay</tt> subdirectory and build 
+and install the <tt>webtpl</tt> library in its subdirectory:</p></li>
+
+<p> 
+<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+<TR> 
+<TD><pre>$ cd relay
+$ wget http://staff.washington.edu/fox/webtpl/webtpl-1.4.tar.gz
+$ tar zxf webtpl-1.4.tar.gz
+$ cd webtpl-1.4
+$ ./configure
+$ make
+$ make install
+</pre></TD>
+</TR>
+</TABLE></p>
+
+<p>Note: <tt>/usr/local</tt> is the default installation prefix
+for the webtpl library; this results in new libs and headers in 
+/usr/local/lib and /usr/local/include, respectively. (On some 
+systems (e.g. linux) you may have to add <tt>/usr/local/lib</tt> 
+to <tt>/etc/ld.so.conf</tt> and run <tt>ldconfig</tt> to 
+reconfigure the dynamic linker to pick up this shared library.)</p>
+
+<li><p>Change back to the relay directory to build and install the 
+relay cgi:</p></li>
+
+<p> 
+<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+<TR> 
+<TD><pre>cd ..
+./configure --prefix=/var/www/html/pcrelay
+make
+make install</pre></TD>
+</TR>
+</TABLE></p>
+
+<p>Note: the <tt>configure</tt> script should pick up the locations
+of your pubcookie source directory (i.e. the current parent) and
+webtpl library without adding configuration options. Use the
+<tt>--prefix</tt> option to define where the relay cgi and its
+templates are installed in your DocumentRoot.</p>
+
+<li><p>Add relay configuration variables to the
+<tt>/usr/local/pubcookie/config</tt> file:</p></li>
+
+<p> 
+<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+<TR> 
+<TD><pre># pubcookie relay config
+<a href="config.html#login_uri">login_uri</a>: https://login.example.edu/
+<a href="config.html#login_host">login_host</a>: login.example.edu
+<a href="config.html#relay_template_path">relay_template_path</a>: /var/www/html/pcrelay/templates/
+<a href="config.html#relay_uri">relay_uri</a>: https://appserver.example.edu/pcrelay/
+</pre></TD>
+</TR>
+</TABLE></p>
+
+<li><p>Now, when you configure the module, specify the relay cgi
+as your login server:</p></li>
+
+<p> 
+<TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+<TR> 
+<TD><pre>PubcookieLogin https://appserver.example.edu/pcrelay/
+</pre></TD>
+</TR>
+</TABLE></p>
+
+<p>The module will redirect users to the relay; the relay will
+handle getting them to the remote login server and back again.</p>
+
+</ol>
 
 <h4><a name="vhosts">Virtual Host Configuration</a></h4>
 
