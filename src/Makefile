@@ -18,13 +18,13 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.36 2001-10-17 18:29:35 willey Exp $
+#   $Id: Makefile,v 1.37 2001-10-24 19:24:11 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-CFLAGS=-O3 -g -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/ -I/usr/local/include
+CFLAGS=-O3 -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/ -I/usr/local/include
 # order is important here
 LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto -ldl
 # nfast stuff
@@ -48,10 +48,15 @@ LOGINSRC=index.cgi.c \
 	 index.cgi_krb.c \
 	 index.cgi_securid.c \
 	 securid.c \
+         login_templates/login_part1 \
+         login_templates/login_part2 \
+         login_templates/nonpost_redirect \
+         login_templates/notok_part1 \
+         login_templates/notok_part2 \
 	 make_crypted_bit.c \
-	 mkc_key_generic.c \
-	 mkc_key_local.txt \
-	 mkc_key_local.c
+	 pbc_key_generic.c \
+	 pbc_key_local.txt \
+	 pbc_key_local.c
 
 TESTSRC=dtest.c \
         pbc_create.c \
@@ -68,6 +73,7 @@ MODULEMISC=CHANGES.mod_pubcookie \
            Makefile.apxs 
 LOGINMISC=CHANGES.login \
           Makefile.index.cgi \
+          contrib\* \
 	  INSTALL.login
 TESTMISC=Makefile
 ALLSRC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
@@ -83,7 +89,7 @@ admin:	pbc_create pbc_verify base64.o
 
 test_apps:	candv dtest test_local_c_key speed_test
 
-all:	pbc_create pbc_verify candv dtest mkc_key_generic mkc_key_local make_crypted_bit test_local_c_key candv dtest test_local_c_key
+all:	pbc_create pbc_verify candv dtest pbc_key_generic pbc_key_local make_crypted_bit test_local_c_key candv dtest test_local_c_key
 
 
 speed_test:	speed_test.o libpubcookie.o base64.o
@@ -107,11 +113,11 @@ pbc_verify:	pbc_verify.o libpubcookie.o base64.o
 t:		t.o libpubcookie.o 
 	$(CC) ${CFLAGS} -o $@ t.o libpubcookie.o base64.o $(LDFLAGS)
 
-mkc_key_generic:	mkc_key_generic.o libpubcookie.o 
-	$(CC) ${CFLAGS} -o $@ mkc_key_generic.o libpubcookie.o base64.o $(LDFLAGS)
+pbc_key_generic:	pbc_key_generic.o libpubcookie.o 
+	$(CC) ${CFLAGS} -o $@ pbc_key_generic.o libpubcookie.o base64.o $(LDFLAGS)
 
-mkc_key_local:		mkc_key_local.o libpubcookie.o 
-	$(CC) ${CFLAGS} -o $@ mkc_key_local.o libpubcookie.o base64.o $(LDFLAGS)
+pbc_key_local:		pbc_key_local.o libpubcookie.o 
+	$(CC) ${CFLAGS} -o $@ pbc_key_local.o libpubcookie.o base64.o $(LDFLAGS)
 
 make_crypted_bit:	make_crypted_bit.o libpubcookie.o 
 	$(CC) ${CFLAGS} -o $@ make_crypted_bit.o libpubcookie.o base64.o $(LDFLAGS)
@@ -122,6 +128,9 @@ what_is_my_ip:		what_is_my_ip.o libpubcookie.o base64.o
 uwnetid_stub:		uwnetid_stub.o libpubcookie.o index.cgi_krb.o base64.o
 	$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o index.cgi_krb.o $(LDFLAGS) -lkrb5
 
+k5auth_test:		k5auth.o k5auth_test.o
+	$(CC) ${CFLAGS} -o $@ k5auth.o k5auth_test.o $(LDFLAGS) -lkrb5
+
 securid_stub:	securid_stub.o  securid.o libpubcookie.o base64.o
 	$(CC) ${CFLAGS} -o $@ securid_stub.o libpubcookie.o base64.o securid.o $(LDFLAGS) -lmgoapi -lkrb5
 
@@ -130,29 +139,27 @@ moduletar:
 	BASENAME=mod_pubcookie; \
 	DIR_NAME=$$BASENAME-$$VERSION; \
 	TARFILE=$$BASENAME-$${VERSION}.tar; \
-	rm -rf $$DIR_NAME; \
-	mkdir $$DIR_NAME; \
+	rm -rf $$DIR_NAME $$TARFILE; \
+	ln -s . $$DIR_NAME; \
 	for i in ${GENERALSRC} $(MODULESRC) $(GENERALHEAD) ${MODULEHEAD} ${MODULEMISC} $(GENERALMISC) ;\
 	do \
-		cp $$i $$DIR_NAME; \
-		chmod 664 $$DIR_NAME/$$i; \
+	        $(TAR) rvf $$TARFILE $$DIR_NAME/$$i; \
 	done; \
-	$(TAR) cvf $$TARFILE $$DIR_NAME; \
 	$(GZIP) -f $$TARFILE; \
 	$(RM) -rf $$DIR_NAME; \
-	echo Created $$TARFILE
+	echo Created $$TARFILE.gz
+
 
 logintar:
 	LVERSION=`awk '/PBC_LOGIN_VERSION/{print $$3}' pbc_version.h | sed 's/"//g'`; \
 	BASENAME=pubcookie_login; \
 	DIR_NAME=$$BASENAME-$$LVERSION; \
 	TARFILE=$$BASENAME-$${LVERSION}.tar; \
-	rm -rf $$DIR_NAME; \
-	mkdir $$DIR_NAME; \
+	rm -rf $$DIR_NAME $$TARFILE; \
+	ln -s . $$DIR_NAME; \
 	for i in ${GENERALSRC} ${LOGINSRC} ${GENERALHEAD} ${LOGINHEAD} ${LOGINMISC} ${GENERALMISC} ;\
 	do \
-		cp $$i $$DIR_NAME; \
-		chmod 664 $$DIR_NAME/$$i; \
+	        $(TAR) rvf $$TARFILE $$DIR_NAME/$$i; \
 	done; \
 	$(TAR) cvf $$TARFILE $$DIR_NAME; \
 	$(GZIP) -f $$TARFILE; \
@@ -164,8 +171,8 @@ candv.o: candv.c ${GENERALHEAD} ${MAKEFILE}
 dtest.o: dtest.c ${GENERALHEAD} ${MAKEFILE}
 libpubcookie.o: libpubcookie.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
 make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
-mkc_key_generic.o: mkc_key_generic.c ${GENERALHEAD} ${MAKEFILE}
-mkc_key_local.o: mkc_key_local.c ${GENERALHEAD} ${MAKEFILE}
+pbc_key_generic.o: pbc_key_generic.c ${GENERALHEAD} ${MAKEFILE}
+pbc_key_local.o: pbc_key_local.c ${GENERALHEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
 pbc_create.o: pbc_create.c ${GENERALHEAD} ${MAKEFILE}
 pbc_verify.o: pbc_verify.c ${GENERALHEAD} ${MAKEFILE}
@@ -175,9 +182,10 @@ what_is_my_ip.o: what_is_my_ip.c ${GENERALHEAD} ${MAKEFILE}
 uwnetid_stub.o: uwnetid_stub.c ${GENERALHEAD} ${MAKEFILE}
 index.cgi_krb.o: index.cgi_krb.c ${GENERALHEAD} ${MAKEFILE}
 securid.o: securid.c securid.h ${GEN_HEAD} ${MAKEFILE}
+k5auth.o: k5auth.c k5auth.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local uwnetid_stub securid_stub
+	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip pbc_key_generic pbc_key_local uwnetid_stub securid_stub
 
 # to purify candv {then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
