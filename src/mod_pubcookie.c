@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.72 2002-02-20 23:28:25 willey Exp $
+    $Id: mod_pubcookie.c,v 1.73 2002-03-01 16:32:41 jteaton Exp $
  */
 
 /* apache includes */
@@ -506,7 +506,7 @@ static int auth_failed(request_rec *r) {
 #else
         args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
 #endif
-        base64_encode(r->args, args, strlen(r->args));
+        libpbc_base64_encode(r->args, args, strlen(r->args));
         if( cfg->super_debug ) {
             libpbc_debug("super-debug: GET args before encoding length %d, string: %s\n", strlen(r->args), r->args);
             libpbc_debug("super-debug: GET args after encoding length %d, string: %s\n", strlen(args), args);
@@ -615,9 +615,9 @@ static int auth_failed(request_rec *r) {
 #endif
 #ifdef PHASEII
     libpbc_encrypt_cookie(g_req_contents, tmp, scfg->c_stuff, strlen(g_req_contents));
-    base64_encode(tmp, e_g_req_contents, strlen(g_req_contents));
+    libpbc_base64_encode(tmp, e_g_req_contents, strlen(g_req_contents));
 #else
-    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
+    libpbc_base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 #endif
 
     /* create whole g req cookie */

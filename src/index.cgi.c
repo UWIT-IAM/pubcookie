@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.37 2001-11-19 22:32:18 willey Exp $
+    $Id: index.cgi.c,v 1.38 2002-03-01 16:32:41 jteaton Exp $
  */
 
 
@@ -750,7 +750,7 @@ char *decode_granting_request(char *in)
     fprintf(stderr, "decode_granting_request: in: %s\n", in);
 #endif
     out = strdup(in);    
-    base64_decode(in, out);
+    libpbc_base64_decode(in, out);
 #ifdef DEBUG
     fprintf(stderr, "decode_granting_request: out: %s\n", out);
 #endif
@@ -1772,7 +1772,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
 
     if( l->args ) {
         args_enc = calloc (1, strlen (l->args));
-	base64_decode(l->args, args_enc);
+	libpbc_base64_decode(l->args, args_enc);
         snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
     } 
     else {

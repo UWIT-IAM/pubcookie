@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.21 2002-02-23 00:25:51 willey Exp $
+    $Id: libpubcookie.c,v 2.22 2002-03-01 16:32:41 jteaton Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -914,7 +914,7 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
 	return 0;
 
     cookie = (unsigned char *)libpbc_alloc_init(PBC_4K);
-    base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data) + 2);
+    libpbc_base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data) + 2);
 
     return cookie;
 }
@@ -1036,7 +1036,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
 	return 0;
     }
 
-    if( ! base64_decode((unsigned char *)in, buf) ) {
+    if( ! libpbc_base64_decode((unsigned char *)in, buf) ) {
         libpbc_debug("libpbc_unbundle_cookie: Could not decode cookie.\n");
 	return 0;
     }

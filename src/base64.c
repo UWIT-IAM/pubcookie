@@ -41,7 +41,7 @@ static unsigned char decode[256] = {
   NL, NL, NL, NL, NL, NL, NL, NL, NL, NL,
   NL, NL, NL, NL, NL, NL};
 
-int base64_encode(unsigned char *in, unsigned char *out, int size) {
+int libpbc_base64_encode(unsigned char *in, unsigned char *out, int size) {
   unsigned int a, b, c;
 
   while(size > 0) {
@@ -74,7 +74,7 @@ int base64_encode(unsigned char *in, unsigned char *out, int size) {
   return 1;
 }
 
-int base64_decode(unsigned char *in, unsigned char *out) {
+int libpbc_base64_decode(unsigned char *in, unsigned char *out) {
   unsigned int a, b, c, d;
   int size = strlen((const char *)in);
   int correct = 0;
