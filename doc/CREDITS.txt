@@ -9,7 +9,7 @@
      * Ryan Campell       University of Washington
      * Rob Christ         University of Washington (former)
      * Jeff Eaton         Carnegie Mellon University
-     * Larry Greenfield   Carnegie Mellon University
+     * Larry Greenfield   Carnegie Mellon University (former)
      * Jon Miner          University of Wisconsin
      * Ryan Muldoon       University of Wisconsin
      * Steve Willey       University of Washington
@@ -27,6 +27,7 @@
    Other Contributors:
      * Bradford Barrett   University of Florida
      * Maurizio Marini    Cost Srl, Milan, Italy
+     * Christopher Maxwell
      * Gary Mills         University of Manitoba, Canada
      * Robert Knight      Princeton University
 
