@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.14 2002-03-04 20:07:48 jteaton Exp $
+#   $Id: Makefile.index.cgi,v 1.15 2002-04-01 22:43:27 willey Exp $
 #
 
 # your compiler here
@@ -37,7 +37,7 @@ CGIC=/usr/local/lib/libcgic.a
 # extra library dirs (for authentication modules and such)
 EXTRA_LIB_DIRS=
 # extra libraries (for authentication modules and suc)
-EXTRA_LIBS=-lkrb5
+EXTRA_LIBS=-lkrb5 -lexpat
 
 # choose your compile flags.
 # some options are: DEBUG - voluminious debug info
@@ -47,7 +47,7 @@ EXTRA_LIBS=-lkrb5
 #                             hostname unless this is set
 #                   FORM_NOT_IN_TMPL - if your login form isn't in the template
 #                                      hopefully obsolete soon, only UWash need
-CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include -DFORM_NOT_IN_TMPL -DDEBUG
+CFLAGS=-O3 -Wall -I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl -I/usr/local/include -DDEBUG
 
 
 # a blast from the past:
