@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.34 2001-11-09 00:53:16 willey Exp $
+    $Id: index.cgi.c,v 1.35 2001-11-13 23:31:28 willey Exp $
  */
 
 
@@ -168,6 +168,29 @@ static void tmpl_print_out(const char *fname,...)
 
 }
 
+
+/* checks a login cookie for expiration */
+/* returns PBC_FAIL for expired */
+/* returns PBC_OK   for not expired */
+int check_l_cookie_expire(login_rec *c, time_t	t) 
+{
+    if( t > (c->create_ts + EXPIRE_LOGIN) )
+        return(PBC_FAIL);
+    else
+        return(PBC_OK);
+
+}
+
+/* initialize some things in the record */
+void init_login_rec(login_rec *r)
+{
+    r->alterable_username = PBC_FALSE;
+    r->first_kiss = NULL;
+    r->appsrv_err = NULL;
+    r->appsrv_err_string = NULL;
+
+}
+
 /* this returns first cookie for a given name */
 int get_cookie(char *name, char *result, int max)
 {
@@ -262,7 +285,6 @@ char *get_cookie_broken(char *name, int max)
         p++;
     }
 
-//    result = wkspc;
     strncpy( result, wkspc, max );
     free( target );
 
@@ -719,7 +741,7 @@ int vector_request(login_rec *l, login_rec *c)
         res = check_login(l, c);
         if( strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
             log_message("%s Authentication failed: %s type: %c %s", l->first_kiss, l->user, l->creds, res);
-            l->user = NULL; /* just in case the username is wrong */
+            l->alterable_username = PBC_TRUE; /* username might be wrong */
             if( !strcmp(res, CHECK_LOGIN_RET_FAIL) ) {
                 snprintf(message, sizeof(message)-1, "%s%s%s<P>%s",
                     PBC_EM1_START,
@@ -865,17 +887,6 @@ int cgiMain()
     return(0);  
 }
 
-
-#define FIELD_TYPE_EMPTY_EDITTABLE 0
-#define FIELD_TYPE_PREFILLED_EDITTABLE 1
-#define FIELD_TYPE_PREFILLED_NONEDITTABLE 2
-#define FIELD_TYPE_FREE_RIDE 3
-
-#define FIELD_ECHO_YES 0
-#define FIELD_ECHO_STARS 1
-
-#define FREE_RIDE_MESSAGE "You entered it less than 10 minutes ago.<BR>\n"
-
 /* in:                                                                       */
 /*   field	string for prompt                                            */
 /*   var	variable name (pass1, pass2, etc.)                           */
@@ -891,10 +902,10 @@ void print_form_field(char *field, char *var, int echo, int field_type, char *va
     log_message("print_form_field: field: %s, field_type %d, value %s", field, field_type, value);
 #endif
 
-    if( field_type == FIELD_TYPE_EMPTY_EDITTABLE || 
-        field_type == FIELD_TYPE_PREFILLED_EDITTABLE ) {
+    if( field_type == FIELD_TYPE_EMPTY_ALTERABLE || 
+        field_type == FIELD_TYPE_PREFILLED_ALTERABLE ) {
          print_out("<INPUT TYPE=\"%s\"", echo==FIELD_ECHO_YES ? "text" : "password");
-         if( field_type==FIELD_TYPE_PREFILLED_EDITTABLE )
+         if( field_type==FIELD_TYPE_PREFILLED_ALTERABLE )
              print_out(" NAME=\"%s\" SIZE=\"20\" VALUE=\"%s\">\n", var, value);
          else
              print_out(" NAME=\"%s\" SIZE=\"20\">\n", var);
@@ -902,7 +913,7 @@ void print_form_field(char *field, char *var, int echo, int field_type, char *va
          print_out("%s\n", FREE_RIDE_MESSAGE);
          print_out("<INPUT TYPE=\"hidden\"");
          print_out(" NAME=\"%s\" VALUE=\"%s\">\n", var, value);
-    } else if( field_type == FIELD_TYPE_PREFILLED_NONEDITTABLE ) {
+    } else if( field_type == FIELD_TYPE_PREFILLED_UNALTERABLE ) {
          print_out("<span style=\"background: #eeeeee; color:black\"><tt>%s</tt></span>\n", value);
          print_out("<INPUT TYPE=\"hidden\"");
          print_out(" NAME=\"%s\" VALUE=\"%s\">\n", var, value);
@@ -928,15 +939,13 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     char	message_out[PBC_1K];
     char	*hostname = strdup(get_domain_hostname());
     char	*prefilled_user = NULL;
-    int		field_type = 0;
-    int		field1_type = 0;
-/* work in progress 
- *   int		field2_type = 0;
- *   int		field3_type = 0;
- */
+    int		field1_type = FIELD_TYPE_EMPTY_ALTERABLE;
+    int		field2_type = FIELD_TYPE_EMPTY_ALTERABLE;
+    int		field3_type = FIELD_TYPE_EMPTY_ALTERABLE;
 
     log_message("%s Printing login page, reason: %s", l->first_kiss, reason);
 
+#ifdef FORM_NOT_IN_TMPL
     switch (l->creds) {
     case PBC_CREDS_CRED1:
         field1_prompt = strdup(PROMPT_UWNETID);
@@ -974,8 +983,35 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         break;
     }
 
+    /* wads of weird logic to determine what the form fields look like */
+    if(field1_prompt != NULL) {
+        if( c != NULL && c->user != NULL ) {
+            field1_type = FIELD_TYPE_PREFILLED_UNALTERABLE;
+            prefilled_user = strdup(c->user);
+        }
+        if( l != NULL && l->user != NULL ) {
+            field1_type = FIELD_TYPE_PREFILLED_UNALTERABLE;
+            prefilled_user = strdup(l->user);
+        }
+        if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3) {
+            field1_type=FIELD_TYPE_FREE_RIDE;
+        }
+        if( (field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && c->alterable_username == PBC_TRUE) ||
+            (field1_type == FIELD_TYPE_PREFILLED_UNALTERABLE && l->alterable_username == PBC_TRUE) ) {
+            field1_type=FIELD_TYPE_PREFILLED_ALTERABLE;
+            free(focus_field);
+            focus_field = strdup("user");
+        }
+    }
+    if(field2_prompt != NULL) {
+        if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3) {
+            field2_type=FIELD_TYPE_FREE_RIDE;
+        }
+    }
+
     /* tell the stoopid browser where to put the cursor */
     sprintf(focus, "onLoad=\"document.query.%s.focus()\"", focus_field);
+#endif
 
     /* text before the form fields */
     if( message == NULL || strcmp(message, PRINT_LOGIN_PLEASE) == 0 ) {
@@ -984,8 +1020,6 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     else {
         strcpy(message_out, message);
     }
-
-    log_message("print_login_page message_out: %s", message_out);
 
     if( need_clear_login ) 
 #ifdef PORT80_TEST
@@ -1010,53 +1044,27 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
 
     tmpl_print_out(TMPL_FNAME "login_part1", focus, reason, message_out);
 
-#ifndef FORM_FIELDS_IN_TMPL
-    if(field1_prompt != NULL) {
-        if( c != NULL && c->user != NULL ) {
-            field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
-            prefilled_user = strdup(c->user);
-        }
-        if( l != NULL && l->user != NULL ) {
-            field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
-            prefilled_user = strdup(l->user);
-        }
-        if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3)
-            print_form_field(field1_prompt, 
-                             "user", 
-                             FIELD_ECHO_YES, 
-                             FIELD_TYPE_FREE_RIDE, 
-                             c->user);
-        else
-            print_form_field(field1_prompt, 
-                             "user", 
-                             FIELD_ECHO_YES, 
-                             field1_type, 
-                             prefilled_user);
-    }
-
-    if(field2_prompt != NULL) {
-        if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3)
-            print_form_field(field2_prompt, 
-                             "pass", 
-                             FIELD_ECHO_STARS, 
-                             FIELD_TYPE_FREE_RIDE, 
-                             "");
-	else
-            print_form_field(field2_prompt, 
-                             "pass", 
-                             FIELD_ECHO_STARS, 
-                             field_type, 
-                             "");
-    }
-
-    if(field3_prompt != NULL) print_form_field(
-                             field3_prompt, 
-                             "pass2", 
-                             FIELD_ECHO_YES, 
-                             field_type, 
-                             "");
-
+#ifdef FORM_NOT_IN_TMPL
+    if(field1_prompt != NULL)
+        print_form_field(field1_prompt, 
+                         "user", 
+                         FIELD_ECHO_YES, 
+                         field1_type, 
+                         prefilled_user);
+    if(field2_prompt != NULL)
+        print_form_field(field2_prompt, 
+                         "pass", 
+                         FIELD_ECHO_STARS, 
+                         field2_type, 
+                         "");
+    if(field3_prompt != NULL) 
+        print_form_field(field3_prompt, 
+                         "pass2", 
+                         FIELD_ECHO_YES, 
+                         field3_type, 
+                         "");
 #endif
+
 
     print_login_page_hidden_stuff(l);
     tmpl_print_out(TMPL_FNAME "login_part2", message, reason);
@@ -1069,7 +1077,7 @@ char *check_login_uwnetid(login_rec *l)
     fprintf(stderr, "check_login_uwnetid: hello\n");
 #endif 
 
-    if( l->ride_free_creds == PBC_CREDS_CRED1 ) {
+    if( l->ride_free_creds == PBC_CREDS_CRED1 && l->creds == PBC_CREDS_CRED3) {
 #ifdef DEBUG
         fprintf(stderr, "check_login_uwnetid: free ride for this cred\n");
 #endif 
@@ -1265,7 +1273,7 @@ char *check_l_cookie(login_rec *l, login_rec *c)
         return "malformed";
     }
 
-    if( (c->create_ts + EXPIRE_LOGIN) < (t=time(NULL)) ) {
+    if( check_l_cookie_expire(c, t=time(NULL)) == PBC_FAIL ) {
         log_message("%s expired login cookie; created: %d timeout: %dsecs now: %d",
 			l->first_kiss,
 			c->create_ts, 
@@ -1838,10 +1846,7 @@ login_rec *get_query()
     fprintf(stderr, "get_query: hello\n");
 #endif
 
-    /* init something in login rec */
-    l->first_kiss = NULL;
-    l->appsrv_err = NULL;
-    l->appsrv_err_string = NULL;
+    init_login_rec(l);
 
     /* even if we hav a granting request post stuff will be in the request */
     l->post_stuff	= get_string_arg(PBC_GETVAR_POST_STUFF, YES_NEWLINES_FUNC);
@@ -1930,6 +1935,7 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     char		sign_keyfile[PBC_4K];
     char		*cookie = NULL;
     login_rec		*new = NULL;
+    time_t		t;
 
 #ifdef DEBUG
     fprintf(stderr, "verify_unload_login_cookie: hello\n");
@@ -1944,6 +1950,7 @@ login_rec *verify_unload_login_cookie (login_rec *l)
         return((login_rec *)NULL);
 
     new = malloc(sizeof(new));
+    init_login_rec(new);
 
     snprintf(sign_keyfile, sizeof(sign_keyfile)-1, "%s%s", 
 			KEY_DIR, CERT_FILE); 
@@ -1966,8 +1973,11 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     new->create_ts = (*cookie_data).broken.create_ts;
     new->last_ts = (*cookie_data).broken.last_ts;
 
+    if( check_l_cookie_expire(new, t=time(NULL)) == PBC_FAIL)
+        new->alterable_username = PBC_TRUE;
+
 #ifdef DEBUG
-    fprintf(stderr, "verify_unload_login_cookie: bye user is %s\n", new->user);
+    fprintf(stderr, "verify_unload_login_cookie: bye!  user is %s\n", new->user);
 #endif
 
     return(new);
