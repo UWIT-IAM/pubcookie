@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.14 2001-11-08 22:45:16 willey Exp $
+    $Id: index.cgi.h,v 1.15 2001-11-14 00:06:50 willey Exp $
  */
 
 typedef struct {
@@ -52,6 +52,7 @@ typedef struct {
     int		duration;
     char	*first_kiss;
     char	reply;
+    int		alterable_username;
 } login_rec;
 
 /*
@@ -97,6 +98,18 @@ cred_def	cred_defs[8];
 #define CRED_ATTR_GRACE 1		/* credential field honors ride free */
 #define CRED_ATTR_ECHO_STARs 2		/* form field echo astrisks */
 #define CRED_ATTR_PREFILL 4		/* pre-fill form field if possilble */
+
+/* defines conditions for describing behaviour and appearance of  */
+/* login page fields 						  */
+#define FIELD_TYPE_EMPTY_ALTERABLE 0
+#define FIELD_TYPE_PREFILLED_ALTERABLE 1
+#define FIELD_TYPE_PREFILLED_UNALTERABLE 2
+#define FIELD_TYPE_FREE_RIDE 3
+
+#define FIELD_ECHO_YES 0
+#define FIELD_ECHO_STARS 1
+
+#define FREE_RIDE_MESSAGE "You entered it less than 10 minutes ago.<BR>\n"
 
 /* prototypes */
 int cgiMain();
