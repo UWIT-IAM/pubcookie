@@ -1,0 +1,24 @@
+<!-- 
+     think of this as a big format string for a printf statement
+     there are substitution tokens thru-out
+     comments hav been added to explain what will be substitued
+  -->
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>pubcookie generic Login</title>
+  </head>
+
+  <body bgcolor="#FFFFFF">
+  <center>
+     <img src="/images/login.gif" alt="" height="64" width="208">
+
+      <!--- action below is the login server URI --->
+     <form name="query" method="POST" action="%s"
+	enctype="application/x-www-form-urlencoded" autocomplete="off">
+
+     <P>
+              <table border="0" cellpadding="0" cellspacing="2" width="271" height="70">
+              <tr>
+<!-- Yes, leave this row "open", the reason must go here. -->

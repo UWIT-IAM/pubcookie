@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.26 2002-11-11 14:35:40 jjminer Exp $
+    $Id: flavor_basic.c,v 1.27 2002-11-11 16:13:25 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,6 +59,13 @@
 static verifier *v = NULL;
 extern int debug;
 
+/* The types of reasons for printing the login page.. 
+ * Should this be in a header?  I don't think I need it outside this file.. */
+
+#define FLB_BAD_AUTH          1
+#define FLB_REAUTH            2
+#define FLB_LCOOKIE_ERROR     3
+#define FLB_CACHE_CREDS_WRONG 4
 
 static int init_basic(void)
 {
@@ -86,16 +93,16 @@ static int init_basic(void)
     return 0;
 }
 
-static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
+static void print_login_page(login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
        we always clear the greq cookie */
     int need_clear_login = 0;
     int need_clear_greq = 1;
     char message_out[1024];
+    const char * reasonpage = NULL;
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello");
-    assert(errstr);
 
     /* set the cookies */
     if (need_clear_login) {
@@ -115,82 +122,112 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 
     }
 
-    /* text before the form fields */
-    snprintf(message_out, sizeof(message_out), 
-	     "<p>The resource you requested requires you to authenticate."
-	     "  %s</p>\n", *errstr ? *errstr : "");
-    
+    /* I removed the "" being passed as the cursor focus grabbing javascript.
+     * It was obviously not being used much. :) */
+    tmpl_print_html(TMPL_FNAME, 
+                    libpbc_config_getstring("tmpl_login_top",
+                                            "login_top"),
+                    PBC_LOGIN_URI
+                   );
+
+    switch (reason) {
+        case FLB_BAD_AUTH:
+            reasonpage = libpbc_config_getstring( "tmpl_login_bad_auth",
+                                                  "login_bad_auth" );
+            break;
+        case FLB_REAUTH:
+            reasonpage = libpbc_config_getstring( "tmpl_login_reauth",
+                                                  "login_reauth" );
+            break;
+        case FLB_CACHE_CREDS_WRONG:
+            reasonpage = libpbc_config_getstring( "tmpl_login_cache_creds_wrong",
+                                                  "login_cache_creds_wrong" );
+            break;
+        case FLB_LCOOKIE_ERROR:
+        default:
+            reasonpage = libpbc_config_getstring( "tmpl_login_nolcookie",
+                                                  "login_nolcookie" );
+            break;
+    }
+
+    if (reasonpage == NULL) {
+        /* We shouldn't be here, but handle it anyway, of course. */
+        libpbc_abend( "Reasonpage is null, this is impossible." );
+    }
+
+    /* Display the reason that we got here.. */
+    tmpl_print_html( TMPL_FNAME, reasonpage );
+
+    /* Display the start of the form. */
+    /* 11/11/2002 - Removed all the parameters, they pretty much all seem to be
+     * unused. */
     tmpl_print_html(TMPL_FNAME,
                     libpbc_config_getstring("tmpl_login_part1",
-                                            "login_part1"), 
-                    "", "this reason not implemented", 
-                    PBC_LOGIN_URI,
-                    message_out,
-                    l->user ? l->user : "");
+                                            "login_part1")
+                   );
 
     /* keep all of the state around we need */
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", 
-		PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : "") );
+               PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_APPID, (l->appid ? l->appid : "") );
+               PBC_GETVAR_APPID, (l->appid ? l->appid : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
-                "creds_from_greq", l->creds_from_greq);
+               "creds_from_greq", l->creds_from_greq);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
-                PBC_GETVAR_CREDS, l->creds);
+               PBC_GETVAR_CREDS, l->creds);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_VERSION, (l->version ? l->version : "") );
+               PBC_GETVAR_VERSION, (l->version ? l->version : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_METHOD, (l->method ? l->method : "") );
+               PBC_GETVAR_METHOD, (l->method ? l->method : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_HOST, (l->host ? l->host : "") );
+               PBC_GETVAR_HOST, (l->host ? l->host : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_URI, (l->uri ? l->uri : "") );
+               PBC_GETVAR_URI, (l->uri ? l->uri : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_ARGS, (l->args ? l->args : "") );
+               PBC_GETVAR_ARGS, (l->args ? l->args : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FR, (l->fr ? l->fr : "") );
+               PBC_GETVAR_FR, (l->fr ? l->fr : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:"") );
+               PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:"") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_APPSRV_ERR, (l->appsrv_err ? l->appsrv_err : "") );
+               PBC_GETVAR_APPSRV_ERR, (l->appsrv_err ? l->appsrv_err : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FILE_UPLD, (l->file ? l->file : "") );
+               PBC_GETVAR_FILE_UPLD, (l->file ? l->file : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_FLAG, (l->flag ? l->flag : "") );
+               PBC_GETVAR_FLAG, (l->flag ? l->flag : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_REFERER, (l->referer ? l->referer : "") );
+               PBC_GETVAR_REFERER, (l->referer ? l->referer : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : "") );
+               PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : "") );
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_SESSION_REAUTH, l->session_reauth);
+               PBC_GETVAR_SESSION_REAUTH, l->session_reauth);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok);
+               PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		"first_kiss", (l->first_kiss ? l->first_kiss : "") );
+               "first_kiss", (l->first_kiss ? l->first_kiss : "") );
 
     /* xxx save add'l requests */
     {
-	/* xxx sigh, i have to explicitly save this */
-	char *target = get_string_arg(PBC_GETVAR_CRED_TARGET,
+        /* xxx sigh, i have to explicitly save this */
+        char *target = get_string_arg(PBC_GETVAR_CRED_TARGET,
                                       NO_NEWLINES_FUNC);
-	if (target) {
-	    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-		       PBC_GETVAR_CRED_TARGET, target);
-	}
+        if (target) {
+            print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+                       PBC_GETVAR_CRED_TARGET, target);
+        }
     }
 
     /* this tags the incoming request as a form reply */
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
-		PBC_GETVAR_REPLY, FORM_REPLY);
+               PBC_GETVAR_REPLY, FORM_REPLY);
 
     print_html("\n");
 
     /* finish off the customized login page */
     tmpl_print_html(TMPL_FNAME,
                     libpbc_config_getstring("tmpl_login_part2",
-                                            "login_part2"), 
-                    message_out,
-                    "this reason not implemented");
+                                            "login_part2")
+                   );
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
 }
@@ -329,7 +366,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
 
             /* make sure 'l' reflects that */
             l->user = NULL;	/* in case wrong username */
-            print_login_page(l, c, errstr);
+            print_login_page(l, c, FLB_BAD_AUTH);
 
             pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
                              "process_basic: login in progress, goodbye\n" );
@@ -339,7 +376,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
         *errstr = "reauthentication required";
         pbc_log_activity(PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
 
-        print_login_page(l, c, errstr);
+        print_login_page(l, c, FLB_REAUTH);
         pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
@@ -351,7 +388,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
         *errstr = l->check_error;
         pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
-        print_login_page(l, c, errstr);
+        print_login_page(l, c, FLB_LCOOKIE_ERROR);
         pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
@@ -368,7 +405,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
         *errstr = "cached credentials wrong flavor";
         pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
-        print_login_page(l, c, errstr);
+        print_login_page(l, c, FLB_CACHE_CREDS_WRONG);
         pbc_log_activity(PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;

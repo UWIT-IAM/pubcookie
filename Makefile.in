@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.18 2002-11-11 14:35:40 jjminer Exp $
+# $Id: Makefile.in,v 1.19 2002-11-11 16:13:25 jjminer Exp $
 
 @SET_MAKE@
 
@@ -165,7 +165,13 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/login_part1 \
 				$(srcdir)/src/login_templates.generic/notok_need_ssl \
 				$(srcdir)/src/login_templates.generic/status_part1 \
 				$(srcdir)/src/login_templates.generic/status_part2 \
-				$(srcdir)/src/login_templates.generic/logout_time_remaining
+				$(srcdir)/src/login_templates.generic/logout_time_remaining \
+				$(srcdir)/src/login_templates.generic/login_top \
+				$(srcdir)/src/login_templates.generic/login_bad_auth \
+				$(srcdir)/src/login_templates.generic/login_reauth \
+				$(srcdir)/src/login_templates.generic/login_cache_creds_wrong \
+				$(srcdir)/src/login_templates.generic/login_nolcookie
+
 
 DOCS=$(srcdir)/doc/CHANGES.login.txt \
 	 $(srcdir)/doc/CHANGES.mod_pubcookie.txt \
