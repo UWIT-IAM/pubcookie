@@ -36,22 +36,32 @@ int argc;
 char **argv;
 {
   char   buf[1024];
-  char   name[9], prn[7], junk[20];
+  char   name[9], prn[7], junk[20], card_id[20];
   int    i;
+  char   *reason;
 
   printf("want: name <userid> securid <sid>\n");
+  printf("or    name <userid> securid <sid> card_id <card_id>\n");
 
   while ( fgets(buf, 1024, stdin) ) {
       sscanf (buf, "%s", junk);
       if ( ! strcmp(junk, "exit") ) break;
-      i=sscanf (buf, "name %s securid %s", name, prn);
-//      printf ("\ti ->%d<- name ->%s<- prn ->%s<-\n", i, name, prn);
+      if( (i=sscanf (buf, "name %s securid %s card_id %s", name, prn, card_id)) == 0 )
+          i=sscanf (buf, "name %s securid %s", name, prn);
+      
+      printf ("\ti ->%d<- name ->%s<- prn ->%s<- card_id ->%s<-\n", i, name, prn, card_id);
 
-      ( i == 2 ) ?
-          securid(name,prn,0,SECURID_TYPE_NORM,SECURID_DO_SID) ? printf("fail\n") : printf("ok\n")
-      :
-          printf("fail\n");
-      *prn='\0'; *name='\0';
+      if( i == 2 ) {
+          securid(reason, name, NULL,prn,1,SECURID_TYPE_NORM,SECURID_ONLY_CRN) ? printf("fail\n") : printf("ok\n");
+      }
+      else {
+          if ( i == 3 )
+              securid(reason,name,card_id,prn,1,SECURID_TYPE_NORM,SECURID_ONLY_CRN) ? printf("fail\n") : printf("ok\n");
+          else
+              printf("fail\n");
+      }
+
+      *prn='\0'; *name='\0'; *card_id='\0';
   }
 
   exit(0);
