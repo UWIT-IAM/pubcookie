@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.75 $
+ * $Revision: 1.76 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -32,7 +32,7 @@
 # include <arpa/inet.h>
 #endif /* HAVE_ARPA_INET_H */
 
-#ifdef HAVE_CTIME_H
+#ifdef HAVE_CTYPE_H
 # include <ctype.h>
 #endif /* HAVE_CTIME_H */
 
@@ -2198,7 +2198,6 @@ login_rec *get_query()
 /* cookie contents                                                          */
 login_rec *verify_unload_login_cookie (login_rec *l)
 {
-    md_context_plus     *ctx_plus;
     pbc_cookie_data     *cookie_data;
     char		*cookie = NULL;
     login_rec		*new = NULL;
@@ -2256,8 +2255,6 @@ int create_cookie(char *user_buf,
                   const char *peer,
  	          int max)
 {
-    /* special data structs for the crypt stuff */
-    md_context_plus 	*ctx_plus;
     /* measured quantities */
     unsigned char 	user[PBC_USER_LEN];
     unsigned char 	appsrvid[PBC_APPSRV_ID_LEN];
