@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_securid.c,v 1.5 2001-05-29 20:49:48 willey Exp $
+    $Id: index.cgi_securid.c,v 1.6 2001-09-28 17:34:15 willey Exp $
  */
 
 
@@ -39,6 +39,7 @@ char *auth_securid(char *user, char *sid, int next, login_rec *l)
     char        *card_id;
     char        *prn = NULL;
     char        *p;
+    login_rec   *c = NULL;
 
     /* if the securid field is really in the form card_id=prn seperate it */
     card_id = malloc((strlen(sid)>strlen(user) ? strlen(sid) : strlen(user))+1);
@@ -79,7 +80,7 @@ char *auth_securid(char *user, char *sid, int next, login_rec *l)
         log_message("%s auth_securid: unable to setuid nobody", l->first_kiss);
 
     if( intret == -1 ) {
-         print_login_page(l, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
+         print_login_page(l, c, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
     } 
     else if( intret == 0 ) {       /* O.K. !!!!!!!! */
         return(NULL);
