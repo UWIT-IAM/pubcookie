@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.46 2000-04-07 21:02:24 willey Exp $
+    $Id: mod_pubcookie.c,v 1.47 2000-04-10 16:35:27 willey Exp $
  */
 
 /* apache includes */
@@ -154,6 +154,9 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
                                          &pubcookie_module);
 #endif
 
+    if( scfg->super_debug )
+        libpbc_debug("super-debug: get_app_path coming in: %s with dirpath %d\n", path, scfg->dirdepth);
+
 #ifdef APACHE1_2
     if( scfg->dirdepth ) {
         if( scfg->dirdepth < count_dirs(path) )
@@ -177,6 +180,9 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
         path_out = ap_make_dirstr(p, path, ap_count_dirs(path));
     }
 #endif
+
+    if( scfg->super_debug )
+        libpbc_debug("super-debug: get_app_path coming out: %s\n", path_out);
 
     return path_out;
 
@@ -270,7 +276,8 @@ unsigned char *appsrv_id(request_rec *r)
         return(scfg->appsrv_id);
     else
 #ifdef APACHE1_2
-        return pstrdup(r->pool, r->hostname);
+        /* because of multiple passes through on www don't use r->hostname() */
+        return pstrdup(r->pool, get_server_name(r));
 #else
         return ap_pstrdup(r->pool, r->hostname);
 #endif
@@ -445,14 +452,16 @@ static int auth_failed(request_rec *r) {
     if ( r->server->port != 80 )
         if ( r->server->port != 443 )
 #ifdef APACHE1_2
-            ap_snprintf(host, PBC_1K-1, "%s:%d", r->hostname, r->server->port);
+            /* because of multiple passes through on www don't use r->hostname() */
+            ap_snprintf(host, PBC_1K-1, "%s:%d", get_server_name(r), r->server->port);
 #else
             host = ap_psprintf(r->pool, "%s:%d", r->hostname, r->server->port);
 #endif
 
     if ( ! host ) 
 #ifdef APACHE1_2
-        host = pstrdup(r->pool, r->hostname);
+        /* because of multiple passes through on www don't use r->hostname() */
+        host = pstrdup(r->pool, get_server_name(r));
 #else
         host = ap_pstrdup(r->pool, r->hostname);
 #endif
