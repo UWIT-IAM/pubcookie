@@ -42,7 +42,7 @@
  */
 
 /*
- * $Revision: 1.6 $
+ * $Revision: 1.7 $
  */
 
 /* xxx this should almost certainly use the registry on windows */
@@ -84,12 +84,27 @@ int libpbc_config_init(const char *alt_config, const char *ident)
     config_read(alt_config);
     
     /* Look up umask */
-    val = libpbc_config_getstring("umask", "077");
+    val = libpbc_config_getstring("umask", "022");
     while (*val) {
         if (*val >= '0' && *val <= '7') umaskval = umaskval*8 + *val - '0';
         val++;
     }
     umask(umaskval);
+
+    /* paranoia checks */
+
+    /* check that our login host is in our enterprise domain */
+    if (!strstr(PBC_LOGIN_HOST, PBC_ENTRPRS_DOMAIN)) {
+
+    }
+
+    /* xxx check that our login URI points to our login host */
+
+    /* xxx check that keydir exists */
+
+    /* xxx check that we can read our symmetric key */
+
+    /* xxx check that the granting certificate (public key) is readable */
     
     return 0;
 }
