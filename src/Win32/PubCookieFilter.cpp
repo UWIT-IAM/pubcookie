@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.33 2004-06-03 19:24:09 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.34 2004-06-16 21:27:00 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -439,7 +439,7 @@ void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, unsigned char* coo
 	pFC->AddResponseHeaders(pFC,szHeaders,0);
 
 }
-
+//handles cases where pubc authn failed. sets pression & granting requests and ships browser to login server.
 int Auth_Failed (HTTP_FILTER_CONTEXT* pFC) 
 {
 	char 			args[PBC_4K];
@@ -471,12 +471,12 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	else
 		strcpy(args, "");
 
-	strcpy(szTemp,p->appsrvid);
+	strcpy(szTemp,p->appsrvid); 
 	if ( strlen(p->appsrv_port) > 0 ) {
 		strcat(szTemp,":");
 		strcat(szTemp,p->appsrv_port);
 	}
-    if( (pre_sess_tok=get_pre_s_token(pFC)) == -1 ) {
+    if( (pre_sess_tok=get_pre_s_token(pFC)) == -1 ) { //make presession token; a number
 		filterlog(p, LOG_ERR,"Security Warning:  Unable to randomize pre-session cookie!");
         return(OK);
     }
@@ -512,11 +512,11 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	filterlog(p, LOG_DEBUG,"Granting Request:\n%s",g_req_contents); 
 
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
-				strlen(g_req_contents));
+				strlen(g_req_contents)); //to avoid illegal cookie characters
 
 	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, p->Enterprise_Domain);
 
-	/* make the pre-session cookie */
+	/* make the pre-session cookie ; sign it*/
     pre_s = libpbc_get_cookie(  
 		p,
 		p->sectext,
@@ -1488,7 +1488,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			}
 
 
-
+//Not currently used..someone unknown issue
 #ifdef COOKIE_PATH
 			if ( stricmp(p->appid,(PBC_DEFAULT_APP_NAME)) == 0 )
 				sprintf(new_cookie, "Set-Cookie: %s_%s=%s; domain=%s; path=/; secure\r\n", 
@@ -1767,7 +1767,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	
    // Begin Pubcookie logic
 
-	if ( Pubcookie_User(pFC,pHeaderInfo) == OK ) 
+	if ( Pubcookie_User(pFC,pHeaderInfo) == OK ) //OK - means continue, DECLINED - means serve page/exit filter
 //		if ( Pubcookie_Auth(pFC) == OK )
 			if ( Pubcookie_Typer(pFC,pHeaderInfo) == OK )
 				switch (p->handler)
@@ -2147,7 +2147,7 @@ DllMain(
     {
     case DLL_PROCESS_ATTACH:
 		{
-			Sleep(5000);
+			
 			// Initialize Pubcookie Stuff - and Set Debug Trace Flags
 			fReturn = Pubcookie_Init ();
 		
