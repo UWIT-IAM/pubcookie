@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.129 2004-02-19 23:07:03 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.130 2004-02-20 18:35:24 fox Exp $
  */
 
 
@@ -2221,13 +2221,14 @@ const char *pubcookie_set_egd_device( cmd_parms *cmd, void *mconfig, const char 
 }
 
 /*                                                                            */
-const char *set_session_reauth(cmd_parms *cmd, void *mconfig, int f) {
+const char *set_session_reauth(cmd_parms *cmd, void *mconfig, const char *v) {
     pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
 
-    if(f != 0)
-        cfg->session_reauth = PBC_SESSION_REAUTH;
-    else
-        cfg->session_reauth = PBC_SESSION_REAUTH_NO;
+    if (!v) cfg->session_reauth = 0;
+    else if (!strcasecmp(v, "on")) cfg->session_reauth = 1;
+    else if (!strcasecmp(v, "off")) cfg->session_reauth = 0;
+    else cfg->session_reauth = atoi((const char *) v);
+    if (cfg->session_reauth<0) cfg->session_reauth = 1;
 
     return NULL;
 }
@@ -2344,8 +2345,8 @@ command_rec pubcookie_commands[] = {
     {"PubCookieDirDepthforAppID", pubcookie_set_dirdepth, NULL, RSRC_CONF, TAKE1,
      "Specify the Directory Depth for generating default AppIDs."},
 
-    {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_AUTHCFG, FLAG,
-     "Force reauthentication for new sessions and session timeouts"},
+    {"PubcookieSessionCauseReAuth", set_session_reauth, NULL, OR_AUTHCFG, TAKE1,
+     "Force reauthentication for new sessions with specified session timeout"},
     {"PubcookieEndSession", set_end_session, NULL, OR_AUTHCFG, RAW_ARGS,
      "End application session and possibly login session"},
     {"PubCookieAddlRequest", pubcookie_add_request, NULL, OR_AUTHCFG, ITERATE,
@@ -2481,10 +2482,10 @@ static const command_rec pubcookie_commands[] = {
          "Specify the Directory Depth for generating default AppIDs."
     ),
 
-    AP_INIT_FLAG("PubcookieSessionCauseReAuth",
+    AP_INIT_TAKE1("PubcookieSessionCauseReAuth",
          set_session_reauth,
          NULL, OR_AUTHCFG,
-         "Force reauthentication for new sessions and session timeouts"
+         "Force reauthentication for new sessions with specified timeout"
     ),
     AP_INIT_RAW_ARGS("PubcookieEndSession",
          set_end_session,
