@@ -2,7 +2,7 @@
 
 <head>
 <title>Pubcookie login cgi</title>
-<link rel="stylesheet" href="pubcookie.css" type="text/css">
+<link rel="stylesheet" href="pubcookie.css" type="text/css" title="pubcookie">
 </head>
 
 <body>
@@ -110,12 +110,13 @@ DirectoryIndex list.</p>
 
 <p>
 Our DirectoryIndex line looks something like:
+</p>
 
 <pre>
 DirectoryIndex index.html index.cgi
 </pre>
 
-If this is the configuration you choose, make sure there isn't an
+<p>If this is the configuration you choose, make sure there isn't an
 index.html file in the same directory as the index.cgi binary.</p>
 
 <h4>Explicit specification of login CGI</h4>
@@ -184,7 +185,7 @@ options and adjust accordingly:
 $ ./configure --help
 </pre>
 
-<a name="runtime"><h2>Run-time configuration</h2></a>
+<h2><a name="runtime">Run-time configuration</a></h2>
 
 <p>
 Most configuration of the login server can be done at run-time via
@@ -293,7 +294,7 @@ claim to be Mozilla that covers the only two browsers known to work
 with Pubcookie. Proceed according to your own policy.
 </p>
 
-<a name="keymgt"><h2>Key management</h2></a>
+<h2><a name="keymgt">Key management</a></h2>
 
 <p>
 <tt>{PUBCOOKIE_DIR}/keys</tt> is the location of the keystore that the login
@@ -321,7 +322,9 @@ server; the certificate must be distributed to every application server.
 </p>
 
 <pre>
-$ openssl req -new -x509 -nodes -out /usr/local/pubcookie/keys/pubcookie_granting.cert -newkey rsa:1024 -keyout /usr/local/pubcookie/keys/pubcookie_granting.key
+$ openssl req -new -x509 -nodes \
+    -out /usr/local/pubcookie/keys/pubcookie_granting.cert \
+    -newkey rsa:1024 -keyout /usr/local/pubcookie/keys/pubcookie_granting.key
 </pre>
 
 <p>If you want to place these files in a different location (than
@@ -339,19 +342,21 @@ recommend that it be run from inetd.
 </p>
 
 <p>
-Add a line like the following to the login server's <tt>/etc/inetd.conf</tt>:
+Add a line like the following to the login server's
+<tt>/etc/inetd.conf</tt>:</p>
 
 <pre>
 2222    stream  tcp     nowait  root    /usr/local/pubcookie/bin/keyserver keyserver
 </pre>
 
+<p>
 where <tt>/usr/local/pubcookie/bin/keyserver</tt> is where the keyserver binary
 is installed.  Make sure that your <tt>pubcookie/config</tt> file is
 correctly configured.</p>
 
 <p>
 If you are using xinetd, you should create a file named <tt>keyserver</tt> in
-<tt>/etc/xinetd.d</tt> with the following contents:
+<tt>/etc/xinetd.d</tt> with the following contents:</p>
 
 <pre>
 # description: pubcookie keyserver
@@ -369,18 +374,18 @@ service keyserver
 }
 </pre>
 
-After adding this line (or file), restart <tt>inetd</tt>.</p>
+<p>After adding this line (or file), restart <tt>inetd</tt>.</p>
 
 <h3>Generate a DES key for the login server with keyclient</h3>
 
 <p>
-Now run keyclient to generate a DES key for the login server:
+Now run keyclient to generate a DES key for the login server:</p>
 
 <pre>
 % /usr/local/pubcookie/bin/keyclient
 </pre>
 
-This will cause the keyserver program to generate a new DES key for
+<p>This will cause the keyserver program to generate a new DES key for
 the login server to use to provide confidentiality for the login
 cookies.</p>
 
@@ -440,6 +445,24 @@ href="#keymgt">Key management</a> section above.</p></li>
 
 <h3>Redundant application hosts</h3>
 
+<p>
+Sites frequently want several hosts configured identically to provide
+redundancy (either for performance or stability). In this section,
+we're assuming that you have a set of machines with an identical SSL
+certificate and key on them.</p>
+
+<p>For instance, an institution might have 15 webmail servers named
+<tt>webmail1.example.edu</tt> through <tt>webmail15.example.edu</tt>
+with 15 unique IP addresses. All of them are equipped with a
+<tt>webmail.example.edu</tt> certificate and are behind a Cisco Load
+Director which controls the IP address for
+<tt>webmail.example.edu</tt>.</p>
+
+<p>Use <tt>keyclient</tt> on <tt>webmail1.example.edu</tt> to generate
+a <tt>webmail.example.edu</tt> DES key. Use <tt>keyclient -d</tt> on
+all other webmail machines (<tt>webmail2.example.edu</tt>, etc.) to
+download an identical application key to the remaining servers.</p>
+
 <h2>Security considerations</h2>
 
 <h3>Login server security</h3>
@@ -473,13 +496,16 @@ cookie_type and the optional arguments are encryption_key and
 cert_file.</p>
 
 <p>
-As an example you can use these two programs to do things like:
+As an example you can use these two programs to do things like:</p>
 
 <pre>
-# echo "willey appsrvid appid 1 2 23 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.key" | ./pbc_create | ./pbc_verify 1 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.cert
+# echo "willey appsrvid appid 1 2 23 \
+    /usr/local/pubcookie/c_key /usr/local/pubcookie/test.key" | \
+    ./pbc_create | \
+    ./pbc_verify 1 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.cert
 </pre>
 
-and get something like
+<p>and get something like</p>
 
 <pre>
 user: willey
@@ -492,8 +518,6 @@ appid: appid
 create_ts: 1006986719
 last_ts: 1006986719
 </pre>
-</p>
-
 
 <h2>Copyright information</h2>
 
@@ -512,5 +536,9 @@ last_ts: 1006986719
 
     this is installation documentation for the login sever
 
-    $Id: install-login.html,v 1.1 2002-08-22 19:59:31 greenfld Exp $
+    $Id: install-login.html,v 1.2 2002-09-11 18:28:33 greenfld Exp $
 </pre>
+
+</body>
+
+</html>
