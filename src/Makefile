@@ -18,18 +18,18 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.21 1999-09-01 17:20:41 willey Exp $
+#   $Id: Makefile,v 1.22 2000-01-27 22:04:42 willey Exp $
 #
 
 # your compiler here
-CC=egcs
+CC=gcc
 # choose your flags.
 #   for convenience i make symlinks to the openssl and rsaref directorys
 #   the two openssl include directories compensate for a openssl
 #     file location shuffling.
-CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include
+CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include -DUSE_SECURID
 # order is important here
-LDFLAGS=-L./openssl -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref
+LDFLAGS=-L./openssl -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref 
 
 # hopefully you don't have to change anything below here
 ################################################################################
@@ -95,6 +95,10 @@ mkc_key_local:	mkc_key_local.o libpubcookie.o
 make_crypted_bit:	make_crypted_bit.o libpubcookie.o 
 		$(CC) ${CFLAGS} -o $@ make_crypted_bit.o libpubcookie.o base64.o $(LDFLAGS)
 
+# index.cgi needs additional libraries
+#index.cgi:	index.cgi.o index.cgi.o 
+#		$(CC) ${CFLAGS} -o $@ index.cgi.o libpubcookie.o base64.o $(LDFLAGS)
+
 h2ph:
 	co -l *.ph; \
 	h2ph -d . *.h; \
@@ -119,14 +123,15 @@ libpubcookie.o: libpubcookie.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 mkc_key_generic.o: mkc_key_generic.c ${GEN_HEAD} ${MAKEFILE}
 mkc_key_local.o: mkc_key_local.c ${GEN_HEAD} ${MAKEFILE}
-mod_pubcookie.o: mod_pubcookie.c
+mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
+index.cgi.o: index.cgi.c libpubcookie.o ${MAKEFILE}
 pbc_create.o: pbc_create.c ${GEN_HEAD} ${MAKEFILE}
 pbc_verify.o: pbc_verify.c ${GEN_HEAD} ${MAKEFILE}
 t.o: t.c ${GEN_HEAD} ${MAKEFILE}
 test_local_c_key.o: test_local_c_key.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so pbc_create pbc_verify t make_crypted_bit
+	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so pbc_create pbc_verify t make_crypted_bit index.cgi 
 
 # to purify candv (then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
