@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.2 2002-05-23 19:32:59 jteaton Exp $
+# $Id: Makefile.login,v 1.3 2002-05-31 21:39:25 jjminer Exp $
 
 include Makefile.settings
 
@@ -20,7 +20,8 @@ DEFINES += -DFLAVOR=$(FLAVOR)
 
 EXTRA_CFLAGS += -I$(CGIC_DIR)
 EXTRA_LIBS += -ldl
-EXTRA_LIBS += -lnsl
+# Socket Libraries
+EXTRA_LIBS += -lnsl -lsocket
 
 ## HAVE_KRB4 - you want the kerberos 4 verifier
 # DEFINES += -DHAVE_KRB4
@@ -29,8 +30,11 @@ EXTRA_LIBS += -lnsl
 DEFINES += -DHAVE_KRB5
 EXTRA_LIBS += -lkrb5
 
-## HAVE_KRB5 - you want the ldap verifier
+## HAVE_LDAP - you want the ldap verifier
 # DEFINES += -DHAVE_LDAP
+# EXTRA_LIBS += -lldapssl30
+# EXTRA_CFLAGS += -I/data/netscape/sdk3/include
+# EXTRA_LDFLAGS += -L/data/netscape/sdk3/include
 
 ## MAKE_MIRROR - mirrors everything sent to the browser
 # DEFINES += -DMAKE_MIRROR
