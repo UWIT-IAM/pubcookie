@@ -8,7 +8,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.20 2003-05-06 23:51:19 willey Exp $
+ * $Id: verify_ldap.c,v 1.21 2003-05-15 00:06:03 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -536,7 +536,7 @@ static int ldap_v( pool * p, const char *userid,
 
         LDAP *ld = NULL;
         char  *user_dn = NULL;
-        char *ptr;
+        char *limit, *ptr_in, *ptr_out;
 
         if ( strstr( ldap_uri_in, "%s" ) == NULL ) {
             /* The LDAP URI must contain a %s to hold the user name! */
@@ -554,32 +554,30 @@ static int ldap_v( pool * p, const char *userid,
             return -1;
         }
 
-        /* Before we go smacking this thing through sprintf, change
-         * the other %'s in the file to something that won't screw sprintf up.
-         * char(013), a vertical tab should do it.
+        /* Copy the bytes which precede the (first) %s into the allocated URI
+         * string. 
          */
 
-        ptr = strstr( ldap_uri_in, "%s" ) + 2;
-
-        while( ( ptr = strchr(ptr, '%') ) != NULL ) {
-            *ptr = '\013';
+        ptr_in = ldap_uri_in;
+        ptr_out = ldap_uri;
+        limit = strstr( ldap_uri_in, "%s" );
+        while ( ptr_in < limit ) {
+            *ptr_out++ = *ptr_in++;
         }
 
-        num = snprintf( ldap_uri, len, ldap_uri_in, userid );
+        /* Add the userid to the allocated URI string */
 
-        if ( num >= len ) {
-            /* Uhm, nearly overflowed the buffer.  We should freak. */
-            *errstr = "System Error.  Contact your system administrator.";
-            return -1;
+        *ptr_out = '\0';
+        strcat( ptr_out, userid );
+
+        /* Copy the rest of the URI */
+        ptr_in = limit + 2;
+        ptr_out += strlen( userid );
+        limit = ldap_uri_in + strlen( ldap_uri_in );
+        while ( ptr_in < limit ) {
+            *ptr_out++ = *ptr_in++;
         }
-
-        /* Make all the VT's back in to %'s. */
-
-        ptr = ldap_uri;
-
-        while( ( ptr = strchr(ptr, '\013') ) != NULL ) {
-            *ptr = '%';
-        }
+        *ptr_out = '\0';
 
         pbc_log_activity( p,  PBC_LOG_DEBUG_VERBOSE,
                           "ldap_verifier: uri: \"%s\"\n", ldap_uri );
