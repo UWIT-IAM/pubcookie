@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.121 2004-03-31 16:53:57 fox Exp $
+ * $Id: index.cgi.c,v 1.122 2004-04-02 17:36:04 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -131,10 +131,10 @@ FILE *headerout;
 /* do we want debugging? */
 int debug;
 
-#ifdef WITH_FCGI
+/* These limit the number of requests a fastcgi-server will handle.
+   Have no effect on the standalone server. */
 int cgi_count = 0;
 int max_cgi_count = 0;
-#endif
 
 security_context *context; /* to hold all of the certs for a transaction */
 char **ok_user_agents = NULL;
@@ -1737,9 +1737,9 @@ int cgiMain_init()
    pbc_log_init_syslog(p, "pubcookie login server");
    get_kiosk_parameters(p);
    libpbc_pubcookie_init(p, &context);
+   init_user_agent(p);
    max_cgi_count = libpbc_config_getint(p, "max_requests_per_server", 100);
    if (max_cgi_count<0) max_cgi_count = 0;
-   init_user_agent(p);
    pbc_log_activity(p, PBC_LOG_ERROR, "Pubcookie login initialized, "
             "max/process = %d\n", max_cgi_count);
 }
