@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.7 2002-06-14 18:25:25 jjminer Exp $
+# $Id: Makefile.login,v 1.8 2002-06-25 19:40:30 greenfld Exp $
 
 include Makefile.settings
 
@@ -12,11 +12,6 @@ DEFINES += -DDEBUG
 
 CGIC_DIR=/usr/user/cgic1.07-pubcookie1.01
 CGIC_LIB=$(CGIC_DIR)/libcgic.a
-
-# you have your choice of "basic" and "basic"
-FLAVOR=basic
-
-DEFINES += -DFLAVOR=$(FLAVOR)
 
 EXTRA_CFLAGS += -g -I$(CGIC_DIR)
 EXTRA_LIBS += -ldl
@@ -28,7 +23,7 @@ EXTRA_LIBS += -ldl
 
 ## HAVE_KRB5 - you want the kerberos 5 verifier
 DEFINES += -DHAVE_KRB5
-EXTRA_LIBS += -ldes -lkrb5
+EXTRA_LIBS += -ldes -lkrb5 -ldes
 
 ## HAVE_LDAP - you want the ldap verifier
 # DEFINES += -DHAVE_LDAP
@@ -69,10 +64,10 @@ VERIFY_SRC=verify_alwaystrue.c \
 	verify_shadow.c \
 	verify_ldap.c
 
-FLAVOR_SRC=flavor_basic.c
+FLAVOR_SRC=flavor.c flavor_basic.c
 
-INDEX_OBJ=index.cgi.o verify.o \
-		  flavor_$(FLAVOR).o \
+INDEX_OBJ=index.cgi.o verify.o flavor.o \
+		  flavor_basic.o \
 		  $(VERIFIERS)
 
 INDEX_FILES=index.cgi
