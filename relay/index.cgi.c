@@ -1,13 +1,4 @@
-/*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
-  For terms of use see doc/LICENSE.txt in this distribution.
- */
-
-/** @file index.cgi.c
- * Pubcookie login relay
- *
- * $Id: index.cgi.c,v 1.2 2004-02-13 21:51:36 dors Exp $
- */
+/* Pubcookie login relay */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +21,10 @@ pool *p = NULL;
 
 #include "pbc_configure.h"
 
+char *relay_domain = NULL;
+char *login_uri = NULL;
+char *relay_uri = NULL;
+
 /* See:  http://staff.washington.edu/fox/webtpl/ */
 #include "webtpl.h"
 
@@ -38,12 +33,15 @@ pool *p = NULL;
 static void get_template(WebTemplate W, char *name,  char *file)
 {
    char *buf;
+   char *e;
    int pl = strlen(PBC_TEMPLATES_PATH) + strlen(file);
  
-   buf = (char*) malloc(pl+1);
+   buf = (char*) malloc(pl+2);
    strcpy(buf, PBC_TEMPLATES_PATH);
-   strcat(buf, file);
-   buf[pl] = '\0';
+   for (e=buf+strlen(buf)-1; e>buf; e--) if (!isspace(*e)) break;
+   if (*e!='/') *++e = '/';
+   e++;
+   strcpy(e, file);
    WebTemplate_get_by_name(W, name, buf);
    free(buf);
 }
@@ -57,17 +55,17 @@ void relay_granting_request(WebTemplate W, char *greq)
 
    /* clear the granting request cookie */
    WebTemplate_set_cookie(W, PBC_G_REQ_COOKIENAME,
-      "", 0, (char*)PBC_ENTRPRS_DOMAIN, "/", 1);
+      "", 0, relay_domain, "/", 1);
 
    get_template(W, "page", "tologin.tpl");
-   WebTemplate_assign(W, "LOGIN", (char*)PBC_LOGIN_URI);
+   WebTemplate_assign(W, "LOGIN", login_uri);
    WebTemplate_assign(W, "G_REQUEST", greq);
 
    if (post = WebTemplate_get_arg(W, PBC_GETVAR_POST_STUFF)) {
       WebTemplate_assign(W, "POSTSTUFF", post);
    }
 
-   WebTemplate_assign(W, "RELAYURL", (char*)PBC_RELAY_URI);
+   WebTemplate_assign(W, "RELAYURL", relay_uri);
 
 }
 
@@ -95,9 +93,9 @@ void relay_granting_reply(WebTemplate W, char *grpl)
   
    expire = time(NULL) + PBC_GRANTING_EXPIRE;
    WebTemplate_set_cookie(W, PBC_G_COOKIENAME,
-      grpl, expire, (char*)PBC_ENTRPRS_DOMAIN, "/", 1);
+      grpl, expire, relay_domain, "/", 1);
   
-   WebTemplate_assign(W, "LOGIN", (char*)PBC_LOGIN_URI);
+   WebTemplate_assign(W, "LOGIN", login_uri);
    /* WebTemplate_assign(W, "LOGO", "login.gif"); */
   
    /* Build the final redirection */
@@ -156,7 +154,7 @@ void relay_logout_request(WebTemplate W, char *act)
 
    /* clear any granting request cookie */
    WebTemplate_set_cookie(W, PBC_G_REQ_COOKIENAME,
-      "", 0, (char*)PBC_ENTRPRS_DOMAIN, "/", 1);
+      "", 0, relay_domain, "/", 1);
 
    /* Reuse the GET redirection of the to-app template */
    get_template(W, "page", "toapp.tpl");
@@ -166,11 +164,11 @@ void relay_logout_request(WebTemplate W, char *act)
    if (!a1) a1 = "";
    a2 = WebTemplate_get_arg(W, "two");
    if (!a2) a2 = "";
-   l = strlen((char*)PBC_LOGIN_URI) + 
+   l = strlen(login_uri) + 
          strlen(PBC_GETVAR_LOGOUT_ACTION) + strlen(act) +
          strlen(a1) + strlen(a2) + 32;
    furl = (char*) malloc(l);
-   sprintf(furl, "%s?%s=%s&one=%s&two=%s", (char*)PBC_LOGIN_URI,
+   sprintf(furl, "%s?%s=%s&one=%s&two=%s", login_uri,
            PBC_GETVAR_LOGOUT_ACTION, act, a1, a2);
 
    WebTemplate_assign(W, "APP_URL", furl);
@@ -183,6 +181,9 @@ main()
 {
   WebTemplate W = newWebTemplate();
   char *req;
+  char *host, *port, *uri;
+  char *uport;
+  int ishttps;
 
 # ifdef WIN32
   p = (pool *)malloc(sizeof(pool));
@@ -195,8 +196,29 @@ main()
         "no-store, no-cache, must-revalidate");
   WebTemplate_add_header(W, "Expires", "Sat, 1 Jan 2000 01:01:01 GMT");
   WebTemplate_get_args(W);
-
+ 
   libpbc_config_init(p, NULL, "relay");
+
+  relay_domain = WebTemplate_get_arg(W, "domain");
+  if (!relay_domain) relay_domain = (char*)PBC_ENTRPRS_DOMAIN;
+
+  login_uri = (char*)PBC_RELAY_LOGIN_URI;
+  if (!*login_uri) login_uri = (char*)PBC_LOGIN_URI;
+
+  /* figure out relay uri */
+
+  if (getenv("HTTPS")) ishttps = 1;
+  else ishttps = 0;
+
+  if (!(host=getenv("HTTP_HOST"))) host = "nohost";
+  if (!(uri=getenv("REQUEST_URI"))) uri = "/";
+  if ((port=getenv("SERVER_PORT")) && strcmp(port,ishttps?"443":"80")) {
+     uport = (char*) malloc(2+strlen(port));
+     sprintf(uport,":%s", port);
+  } else uport = strdup("");
+  
+  relay_uri = (char*) malloc(16+strlen(host)+strlen(uport)+strlen(uri));
+  sprintf(relay_uri, "http%c://%s%s%s", ishttps?'s':'\0', host, uport, uri);
 
   /* A logout request to the login server will have a
      logout action variable */

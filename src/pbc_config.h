@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.96 2004-04-28 21:06:05 willey Exp $
+     $Id: pbc_config.h,v 1.97 2004-06-24 18:58:09 fox Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -32,6 +32,7 @@
         #define PBC_LOGIN_HOST (libpbc_config_getstring(p,"login_host", "weblogin.washington.edu"))
 #endif
 #define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
+#define PBC_RELAY_LOGIN_URI (libpbc_config_getstring(p,"relay_login_uri", ""))
 #define PBC_KEYMGT_URI (libpbc_config_getstring(p,"keymgt_uri", "https://weblogin.washington.edu/cgi-bin/keyserver"))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
 #define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "relay_template_path", "")
