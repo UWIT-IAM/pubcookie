@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_create.c,v 1.3 1998-07-20 10:34:34 willey Exp $
+    $Id: pbc_create.c,v 1.4 1998-07-24 23:14:00 willey Exp $
  */
 
 #include <stdio.h>
@@ -35,8 +35,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    ctx_plus = libpbc_sign_init();
-    c_stuff = libpbc_init_crypt();
+    ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
+    c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
     cookie = libpbc_get_cookie(argv[1], type, creds, appsrv_id, app_id, ctx_plus, c_stuff);
 
     fp = fopen("out", "w");

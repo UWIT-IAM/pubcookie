@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.3 1998-07-20 10:34:34 willey Exp $
+    $Id: pbc_config.h,v 1.4 1998-07-24 23:14:00 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -8,33 +8,55 @@
 /* 
  things that came from the module
  */
-#define PBC_COOKIENAME "pubcookie"
+#define PBC_L_COOKIENAME "pubcookie_l"
+#define PBC_G_COOKIENAME "pubcookie_g"
+#define PBC_S_COOKIENAME "pubcookie_s"
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_LOGIN_PAGE_STAT "http://pcookiel1.cac.washington.edu/login/login-stat.html"
 #define PBC_LOGIN_PAGE_DYN "http://pcookiel1.cac.washington.edu/login/login-dyn.html"
 #define PBC_LOGIN_DESC "http://pcookiel1.cac.washington.edu/login/login-desc.html"
-#define PBC_CRYPT_KEYFILE "c_key"
-#define PBC_DEFAULT_EXPIRE 1800
+#define PBC_CRYPT_KEYFILE "/tmp/c_key"
+#define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
+#define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
+#define PBC_GRANTING_EXPIRE 30
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_NUWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
-#define PBC_SECUREID_AUTHTYPE "secureid"
 
 /* 
  things that are used both places
  */
 #define PBC_SIG_LEN 128
-#define PBC_KEYFILE "/tmp/pubcookie.key"
-#define PBC_CERTFILE "/tmp/pubcookie.cert"
+#define PBC_CREDS_UWNETID 1
+#define PBC_CREDS_SECURID 2
+#define PBC_CREDS_MCIS    3
+
+/* lives only on login servers */
+#define PBC_L_CERTFILE "/tmp/pubcookie_login.cert"
+
+/* lives only on login server */
+#define PBC_L_KEYFILE "/tmp/pubcookie_login.key"
+
+/* lives only on application server */
+#define PBC_S_CERTFILE "/tmp/pubcookie_session.cert"
+
+/* lives only on application server */
+#define PBC_S_KEYFILE "/tmp/pubcookie_session.key"
+
+/* lives on application servers */
+#define PBC_G_CERTFILE "/tmp/pubcookie_granting.cert"
+
+/* lives only on login server */
+#define PBC_G_KEYFILE "/tmp/pubcookie_granting.key"
 
 #ifdef APACHE1_2
 #define pbc_malloc(x) palloc(p, x)
 #define pbc_strdup(x) pstrdup(p, x)
 #define pbc_strndup(s, n) pstrdup(p, s, n)
 #define pbc_fopen(x, y) pfopen(p, x, y)
-#define pbc_fclose(x) fclose(p, x)
+#define pbc_fclose(x) pfclose(p, x)
 #endif
 
 #ifndef pbc_malloc
@@ -53,4 +75,48 @@
 #define pbc_fclose(x) fclose(x)
 #endif
 
+#ifdef APACHE1_2
+#define libpbc_get_cookie(a,b,c,d,e,f,g) libpbc_get_cookie_p(p, a,b,c,d,e,f,g)
+#define libpbc_unbundle_cookie(a,b,c)  libpbc_unbundle_cookie_p(p, a,b,c)
+#define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_p(p, a,b,c)
+#define libpbc_sign_init(a) 		   libpbc_sign_init_p(p, a)
+#define libpbc_verify_init(a) 	   libpbc_verify_init_p(p, a)
+#define libpbc_pubcookie_init() 	   libpbc_pubcookie_init_p(p)
+#define libpbc_pubcookie_exit() 	   libpbc_pubcookie_exit_p(p)
+#define libpbc_alloc_init(a) 		   libpbc_alloc_init_p(p, a)
+#define libpbc_gethostip() 		   libpbc_gethostip_p(p)
+#define libpbc_init_crypt(a) 		   libpbc_init_crypt_p(p, a)
+#define libpbc_rand_malloc() 		   libpbc_rand_malloc_p(p)
+#define libpbc_get_private_key(a,b) 	   libpbc_get_private_key_p(p, a,b)
+#define libpbc_get_public_key(a,b) 	   libpbc_get_public_key_p(p, a,b)
+#define libpbc_init_cookie_data() 	   libpbc_init_cookie_data_p(p)
+#define libpbc_init_md_context_plus() 	   libpbc_init_md_context_plus_p(p)
+#define libpbc_get_crypt_key(a,b) 	   libpbc_get_crypt_key_p(p, a,b)
+#define libpbc_sign_cookie(a,b) 	   libpbc_sign_cookie_p(p, a,b)
+#define libpbc_sign_bundle_cookie(a,b,c) 	   libpbc_sign_bundle_cookie_p(p, a,b,c)
+#define libpbc_stringify_cookie_data(a) 	   libpbc_stringify_cookie_data_p(p, a)
+
+#else
+#define libpbc_get_cookie(a,b,c,d,e,f,g) libpbc_get_cookie_np(a,b,c,d,e,f,g)
+#define libpbc_unbundle_cookie(a,b,c)    libpbc_unbundle_cookie_np(a,b,c)
+#define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_np(a,b,c)
+#define libpbc_sign_init(a) 		 libpbc_sign_init_np(a)
+#define libpbc_verify_init(a) 	   	 libpbc_verify_init_np(a)
+#define libpbc_pubcookie_init	 	 libpbc_pubcookie_init_np
+#define libpbc_pubcookie_exit 		 libpbc_pubcookie_exit_np
+#define libpbc_alloc_init(a) 		 libpbc_alloc_init_np(a)
+#define libpbc_gethostip   		 libpbc_gethostip_np
+#define libpbc_init_crypt(a) 		 libpbc_init_crypt_np(a)
+#define libpbc_rand_malloc 	   	 libpbc_rand_malloc_np
+#define libpbc_get_private_key(a,b) 	 libpbc_get_private_key_np(a,b)
+#define libpbc_get_public_key(a,b) 	 libpbc_get_public_key_np(a,b)
+#define libpbc_init_cookie_data 	 libpbc_init_cookie_data_np
+#define libpbc_init_md_context_plus 	 libpbc_init_md_context_plus_np
+#define libpbc_get_crypt_key(a,b) 	 libpbc_get_crypt_key_np(a,b)
+#define libpbc_sign_cookie(a,b) 	 libpbc_sign_cookie_np(a,b)
+#define libpbc_sign_bundle_cookie(a,b,c) libpbc_sign_bundle_cookie_np(a,b,c)
+#define libpbc_stringify_cookie_data(a)  libpbc_stringify_cookie_data_np(a)
+#endif 
+
 #endif /* !PUBCOOKIE_CONFIG */
+

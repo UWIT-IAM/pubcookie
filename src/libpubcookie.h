@@ -1,36 +1,64 @@
 /*
-    $Id: libpubcookie.h,v 1.3 1998-07-20 10:34:34 willey Exp $
+    $Id: libpubcookie.h,v 1.4 1998-07-24 23:14:00 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
 #define PUBCOOKIE_LIB
 
 
-unsigned char *libpbc_get_cookie(char *, 
+#ifdef APACHE1_2
+
+unsigned char *libpbc_get_cookie_p(pool *, char *, 
 	                         unsigned char, 
 				 unsigned char, 
 				 unsigned char *, 
 				 unsigned char *, 
 				 md_context_plus *, 
 				 crypt_stuff *);
-pbc_cookie_data *libpbc_unbundle_cookie(char *, 
+pbc_cookie_data *libpbc_unbundle_cookie_p(pool *, char *, 
 	                                md_context_plus *, 
 					crypt_stuff *);
-unsigned char *libpbc_update_lastts(pbc_cookie_data *,
+unsigned char *libpbc_update_lastts_p(pool *, pbc_cookie_data *,
                                     md_context_plus *, 
                                     crypt_stuff *);
-int libpbc_init_cookie(pbc_cookie_data *);
+md_context_plus *libpbc_sign_init_p(pool *, char *);
+md_context_plus *libpbc_verify_init_p(pool *, char *);
+void libpbc_pubcookie_init_p(pool *);
+void libpbc_pubcookie_exit_p(pool *);
+char *libpbc_alloc_init_p(pool *, int);
+unsigned char *libpbc_gethostip_p(pool *);
+crypt_stuff *libpbc_init_crypt_p(pool *, char *);
+
+#else
+
+unsigned char *libpbc_get_cookie_np(char *, 
+	                         unsigned char, 
+				 unsigned char, 
+				 unsigned char *, 
+				 unsigned char *, 
+				 md_context_plus *, 
+				 crypt_stuff *);
+pbc_cookie_data *libpbc_unbundle_cookie_np(char *, 
+	                                md_context_plus *, 
+					crypt_stuff *);
+unsigned char *libpbc_update_lastts_np(pbc_cookie_data *,
+                                    md_context_plus *, 
+                                    crypt_stuff *);
+md_context_plus *libpbc_sign_init_np(char *);
+md_context_plus *libpbc_verify_init_np(char *);
+void libpbc_pubcookie_init_np();
+void libpbc_pubcookie_exit_np();
+char *libpbc_alloc_init_np(int);
+unsigned char *libpbc_gethostip_np();
+crypt_stuff *libpbc_init_crypt_np(char *);
+
+#endif 
+
+char *libpbc_time_string(time_t);
 void *libpbc_abend(const char *,...);
 int libpbc_debug(const char *,...);
-char *libpbc_time_string(time_t);
-md_context_plus *libpbc_sign_init();
-md_context_plus *libpbc_verify_init();
-void libpbc_pubcookie_init();
-void libpbc_pubcookie_exit();
 void libpbc_augment_rand_state(unsigned char *, int);
-crypt_stuff *libpbc_init_crypt();
-char *libpbc_alloc_init(int);
-char *mod_crypt_key(char *);
+char *libpbc_mod_crypt_key(char *, unsigned char *);
 int libpbc_encrypt_cookie(unsigned char *, 
 	                  unsigned char *, 
                           crypt_stuff *, 
@@ -41,8 +69,5 @@ int libpbc_decrypt_cookie(unsigned char *,
 	     	          long);
 int base64_encode(unsigned char *in, unsigned char *out, int size);
 int base64_decode(unsigned char *in, unsigned char *out);
-
-unsigned char *libpbc_sign_cookie(unsigned char *, md_context_plus *);
-int libpbc_verify_sig(unsigned char *, unsigned char *, md_context_plus *);
 
 #endif /* !PUBCOOKIE_LIB */

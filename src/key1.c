@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
@@ -7,22 +8,19 @@
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
-#define LEN 5
 
 void *main() {
-    unsigned char	buf[4096];
-    FILE		*fp;
+    unsigned char	buf[PBC_4K];
     pid_t               pid;
 
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
 
-    RAND_bytes(buf, 4096);
+    RAND_bytes(buf, PBC_4K);
 
-    fp = fopen("key1.out", "w");
-    fwrite(buf, sizeof(char), 4096, fp);
-    fclose(fp);
+    fwrite(buf, sizeof(char), PBC_4K, stdout);
+    fflush(stdout);
 
     exit (0);
 
