@@ -4,6 +4,24 @@ This is where changes to the pubcookie login software is recorded
 (changes prior to 1.20 are straight out of the rcs logs, including crappy
 cryptic messages)
 
+a5 1.30 29Oct2001
+- Extra debugging
+- Support for testing on port 80
+- location of exit on failure for reading/processessing keys and certs moved to
+- fixed error where 'login failed' message wasn't presented if username field 
+  was left blank
+- initial support for 'duration'
+- Added Ride-free-zone to elimate need to re-enter creds sooner then n mintues
+- Pre-fill username from login cookie on login page if possible
+- CMU Kerberos changes.  -
+- CMU methods for printing login page from dynamic templates.  
+- Support for Session_requth.  
+- Seperate main action logic out.  
+- Rename app_id to appid
+- Rename appsrv_id to appsrvid.
+- clean-up more UWash-isms.
+- moved code for initializing crypt key so that it should only happen once
+- added better failure mode for not being able to read a key or cert
 
 a5 1.20 24April2001
 - Use creds from granting request for granting cookie, not login cookie
