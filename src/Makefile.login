@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.6 2002-06-12 20:09:58 jjminer Exp $
+# $Id: Makefile.login,v 1.7 2002-06-14 18:25:25 jjminer Exp $
 
 include Makefile.settings
 
@@ -93,7 +93,13 @@ LOGIN_TEMPLATES=login_templates.generic/login_part1 \
 			    login_templates.generic/login_part2 \
 			    login_templates.generic/nonpost_redirect \
 			    login_templates.generic/notok_part1 \
-			    login_templates.generic/notok_part2
+			    login_templates.generic/notok_part2 \
+				login_templates.generic/logout_postscript_still_weblogin \
+				login_templates.generic/logout_still_weblogin \
+				login_templates.generic/notok_need_ssl \
+				login_templates.generic/status_part1 \
+				login_templates.generic/status_part2 \
+				login_templates.generic/logout_time_remaining
 
 DOCS=$(GENERAL_DOCS) \
 	 ../doc/NEW_SITE.txt \
