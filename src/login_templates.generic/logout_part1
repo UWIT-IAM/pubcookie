@@ -1,0 +1,21 @@
+<!-- begin tmpl logout_part1 -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>pubcookie logout response</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+
+<CENTER>
+
+<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=580>
+<TR>
+<TD VALIGN="MIDDLE">
+<IMG SRC="/images/login.gif" ALT="" height="" width="">
+
+<p>
+<img src="/images/caution.gif" align="absmiddle" alt="" height="35" width="35">
+<font size="+1"><b>Completely exit your Web browser if you are finished browsing.</b></font></p>
+<!-- end tmpl logout_part1 -->
+

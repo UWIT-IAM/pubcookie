@@ -1,0 +1,6 @@
+<!-- begin tmpl logout_app -->
+<p>
+<img src="/images/check.gif" align="absmiddle" alt="" height="35" width="35">
+<font size="+1">You successfully logged out of a weblogin application.</font></P>
+<!-- end tmpl logout_app -->
+
