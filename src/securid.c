@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.5 2001-10-18 22:33:58 willey Exp $
+/* $Id: securid.c,v 1.6 2002-03-02 00:41:11 willey Exp $
 
    function: securid  
    args:     reason - points to a reason string
@@ -33,30 +33,46 @@
 #include <mgoapi.h>
 #include <securid.h>
 
-void securid_cleanup () 
+#define SECURID_TRUE 1
+
+void securid_log(int log, char *string) 
+{
+    FILE *ouf = stderr;
+
+    if (log == SECURID_TRUE) 
+      fprintf(ouf, "securid: %s\n", string);
+
+}
+
+void securid_cleanup() 
 {
     MGOdisconnect ();
 
 }
 
-int securid (char *reason, char *user, char *card_id, char *s_prn, int log, int typ, int doit)
+int securid(char *reason, 
+            char *user, 
+            char *card_id, 
+            char *s_prn, 
+            int log, 
+            int typ, 
+            int doit)
 {
-      /* use stderr for blather info */
-      FILE *ouf = stderr;
-      char **vec, *lst, crn[33], tmp[33];
+      char **vec, *lst, tmp[33], crn[33];
       int  i, prn, ret;
       char tmp_res[BIGS];
-      char *id;
 
       vec = NULL; lst = NULL; ret = 0; *crn = ESV; prn = EIV;
 
-      /* use the card_id if we got one */
-      if ( card_id == NULL ) id = user; else id = card_id;
+      snprintf(tmp_res, BIGS, 
+	  "user: %s card_id: %s s_prn: %s log: %d typ: %d doit: %d",
+	  user, card_id, s_prn, log, typ, doit);
+      securid_log(log, tmp_res);
 
       /* move prn if we got one */
       if ( s_prn == NULL ) {
-         fprintf (ouf, "No PRN, bye\n");
          reason = strdup("No PRN");
+         securid_log(log, reason);
          securid_cleanup();
          return(SECURID_PROB);
       }
@@ -73,46 +89,64 @@ int securid (char *reason, char *user, char *card_id, char *s_prn, int log, int 
 
       if (MGOconnect () < 1) {
          snprintf(tmp_res, BIGS, "Connect error: %d %s.", MGOerrno, MGOerrmsg);
-         syslog (LOG_ERR, "%s\n", tmp_res);
-         fprintf (ouf, "%s\n", tmp_res);
+         syslog (LOG_ERR, "%s\n", tmp_res); /* syslog regardless */
          reason = strdup(tmp_res);
+         securid_log(log, reason);
          securid_cleanup();
          return(SECURID_PROB);
       }
 
       if (MGOgetcrn (&lst, user) < 1) {
          snprintf(tmp_res, BIGS, "No card list for %s.", user);
-         if (log) syslog (LOG_WARNING, "%s\n", tmp_res);
-         fprintf (ouf, "%s\n", tmp_res);
+         if (log == SECURID_TRUE) syslog (LOG_WARNING, "%s\n", tmp_res);
          reason = strdup(tmp_res);
+         securid_log(log, reason);
          securid_cleanup();
          return(SECURID_PROB);
       }
 
       /* crn fields are either in the form                                */
-      /* "key1=value1 value2 key3=value3 ..." or                          */
-      /* simply "value1".  where one of the keys is the card_id or user.  */
-      /* if no card_id is specified or matched then the first value       */
-      /* is used                                                          */
+      /* "alias1=crn1 crn2 alias3=crn3 ..." or                            */
+      /* simply "crn1".                                                   */
+      /* If specified, "card_id" selects first entry that it is a         */
+      /* substring of.  If not specified, first crn is used.              */
 
-      vec = MGOvectorize (lst);
-      if( *vec != NULL && *(vec +1) != NULL ) {  /* skip if 1 or less entrys */
-         for( i = 0; i>=0 && (*(vec+i)) != NULL; i++ ) { /* walk thru k=v sets*/
-             MGOkeyword (*(vec+i), tmp, sizeof (tmp), 0);
-             if( strcmp(tmp, id) == 0 ) {
-                 if ( MGOvalue (*(vec+i), crn, sizeof (crn), 1) < 0 )
-                     strcpy (crn, *(vec+i));
-                 i = -9; /* leave walk thru */
-             }
-         }
-      }
+      vec = MGOvectorize (&vec, lst);
 
-      /* use default (1st) value */
-      if (*crn == ESV) {
-         MGOkeyword (*vec, tmp, sizeof (tmp), 0);
-         if ( MGOvalue (*vec, crn, sizeof (crn), 1) < 0 ) {
-             strcpy (crn, tmp);
+      if (card_id != NULL) {
+
+         for (i = 0; vec[i] != NULL; i++) {
+            if (strstr(vec[i], card_id)) {
+               if (MGOvalue(vec[i], crn, sizeof(crn), 1) < 0) {
+                  MGOkeyname(vec[i], crn, sizeof(crn), 1);
+               }
+               break;
+            }
          }
+
+         /* use default (1st) value */
+         if (*crn == ESV) {
+            MGOkeyword(*vec, tmp, sizeof (tmp), 0);
+            if (MGOvalue(*vec, crn, sizeof(crn), 1) < 0) {
+                strcpy(crn, tmp);
+            }
+         }
+
+         if (*crn == ESV) {
+            reason = strdup("Invalid CRN");
+            securid_log(log, reason);
+            securid_cleanup();
+            return SECURID_PROB;
+         }
+
+      } else {
+
+         /* Use default (1st) value */
+
+         if (MGOvalue(vec[0], crn, sizeof(crn), 1) < 0) {
+            MGOkeyname(vec[0], crn, sizeof(crn), 1);
+         }
+
       }
 
       MGOfreevector (&vec);
@@ -120,28 +154,31 @@ int securid (char *reason, char *user, char *card_id, char *s_prn, int log, int 
 
       /* this is the bail-out option */
       if( doit == SECURID_ONLY_CRN ) {
-          snprintf(tmp_res, BIGS, "no securid check was done for user: %s crn: %s", user, crn);
-          fprintf (ouf, "%s\n", tmp_res);
+          snprintf(tmp_res, BIGS, 
+          	"no securid check was done for user: %s crn: %s", user, crn);
           reason = strdup(tmp_res);
+          securid_log(log, reason);
           securid_cleanup();
           return(SECURID_BAILOUT);
       }
 
       if (MGOsidcheck (user, crn, prn, typ) < 1) {
          if (MGOerrno == MGO_E_NPN) {
-            snprintf(tmp_res, BIGS, "Asking for next prn: id=%s, crn=%s, prn=%d.", user, crn, prn);
+            snprintf(tmp_res, BIGS, 
+		"Asking for next prn: id=%s, crn=%s, prn=%d.", user, crn, prn);
             if(log) syslog (LOG_INFO, "%s", tmp_res);
             ret = SECURID_WANTNEXT;
          } else if (MGOerrno == MGO_E_CRN) {
-            snprintf(tmp_res, BIGS, "Failed SecurID check: id=%s, crn=%s, prn=%d.", user, crn, prn);
+            snprintf(tmp_res, BIGS, 
+		"Failed SecurID check: id=%s, crn=%s, prn=%d.", user, crn, prn);
             if(log) syslog (LOG_INFO, "%s", tmp_res);
-            if(log) fprintf (ouf, "%s\n", tmp_res);
             ret = SECURID_FAIL;
          } else {
             snprintf(tmp_res, BIGS, "Unexpected error: %d %s.", 
 			MGOerrno, MGOerrmsg);
             syslog (LOG_ERR, "%s\n", tmp_res);
-            fprintf (ouf, "%s\n", tmp_res);
+            reason = strdup(tmp_res);
+            securid_log(log, reason);
             ret = SECURID_PROB;
          }
       } else {
@@ -151,6 +188,7 @@ int securid (char *reason, char *user, char *card_id, char *s_prn, int log, int 
       }
  
       reason = strdup(tmp_res);
+      securid_log(log, reason);
       securid_cleanup();
       return(ret);
 
