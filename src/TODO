@@ -1,7 +1,0 @@
-this is a randomly updated file that is up to date as of June3, 1999
-
-longer term
-- add more junk to random seed stuff
-- break a few things up so 'secure' functions and includes can go in more 
-protected files
-- replace base64.c with something from ssleay
