@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.16 2000-09-25 17:58:31 willey Exp $
+    $Id: index.cgi.c,v 1.17 2001-01-26 21:27:09 willey Exp $
  */
 
 
@@ -192,7 +192,8 @@ login_rec *load_login_rec(login_rec *l)
     l->method 		= get_string_arg(PBC_GETVAR_METHOD, NO_NEWLINES_FUNC);
     l->version 		= get_string_arg(PBC_GETVAR_VERSION, NO_NEWLINES_FUNC);
     l->creds      	= get_int_arg(PBC_GETVAR_CREDS) + 48;
-    l->creds_from_greq  = l->creds;
+    if( ! (l->creds_from_greq = get_int_arg("creds_from_greq") + 48) ) 
+        l->creds_from_greq  = l->creds;
     l->appid 		= get_string_arg(PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
     l->appsrvid 	= get_string_arg(PBC_GETVAR_APPSRVID, NO_NEWLINES_FUNC);
     l->fr 		= get_string_arg(PBC_GETVAR_FR, NO_NEWLINES_FUNC);
@@ -660,7 +661,7 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
     if( need_clear_login ) 
         print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
             PBC_L_COOKIENAME, 
-            "done",
+            PBC_CLEAR_COOKIE,
             hostname, 
             LOGIN_DIR, 
             EARLIEST_EVER);
@@ -701,6 +702,13 @@ char *check_login_uwnetid(const char *user, const char *pass)
     fprintf(stderr, "check_login_uwnetid: hello\n");
 #endif 
 
+    if( user == NULL || pass == NULL ) {
+#ifdef DEBUG
+        fprintf(stderr, "check_login_uwnetid: user or pass absent\n");
+#endif 
+        return(CHECK_LOGIN_RET_FAIL);
+    }
+
     if( auth_kdc(user, pass) == NULL ) {
 #ifdef DEBUG
         fprintf(stderr, "check_login_uwnetid: auth_kdc say ok\n");
@@ -730,6 +738,13 @@ char *check_login_securid(char *user, char *sid, int next, login_rec *l)
 #ifdef DEBUG
     fprintf(stderr, "check_login_securid: hello\n");
 #endif 
+
+    if( user == NULL || sid == NULL ) {
+#ifdef DEBUG
+        fprintf(stderr, "check_login_securid: user or sid absent\n");
+#endif 
+        return(CHECK_LOGIN_RET_FAIL);
+    }
 
     if( auth_securid(user, sid, next, l) == NULL ) {
 #ifdef DEBUG
@@ -936,8 +951,9 @@ void notok ( void (*notok_f)() )
 {
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), PBC_FORM_MP_COOKIENAME) ) {
-        print_out("Set-Cookie: %s=done; domain=%s; path=/; expires=%s\n", 
+        print_out("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n", 
             PBC_FORM_MP_COOKIENAME, 
+            PBC_CLEAR_COOKIE,
             PBC_ENTRPRS_DOMAIN, 
             EARLIEST_EVER);
     }
@@ -959,6 +975,7 @@ void notok ( void (*notok_f)() )
 int cookie_test() 
 {
     char        *cookies;
+    char        cleared_g_req[100];
 
     /* get the cookies */
     if ( !(cookies = getenv("HTTP_COOKIE")) ){
@@ -973,7 +990,11 @@ int cookie_test()
         return(0);
     }
 
-    if ( !strstr(cookies, PBC_G_REQ_COOKIENAME) ) {
+    /* a cleared G req is as bad as no g req */
+    sprintf(cleared_g_req, "%s=%s", PBC_G_REQ_COOKIENAME, PBC_CLEAR_COOKIE);
+
+    if ( !strstr(cookies, PBC_G_REQ_COOKIENAME) || 
+         strstr(cookies, cleared_g_req) ) {
 
         if ( !strstr(cookies, PBC_L_COOKIENAME) ) {
             log_message("no granting req or login cookie from %s", cgiRemoteAddr);
@@ -1122,6 +1143,8 @@ void print_login_page_hidden_stuff(login_rec *l)
 		PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : "") );
     print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
 		PBC_GETVAR_APPID, (l->appid ? l->appid : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
+                "creds_from_greq", l->creds_from_greq);
     print_out("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
                 PBC_GETVAR_CREDS, l->creds);
     print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
@@ -1327,8 +1350,9 @@ void print_redirect_page(login_rec *l)
                 get_domain_hostname(),
                 LOGIN_DIR);
     snprintf( clear_g_req_cookie, sizeof(l_set_cookie)-1, 
-		"Set-Cookie: %s=clear; domain=%s; path=/; secure", 
+		"Set-Cookie: %s=%s; domain=%s; path=/; secure", 
 		PBC_G_REQ_COOKIENAME,
+                PBC_CLEAR_COOKIE,
                 PBC_ENTRPRS_DOMAIN);
 
     /* whip up the url to send the browser back to */
