@@ -10,7 +10,7 @@
 #
 #
 #   All comments and suggestions to pubcookie@cac.washington.edu
-#   More info: https:/www.washington.edu/pubcookie/
+#   More info: http://www.washington.edu/pubcookie/
 #   Written by the Pubcookie Team
 #
 #   This is the pubcookie general Makefile.  It is not for the Apache module
@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.4 2001-05-15 01:22:00 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.5 2001-05-29 20:55:50 willey Exp $
 #
 
 # your compiler here
