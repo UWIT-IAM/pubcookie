@@ -18,15 +18,15 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.33 2001-05-29 20:56:40 willey Exp $
+#   $Id: Makefile,v 1.34 2001-08-22 23:22:42 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include 
+CFLAGS=-O3 -g -Wall -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/
 # order is important here
-LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto
+LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto -ldl
 # nfast stuff
 #LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto -L/opt/nfast/gcc/lib -lnfstub
 
@@ -43,6 +43,7 @@ ALLHEAD=${GENERALHEAD} ${LOGINHEAD} ${MODULEHEAD} ${TESTHEAD}
 GENERALSRC=libpubcookie.c \
            base64.c
 MODULESRC=mod_pubcookie.c
+
 LOGINSRC=index.cgi.c \
 	 index.cgi_krb.c \
 	 index.cgi_securid.c \
@@ -51,6 +52,7 @@ LOGINSRC=index.cgi.c \
 	 mkc_key_generic.c \
 	 mkc_key_local.txt \
 	 mkc_key_local.c
+
 TESTSRC=dtest.c \
         pbc_create.c \
         test_localc_key.c \
@@ -146,7 +148,7 @@ logintar:
 	TARFILE=$$BASENAME-$${LVERSION}.tar; \
 	rm -rf $$DIR_NAME; \
 	mkdir $$DIR_NAME; \
-	for i in ${GENERALSRC} ${LOGINSRC) $(GENERALHEAD) ${LOGINHEAD} ${LOGINMISC} $(GENERALMISC) ;\
+	for i in ${GENERALSRC} ${LOGINSRC} ${GENERALHEAD} ${LOGINHEAD} ${LOGINMISC} ${GENERALMISC} ;\
 	do \
 		cp $$i $$DIR_NAME; \
 		chmod 664 $$DIR_NAME/$$i; \
