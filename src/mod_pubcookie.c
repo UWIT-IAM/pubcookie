@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.88 2002-07-05 23:35:48 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.89 2002-07-18 20:14:46 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -392,12 +392,11 @@ static void set_session_cookie(request_rec *r, int firsttime)
 				 appid(r), 
 				 NULL);
 
-    new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=%s;%s", 
+    new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
 			     make_session_cookie_name(r->pool, 
                                                       PBC_S_COOKIENAME, 
                                                       appid(r)),
 			     cookie, 
-			     ap_get_server_name(r),
 			     "/",
                              secure);
 
@@ -431,12 +430,11 @@ static void set_session_cookie(request_rec *r, int firsttime)
         if (blob) free(blob);
 
         /* set */
-        new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s; path=%s;%s", 
+        new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
                                  make_session_cookie_name(r->pool, 
                                                           PBC_CRED_COOKIENAME,
                                                           appid(r)),
                                  base64,
-                                 ap_get_server_name(r),
                                  "/",
                                  secure);
         ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
@@ -493,9 +491,8 @@ void clear_pre_session_cookie(request_rec *r) {
 #endif
 
     new_cookie = ap_psprintf(r->pool, 
-                 "%s=; domain=%s; path=/; expires=%s;%s", 
+                 "%s=; path=/; expires=%s;%s", 
        PBC_PRE_S_COOKIENAME, 
-       ap_get_server_name(r),
        EARLIEST_EVER, secure);
 
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
@@ -515,10 +512,9 @@ void clear_session_cookie(request_rec *r) {
                                                      &pubcookie_module);
 
     new_cookie = ap_psprintf(r->pool, 
-		"%s=%s; domain=%s; path=/; expires=%s;%s",
+		"%s=%s; path=/; expires=%s;%s",
                 make_session_cookie_name(r->pool, PBC_S_COOKIENAME, appid(r)), 
 	        PBC_CLEAR_COOKIE,
-                ap_get_server_name(r),
                 EARLIEST_EVER,
                 secure);
                              
@@ -527,12 +523,11 @@ void clear_session_cookie(request_rec *r) {
     if (cfg->cred_transfer) {
         /* extra cookies (need cookie extensions) */
         new_cookie = ap_psprintf(r->pool, 
-                                 "%s=%s; domain=%s; path=/; expires=%s;%s",
+                                 "%s=%s; path=/; expires=%s;%s",
                                  make_session_cookie_name(r->pool, 
                                                           PBC_CRED_COOKIENAME, 
                                                           appid(r)), 
                                  PBC_CLEAR_COOKIE,
-                                 ap_get_server_name(r),
                                  EARLIEST_EVER,
                                  secure);
         
@@ -825,10 +820,9 @@ static int auth_failed(request_rec *r) {
 				   NULL);
 		
       pre_s_cookie = ap_psprintf(r->pool, 
-                     "%s=%s; domain=%s; path=%s; expires=%s;%s", 
+                     "%s=%s; path=%s; expires=%s;%s", 
               PBC_PRE_S_COOKIENAME,
               pre_s, 
-              ap_get_server_name(r),
               "/",
               ap_gm_timestr_822(r->pool, time(NULL) + PBC_PRE_S_EXP),
                                  secure);
@@ -1000,6 +994,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
 
     libpbc_config_init(NULL, "mod_pubcookie");
 
+#if 0
     /* xxx how to get this data to security_legacy.c ? 
      we need some sort of config_override() call ? */
     /* read and init session public key */
@@ -1013,6 +1008,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
     /* read and init granting public key */
     fname = ap_server_root_relative (p,
 	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
+#endif
 
     /* libpubcookie initialization */
     libpbc_pubcookie_init();
@@ -1211,7 +1207,7 @@ static int pubcookie_user(request_rec *r) {
      if we don't have one.  This helps if there are any old g cookies */
   cookie_data = NULL;
   if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
-      cookie_data = libpbc_unbundle_cookie(cookie, get_my_hostname());
+      cookie_data = libpbc_unbundle_cookie(cookie, ap_get_server_name(r));
       if( !cookie_data) {
 	  libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
 	  libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
@@ -1377,9 +1373,10 @@ static int pubcookie_user(request_rec *r) {
   
       /* decrypt cookie. if credtrans is set, then it's from login server
        to me. otherwise its from me to me. */
-      if (!res && libpbc_rd_priv(cred_from_trans ? get_my_hostname() : NULL, 
-                               blob, bloblen, 
-                               &plain, &plainlen)) {
+      if (!res && libpbc_rd_priv(cred_from_trans ? 
+                                    ap_get_server_name(r) : NULL, 
+                                 blob, bloblen, 
+                                 &plain, &plainlen)) {
           syslog(LOG_ERR, "credtrans: libpbc_rd_priv() failed");
           res = -1;
       }
