@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.20 1999-05-26 18:25:14 willey Exp $
+    $Id: pbc_config.h,v 1.21 1999-06-25 22:18:13 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -27,9 +27,28 @@
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 
-#define PBC_POST_NO_JS_HTML1 "<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520><TR><TD WIDTH=300 VALIGN=\"MIDDLE\"> <IMG SRC=\""
-#define PBC_POST_NO_JS_HTML2 "\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\"><P>You do not have Javascript turned on and are penalized by having to press this button<P>\n" 
-#define PBC_POST_NO_JS_HTML3 "</TABLE>\n"
+#define PBC_POST_NO_JS_HTML1 "<HTML><HEAD></HEAD>\n \
+<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n \
+<CENTER>\n \
+<FORM METHOD=\"POST\" ACTION=\""
+/* url of login page */
+#define PBC_POST_NO_JS_HTML2 "\" NAME=\"query\">\n \
+<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\""
+/* packages POST stuff */
+#define PBC_POST_NO_JS_HTML3 "\">\n \
+<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520><TR><TD WIDTH=300 VALIGN=\"MIDDLE\"> <IMG SRC=\""
+/* UWnetID logdo url */
+#define PBC_POST_NO_JS_HTML4 "\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\"> \n \
+<P>You do not have Javascript turned on, additional interaction will be required, please click the button to continue<P>\n \
+</TABLE>\n \
+<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\""
+/* button text (PBC_POST_NO_JS_BUTTON) */
+#define PBC_POST_NO_JS_HTML5 "\">\n \
+</FORM>\n"
+/* copyright (PBC_HTML_COPYRIGHT) */
+#define PBC_POST_NO_JS_HTML6 "</CENTER>\n \
+</BODY></HTML>\n"
+
 #define PBC_HTML_COPYRIGHT "<P><address>&#169; 1999 University of Washington</address><P>\n" 
 #define PBC_POST_NO_JS_BUTTON "Click here to continue"
 #define PBC_UWNETID_LOGO "images/login.gif"
