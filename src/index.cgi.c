@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.57 $
+ * $Revision: 1.58 $
  */
 
 
@@ -305,13 +305,20 @@ int get_cookie(char *name, char *result, int max)
     char *target;
     char *wkspc;
 
+    if (debug) {
+        fprintf(stderr, "get_cookie: hello\n");
+    }
+
     if (!(target = malloc(PBC_20K)) ) {
         abend("out of memory");
     }
 
     /* get all the cookies */
     if (!(s = getenv("HTTP_COOKIE")) ){
-	free(target);
+        if (debug) {
+            fprintf(stderr, "get_cookie: no cookies, bailing.\n");
+        }
+        free(target);
         return(PBC_FAIL);
     }
     
@@ -336,8 +343,8 @@ int get_cookie(char *name, char *result, int max)
     strncpy(result, wkspc, max);
 
     if (debug) {
-	fprintf(stderr, "get_cookie: returning cookie: %s\n%s\n",
-		name, result);
+        fprintf(stderr, "get_cookie: returning cookie: %s\n%s\n",
+                name, result);
     }
 
     free(target);
@@ -483,10 +490,11 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
           return(PBC_FAIL);
     }
 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=%s%s\n",
 #ifdef PORT80_TEST
-    print_header("Set-Cookie: %s=%s; domain=%s; path=%s\n", 
+            ""
 #else
-    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; secure\n", 
+            "; secure"
 #endif
 		PBC_L_COOKIENAME,
                 l_cookie,
@@ -506,10 +514,11 @@ int clear_login_cookie() {
     if(debug)
         log_message("clear_login_cookie: hello");
 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\n",
 #ifdef PORT80_TEST
-    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s\n",
+            ""
 #else
-    print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+            "; secure"
 #endif
             PBC_L_COOKIENAME, 
             PBC_CLEAR_COOKIE,
@@ -527,10 +536,11 @@ int clear_login_cookie() {
  */
 int clear_greq_cookie() {
 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
 #ifdef PORT80_TEST
-    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n",
+            ""
 #else
-    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\n",
+            "; secure"
 #endif
             PBC_G_REQ_COOKIENAME, 
             PBC_CLEAR_COOKIE,
@@ -1441,10 +1451,10 @@ int cgiMain()
                 l->first_kiss, 
                 l->user == NULL ? "(null)" : l->user, 
                 cgiRemoteAddr, 
-                l->host, 
-                l->appid,
-                l->uri,
-                l->appsrv_err_string);
+                l->host == NULL ? "(null)" : l->host, 
+                l->appid == NULL ? "(null)" : l->appid,
+                l->uri == NULL ? "(null)" : l->uri,
+                l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
 
     /* check the user agent */
     if (!check_user_agent()) {
@@ -2304,14 +2314,22 @@ login_rec *get_query()
     }
 
     if (debug) { 
-	fprintf(stderr, "get_query: from login user: %s\n", 
+	fprintf(stderr, "get_query: from login user: %s\n",
             l->user == NULL ? "(null)" : l->user
             );
-	fprintf(stderr, "get_query: from login version: %s\n", l->version);
+	fprintf(stderr, "get_query: from login version: %s\n",
+            l->version == NULL ? "(null)" : l->version
+            );
 	fprintf(stderr, "get_query: from login creds: %c\n", l->creds);
-	fprintf(stderr, "get_query: from login appid: %s\n", l->appid);
-	fprintf(stderr, "get_query: from login host: %s\n", l->host);
-	fprintf(stderr, "get_query: from login appsrvid: %s\n", l->appsrvid);
+	fprintf(stderr, "get_query: from login appid: %s\n",
+            l->appid == NULL ? "(null)" : l->appid
+            );
+	fprintf(stderr, "get_query: from login host: %s\n",
+            l->host == NULL ? "(null)" : l->host
+            );
+	fprintf(stderr, "get_query: from login appsrvid: %s\n",
+            l->appsrvid == NULL ? "(null)" : l->appsrvid
+            );
 	fprintf(stderr, "get_query: from login next_securid: %d\n", 
 		l->next_securid);
 	fprintf(stderr, "get_query: from login first_kiss: %d\n",
@@ -2342,7 +2360,7 @@ login_rec *verify_unload_login_cookie (login_rec *l)
 
     /* get the login cookie */
     if ((get_cookie(PBC_L_COOKIENAME, cookie, PBC_4K-1)) == PBC_FAIL )
-        return((login_rec *)NULL);
+        return( (login_rec *) NULL );
 
     new = malloc(sizeof(login_rec));
     init_login_rec(new);
@@ -2371,7 +2389,8 @@ login_rec *verify_unload_login_cookie (login_rec *l)
 
     if (debug) {
 	fprintf(stderr, "verify_unload_login_cookie: bye!  user is %s\n", 
-		new->user);
+            new->user  == NULL ? "(null)" : new->user 
+            );
     }
 
     return(new);
