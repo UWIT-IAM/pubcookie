@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.16 2002-06-27 22:51:42 jjminer Exp $
+    $Id: keyserver.c,v 2.17 2002-06-27 23:34:57 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -258,6 +258,10 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
                 /* base64 decode thekey64 */
                 thekey = (char *) malloc(strlen(thekey64));
+                if (strchr(thekey64, '\r')) {
+                        /* chomp new line */
+                        *strchr(thekey64, '\r') = '\0';
+                }
                 if (!thekey || 
                     !libpbc_base64_decode( (unsigned char *) thekey64,
                                    (unsigned char *) thekey, &ksize) || 
@@ -362,7 +366,7 @@ int main(int argc, char *argv[])
     int filetype = SSL_FILETYPE_PEM;
     char *peer = NULL;
     char *p;
-    char buf[2048];
+    char buf[4096];
     enum optype op = NOOP;
     char *setkey = NULL;
     SSL_CTX *ctx;
@@ -531,6 +535,7 @@ int main(int argc, char *argv[])
     }
 
     /* call doit */
+
     r = doit(peer, op, setkey);
     SSL_shutdown(ssl);
 
