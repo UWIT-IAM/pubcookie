@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.46 2004-02-10 00:42:14 willey Exp $
+ * $Id: flavor_basic.c,v 1.47 2004-02-13 18:57:04 fox Exp $
  */
 
 
@@ -79,6 +79,7 @@ extern int debug;
 #define FLB_PINIT             5
 #define FLB_PLACE_HOLDER      6  /* for consistancy btwn flavors, why? */
 #define FLB_LCOOKIE_EXPIRED   7
+#define FLB_FORM_EXPIRED      8
 
 /* The beginning size for the hidden fields */
 #define INIT_HIDDEN_SIZE 2048
@@ -408,6 +409,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
             reasonpage = libpbc_config_getstring(p, "tmpl_login_expired",
                                                   "login_expired" );
             break;
+        case FLB_FORM_EXPIRED:
+            reasonpage = libpbc_config_getstring(p, "tmpl_form_expired",
+                                                  "form_expired" );
+            break;
         case FLB_LCOOKIE_ERROR:
         default:
             reasonpage = libpbc_config_getstring(p,  "tmpl_login_nolcookie",
@@ -460,11 +465,13 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
-                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%u\">\n",
                                       PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : ""),
                                       PBC_GETVAR_APPID, (l->appid ? l->appid : ""),
                                       "creds_from_greq", l->creds_from_greq,
@@ -473,6 +480,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       PBC_GETVAR_METHOD, (l->method ? l->method : ""),
                                       PBC_GETVAR_HOST, (l->host ? l->host : ""),
                                       PBC_GETVAR_URI, (l->uri ? l->uri : ""),
+                                      PBC_GETVAR_RELAY_URL, (l->relay_uri ? l->relay_uri : ""),
                                       PBC_GETVAR_ARGS, (l->args ? l->args : ""),
                                       PBC_GETVAR_FR, (l->fr ? l->fr : ""),
                                       PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:""),
@@ -485,7 +493,8 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok,
                                       "first_kiss", (l->first_kiss ? l->first_kiss : ""),
                                       PBC_GETVAR_PINIT, l->pinit,
-                                      PBC_GETVAR_REPLY, FORM_REPLY
+                                      PBC_GETVAR_REPLY, FORM_REPLY,
+                                      PBC_GETVAR_CREATE_TS, time(NULL)
                                     );
     }
 
@@ -587,6 +596,9 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
     int also_allow_cred = 0;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n" );
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+         "process_basic: create=%d,  reauth=%d\n",
+         c?c->create_ts:(-1), l->session_reauth );
 
     /* make sure we're initialized */
     assert(v != NULL);
@@ -632,6 +644,16 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
             credsp = &creds;
         }
 
+        /* Make sure response is timely */
+      pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_basic: create=%d\n",
+              l->create_ts);
+        if (l->create_ts && (time(NULL) > (l->create_ts+30))) {
+            print_login_page(p, l, c, FLB_FORM_EXPIRED);
+
+            pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+                             "process_basic: slow form response: retry\n" );
+            return LOGIN_INPROGRESS;
+        }
         if (v->v(p, l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
             if (debug) {
                 /* xxx log realm */
@@ -724,7 +746,9 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
                              "process_basic: login in progress, goodbye\n" );
             return LOGIN_INPROGRESS;
         }
-    } else if (l->session_reauth) {
+    } else if (l->session_reauth &&  
+           ( (l->session_reauth==1) ||
+             (c && (c->create_ts+(l->session_reauth) < time(NULL))) )) {
         *errstr = "reauthentication required";
         pbc_log_activity(p, PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.3 2004-02-10 00:42:14 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.4 2004-02-13 18:57:04 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -564,6 +564,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
@@ -577,6 +578,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       PBC_GETVAR_METHOD, (l->method ? l->method : ""),
                                       PBC_GETVAR_HOST, (l->host ? l->host : ""),
                                       PBC_GETVAR_URI, (l->uri ? l->uri : ""),
+                                      PBC_GETVAR_RELAY_URL, (l->relay_uri ? l->relay_uri : ""),
                                       PBC_GETVAR_ARGS, (l->args ? l->args : ""),
                                       PBC_GETVAR_FR, (l->fr ? l->fr : ""),
                                       PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:""),

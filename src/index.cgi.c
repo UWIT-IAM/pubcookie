@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.114 2004-02-10 00:42:14 willey Exp $
+ * $Id: index.cgi.c,v 1.115 2004-02-13 18:57:04 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -395,7 +395,8 @@ void init_login_rec(pool *p, login_rec *r)
     r->file = NULL;
     r->flag = NULL;
     r->referer = NULL;
-    r->expire_ts = PBC_FALSE;
+    r->expire_ts = 0;
+    r->create_ts = 0;
     r->duration = 0;
     r->first_kiss = NULL;
     r->reply = PBC_FALSE;
@@ -408,6 +409,7 @@ void init_login_rec(pool *p, login_rec *r)
     r->creds = PBC_CREDS_NONE;
     r->creds_from_greq = PBC_CREDS_NONE;
     r->ride_free_creds = PBC_CREDS_NONE;
+    r->relay_uri = NULL;
 
 }
 
@@ -737,6 +739,9 @@ login_rec *load_login_rec(pool *p, login_rec *l)
     l->duration       = get_int_arg(p, PBC_GETVAR_DURATION, 0);
     l->pinit          = get_int_arg(p, PBC_GETVAR_PINIT, 0);
     l->pre_sess_tok   = get_int_arg(p, PBC_GETVAR_PRE_SESS_TOK, 0);
+    tmp              = get_string_arg(p,PBC_GETVAR_RELAY_URL,NO_NEWLINES_FUNC);
+    if (tmp) l->relay_uri = tmp;
+    l->create_ts      = get_int_arg(p, PBC_GETVAR_CREATE_TS, 0);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "load_login_rec: bye\n");
 
@@ -1295,8 +1300,9 @@ const char *time_remaining_text(pool *p, login_rec *c)
         abend(p, "out of memory");
 
     if( c == NULL ) {
-        free(remaining), free(h), free(m);
-        return(REMAINING_UNKNOWN);
+        free(h), free(m);
+        strcpy(remaining, REMAINING_UNKNOWN);
+        return(remaining);
     }
 
     if( c->expire_ts == 0 ) {
@@ -1307,8 +1313,9 @@ const char *time_remaining_text(pool *p, login_rec *c)
     }
 
     if( secs_left <= 0 ) {
-        free(remaining), free(h), free(m);
-        return(REMAINING_EXPIRED);
+        free(h), free(m);
+        strcpy(remaining, REMAINING_UNKNOWN);
+        return(remaining);
     }
 
     snprintf(m, len, "%d minute%c", 
@@ -1765,13 +1772,14 @@ int cgiMain()
 
     /* log the arrival */
     pbc_log_activity(p, PBC_LOG_AUDIT,
-		"%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
+		"%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s relay: %s because: %s", 
                 l->first_kiss, 
                 l->user == NULL ? "(null)" : l->user, 
                 cgiRemoteAddr, 
                 l->host == NULL ? "(null)" : l->host, 
                 l->appid == NULL ? "(null)" : l->appid,
                 l->uri == NULL ? "(null)" : l->uri,
+                l->relay_uri == NULL ? "(null)" : l->relay_uri,
                 l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
 
     /* use the userid in the cookie if none in the form */
@@ -1797,7 +1805,7 @@ int cgiMain()
     /* check to see what cookies we have */
     /* pinit detected in here */
     /* pinit response detected in here */
-    if (cookie_test(p, l, c) == PBC_FAIL) {
+    if ((!l->relay_uri) && (cookie_test(p, l, c) == PBC_FAIL)) {
         goto done;
     }
 
@@ -2433,6 +2441,8 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
     }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "created cookies l_res g_res\n");
+    if (l->relay_uri) pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+             "This is a relay request from %s\n", l->relay_uri);
 
 
     /* create the http header line with the cookie */
@@ -2480,9 +2490,6 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
         strcpy( redirect_final, redirect_dest );
     }
 
-    if (redirect_dest != NULL)
-        free(redirect_dest);
-
     /* we don't use the fab log_message funct here because the url encoding */
     /* will look like format chars in future *printf's */
     now = time(NULL);
@@ -2495,15 +2502,36 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
             redirect_final);
 
     /* now blat out the redirect page */
-    if( l->pinit == PBC_FALSE )   /* don't need a G cookie for a pinit */
-        print_header(p, "%s\n", g_set_cookie);
-    else
+    if( l->pinit == PBC_FALSE ) { /* don't need a G cookie for a pinit */
+        if (!l->relay_uri) print_header(p, "%s\n", g_set_cookie);
+    } else {
         set_pinit_cookie(p);
+    }
     print_header(p, "%s\n", l_set_cookie);
     clear_greq_cookie(p);
 
+    /* incase we have a relay */
+    if ( l->relay_uri ) {
+        print_html(p, "<HTML>");
+        print_html(p, "<body onLoad=\"document.relay.submit()\">\n");
+        print_html(p, "<form method=post action=\"%s\" name=relay>",
+                            l->relay_uri);
+        print_html(p, "<input type=hidden name=post_stuff value=\"%s\">",
+             l->post_stuff?l->post_stuff:"");
+        print_html(p, "<input type=hidden name=get_args value=\"%s\">",
+             l->args?args_enc:"");
+        print_html(p, "<input type=hidden name=pubcookie_g value=\"%s\">",
+             g_cookie);
+        print_html(p, "<input type=hidden name=redirect_url value=\"%s\">",
+             redirect_dest);
+  /**
+        print_html(p, "<p align=center><input type=submit name=go value=\"Continue\">");
+   **/
+        print_html(p, "</form></html>\n");
+
+
     /* incase we have a post */
-    if ( l->post_stuff ) {
+    } else if ( l->post_stuff ) {
         /* cgiParseFormInput will extract the arguments from the post */
         /* make them available to subsequent cgic calls */
         if (cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
@@ -2612,6 +2640,8 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
                         NULL);
     } /* end if post_stuff */
 
+    if (redirect_dest != NULL)
+        free(redirect_dest);
     if( g_cookie != NULL ) 
         pbc_free(p, g_cookie);
     if( l_cookie != NULL ) 
@@ -2639,7 +2669,7 @@ login_rec *get_query(pool *p)
     l->post_stuff = get_string_arg(p, PBC_GETVAR_POST_STUFF, YES_NEWLINES_FUNC);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
-			 "get_query: looked at post_stuff\n");
+		 "get_query: %s post_stuff\n", l->post_stuff?"have":"no");
 
     /* take everything out of the environment */
     l = load_login_rec(p, l);
@@ -2648,8 +2678,17 @@ login_rec *get_query(pool *p)
     /* cookie string and make them available to subsequent cgic calls        */
     /* if the reply field isn't set then this is not be a submit from a login*/
     if (l->reply != FORM_REPLY ) {
-        /* get greq cookie */
-        g_req = get_granting_request(p);
+        /* get greq post or cookie */
+        g_req = get_string_arg(p, PBC_G_REQ_COOKIENAME, YES_NEWLINES_FUNC);
+        if (g_req) pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+                "get_query: g req from post\n");
+        if (!g_req) g_req = get_granting_request(p);
+
+        l->relay_uri = get_string_arg(p,PBC_GETVAR_RELAY_URL,NO_NEWLINES_FUNC);
+        pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+                "get_query: %s g req, relay=%s\n",
+                    g_req?"have":"no",
+                    l->relay_uri?l->relay_uri:"none");
 
         /* is granting cookie missing or "spent" */
         if( g_req != NULL && 
@@ -2721,6 +2760,9 @@ login_rec *get_query(pool *p)
     pbc_log_activity(p, PBC_LOG_AUDIT, 
 			"get_query: from login post_stuff: %s\n", 
 			(l->post_stuff==NULL ? "" : l->post_stuff));
+    pbc_log_activity(p, PBC_LOG_AUDIT,
+                        "get_query: from login relay_uri: %s\n",
+                        (l->relay_uri==NULL ? "null" : l->relay_uri));
 
     return(l);
 

@@ -1,0 +1,35 @@
+
+This is the pubcookie relay.  
+
+Build: e.g. 
+ 
+  (build the pubcookie login server first)
+  (then, e.g.)
+
+  $ ./configure --prefix=/usr/local/apache/htodcs/PCRELAY \
+               --with-pubcookie=.. \
+               --with-webtpl=/usr/local/webtpl
+  $ make
+  $ make install
+
+(For the webtpl library, see:  http://staff.washington.edu/fox/webtpl)
+
+
+Use;
+
+
+  Configure your remote applications to use the relay uri as a login server.
+
+  Pubcookie (/usr/local/pubcookie/config) variables:
+
+    login_uri:  <uri of the real login server>
+    login_host: <host of the real login server>
+
+    relay_template_path: <path th your relay's template directory>
+                          -- usually: (prefix)/templates --
+    relay_uri:  <uri of your relay>
+
+
+
+
+

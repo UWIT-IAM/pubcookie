@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: pbc_config.h,v 1.87 2004-02-10 00:42:15 willey Exp $
+    $Id: pbc_config.h,v 1.88 2004-02-13 18:57:04 fox Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -38,7 +38,7 @@
 #define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
 #define PBC_KEYMGT_URI (libpbc_config_getstring(p,"keymgt_uri", "https://weblogin.washington.edu/cgi-bin/keyserver"))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
-#define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "RelayTemplatePath", "")
+#define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "relay_template_path", "")
 #define PBC_RELAY_URI libpbc_config_getstring(p, "relay_uri", "https://relay.example.url/relay/index.cgi")
 
 #if defined (WIN32)
@@ -202,6 +202,9 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_CRED_TARGET "cred_target"
 /* added June 2002 willey */
 #define PBC_GETVAR_PRE_SESS_TOK "pre_sess_tok"
+
+#define PBC_GETVAR_RELAY_URL "relay_url"  /* relay url                 */
+#define PBC_GETVAR_CREATE_TS "create_ts"  /* time form issued          */
 
 /* 
  things that are used both places (module and the library)

@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.h
  * header file for Runtime configuration
  *
- * $Id: pbc_myconfig.h,v 1.19 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_myconfig.h,v 1.20 2004-02-13 18:57:04 fox Exp $
  */
 
 
@@ -20,11 +20,11 @@
 #ifndef WIN32
 /**
  * initialize the config subsystem
- * @param pool Apache memory pool
- * @param alt_config the location of an alternate configuration file
+ * param pool Apache memory pool
+ * param alt_config the location of an alternate configuration file
  * to read, instead of the default
- * @param ident the identity of the calling program used
- * @return 0 for success, non-zero for failure
+ * param ident the identity of the calling program used
+ * return 0 for success, non-zero for failure
  */
 extern int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident);
 

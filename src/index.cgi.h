@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: index.cgi.h,v 1.44 2004-02-10 00:42:15 willey Exp $
+  $Id: index.cgi.h,v 1.45 2004-02-13 18:57:04 fox Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -60,6 +60,7 @@ typedef struct {
     int		pinit;
     int		pre_sess_tok;   
     char        *check_error;
+    char        *relay_uri;
     void *flavor_extension; /* used for ad-hoc purposes until
 			       we add a general extension mechanism to the
 			       cookie structure */
