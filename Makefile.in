@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.28 2003-04-19 17:19:37 jjminer Exp $
+# $Id: Makefile.in,v 1.29 2003-04-19 18:17:01 jjminer Exp $
 
 @SET_MAKE@
 
@@ -194,18 +194,12 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
 				$(srcdir)/src/login_templates.generic/welcome_back
 
 
-DOCS=$(srcdir)/doc/CHANGES.login.txt \
-	 $(srcdir)/doc/CHANGES.mod_pubcookie.txt \
-	 $(srcdir)/doc/config.html \
+DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/CREDITS.txt \
 	 $(srcdir)/doc/LICENSE.txt \
-	 $(srcdir)/doc/NEW_SITE.txt \
-	 $(srcdir)/doc/README.txt \
 	 $(srcdir)/doc/config.sample \
 	 $(srcdir)/doc/install-mod_pubcookie-3.0.html \
 	 $(srcdir)/doc/mod_pubcookie-directives.html \
-	 $(srcdir)/doc/mod_pubcookie_dev_notes.txt \
-	 $(srcdir)/doc/pubcookie_style_guide.txt \
 	 $(srcdir)/doc/install-login.html
 
 CGIC_FILES=$(srcdir)/cgic/Makefile.in \
@@ -221,11 +215,9 @@ CGIC_FILES=$(srcdir)/cgic/Makefile.in \
 		   $(srcdir)/cgic/testform.html \
 		   $(srcdir)/cgic/CHANGES
 
-VERSION := `$(AWK) -F\" '/PBC_VERSION_STRING/{print $$2}' $(srcdir)/src/pbc_version.h | $(SED) "s/ /-/g" `
+VERSION := `echo @PACKAGE_VERSION@ | $(SED) "s/ /-/g" `
 
-# " ` (Satisfying Vim)
-
-BASENAME := pubcookie
+BASENAME := @PACKAGE_TARNAME@
 DISTNAME := $(BASENAME)-$(VERSION)
 
 .PHONY: all clean install dist login_server apache_module ver
@@ -467,7 +459,6 @@ WIN32_MISC_SRC=$(srcdir)/src/Win32/debug.c \
 			   $(srcdir)/src/Win32/debug.h \
 			   $(srcdir)/src/Win32/getopt.c \
 			   $(srcdir)/src/Win32/getopt.h \
-			   $(srcdir)/src/Win32/pbc_w32_myconfig.c \
 			   $(srcdir)/src/Win32/resource.h
 
 WIN32_KEYCLIENT_SRC=$(srcdir)/src/Win32/keyclient.dsp \
