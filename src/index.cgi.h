@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.33 $
+ * $Revision: 1.34 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -131,6 +131,8 @@ char *get_string_arg(char *name, cgiFormResultType (*f)());
 void print_html(const char *format, ...);
 /* print it from the template "fname" */
 void tmpl_print_html(const char *fname,...);
+
+void ntmpl_print_html(const char *fname, ...);
 
 /* print part of the HTTP headers */
 void print_header(const char *format, ...);

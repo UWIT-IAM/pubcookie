@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.10 2002-08-16 21:47:28 jjminer Exp $
+# $Id: Makefile.in,v 1.11 2002-09-02 18:08:30 greenfld Exp $
 
 @SET_MAKE@
 
@@ -192,6 +192,9 @@ dtest:	src/dtest.o $(LIB_OBJ)
 
 vtest: $(VERIFIERS) $(LIB_OBJ)
 	$(CC) ${CFLAGS} -DTEST_VERIFY -o $@ $(VERIFIERS) $(LIB_OBJ) $(LDFLAGS) $(EXTRA_LIBS)
+
+ntmpl_test: $(srcdir)/src/ntmpl.c $(LIB_OBJ)
+	$(CC) ${CFLAGS} -DTEST_NTMPL -o $@ $(srcdir)/src/ntmpl.c $(LIB_OBJ) $(LDFLAGS) $(EXTRA_LIBS)
 
 check_crypted_blob:	src/check_crypted_blob.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ src/check_crypted_blob.o $(LIB_OBJ) $(LDFLAGS)
