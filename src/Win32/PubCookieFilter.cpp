@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.40 2005-02-09 04:53:47 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.41 2005-02-09 05:09:51 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -2368,10 +2368,9 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    // syslog(LOG_INFO,"Extension relaying cookie %s\n   domain=%s;\n   path=/;\n   secure;\n",PBC_G_COOKIENAME,p->Enterprise_Domain);
    // Access issues in 6.0
 
-   snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\nContent-type: text/html\r\n\r\n", 
+   snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; path=/; secure\r\nContent-type: text/html\r\n\r\n", 
 			PBC_G_COOKIENAME,
-			grpl,
-			p->Enterprise_Domain); 
+			grpl); 
 
    SendHttpHeaders(pECB, "200 OK", httpheader);
 
