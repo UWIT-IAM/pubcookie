@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.20 2005-01-15 01:16:59 willey Exp $
+ * $Id: ntmpl.c,v 1.21 2005-01-17 23:03:35 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -257,7 +257,7 @@ int ntmpl_tmpl_exist (pool * p, const char *fpath, const char *fname)
     }
     if (snprintf (templatefile, len, "%s%s%s", fpath,
                   fpath[strlen (fpath) - 1] == '/' ? "" : "/",
-                  fname) > len) {
+                  fname) == -1 ) {
         pbc_log_activity (p, PBC_LOG_ERROR, "template filename overflow");
         return (PBC_FAIL);
     }
