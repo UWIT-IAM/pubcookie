@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 2.0 1999-04-01 01:09:37 willey Exp $
+    $Id: libpubcookie.c,v 2.1 1999-04-06 00:00:34 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -502,17 +502,17 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     /* find a random index into the char key array and make a key shedule */
     des_check_key = 1;
     memset(key, 0, sizeof(key));
-    while ( des_key_sched((des_cblock *) key, ks) != 0 && --tries ) {
+    while ( des_key_sched(&key, ks) != 0 && --tries ) {
         index1=libpbc_get_crypt_index();
 	memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-        des_set_odd_parity((des_cblock *) key);
+        des_set_odd_parity(&key);
     }
     if ( ! tries ) {
        libpbc_debug("libpbc_encrypt_cookie: Coudn't find a good key\n");
        return 0;
     }
 
-    des_cfb64_encrypt(in, out, len, ks, (des_cblock *) ivec, &i, DES_ENCRYPT);
+    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_ENCRYPT);
     libpbc_augment_rand_state(ivec, sizeof(ivec));
 
     /* stick the indices on the end of the train */
@@ -543,13 +543,13 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
 
     /* use the supplied index into the char key array and make a key shedule */
     memcpy(key, &(c_stuff->key_a[index1]), sizeof(key));
-    des_set_odd_parity((des_cblock *) key);
-    if ( des_key_sched((des_cblock *) key, ks) ) {
+    des_set_odd_parity(&key);
+    if ( des_key_sched(&key, ks) ) {
        libpbc_debug("libpbc_decrypt_cookie: Didn't derive a good key\n");
        return 0;
     }
 
-    des_cfb64_encrypt(in, out, len, ks, (des_cblock *) ivec, &i, DES_DECRYPT);
+    des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
 
     return 1;
 
@@ -764,71 +764,4 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
 
     return cookie;
 
-}
-
-/*                                                                            */
-/*  generate granting request cookie to go to the login server                */
-/*                                                                            */
-/*                                                                            */
-#ifdef APACHE
-unsigned char *libpbc_gen_granting_req_p(pool *p, 
-	                                 char *appsrv_id, 
-				         char *app_id, 
-				         char creds, 
-				         char *method, 
-				         char *host, 
-				         char *uri, 
-				         char *args, 
-				         char *fr, 
-				         int port,
-			                 md_context_plus *ctx_plus,
-			                 crypt_stuff *c_stuff) 
-#else
-unsigned char *libpbc_gen_granting_req_np(char *appsrv_id, 
-				          char *app_id, 
-				          char creds, 
-				          char *method, 
-				          char *host, 
-				          char *uri, 
-				          char *args, 
-				          char *fr, 
-				          int port,
-			                  md_context_plus *ctx_plus,
-			                  crypt_stuff *c_stuff) 
-#endif
-{
-    char *e_args; 
-    char *g_req_contents;
-    char *e_g_req_contents;
-
-    if ( args )
-        base64_encode(args, e_args, strlen(args));
-    else
-        strcpy(e_args, "");
-
-    /* make the granting request */
-    sprintf(g_req_contents,
-            "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s",
-            PBC_GETVAR_APPSRVID,
-            appsrv_id,
-            PBC_GETVAR_APPID,
-            app_id,
-            PBC_GETVAR_CREDS,
-            creds,
-            PBC_GETVAR_VERSION,
-            PBC_VERSION,
-            PBC_GETVAR_METHOD,
-            method,
-            PBC_GETVAR_HOST,
-            host,
-            PBC_GETVAR_URI,
-            uri,
-            PBC_GETVAR_ARGS,
-            e_args,
-            PBC_GETVAR_FR,
-            fr);
-
-  base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
-
-  return e_g_req_contents;
 }
