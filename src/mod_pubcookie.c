@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.101 2002-09-25 21:06:25 willey Exp $
+    $Id: mod_pubcookie.c,v 1.102 2002-09-26 19:32:46 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -377,7 +377,7 @@ void set_no_cache_headers(request_rec *r) {
 
 }
 
-/* make session cookie */
+/* set or reset the session cookie */
 static void set_session_cookie(request_rec *r, int firsttime) 
 {
     pubcookie_dir_rec    *cfg;
@@ -391,12 +391,17 @@ static void set_session_cookie(request_rec *r, int firsttime)
 #endif
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
-                                         &pubcookie_module);
-    scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, 					 &pubcookie_module);
-
-    if( firsttime != 1 )
+                                                     &pubcookie_module);
+    scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
+                                                         &pubcookie_module);
+    
+    if( firsttime != 1 ) {
+        /* just update the idle timer */
+        /* xxx it would be nice if the idle timeout has been disabled
+           to avoid recomputing and resigning the cookie? */
         cookie = libpbc_update_lastts_p(r->pool, cfg->cookie_data, NULL);
-    else
+    } else {
+        /* create a brand new cookie, initialized with the present time */
         cookie = libpbc_get_cookie_p(r->pool, 
                                      (unsigned char *)r->connection->user, 
                                      PBC_COOKIE_TYPE_S, 
@@ -405,6 +410,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
 				     (unsigned char *)appsrvid(r), 
 				     appid(r), 
 				     NULL);
+    }
 
     new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
 			     make_session_cookie_name(r->pool, 
