@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.4 2000-01-12 04:17:00 willey Exp $
+    $Id: index.cgi.c,v 1.5 2000-01-27 22:18:53 willey Exp $
  */
 
 
@@ -53,9 +53,11 @@
 /* cgic */
 #include <cgic.h>
 
-// extra debugging
+#ifdef MAKE_MIRROR
+/* the mirror file is a mirror of what gets written out of the cgi */
+/* of course it is overwritten each time this runs                 */
 FILE	*mirror;
-
+#endif 
 
   /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
  /*	general utility thingies                                            */
@@ -167,7 +169,9 @@ char *clean_username(char *in)
 login_rec *load_login_rec(login_rec *l) 
 {
 
-fprintf(stderr, "in load_login_rec\n");
+#ifdef DEBUG
+    fprintf(stderr, "load_login_rec: hello\n");
+#endif
 
     /* make sure the username is a uwnetid */
     if( (l->user=get_string_arg("user", NO_NEWLINES_FUNC)) )
@@ -193,7 +197,9 @@ fprintf(stderr, "in load_login_rec\n");
     l->flag 		= get_string_arg("flag", NO_NEWLINES_FUNC);
     l->referer 		= get_string_arg("referer", NO_NEWLINES_FUNC);
 
-fprintf(stderr, "finished load_login_rec\n");
+#ifdef DEBUG
+    fprintf(stderr, "load_login_rec: bye\n");
+#endif
 
     return(l);
 
@@ -257,6 +263,7 @@ char *url_encode(char *in)
 
 }
 
+/* write a log message via whatever mechanism                                 */
 void log_message(const char *format, ...) 
 {
     va_list	args;
@@ -272,6 +279,7 @@ void log_message(const char *format, ...)
 
 }
 
+/* send a message to pilot                                                    */
 void send_pilot_message(char *message) 
 {
 
@@ -279,6 +287,7 @@ void send_pilot_message(char *message)
 
 }
 
+/* logs the message and forwards it on to pilot                               */
 void log_error(const char *format,...)
 {
     va_list	args;
@@ -294,6 +303,8 @@ void log_error(const char *format,...)
 
 }
 
+/* when things go wrong and you're not sure what else to do                   */
+/* a polite bailing out                                                       */
 void abend(char *message) 
 {
 
@@ -303,19 +314,19 @@ void abend(char *message)
 
 }
 
-// this should go away
+#ifdef MAKE_MIRROR
 void init_mirror_file() 
 {
     mirror = fopen("/tmp/mirror", "w");
 
 }
 
-// this should go away
 void close_mirror_file() 
 {
     fclose(mirror);
 
 }
+#endif 
 
 void print_out(char *format,...)
 {
@@ -324,7 +335,9 @@ void print_out(char *format,...)
     va_start(args, format);
     vprintf(format, args);
     vfprintf(stderr, format, args);
+#ifdef MAKE_MIRROR
     vfprintf(mirror, format, args);
+#endif 
     va_end(args);
 
 }
@@ -368,6 +381,7 @@ int has_login_cookie()
 
 /* we've decided not to serialize cookies, but we'll use this field           */
 /* for something else in the future                                           */
+/* why 23?  consult the stars                                                 */
 int get_next_serial()
 {
     return(23);
@@ -411,8 +425,12 @@ int cgiMain()
     char	*res;
     char	message[PBC_4K];
 
-fprintf(stderr, "HELLO\n");
-init_mirror_file();
+#ifdef DEBUG
+    fprintf(stderr, "cgiMain: hello\n");
+#endif
+#ifdef MAKE_MIRROR
+    init_mirror_file();
+#endif
 
     /* bail if not ssl */
     if( !getenv("HTTPS") || strcmp( getenv("HTTPS"), "on" ) ) { 
@@ -432,7 +450,9 @@ init_mirror_file();
     /* malloc and populate login_rec                                   */
     l = get_query(); 
 
-fprintf(stderr, "after get_query\n");
+#ifdef DEBUG
+    fprintf(stderr, "cgiMain: after get_query\n");
+#endif
 
     /* check the user agent */
     if ( !check_user_agent() ) {
@@ -442,7 +462,9 @@ fprintf(stderr, "after get_query\n");
         exit(0);
     }
 
-fprintf(stderr, "after user agent get_query\n");
+#ifdef DEBUG
+    fprintf(stderr, "cgiMain: after user agent get_query\n");
+#endif
 
     /* allow for older versions that don't have froce_reauth */
     if ( !l->fr ) {
@@ -477,12 +499,11 @@ fprintf(stderr, "after user agent get_query\n");
     /*                                                                   */
     /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
-fprintf(stderr, "why don't we see the next line?\n");
-fprintf(stderr, "before main logic loop: creds %c and the target is %c\n", l->creds, PBC_CREDS_UWNETID_SECURID);
-
     /* the main logic */
     if ( l->user ) {                           /* a reply from the login page */
-fprintf(stderr, "wohooo!, an answer from the login page!");
+#ifdef DEBUG
+        fprintf(stderr, "wohooo!, an answer from the login page!");
+#endif
         res = check_login(l);
         if( strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
             log_message("Authentication failed: %s type: %c %s", l->user, l->creds, res);
@@ -527,8 +548,9 @@ fprintf(stderr, "wohooo!, an answer from the login page!");
     /* generate the cookies and print the redirect page                       */
     print_redirect_page(l);
 
-// extra debugging
-close_mirror_file();
+#ifdef MAKE_MIRROR
+    close_mirror_file();
+#endif
 
     return(0);  
 }
@@ -605,7 +627,9 @@ void print_login_page(char *message, char *reason, char creds, int need_clear_lo
 char *check_login_uwnetid(char *user, char *pass)
 {
 
-fprintf(stderr, "in check_login_uwnetid\n");
+#ifdef DEBUG
+    fprintf(stderr, "check_login_uwnetid: hello\n");
+#endif 
 
     if( auth_kdc(user, pass) == OK )
         return(CHECK_LOGIN_RET_SUCCESS);
@@ -628,7 +652,9 @@ char *check_login(login_rec *l)
 {
     char	*ret;
 
-fprintf(stderr, "in check_login\n");
+#ifdef DEBUG
+    fprintf(stderr, "in check_login\n");
+#endif
 
     if( !(ret = malloc(100)) ) {
         abend("out of memory");
@@ -664,7 +690,9 @@ char *check_l_cookie(login_rec *l)
     char	*g_version;
     char	*l_version;
 
-fprintf(stderr, "in check_l_cookie \n");
+#ifdef DEBUG
+    fprintf(stderr, "check_l_cookie: hello\n");
+#endif
 
     if( !(cookie = malloc(PBC_4K)) ) {
         abend("out of memory");
@@ -675,8 +703,6 @@ fprintf(stderr, "in check_l_cookie \n");
         abend("no login cookies");
         return 0;
     }
-
-fprintf(stderr, "in check_l_cookie l cookie is %s\n", cookie);
 
     /* $verify_pgm takes arguments on the command line         */
     /* the arguments are <cookie type> <crypt key> <cert file> */
@@ -690,7 +716,9 @@ fprintf(stderr, "in check_l_cookie l cookie is %s\n", cookie);
         return("couldn't decode login cookie");
     }
 
-fprintf(stderr, "in check_l_cookie ready to look at cookie contents %s\n", lc->user);
+#ifdef DEBUG
+    fprintf(stderr, "in check_l_cookie ready to look at cookie contents %s\n", lc->user);
+#endif
 
     /* look at what we got back from the cookie */
     if( ! lc->user ) {
@@ -704,7 +732,10 @@ fprintf(stderr, "in check_l_cookie ready to look at cookie contents %s\n", lc->u
         return "expired";
     }
 
-fprintf(stderr, "in check_l_cookie ready to look at cookie creds %c\n", lc->creds);
+#ifdef DEBUG
+    fprintf(stderr, "in check_l_cookie ready to look at cookie creds %c\n", lc->creds);
+#endif
+
     if( lc->creds != l->creds ) {
         if( l->creds == PBC_CREDS_UWNETID ) {
             if( lc->creds != PBC_CREDS_UWNETID_SECURID ) {
