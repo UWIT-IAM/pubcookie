@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.54 2004-05-11 17:39:26 dors Exp $
+# $Id: Makefile.in,v 1.55 2004-05-15 22:48:08 ryanc Exp $
 
 @SET_MAKE@
 
@@ -483,89 +483,150 @@ no_module:
 
 # Win32 ... Nothing here except the Dist files.
 
-WIN32_SSL_SRC=$(srcdir)/src/Win32/include/openssl/asn1_mac.h \
-			  $(srcdir)/src/Win32/include/openssl/asn1.h \
-			  $(srcdir)/src/Win32/include/openssl/blowfish.h \
-			  $(srcdir)/src/Win32/include/openssl/bio.h \
-			  $(srcdir)/src/Win32/include/openssl/buffer.h \
-			  $(srcdir)/src/Win32/include/openssl/bn.h \
-			  $(srcdir)/src/Win32/include/openssl/conf_api.h \
-			  $(srcdir)/src/Win32/include/openssl/cast.h \
-			  $(srcdir)/src/Win32/include/openssl/comp.h \
-			  $(srcdir)/src/Win32/include/openssl/conf.h \
-			  $(srcdir)/src/Win32/include/openssl/obj_mac.h \
-			  $(srcdir)/src/Win32/include/openssl/crypto.h \
-			  $(srcdir)/src/Win32/include/openssl/des.h \
-			  $(srcdir)/src/Win32/include/openssl/dh.h \
-			  $(srcdir)/src/Win32/include/openssl/dsa.h \
-			  $(srcdir)/src/Win32/include/openssl/dso.h \
-			  $(srcdir)/src/Win32/include/openssl/e_os.h \
-			  $(srcdir)/src/Win32/include/openssl/e_os2.h \
-			  $(srcdir)/src/Win32/include/openssl/ebcdic.h \
-			  $(srcdir)/src/Win32/include/openssl/err.h \
-			  $(srcdir)/src/Win32/include/openssl/evp.h \
-			  $(srcdir)/src/Win32/include/openssl/hmac.h \
-			  $(srcdir)/src/Win32/include/openssl/idea.h \
-			  $(srcdir)/src/Win32/include/openssl/lhash.h \
-			  $(srcdir)/src/Win32/include/openssl/md2.h \
-			  $(srcdir)/src/Win32/include/openssl/md4.h \
-			  $(srcdir)/src/Win32/include/openssl/md5.h \
-			  $(srcdir)/src/Win32/include/openssl/mdc2.h \
-			  $(srcdir)/src/Win32/include/openssl/opensslconf.h \
-			  $(srcdir)/src/Win32/include/openssl/objects.h \
-			  $(srcdir)/src/Win32/include/openssl/safestack.h \
-			  $(srcdir)/src/Win32/include/openssl/opensslv.h \
-			  $(srcdir)/src/Win32/include/openssl/pem.h \
-			  $(srcdir)/src/Win32/include/openssl/pem2.h \
-			  $(srcdir)/src/Win32/include/openssl/pkcs12.h \
-			  $(srcdir)/src/Win32/include/openssl/pkcs7.h \
-			  $(srcdir)/src/Win32/include/openssl/rand.h \
-			  $(srcdir)/src/Win32/include/openssl/rc2.h \
-			  $(srcdir)/src/Win32/include/openssl/rc4.h \
-			  $(srcdir)/src/Win32/include/openssl/rc5.h \
-			  $(srcdir)/src/Win32/include/openssl/ripemd.h \
-			  $(srcdir)/src/Win32/include/openssl/rsa.h \
-			  $(srcdir)/src/Win32/include/openssl/rsaref.h \
-			  $(srcdir)/src/Win32/include/openssl/sha.h \
-			  $(srcdir)/src/Win32/include/openssl/ssl.h \
-			  $(srcdir)/src/Win32/include/openssl/ssl2.h \
-			  $(srcdir)/src/Win32/include/openssl/ssl23.h \
-			  $(srcdir)/src/Win32/include/openssl/ssl3.h \
-			  $(srcdir)/src/Win32/include/openssl/stack.h \
-			  $(srcdir)/src/Win32/include/openssl/symhacks.h \
-			  $(srcdir)/src/Win32/include/openssl/tls1.h \
-			  $(srcdir)/src/Win32/include/openssl/tmdiff.h \
-			  $(srcdir)/src/Win32/include/openssl/txt_db.h \
-			  $(srcdir)/src/Win32/include/openssl/x509.h \
-			  $(srcdir)/src/Win32/include/openssl/x509_vfy.h \
-			  $(srcdir)/src/Win32/include/openssl/x509v3.h
+WIN32_SSL_SRC=$(srcdir)/src/Win32/include/openssl/aes.h \
+			$(srcdir)/src/Win32/include/openssl/asn1.h \
+			$(srcdir)/src/Win32/include/openssl/asn1_mac.h \
+			$(srcdir)/src/Win32/include/openssl/asn1t.h \
+			$(srcdir)/src/Win32/include/openssl/bio.h \
+			$(srcdir)/src/Win32/include/openssl/blowfish.h \
+			$(srcdir)/src/Win32/include/openssl/bn.h \
+			$(srcdir)/src/Win32/include/openssl/buffer.h \
+			$(srcdir)/src/Win32/include/openssl/cast.h \
+			$(srcdir)/src/Win32/include/openssl/comp.h \
+			$(srcdir)/src/Win32/include/openssl/conf.h \
+			$(srcdir)/src/Win32/include/openssl/conf_api.h \
+			$(srcdir)/src/Win32/include/openssl/crypto.h \
+			$(srcdir)/src/Win32/include/openssl/des.h \
+			$(srcdir)/src/Win32/include/openssl/des_old.h \
+			$(srcdir)/src/Win32/include/openssl/dh.h \
+			$(srcdir)/src/Win32/include/openssl/dsa.h \
+			$(srcdir)/src/Win32/include/openssl/dso.h \
+			$(srcdir)/src/Win32/include/openssl/e_os2.h \
+			$(srcdir)/src/Win32/include/openssl/ebcdic.h \
+			$(srcdir)/src/Win32/include/openssl/ec.h \
+			$(srcdir)/src/Win32/include/openssl/engine.h \
+			$(srcdir)/src/Win32/include/openssl/err.h \
+			$(srcdir)/src/Win32/include/openssl/evp.h \
+			$(srcdir)/src/Win32/include/openssl/hmac.h \
+			$(srcdir)/src/Win32/include/openssl/idea.h \
+			$(srcdir)/src/Win32/include/openssl/krb5_asn.h \
+			$(srcdir)/src/Win32/include/openssl/kssl.h \
+			$(srcdir)/src/Win32/include/openssl/lhash.h \
+			$(srcdir)/src/Win32/include/openssl/md2.h \
+			$(srcdir)/src/Win32/include/openssl/md4.h \
+			$(srcdir)/src/Win32/include/openssl/md5.h \
+			$(srcdir)/src/Win32/include/openssl/mdc2.h \
+			$(srcdir)/src/Win32/include/openssl/obj_mac.h \
+			$(srcdir)/src/Win32/include/openssl/objects.h \
+			$(srcdir)/src/Win32/include/openssl/ocsp.h \
+			$(srcdir)/src/Win32/include/openssl/opensslconf.h \
+			$(srcdir)/src/Win32/include/openssl/opensslv.h \
+			$(srcdir)/src/Win32/include/openssl/ossl_typ.h \
+			$(srcdir)/src/Win32/include/openssl/pem.h \
+			$(srcdir)/src/Win32/include/openssl/pem2.h \
+			$(srcdir)/src/Win32/include/openssl/pkcs12.h \
+			$(srcdir)/src/Win32/include/openssl/pkcs7.h \
+			$(srcdir)/src/Win32/include/openssl/rand.h \
+			$(srcdir)/src/Win32/include/openssl/rc2.h \
+			$(srcdir)/src/Win32/include/openssl/rc4.h \
+			$(srcdir)/src/Win32/include/openssl/rc5.h \
+			$(srcdir)/src/Win32/include/openssl/ripemd.h \
+			$(srcdir)/src/Win32/include/openssl/rsa.h \
+			$(srcdir)/src/Win32/include/openssl/safestack.h \
+			$(srcdir)/src/Win32/include/openssl/sha.h \
+			$(srcdir)/src/Win32/include/openssl/ssl.h \
+			$(srcdir)/src/Win32/include/openssl/ssl2.h \
+			$(srcdir)/src/Win32/include/openssl/ssl23.h \
+			$(srcdir)/src/Win32/include/openssl/ssl3.h \
+			$(srcdir)/src/Win32/include/openssl/stack.h \
+			$(srcdir)/src/Win32/include/openssl/symhacks.h \
+			$(srcdir)/src/Win32/include/openssl/tls1.h \
+			$(srcdir)/src/Win32/include/openssl/tmdiff.h \
+			$(srcdir)/src/Win32/include/openssl/txt_db.h \
+			$(srcdir)/src/Win32/include/openssl/ui.h \
+			$(srcdir)/src/Win32/include/openssl/ui_compat.h \
+			$(srcdir)/src/Win32/include/openssl/x509.h \
+			$(srcdir)/src/Win32/include/openssl/x509_vfy.h \
+			$(srcdir)/src/Win32/include/openssl/x509v3.h
 
 WIN32_LIB_SRC=$(srcdir)/src/Win32/lib/libeay32.lib \
 			  $(srcdir)/src/Win32/lib/openssl.cnf \
 			  $(srcdir)/src/Win32/lib/ssleay32.lib
 
+
 WIN32_FILTER_SRC=$(srcdir)/src/Win32/PubCookieFilter.cpp \
-				 $(srcdir)/src/Win32/PubCookieFilter.def \
-				 $(srcdir)/src/Win32/PubCookieFilter.dsp \
-				 $(srcdir)/src/Win32/PubCookieFilter.dsw \
-				 $(srcdir)/src/Win32/PubCookieFilter.h \
-				 $(srcdir)/src/Win32/PubCookieFilter.rc \
-				 $(srcdir)/src/Win32/PubCookieFilter.opt
+			$(srcdir)/src/Win32/PubCookieFilter.def \
+			$(srcdir)/src/Win32/PubCookieFilter.h  \
+			$(srcdir)/src/Win32/PubCookieFilter.opt \
+			$(srcdir)/src/Win32/PubCookieFilter.rc \
+			$(srcdir)/src/Win32/PubCookieFilter.sln \
+			$(srcdir)/src/Win32/PubCookieFilter.vcproj \
+			$(srcdir)/src/Win32/resource.h
+
+
+WIN32_MESSAGES_SRC=$(srcdir)/src/Win32/MSG00001.bin \
+			$(srcdir)/src/Win32/pbc_messages.dsp \
+			$(srcdir)/src/Win32/pbc_messages.h \
+			$(srcdir)/src/Win32/pbc_messages.mc \
+			$(srcdir)/src/Win32/pbc_messages.rc \
+			$(srcdir)/src/Win32/pbc_messages.vcproj
 
 WIN32_MISC_SRC=$(srcdir)/src/Win32/debug.c \
-			   $(srcdir)/src/Win32/debug.h \
-			   $(srcdir)/src/Win32/getopt.c \
-			   $(srcdir)/src/Win32/getopt.h \
-			   $(srcdir)/src/Win32/resource.h
+			$(srcdir)/src/Win32/debug.h \
+			$(srcdir)/src/Win32/getopt.c \
+			$(srcdir)/src/Win32/getopt.h 
 
-WIN32_KEYCLIENT_SRC=$(srcdir)/src/Win32/keyclient.dsp \
-					$(srcdir)/src/Win32/keyclient.dsw \
-					$(srcdir)/src/Win32/keyclient.opt
+
+WIN32_INSTALLER_SRC=$(srcdir)/src/Win32/installer/addfiltertometabaseenum.vbs \
+			$(srcdir)/src/Win32/installer/addfiltertometabasemain.vbs \
+			$(srcdir)/src/Win32/installer/find_webroot.vbs \
+			$(srcdir)/src/Win32/installer/pubcookie.ism
+
+WIN32_GUI_SRC=$(srcdir)/src/Win32/pbcgui/CPBC_PropSheet.cpp \
+			$(srcdir)/src/Win32/pbcgui/CPBC_PropSheet.h \
+			$(srcdir)/src/Win32/pbcgui/basesnap.Cpp \
+			$(srcdir)/src/Win32/pbcgui/basesnap.Def \
+			$(srcdir)/src/Win32/pbcgui/basesnap.h \
+			$(srcdir)/src/Win32/pbcgui/extend.h \
+			$(srcdir)/src/Win32/pbcgui/globals.h \
+			$(srcdir)/src/Win32/pbcgui/gui_myconfig.cpp \
+			$(srcdir)/src/Win32/pbcgui/gui_myconfig.h \
+			$(srcdir)/src/Win32/pbcgui/pbcgui-directive.vcproj \
+			$(srcdir)/src/Win32/pbcgui/pbcgui-server.vcproj \
+			$(srcdir)/src/Win32/pbcgui/pbcgui.sln \
+			$(srcdir)/src/Win32/pbcgui/pbcgui.suo \
+			$(srcdir)/src/Win32/pbcgui/registry.Cpp \
+			$(srcdir)/src/Win32/pbcgui/registry.h 
+
+WIN32_GUI_SERVER_SRC=$(srcdir)/src/Win32/pbcgui/Server/GUIDs.h \
+			$(srcdir)/src/Win32/pbcgui/Server/pbc_directives.h \
+			$(srcdir)/src/Win32/pbcgui/Server/resource.Rc \
+			$(srcdir)/src/Win32/pbcgui/Server/resource.h \
+			$(srcdir)/src/Win32/pbcgui/Server/server.cpp
+
+
+WIN32_GUI_DIRECTIVE_SRC=$(srcdir)/src/Win32/pbcgui/Directive/GUIDs.h \
+			$(srcdir)/src/Win32/pbcgui/Directive/directive.Cpp \
+			$(srcdir)/src/Win32/pbcgui/Directive/pbc_directives.h \
+			$(srcdir)/src/Win32/pbcgui/Directive/resource.Rc \
+			$(srcdir)/src/Win32/pbcgui/Directive/resource.h 
+
+WIN32_KEYCLIENT_SRC=$(srcdir)/src/Win32/WebClient.c \
+			$(srcdir)/src/Win32/WebClient.h \
+			$(srcdir)/src/Win32/keyclient.opt \
+			$(srcdir)/src/Win32/keyclient.sln \
+			$(srcdir)/src/Win32/keyclient.vcproj \
+			$(srcdir)/src/Win32/winkeyclient.c \
+			$(srcdir)/src/Win32/winkeyclient.h
 
 WIN32_SRC=$(WIN32_SSL_SRC) \
 		  $(WIN32_LIB_SRC) \
 		  $(WIN32_FILTER_SRC) \
+		  $(WIN32_MESSAGES_SRC) \
 		  $(WIN32_MISC_SRC) \
+		  $(WIN32_GUI_SRC) \
+		  $(WIN32_GUI_SERVER_SRC) \
+		  $(WIN32_GUI_DIRECTIVE_SRC) \
 		  $(WIN32_KEYCLIENT_SRC)
 
 # Dist stuff
@@ -596,11 +657,20 @@ dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)/src/Win32/include
 	$(MKDIR) $(DISTNAME)/src/Win32/include/openssl
 	$(MKDIR) $(DISTNAME)/src/Win32/lib
+	$(MKDIR) $(DISTNAME)/src/Win32/pbcgui
+	$(MKDIR) $(DISTNAME)/src/Win32/pbcgui/directive
+	$(MKDIR) $(DISTNAME)/src/Win32/pbcgui/server
+	$(MKDIR) $(DISTNAME)/src/Win32/installer
 	$(CP) $(WIN32_SSL_SRC) $(DISTNAME)/src/Win32/include/openssl
 	$(CP) $(WIN32_LIB_SRC) $(DISTNAME)/src/Win32/lib
 	$(CP) $(WIN32_FILTER_SRC) $(DISTNAME)/src/Win32
 	$(CP) $(WIN32_MISC_SRC) $(DISTNAME)/src/Win32
 	$(CP) $(WIN32_KEYCLIENT_SRC) $(DISTNAME)/src/Win32
+	$(CP) $(WIN32_MESSAGES_SRC) $(DISTNAME)/src/Win32
+	$(CP) $(WIN32_GUI_SRC) $(DISTNAME)/src/Win32/pbcgui
+	$(CP) $(WIN32_GUI_SERVER_SRC) $(DISTNAME)/src/Win32/pbcgui/server
+	$(CP) $(WIN32_GUI_DIRECTIVE_SRC) $(DISTNAME)/src/Win32/pbcgui/directive
+	$(CP) $(WIN32_INSTALLER_SRC) $(DISTNAME)/src/Win32/installer
 	$(TAR) cf $(DISTNAME).tar $(DISTNAME)/
 	$(GZIP) $(DISTNAME).tar
 	$(RECURSIVE_FORCE_RM) ./$(DISTNAME)/
