@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.20 2003-03-05 22:38:47 willey Exp $
+    $Id: pbc_myconfig.c,v 1.21 2003-03-06 23:47:17 ryanc Exp $
  */
 
 
@@ -369,9 +369,9 @@ const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 }
 
 
-int libpbc_config_getint(const char *key, int def)
+int libpbc_config_getint(pool *p, const char *key, int def)
 {
-    const char *val = libpbc_config_getstring(key, (char *)0);
+    const char *val = libpbc_config_getstring(p, key, (char *)0);
     
     if (!val) return def;
     if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
@@ -380,7 +380,7 @@ int libpbc_config_getint(const char *key, int def)
 }
 
 
-int libpbc_config_init(const char *alt_config, const char *ident)
+int libpbc_config_init(pool *p, const char *alt_config, const char *ident)
 {
 	int rslt;
 	HKEY hKey;

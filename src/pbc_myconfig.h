@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.h,v 1.7 2003-03-05 22:38:47 willey Exp $
+    $Id: pbc_myconfig.h,v 1.8 2003-03-06 23:47:17 ryanc Exp $
  */
 
 #ifndef INCLUDED_PBC_MYCONF_H
@@ -76,7 +76,7 @@ extern int libpbc_config_getswitch(pool *p, const char *key, int def);
 extern char **libpbc_config_getlist(pool *p, const char *key);
 
 #ifdef WIN32
-  const char *AddSystemRoot(pool *p, const char *subdir); 
+  const char *AddSystemRoot(const char *subdir); 
 #endif
 
 #endif /* INCLUDED_PBC_MYCONF_H */
