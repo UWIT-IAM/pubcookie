@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.47 2003-12-11 21:48:43 willey Exp $
+# $Id: Makefile.in,v 1.48 2004-02-06 18:39:10 dors Exp $
 
 @SET_MAKE@
 
@@ -233,7 +233,7 @@ DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/LICENSE.txt \
 	 $(srcdir)/doc/config.sample \
 	 $(srcdir)/doc/config.login.sample \
-	 $(srcdir)/doc/install-mod_pubcookie-3.0.html \
+	 $(srcdir)/doc/install-mod_pubcookie.html \
 	 $(srcdir)/doc/mod_pubcookie-directives.html \
 	 $(srcdir)/doc/install-login.html \
 	 $(srcdir)/doc/HACKING.txt \
