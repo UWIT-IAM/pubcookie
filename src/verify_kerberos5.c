@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.20 $
+ * $Revision: 1.21 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -87,7 +87,7 @@ static int save_tf(pool *p, const char *tfname, struct credentials **credsp)
 
     *credsp = malloc(sizeof(struct credentials));
     if (!*credsp) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: malloc failed");
 	return -1;
     }
@@ -95,13 +95,13 @@ static int save_tf(pool *p, const char *tfname, struct credentials **credsp)
 
     f = fopen(tfname, "r");
     if (!f) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: can't open %s: %m", tfname);
 	return -1;
     }
 
     if (fstat(fileno(f), &sbuf) < 0) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: fstat %s: %m", tfname);
 	return -1;
     }
@@ -109,13 +109,13 @@ static int save_tf(pool *p, const char *tfname, struct credentials **credsp)
     (*credsp)->sz = sbuf.st_size;
     (*credsp)->str = malloc(sbuf.st_size * sizeof(char));
     if (!(*credsp)->str) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: malloc failed");
 	goto cleanup;
     }
 
     if (fread((*credsp)->str, sbuf.st_size, 1, f) != 1) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: short read %s: %m", tfname);
 	goto cleanup;
     }
@@ -139,13 +139,13 @@ static int unsave_tf(pool *p, const char *tfname, struct credentials *creds)
 
     f = fopen(tfname, "w");
     if (!f) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: can't open %s: %m", tfname);
 	return -1;
     }
 
     if (fwrite(creds->str, creds->sz, 1, f) != 1) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: can't write %s: %m", tfname);
 	fclose(f);
 	unlink(tfname);
@@ -153,7 +153,7 @@ static int unsave_tf(pool *p, const char *tfname, struct credentials *creds)
     }
 
     if (fclose(f) != 0) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: can't close %s: %m", tfname);
 	unlink(tfname);
 	return -1;
@@ -197,7 +197,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     }
 
     /* unpack 'creds' into a ticket file */
-    if (unsave_tf(tfname, creds) < 0) {
+    if (unsave_tf(p, tfname, creds) < 0) {
 	return -1;
     }
 
@@ -207,7 +207,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     }
 
     if (krb5_cc_resolve(context, tfname, &ccache)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: krb5_cc_resolve failed",
                          target);
 	krb5_free_context(context);
@@ -225,7 +225,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     }
 
     if (!realm) {
-	pbc_log_activity(PBC_LOG_ERROR,
+	pbc_log_activity(p, PBC_LOG_ERROR,
                          "verify_kerberos5: creds_derive %s: couldn't determine realm", 
                          target);
 	goto cleanup;
@@ -237,7 +237,7 @@ static int creds_derive(pool *p, struct credentials *creds,
 
     /* who am i? */
     if (krb5_cc_get_principal(context, ccache, &(request.client))) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: who am i?", 
                          target);
 	goto cleanup;
@@ -246,7 +246,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     /* build requested principal */
     if (krb5_build_principal(context, &request.server, 
 			     strlen(realm), realm, s, t, NULL)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: couldn't build principal", 
                          target);
 	goto cleanup;
@@ -254,7 +254,7 @@ static int creds_derive(pool *p, struct credentials *creds,
 
     /* fetch the request ticket */
     if (krb5_get_credentials(context, 0, ccache, &request, &newcreds)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: krb5_get_credentials failed",
                          target);
 	goto cleanup;
@@ -262,21 +262,21 @@ static int creds_derive(pool *p, struct credentials *creds,
 
     /* save the new credentials in a new ccache */
     if (krb5_cc_resolve(context, tfname_target, &ccache_target)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: krb5_cc_resolve failed",
                          target);
 	goto cleanup;
     }
 
     if (krb5_cc_initialize (context, ccache_target, request.client)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: krb5_cc_initialize failed",
                          target);
 	goto cleanup;
     }
 
     if (krb5_cc_store_cred(context, ccache_target, newcreds)) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: creds_derive %s: krb5_cc_store_cred failed",
                          target);
 	krb5_cc_destroy(context, ccache_target);
@@ -284,8 +284,8 @@ static int creds_derive(pool *p, struct credentials *creds,
     }
 
     /* bundle up the new ticket */
-    if (save_tf(tfname_target, outcredsp) < 0) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+    if (save_tf(p, tfname_target, outcredsp) < 0) {
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: save_tf failed");
 	krb5_cc_destroy(context, ccache_target);
 	goto cleanup;
@@ -335,7 +335,7 @@ static int k5support_verify_tgt(pool *p, krb5_context context,
 	return -1;
     }
 
-    keytabname = (krb5_pointer) libpbc_config_getstring("kerberos5_keytab",
+    keytabname = (krb5_pointer) libpbc_config_getstring(p, "kerberos5_keytab",
                                                         NULL);
     if (keytabname) {
 	if (krb5_kt_resolve(context, keytabname, &keytab)) {
@@ -500,12 +500,12 @@ static int kerberos5_v(pool *p, const char *userid,
     }
 
     /* save the TGT if we were asked to */
-    if (credsp && save_tf(tfname, credsp) < 0) {
-	pbc_log_activity(PBC_LOG_ERROR, 
+    if (credsp && save_tf(p, tfname, credsp) < 0) {
+	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: save_tf failed");
     }
 
-    result = k5support_verify_tgt(context, ccache, &auth_context, errstr);
+    result = k5support_verify_tgt(p, context, ccache, &auth_context, errstr);
 
 #if 0
     /* xxx this seems like the way it "should" be done instead of the
@@ -561,12 +561,12 @@ static int kerberos5_v(pool *p, const char *userid,
 		(*credsp)->sz = forw_creds.length;
 		(*credsp)->str = forw_creds.data;
 	    } else {
-		pbc_log_activity(PBC_LOG_ERROR, 
+		pbc_log_activity(p, PBC_LOG_ERROR, 
                                  "verify_kerberos5: malloc() failed");
 	    }
 	} else {
 	    /* krb error */
-	    pbc_log_activity(PBC_LOG_ERROR, 
+	    pbc_log_activity(p, PBC_LOG_ERROR, 
                              "verify_kerberos5: error getting forwarded creds: %s",
                              error_message(r));
 	}
@@ -586,14 +586,14 @@ static int kerberos5_v(pool *p, const char *userid,
 
     if (result != 0 && credsp && *credsp) {
 	/* destroy the credentials we saved */
-	creds_free(*credsp);
+	creds_free(p, *credsp);
     }
 
     return result;
 }
 
-verifier kerberos5_verifier = { "kerberos_v5", 
-				&kerberos5_v, &creds_free, &creds_derive };
+verifier kerberos5_verifier = { "kerberos_v5", &kerberos5_v,
+				&creds_free, &creds_derive };
 
 #else /* ENABLE_KRB5 */
 
