@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.63 2001-10-18 01:22:19 willey Exp $
+    $Id: mod_pubcookie.c,v 1.64 2001-10-18 01:41:03 willey Exp $
  */
 
 /* apache includes */
@@ -967,6 +967,7 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
     scfg->login = nscfg->login ? nscfg->login : pscfg->login;
     scfg->appsrvid = nscfg->appsrvid ? nscfg->appsrvid : pscfg->appsrvid;
     scfg->dirdepth = nscfg->dirdepth ? nscfg->dirdepth : pscfg->dirdepth;
+    scfg->noblank = nscfg->noblank ? nscfg->noblank : pscfg->noblank;
 
     scfg->g_certfile = nscfg->g_certfile ? nscfg->g_certfile : pscfg->g_certfile;
     scfg->s_keyfile = nscfg->s_keyfile ? nscfg->s_keyfile : pscfg->s_keyfile;
