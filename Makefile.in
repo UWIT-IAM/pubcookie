@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.2 2002-08-15 23:05:18 jjminer Exp $
+# $Id: Makefile.in,v 1.3 2002-08-15 23:47:15 jjminer Exp $
 
 @SET_MAKE@
 
@@ -46,7 +46,7 @@ LIBS=@LIBS@
 CPPFLAGS=@CPPFLAGS@ @DEFS@
 CFLAGS=@CFLAGS@ $(CPPFLAGS)
 LDFLAGS=@LDFLAGS@ $(LIBS)
-LOGINLIBS=@LOGINLIBS@
+LOGINLIBS=@LOGINLIBS@ -lcgic
 
 APXS=@APXS@
 
@@ -139,6 +139,19 @@ DOCS=doc/NEW_SITE.txt \
 	 doc/install-mod_pubcookie-3.0.html \
 	 doc/mod_pubcookie-directives.html
 
+CGIC_FILES=cgic/Makefile.in \
+		   cgic/capture.c \
+		   cgic/cgic.c \
+		   cgic/cgic.h \
+		   cgic/cgic.html \
+		   cgic/cgic.txt \
+		   cgic/cgictest.c \
+		   cgic/license.txt \
+		   cgic/readme.txt \
+		   cgic/support.txt \
+		   cgic/testform.html \
+		   cgic/CHANGES
+
 L_VERSION := `$(AWK) '/PBC_LOGIN_VERSION/{print $$3}' src/pbc_version.h | $(SED) 's/"//g'`
 L_BASENAME := pubcookie_login-$(L_VERSION)
 
@@ -184,13 +197,16 @@ make_crypted_blob: src/make_crypted_blob.o $(LIB_OBJ)
 what_is_my_ip: src/what_is_my_ip.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ src/what_is_my_ip.o $(LIB_OBJ) $(LDFLAGS)
 
-index.cgi: $(LIB_OBJ) $(INDEX_OBJ) $(CGIC_LIB) 
-	$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS) $(LOGINLIBS)
+index.cgi: cgic/libcgic.a $(LIB_OBJ) $(INDEX_OBJ)
+	$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
+
+cgic/libcgic.a:
+	(cd cgic; make)
 
 $(INDEX_OBJ): Makefile $(LIB_HEAD) $(INDEX_HEAD)
 
 keyserver: src/keyserver.o $(LIB_OBJ)
-	$(CC) ${CFLAGS} -o $@ src/keyserver.o $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS) $(LOGINLIBS)
+	$(CC) ${CFLAGS} -o $@ src/keyserver.o $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
 
 keyclient: src/keyclient.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ src/keyclient.o $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
@@ -249,9 +265,11 @@ pbc_myconfig: src/pbc_myconfig.c
 clean::
 	-$(FORCE_RM) *.so src/*.so so_locations 
 	-$(FORCE_RM) $(INDEX_FILES) *.o src/*.o $(TEST_FILES) $(KEY_FILES)
+	(cd cgic; $(MAKE) clean)
 
 distclean:: clean
 	$(FORCE_RM) $(CONFIGURE_TMP_FILES)
+	(cd cgic; $(MAKE) distclean)
 
 # APXS Stuff.
 
@@ -276,6 +294,7 @@ dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)
 	$(MKDIR) $(DISTNAME)/src
 	$(MKDIR) $(DISTNAME)/doc
+	$(MKDIR) $(DISTNAME)/cgic
 	-$(RECURSIVE_CP) src/contrib $(DISTNAME)
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic
 	$(CP) $(LOGIN_TEMPLATES) $(DISTNAME)/src/login_templates.generic
@@ -285,6 +304,7 @@ dist: a_ver l_ver
 	$(CP) $(TEST_SRC) $(UTIL_SRC) $(VERIFY_SRC) $(DISTNAME)/src
 	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(MOD_SRC) $(DISTNAME)/src
 	$(CP) $(INDEX_HEAD) $(LIB_HEAD) $(DISTNAME)/src
+	$(CP) $(CGIC_FILES) $(DISTNAME)/cgic
 	$(TAR) cf $(DISTNAME).tar $(DISTNAME)/
 	$(GZIP) $(DISTNAME).tar
 	$(RECURSIVE_FORCE_RM) ./$(DISTNAME)/

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.1 $)
+AC_REVISION($Revision: 1.2 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -63,6 +63,7 @@ AC_PROG_MAKE_SET
 AC_PROG_AWK
 
 # Utilities
+AC_PATH_PROG(AR, ar, ar)
 AC_PATH_PROG(RM, rm, rm)
 AC_PATH_PROG(CP, cp, cp)
 AC_PATH_PROG(SED, sed, sed)
@@ -214,22 +215,10 @@ OLDLIBS=$LIBS
 
 if test "$enable_login" = yes; then
 
-AC_ARG_WITH(cgic-dir,
-    AC_HELP_STRING([--with-cgic-dir=PATH], [CGIC lib/include directory]),
-[ case "$withval" in
-   no)
-    ;;
-   *)
-    CPPFLAGS="$CPPFLAGS -I$withval"
-    LDFLAGS="$LDFLAGS -L$withval"
-    ;;
-  esac ])
+    CPPFLAGS="$CPPFLAGS -Icgic/"
+    LDFLAGS="$LDFLAGS -Lcgic/"
 
 AC_CHECK_HEADERS([cgic.h])
-
-if test "$ac_cv_header_cgic_h" = "yes"; then
-    LIBS="$LIBS -lcgic"
-fi
 
 AC_ARG_ENABLE(krb5,
     AC_HELP_STRING([--enable-krb5],[Enable Kerberos 5 Verifier]),
@@ -301,5 +290,5 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname getspnam gettimeofday \
                 memset socket strcasecmp strchr strdup strerror strncasecmp \
                 strstr uname strlcpy strlcat])
 
-AC_CONFIG_FILES([Makefile src/pbc_path.h])
+AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
 AC_OUTPUT
