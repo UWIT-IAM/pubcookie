@@ -42,7 +42,6 @@ void pbc_log_activity(int logging_level, const char *message,...)
 
 void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 {
-    char      new_message[PBC_4K];
     char      log[PBC_4K];
         
     if (logging_level <= (libpbc_config_getint("logging_level", logging_level)))    {
