@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.108 2002-12-11 01:34:38 willey Exp $
+    $Id: mod_pubcookie.c,v 1.109 2003-02-20 16:44:22 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -421,7 +421,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
 
         /* base 64 */
         if (!res) {
-            base64 = ap_palloc(r->pool, bloblen * 4 / 3 + 20);
+            base64 = ap_palloc(r->pool, (bloblen + 3) / 3 * 4 + 1);
             if (!libpbc_base64_encode( (unsigned char *) blob, 
                                        (unsigned char *) base64, bloblen)) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
@@ -712,7 +712,7 @@ static int auth_failed_handler(request_rec *r) {
     char                 *pre_s_cookie = ap_palloc(p, PBC_1K);
     char                 *g_req_cookie = ap_palloc(p, PBC_4K);
     char                 *g_req_contents = ap_palloc(p, PBC_4K);
-    char                 *e_g_req_contents = ap_palloc(p, PBC_4K);
+    char                 *e_g_req_contents;
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
     const char *ctype = ap_table_get(r->headers_in, "Content-type");
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
@@ -847,7 +847,7 @@ static int auth_failed_handler(request_rec *r) {
     /*   turned off.  the POST info is in a FORM in  */
     /*   the body of the redirect                    */
 
-    e_g_req_contents = ap_palloc(p, (strlen(g_req_contents) + 3) / 3 * 4);
+    e_g_req_contents = ap_palloc(p, (strlen(g_req_contents) + 3) / 3 * 4 + 1);
     libpbc_base64_encode( (unsigned char *) g_req_contents, (unsigned char *) e_g_req_contents, strlen(g_req_contents));
 
     /* create whole g req cookie */
