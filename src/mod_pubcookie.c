@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.17 1999-01-27 03:33:43 willey Exp $
+    $Id: mod_pubcookie.c,v 1.18 1999-01-29 22:26:54 willey Exp $
  */
 
 #include "httpd.h"
@@ -204,14 +204,30 @@ static int pubcookie_check_exp(time_t fromc, int exp, int def) {
 }
 
 /*                                                                            */
+/*
+ * Since we blank out cookies, they're stashed in the notes table.
+ * blank_cookie only stashes in the topmost request's notes table, so
+ * that's where we'll look.
+ *
+ * We don't bother with using the topmost request when playing with the
+ * headers because only the pointer is copied, anyway.
+ */
 char *get_cookie(request_rec *r, char *name) {
   const char *cookie_header; 
   char *cookie, *ptr;
+  request_rec *mr;
 
   /* get cookies */
+  mr = r;
+  while (mr->main)
+    mr = mr->main;
 #ifdef APACHE1_2
+  if (cookie_header = table_get(mr->notes, name))
+    return pstrdup(r->pool, cookie_header);
   if(!(cookie_header = table_get(r->headers_in, "Cookie")))
 #else
+  if (cookie_header = ap_table_get(mr->notes, name))
+    return ap_pstrdup(r->pool, cookie_header);
   if(!(cookie_header = ap_table_get(r->headers_in, "Cookie")))
 #endif
     return NULL;
@@ -239,6 +255,7 @@ char *get_cookie(request_rec *r, char *name) {
     ptr++;
   }
 
+  blank_cookie (name);
   return cookie;
 }
 
@@ -531,6 +548,10 @@ static int pubcookie_typer(request_rec *r) {
 
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
+  if(!requires(r)) {
+    log_reason("pubcookie auth configured with no requires lines", r->uri, r);
+    return SERVER_ERROR;
+  }
 
   if( cfg->has_granting ) {
     /* clear granting cookie */
@@ -549,6 +570,10 @@ static int pubcookie_typer(request_rec *r) {
 
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
+  if(!requires(r)) {
+    ap_log_reason("pubcookie auth configured with no requires lines", r->uri, r);
+    return SERVER_ERROR;
+  }
 
   if( cfg->has_granting ) {
     new_cookie = ap_psprintf(r->pool, "%s=; domain=%s path=/; secure", PBC_G_COOKIENAME, PBC_ENTRPRS_DOMAIN);
@@ -589,11 +614,19 @@ int blank_cookie(request_rec *r, char *name) {
   const char *cookie_header; 
   char *cookie;
   char *ptr;
+  request_rec *mr;
+  char *c2;
 
+  mr = r;
+  while (mr->main)
+    mr = mr->main;
+  /* If we've stashed the cookie, we know it's already blanked */
 #ifdef APACHE1_2
-  if(!(cookie_header = table_get(r->headers_in, "Cookie")))
+  if(table_get(mr->notes, name) ||
+      !(cookie_header = table_get(r->headers_in, "Cookie")))
 #else
-  if(!(cookie_header = ap_table_get(r->headers_in, "Cookie")))
+  if(ap_table_get(mr->notes, name) ||
+      !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
 #endif
     return 0;
 
@@ -604,6 +637,30 @@ int blank_cookie(request_rec *r, char *name) {
 
   if ( cookie[0] == '=' )
       ++cookie;
+
+  /*
+   * Because the cookie blanking affects the whole subrequest chain, we
+   * need to stash the cookie away to be used again later.  We need cookies
+   * to persist among subrequests, either because subrequests need the
+   * cookie, such as in mod_cern_meta, or because the first time fixups is
+   * run and blanks the cookies is during a subrequest itself.
+   *
+   * Because of all this, we stash in the topmost request's notes table.
+   * Note that we must use the topmost request's pool instead of our own
+   * pool!
+   */
+#ifdef APACHE1_2
+  c2 = pstrdup (mr->pool, cookie);
+#else
+  c2 = ap_pstrdup (mr->pool, cookie);
+#endif
+  if (ptr = strchr (c2, ';'))
+    *ptr = '\0';
+#ifdef APACHE1_2
+  table_set (mr->notes, name, c2);
+#else
+  ap_table_set (mr->notes, name, c2);
+#endif
 
   ptr = cookie;
   while(*ptr) {
