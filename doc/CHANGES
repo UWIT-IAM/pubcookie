@@ -8,6 +8,10 @@ L - library changes
 H - only .h files changed
 O - other (Makefile, Makefile.apxs, etc.)
 
+a5 release11 26Jan2001 rcs references: m1.50
+M  - increased buffer size into which to base64 encode, and made
+     sure it's null-terminated; fixes '6n+4/6n+5' query string bug
+
 a5 release10 26Sep2000 rcs references: m1.49 l2.13
 M  - changed the redirect_reason to be passed to login server as int
      instead of a string.
