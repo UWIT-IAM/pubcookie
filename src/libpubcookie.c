@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.17 2001-08-24 01:38:35 willey Exp $
+    $Id: libpubcookie.c,v 2.18 2001-08-29 18:14:58 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -672,8 +672,8 @@ pbc_cookie_data *libpbc_destringify_cookie_data(pbc_cookie_data *cookie_data)
 
     (*cookie_data).broken.user[PBC_USER_LEN-1] = '\0';
     (*cookie_data).broken.version[PBC_VER_LEN-1] = '\0';
-    (*cookie_data).broken.app_id[PBC_APP_ID_LEN-1] = '\0';
-    (*cookie_data).broken.appsrv_id[PBC_APPSRV_ID_LEN-1] = '\0';
+    (*cookie_data).broken.appid[PBC_APP_ID_LEN-1] = '\0';
+    (*cookie_data).broken.appsrvid[PBC_APPSRV_ID_LEN-1] = '\0';
     return cookie_data;
 
 }
@@ -694,8 +694,8 @@ unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data)
     ptr = cookie_string = (unsigned char *)libpbc_alloc_init(sizeof(pbc_cookie_data));
     ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.user, PBC_USER_LEN);
     ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.version, PBC_VER_LEN);
-    ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.appsrv_id, PBC_APPSRV_ID_LEN);
-    ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.app_id, PBC_APP_ID_LEN);
+    ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.appsrvid, PBC_APPSRV_ID_LEN);
+    ptr = libpbc_stringify_seg(ptr, (*cookie_data).broken.appid, PBC_APP_ID_LEN);
     *ptr = (*cookie_data).broken.type;
     ptr++;
 
@@ -889,8 +889,8 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
-			  unsigned char *appsrv_id,
-			  unsigned char *app_id) 
+			  unsigned char *appsrvid,
+			  unsigned char *appid) 
 {
 
     strncpy((char *)(*cookie_data).broken.user, (const char *)user, PBC_USER_LEN-1);
@@ -900,8 +900,8 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
     (*cookie_data).broken.serial = serial;
     (*cookie_data).broken.create_ts = time(NULL);
     (*cookie_data).broken.last_ts = time(NULL);
-    strncpy((char *)(*cookie_data).broken.appsrv_id, (const char *)appsrv_id, PBC_APPSRV_ID_LEN-1);
-    strncpy((char *)(*cookie_data).broken.app_id, (const char *)app_id, PBC_APP_ID_LEN-1);
+    strncpy((char *)(*cookie_data).broken.appsrvid, (const char *)appsrvid, PBC_APPSRV_ID_LEN-1);
+    strncpy((char *)(*cookie_data).broken.appid, (const char *)appid, PBC_APP_ID_LEN-1);
 
 }
 
@@ -1003,8 +1003,8 @@ unsigned char *libpbc_get_cookie_p(pool *p, unsigned char *user,
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
-			  unsigned char *appsrv_id,
-			  unsigned char *app_id,
+			  unsigned char *appsrvid,
+			  unsigned char *appid,
 			  md_context_plus *ctx_plus,
 			  crypt_stuff *c_stuff) 
 #else
@@ -1012,8 +1012,8 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
-			  unsigned char *appsrv_id,
-			  unsigned char *app_id,
+			  unsigned char *appsrvid,
+			  unsigned char *appid,
 			  md_context_plus *ctx_plus,
 			  crypt_stuff *c_stuff) 
 #endif
@@ -1028,7 +1028,7 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
-    libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, appsrv_id, app_id);
+    libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     pbc_free(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
