@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.77 $
+ * $Revision: 1.78 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -114,6 +114,7 @@
 #include "pbc_version.h"
 #include "index.cgi.h"
 #include "pbc_logging.h"
+#include "strlcpy.h"
 
 #include "flavor.h"
 
