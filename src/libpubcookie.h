@@ -1,13 +1,44 @@
+/*
 
-/* Copyright 1999, University of Washington.  All rights reserved. */
+    Copyright 1999, University of Washington.  All rights reserved.
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More info: https:/www.washington.edu/pubcookie/
+    Written by the Pubcookie Team
+
+    this is the header file for the pubcookie library, things
+    in here are only used by the library.
+
+    logic for how the pubcookie include files are devided up:
+       libpubcookie.h: only stuff used in library
+       pubcookie.h: stuff used in the module and library
+       pbc_config.h: stuff used in the module and library that 
+            people might want to change, as far a local configuration
+       pbc_version.h: only version stuff
+
+ */
 
 /*
-    $Id: libpubcookie.h,v 1.10 1999-08-11 23:00:39 willey Exp $
+    $Id: libpubcookie.h,v 1.11 1999-08-23 19:14:51 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
 #define PUBCOOKIE_LIB
 
+#include <opensslv.h>
+#if OPENSSL_VERSION_NUMBER < 0x00904000
+#define PRE_OPENSSL_094
+#endif
+#if OPENSSL_VERSION_NUMBER == 0x0922
+#define OPENSSL_0_9_2B
+#endif
 
 #ifdef APACHE1_2
 
