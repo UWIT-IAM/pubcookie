@@ -2,66 +2,69 @@
 The following should be an authoratative list of run-time configurable
 variables on the login server.
 
-Name			Type	Description
+Name            Type    Description
 -------------------------------------------------------------------------------
-debug			int	Non-zero value enables debug logging. The
-				higher the number, the more debugging output
-				that is generated.
-mirrorfile		string	full path to a file to keep a mirrored copy
-				of all output sent to the client by the
-				most recent call to the login cgi
+debug           int     Non-zero value enables debug logging. The higher the
+                        number, the more debugging output that is generated.
+mirrorfile      string  full path to a file to keep a mirrored copy of all
+                        output sent to the client by the most recent call to the
+                        login cgi
 
-login_host		string	The hostname of login server
-login_uri		string	The complete URI of the login cgi
-logout_prog		string	the complete URI of the logout cgi
+login_host      string  The hostname of login server
+login_uri       string  The complete URI of the login cgi
+logout_prog     string  the complete URI of the logout cgi
 
-login_servers		list	List of all of the login servers for our
-				domain;  keyserver uses this to distribute
-				keys to the other login servers
+login_servers   list    List of all of the login servers for our domain;
+                        keyserver uses this to distribute keys to the other
+                        login servers
 
-ssl_ca_file		string  Path and filename of the Cerificate Authority
-				which signed our SSL key
-ssl_ca_path		string  Path of directory containing CA certificates
-				named by their hashes for all CAs that we
-				should trust
-ssl_cert_file		string	Path to our SSL certificate
-ssl_key_file		string  Path to our SSL key
+ssl_ca_file     string  Path and filename of the Cerificate Authority which
+                        signed our SSL key
+ssl_ca_path     string  Path of directory containing CA certificates named by
+                        their hashes for all CAs that we should trust
+ssl_cert_file   string  Path to our SSL certificate
+ssl_key_file    string  Path to our SSL key
 
-default_l_expire	int	
-min_countdown		int	
+default_l_expire    int 
+min_countdown       int 
 
-kiosk_keys		list
-kiosk_values		list
+kiosk_keys      list
+kiosk_values    list
 
-enterprise_domain	string	the domain under which all hosts will live.
-				must be at least a second level domain
-				(e.g. somewhere.edu); used to scope cookies
-				for communication between the login server
-				and app servers
+enterprise_domain   string  The domain under which all hosts will live.  must be
+                            at least a second level domain (e.g. somewhere.edu);
+                            used to scope cookies for communication between the
+                            login server and app servers
 
-basic_verifier		string	the verifier to use for the "basic" flavor
+basic_verifier  string  The verifier to use for the "basic" flavor
 
-append_realm		switch	If true, the authentication realm is appended
-				to the user name after authentication but
-				before issuing cookies (eg, the cookie
-				will contain user@REALM)
-default_realm		string	optional default authentication realm to
-				pass to the verifier when none is
-				submitted via the form
+append_realm    switch  If true, the authentication realm is appended to the
+                        user name after authentication but before issuing
+                        cookies (eg, the cookie will contain user@REALM)
+default_realm   string  optional default authentication realm to pass to the
+                        verifier when none is submitted via the form
 
-keymgt_uri		string	the location of the "keyserver" CGI.
+keymgt_uri      string  the location of the "keyserver" CGI.
 
-keydir			string	location of DES keys used for encrypting
-				cookies sent to the app server
+keydir          string  location of DES keys used for encrypting cookies sent to
+                        the app server
 
-mirrorfile		string	full path to a file to keep a mirrored copy
-				of all output sent to the client by the
-				most recent call to the login cgi
-umask			string	umask used when creating file
+mirrorfile      string  full path to a file to keep a mirrored copy of all
+                        output sent to the client by the most recent call to the
+                        login cgi
+umask           string  umask used when creating file
 
 -------------------------------------------------------------------------------
 The Keberos V verifier uses:
 
-kerberos5_keytab	string	full path to the K5 keytab file
+kerberos5_keytab    string  full path to the K5 keytab file
 
 -------------------------------------------------------------------------------
+The LDAP verifier uses:
+ldap_uri        list    The LDAP URI in this format:
+                        ldaps://host/o=searchbase???(uid=%s)
+                        ldap://host/o=searchbase???(uid=%s)
+
+                        (uid=%s) is the search filter for finding an account
+                        by netid.  The %s will be replaced with the netid.
+                        The host string can optionally contain a port number.

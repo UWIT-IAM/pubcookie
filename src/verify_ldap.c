@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.8 2002-07-05 23:35:48 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.9 2002-07-12 00:00:02 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,8 +41,8 @@
 #include "index.cgi.h"
 #include "pbc_myconfig.h"
 
-/** The debug level */
-extern int debug;
+/* Error logging! */
+#include "pbc_logging.h"
 
 /**
  * Generates the name for the config file key
@@ -63,11 +63,13 @@ static char * gen_key( const char * prefix, char * suffix )
         suffix = "";
 
     /* Add 2, one for the \0 and one for a _ */
-    len =  strlen(prefix) + strlen(suffix) + 2;
+    len =  strlen(prefix) + strlen(suffix) + 7;
 
     result = calloc( len, sizeof(char) );
 
-    num = snprintf( result, len, "%s_%s", prefix, suffix );
+    num = snprintf( result, len, "ldap%s%s_%s", 
+                    strlen(prefix) ? "_" : "",
+                    prefix, suffix );
 
     if ( num >= len )
         return NULL;
@@ -88,24 +90,20 @@ static int do_bind( LDAP *ld, char * user, const char * password, const char ** 
 {
     int rc;
 
-    if (debug)
-        fprintf( stderr, "do_bind: hello\n" );
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "do_bind: hello\n" );
 
     rc = ldap_simple_bind_s (ld, user, password );
 
     if ( rc != LDAP_SUCCESS) {
-        if (debug) {
-            fprintf(stderr, "do_bind: failed - %s\n", ldap_err2string(rc));
-        }
+        pbc_log_activity(PBC_LOG_DEBUG_LOW, "do_bind: failed - %s\n", 
+                         ldap_err2string(rc) );
         *errstr  = "Bind failed -- auth failed";
         return -1;
-    } else if ( debug ) {
-            fprintf( stderr, "do_bind: bind successful\n");
+    } else {
+        pbc_log_activity(PBC_LOG_DEBUG_LOW, "do_bind: bind successful\n" );
     }
 
-    if (debug) {
-        fprintf( stderr, "do_bind: bye!\n" );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "do_bind: bye!\n" );
 
     return 0;
 }
@@ -120,23 +118,36 @@ static int do_bind( LDAP *ld, char * user, const char * password, const char ** 
  * @retval 0 for sucess, nonzero on failure.
  */
 static int ldap_connect( LDAP ** ld, 
-			 char * ldap_server, 
-			 int ldap_port, 
+			 char * ldap_uri, 
 			 char * dn, 
 			 char * pwd,
 			 const char ** errstr ) 
 {
     int rc;
+    char *tmp_uri, *p;
 
-    if (debug) {
-        fprintf( stderr, "ldap_connect: hello\n" );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "ldap_connect: hello\n" );
+
+    /*
+     * Work around a bug in the OpenLDAP stuff that causes the init to fail when
+     * there are things other than the server name in the URI.
+     */
+    
+    tmp_uri = strdup( ldap_uri );
+    p = strstr( tmp_uri, "//" );
+    p += 2;
+    p = strchr( p, '/' );
+    p++;
+    *p = '\0';
 
     /* lookup DN for username using an anonymous bind */
-    *ld = ldap_init(ldap_server, ldap_port);
-    if (ld == NULL) {
-        if (debug)
-            fprintf(stderr, "ldap_connect: LDAP Initialization error!\n");
+    rc = ldap_initialize(ld, tmp_uri);
+
+    free( tmp_uri );
+
+    if (rc != LDAP_SUCCESS || ld == NULL) {
+        pbc_log_activity( PBC_LOG_DEBUG_VERBOSE,
+                          "ldap_connect: LDAP Initialization error %d.\n", rc  );
         *errstr = "connection to ldap server failed -- auth failed";
         return -2;
     }
@@ -145,15 +156,12 @@ static int ldap_connect( LDAP ** ld,
 
     if( rc == -1 ) {
         /* Here a bind failing isn't catastrophic..  */
-        if (debug)
-            fprintf( stderr, "ldap_connect: Bind Failed.\n" );
+        pbc_log_activity(PBC_LOG_DEBUG_LOW, "ldap_connect: Bind Failed.\n"  );
         ldap_unbind(*ld);
         return -2;
     }
 
-    if (debug) {
-        fprintf( stderr, "ldap_connect: bye!\n" );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "ldap_connect: bye!\n" );
 
     return 0;
 }
@@ -172,66 +180,39 @@ static int ldap_connect( LDAP ** ld,
  * @retval 0 for sucess, nonzero on failure.
  */
 static int get_dn( LDAP * ld, 
-		   char * searchbase, 
-		   char * attr, 
-		   const char * val, 
-		   char ** dn,
-		   const char ** errstr )
+                   char * ldapuri,
+                   char ** dn,
+                   const char ** errstr )
 {
-    char * ldap_filter;
-
-    int len;
-    int num;
     int err;
     int num_entries;
+    
 
     LDAPMessage * results, * entry;
+    LDAPURLDesc *ludp;
 
-    if( debug ) {
-        fprintf( stderr, "get_dn: hello\n" );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_dn: hello\n" );
 
     *dn = NULL;
 
-    if( attr == NULL || val == NULL || strlen(attr) == 0 || strlen(val) == 0 ) {
-        fprintf( stderr, "Error - attr: \"%s\" val: \"%s\"", 
-                 attr == NULL ? "(null)" : attr, val == NULL ? "(null)" : val );
-        return -2;
-    }
-
-    len = strlen(attr) + strlen(val) + strlen("(=)") + 1;
-
-    ldap_filter = calloc( len, sizeof(char) );
-
-    if ( ldap_filter == NULL ) {
+    if ( ldap_url_parse( ldapuri, &ludp ) ) {
+        pbc_log_activity(PBC_LOG_ERROR, "Cannot parse \"%s\"\n", ldapuri  );
+        *errstr = "System Error.  Contact your system administrator.";
         return -1;
     }
 
-    num = snprintf( ldap_filter, len, "(%s=%s)", attr, val );
-
-    if ( num >= len ) {
-        return -1;
-    }
-
-    if (debug) {
-        fprintf( stderr, "get_dn: Created filter: %s\n", ldap_filter );
-    }
-
-    err = ldap_search_s( ld, searchbase, LDAP_SCOPE_SUBTREE,
-                         ldap_filter, NULL, 0, &results );
+    err = ldap_search_s( ld, ludp->lud_dn, LDAP_SCOPE_SUBTREE,
+                         ludp->lud_filter, NULL, 0, &results );
 
     if (err != LDAP_SUCCESS) {
         *errstr = "user not found -- auth failed";
         return -1;
     }
 
-    free(ldap_filter);
-
     num_entries = ldap_count_entries(ld, results);
 
-    if (debug) {
-        fprintf( stderr, "get_dn: Found %d Entries\n", num_entries );
-    }
+    pbc_log_activity( PBC_LOG_DEBUG_VERBOSE, "get_dn: Found %d Entries\n",
+                      num_entries );
 
     if (num_entries != 1) {
         ldap_msgfree(results);
@@ -250,9 +231,7 @@ static int get_dn( LDAP * ld,
 
     *dn = ldap_get_dn(ld, entry);
 
-    if (debug) {
-        fprintf( stderr, "get_dn: Got DN: \"%s\"\n", *dn );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_dn: Got DN: \"%s\"\n", *dn  );
     
     if (*dn == NULL) {
         ldap_msgfree(results);
@@ -269,9 +248,7 @@ static int get_dn( LDAP * ld,
     ldap_msgfree( entry );
 #endif
 
-    if( debug ) {
-        fprintf( stderr, "get_dn: bye!\n" );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_dn: bye!\n" );
 
     return 0;
 }
@@ -296,38 +273,15 @@ static int ldap_v( const char *userid,
     int   got_error = -2;
     int   i = 0;
 
-    char  **ldap_server_list;
-    char  **ldap_port_list;
-    char  **ldap_search_base_list;
-    char  **ldap_uid_attribute_list;
+    char  **ldap_uri_list;
     char *key = NULL;
 
-    if ( debug ) {
-        fprintf( stderr, "ldap_verifier: hello\n" );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "ldap_verifier: hello\n" );
 
     if (creds) *creds = NULL;
 
-    /* What should we do when the realm is null? I'm defaulting to "ldap" */
-
-    if( user_realm == NULL ) {
-        user_realm = "ldap";
-    }
-
-    key = gen_key(user_realm, "server");
-    ldap_server_list = libpbc_config_getlist(key);
-    free(key);
-
-    key = gen_key(user_realm, "port");
-    ldap_port_list = libpbc_config_getlist( key );
-    free(key);
-
-    key = gen_key(user_realm, "searchbase");
-    ldap_search_base_list = libpbc_config_getlist( key );
-    free(key);
-
-    key = gen_key(user_realm, "uid");
-    ldap_uid_attribute_list = libpbc_config_getlist( key );
+    key = gen_key(user_realm, "uri");
+    ldap_uri_list = libpbc_config_getlist(key);
     free(key);
 
     if (service != NULL) {
@@ -346,28 +300,42 @@ static int ldap_v( const char *userid,
     }
 
     while ( (got_error == -2)
-            && (ldap_server_list != NULL)
-            && (ldap_server_list[i] != NULL) ) {
+            && (ldap_uri_list != NULL)
+            && (ldap_uri_list[i] != NULL) ) {
 
-        char *ldap_server = ldap_server_list[i];
-        char *ldap_search_base = ldap_search_base_list[i];
-        char *ldap_uid_attribute = ldap_uid_attribute_list[i];
-        char *ldap_port_str = ldap_port_list[i];
+        char *ldap_uri_in = ldap_uri_list[i];
+        char *ldap_uri;
+        int len, num;
+
         LDAP *ld = NULL;
         char  *user_dn = NULL;
-        int ldap_port;
 
-        if( ldap_port_str == NULL )
-            ldap_port = LDAP_PORT;
-        else
-            ldap_port = atoi( ldap_port_str );
-
-        if (debug) {
-            fprintf( stderr, "ldap_verifier: server: %s port: %d\n",
-                     ldap_server, ldap_port );
-            fprintf( stderr, "ldap_verifier: search base: %s uid: %s\n",
-                     ldap_search_base, ldap_uid_attribute );
+        if ( strstr( ldap_uri_in, "%s" ) == NULL ) {
+            /* The LDAP URI must contain a %s to hold the user name! */
+            *errstr = "System Error.  Contact your system administrator.";
+            return -1;
         }
+
+        /* Something big enough to hold the uri, userid and a \0 */
+        len = strlen(ldap_uri_in) + strlen(userid) + 1;
+        ldap_uri = malloc( len );
+
+        if ( ldap_uri == NULL ) {
+            /* Ooops, out of memory! */
+            *errstr = "System Error.  Contact your system administrator.";
+            return -1;
+        }
+
+        num = snprintf( ldap_uri, len, ldap_uri_in, userid );
+
+        if ( num >= len ) {
+            /* Uhm, nearly overflowed the buffer.  We should freak. */
+            *errstr = "System Error.  Contact your system administrator.";
+            return -1;
+        }
+
+        pbc_log_activity( PBC_LOG_DEBUG_VERBOSE,
+                          "ldap_verifier: uri: \"%s\"\n", ldap_uri );
 
         if (userid == NULL || passwd == NULL) {
             *errstr = "username or password is null -- auth failed";
@@ -378,13 +346,12 @@ static int ldap_v( const char *userid,
          * The definately needs to be changed.  There will need to be a
          * "searching" login that we use to find the Dn.
          */
-        got_error = ldap_connect( &ld, ldap_server, ldap_port, NULL, NULL, errstr );
+        got_error = ldap_connect( &ld, ldap_uri, NULL, NULL, errstr );
         if( got_error == 0 ) {
 
-            got_error = get_dn( ld, ldap_search_base, ldap_uid_attribute, userid,
-                                &user_dn, errstr );
+            got_error = get_dn( ld, ldap_uri, &user_dn, errstr );
 
-            if( got_error == 0 ) {
+            if( got_error == 0 && strlen(user_dn) ) {
 
                 got_error = do_bind( ld, user_dn, passwd, errstr );
 
@@ -400,23 +367,7 @@ static int ldap_v( const char *userid,
         i++;
     }
 
-    if( ldap_search_base_list != NULL ) {
-        free(ldap_search_base_list);
-    }
-    if( ldap_server_list != NULL ) {
-        free(ldap_server_list);
-    }
-    if( ldap_uid_attribute_list != NULL ) {
-        free(ldap_uid_attribute_list);
-    }
-    if( ldap_port_list != NULL ) {
-        free(ldap_port_list);
-    }
-
-    if( debug ) {
-        fprintf( stderr, "ldap_verifier: bye!\n" );
-        fprintf( stderr, "returning: %d\n", got_error );
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "ldap_verifier: bye!\n" );
 
     return(got_error);
 }

@@ -215,7 +215,8 @@ static login_result process_basic(login_rec *l, login_rec *c,
     if (l->reply == FORM_REPLY) {
         if (v->v(l->user, l->pass, NULL, l->realm, &creds, errstr) == 0) {
             if (debug) {
-               fprintf(stderr, "authentication successful for %s\n", l->user);
+               pbc_log_activity( PBC_LOG_AUDIT,
+                                 "authentication successful for %s\n", l->user );
             }
 
 	    /* authn succeeded! */

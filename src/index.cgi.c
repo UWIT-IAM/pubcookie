@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.72 $
+ * $Revision: 1.73 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2292,9 +2292,7 @@ int create_cookie(char *user_buf,
 	free(cookie_local);
     }
 
-    if(debug) {
-        fprintf(stderr, "create_cookie: goodbye\n"); 
-    }
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "create_cookie: goodbye\n" ); 
 
     return (PBC_OK);
 }
