@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.4 1998-07-15 00:21:22 willey Exp $
+    $Id: libpubcookie.c,v 1.5 1998-07-17 04:29:16 willey Exp $
  */
 
 #include <stdio.h>
@@ -7,9 +7,13 @@
 #include <stdarg.h>
 #include <time.h>
 #include <string.h>
+#include <unistd.h>
+/* ssleay lib stuff */
 #include <pem.h>
 #include <des.h>
+#include <rand.h>
 #include <err.h>
+/* pubcookie lib stuff */
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
@@ -17,7 +21,7 @@
 /*#include <envelope.h> */
 
 /* get a nice pretty log time                                                 */
-static char *libpbc_time_string(time_t t)
+char *libpbc_time_string(time_t t)
 { 
     struct tm	*tm;
     static char	buf[128];
@@ -52,10 +56,57 @@ int libpbc_debug(const char *format,...)
 
     va_start(args, format);
     now = time(NULL);
-    sprintf(format_w_time, "%s: DEBUG: %s", libpbc_time_string(now), format);
-    vprintf(format_w_time, args);
+    sprintf(format_w_time, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
+    vfprintf(stderr, format_w_time, args);
     va_end(args);
     return 1;
+}
+
+/* get some dubgging into to stdout                                           */
+void libpbc_augment_rand_state(unsigned char *array, int len)
+{
+
+    struct timeval 	tv; 
+    struct timezone 	tz;
+    unsigned char	buf[1024];
+    pid_t		pid;
+
+    gettimeofday(&tv, &tz);
+    memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
+    RAND_seed(buf, sizeof(tv.tv_usec));
+    pid = getpid();
+    memcpy(buf, &pid, sizeof(pid_t));
+    RAND_seed(buf, sizeof(pid));
+
+}
+
+/* keep 'em guessing                                                          */
+void libpbc_rand_malloc()
+{
+
+    int			num = 0, i;
+    unsigned char	buf[PBC_RAND_MALLOC_BYTES];
+
+    while ( num <= 0 ) {
+        RAND_bytes(buf, PBC_RAND_MALLOC_BYTES);
+        for( i=0; i<PBC_RAND_MALLOC_BYTES; i++)
+            num = num + (int)buf[i];	
+    }
+    pbc_malloc(num);
+
+}
+
+/* a local malloc and init                                                    */
+char *libpbc_alloc_init(int len)
+{
+    char	*pointer;
+
+    libpbc_rand_malloc();
+    if( (pointer = pbc_malloc(len)) ) 
+	memset(pointer, 0, len);
+    else
+        libpbc_abend("libpbc_alloc_init: Failed to malloc space\n");
+    return pointer;
 }
 
 /*                                                                            */
@@ -109,29 +160,54 @@ pbc_cookie_data *libpbc_init_cookie_data()
 {
     pbc_cookie_data *cookie_data;
 
-    if( ! (cookie_data=(pbc_cookie_data *)pbc_malloc(sizeof(pbc_cookie_data))) )
-	libpbc_abend("libpbc_init_cookie_data: failed to allocate memory\n");
+    cookie_data=(pbc_cookie_data *)libpbc_alloc_init(sizeof(pbc_cookie_data));
 
-    memset(cookie_data, ' ', sizeof(pbc_cookie_data));
     return cookie_data;
 }
 
-/* init md_context_plus structure                                                */
+/* init md_context_plus structure                                             */
 md_context_plus *libpbc_init_md_context_plus()
 {
     md_context_plus	*ctx_plus;
+    unsigned char	lil_buf[1];
 
-    if( (ctx_plus=(md_context_plus *)pbc_malloc(sizeof(md_context_plus))) &&
-      (ctx_plus->ctx=(EVP_MD_CTX *)pbc_malloc(sizeof(EVP_MD_CTX))) &&
-      (ctx_plus->public_key=(EVP_PKEY *)pbc_malloc(sizeof(EVP_PKEY))) &&
-      (ctx_plus->private_key=(EVP_PKEY *)pbc_malloc(sizeof(EVP_PKEY))) ) {
-	memset(ctx_plus->ctx, 0, sizeof(EVP_MD_CTX));
-	memset(ctx_plus->private_key, 0, sizeof(EVP_PKEY));
-	memset(ctx_plus->public_key, 0, sizeof(EVP_PKEY));
-	;
-    }
-    else {
-        libpbc_abend("libpbc_init_md_context_plus: Failed to malloc space for signing context\n");
+    ctx_plus=(md_context_plus *)libpbc_alloc_init(sizeof(md_context_plus));
+
+    RAND_bytes(lil_buf, 1);
+    switch ((int)lil_buf[0] % 3) {
+    case 0:
+        ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
+        RAND_bytes(lil_buf, 1);
+        switch ((int)lil_buf[0] % 2) {
+        case 0:
+            ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+            ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+        case 1:
+            ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+            ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+	}
+    case 1:
+        ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+        RAND_bytes(lil_buf, 1);
+        switch ((int)lil_buf[0] % 2) {
+        case 0:
+            ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
+            ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+        case 1:
+            ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+            ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
+	}
+    case 2:
+        ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+        RAND_bytes(lil_buf, 1);
+        switch ((int)lil_buf[0] % 2) {
+        case 0:
+            ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
+            ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+        case 1:
+            ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+            ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
+	}
     }
 
     return ctx_plus;
@@ -143,9 +219,11 @@ void libpbc_get_crypt_key(crypt_stuff *c_stuff)
     FILE 		*fp;
 //    int			start = 0;
     int			len = 64;
-    char		key_in[1024];
+    char		*key_in;
     des_cblock		key;
     int			tries = 5;
+
+    key_in = (char *)libpbc_alloc_init(PBC_BUF_LEN);
 
     if( ! (fp = pbc_fopen(PBC_CRYPT_KEYFILE, "r")) )
 	libpbc_abend("libpbc_crypt_key: Failed open \n");
@@ -153,8 +231,13 @@ void libpbc_get_crypt_key(crypt_stuff *c_stuff)
     if( ! fgets(key_in, len, fp) )
 	libpbc_abend("libpbc_crypt_key: Failed read \n");
     
+    fclose(fp);
     des_string_to_key(key_in, &key);
-    while ( ! des_key_sched(&key, c_stuff->ks) && tries-- )
+    memset(key_in, 0, PBC_BUF_LEN);
+
+    libpbc_augment_rand_state(key, sizeof(des_cblock));
+
+    while ( des_key_sched(&key, c_stuff->ks) && tries-- )
 	;
     if( ! tries ) 
 	libpbc_abend("libpbc_crypt_key: Coudn't build schedule\n");
@@ -166,11 +249,7 @@ crypt_stuff *libpbc_init_crypt()
 {
     crypt_stuff	*c_stuff;
 
-    if( ! (c_stuff=(crypt_stuff *)pbc_malloc(sizeof(crypt_stuff))) ||
-      ! (c_stuff->ivec=(des_cblock *)pbc_malloc(sizeof(des_cblock))) ||
-      ! (c_stuff->num=(int *)pbc_malloc(sizeof(int))) ) {
-        libpbc_abend("libpbc_init_crypt: Failed to malloc space for des stuff\n");
-    }
+    c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
 
     libpbc_get_crypt_key(c_stuff);
 
@@ -183,8 +262,7 @@ unsigned char *libpbc_sign_cookie(unsigned char *cookie_string, md_context_plus 
     unsigned char	*sig;
     unsigned int	sig_len = 0;
 
-    sig = pbc_malloc(PBC_SIG_LEN);
-    memset(sig, 0, PBC_SIG_LEN);
+    sig = (unsigned char *)libpbc_alloc_init(PBC_SIG_LEN);
 
     EVP_SignUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
     if( EVP_SignFinal(ctx_plus->ctx, sig, &sig_len, ctx_plus->private_key) )
@@ -213,7 +291,6 @@ unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, un
 
     seg_len = ( len < strlen(seg) ) ? len : strlen(seg);
     memcpy(start, seg, seg_len);
-    memset(start+seg_len, ' ', len - seg_len);
     return start + len;
 }
 
@@ -221,7 +298,10 @@ unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, un
 pbc_cookie_data *libpbc_destringify_cookie_data(pbc_cookie_data *cookie_data) 
 {
 
-    (*cookie_data).broken.user[PBC_USER_LEN] = '\0';
+    (*cookie_data).broken.user[PBC_USER_LEN-1] = '\0';
+    (*cookie_data).broken.version[PBC_VER_LEN-1] = '\0';
+    (*cookie_data).broken.app_id[PBC_APP_ID_LEN-1] = '\0';
+    (*cookie_data).broken.appsrv_id[PBC_APPSRV_ID_LEN-1] = '\0';
     return cookie_data;
 
 }
@@ -232,7 +312,7 @@ unsigned char *libpbc_stringify_cookie_data(pbc_cookie_data *cookie_data)
     unsigned char	*cookie_string;
     unsigned char	*p;
 
-    p = cookie_string = pbc_malloc(sizeof(pbc_cookie_data));
+    p = cookie_string = (unsigned char *)libpbc_alloc_init(sizeof(pbc_cookie_data));
     p = libpbc_stringify_seg(p, (*cookie_data).broken.user, PBC_USER_LEN);
     p = libpbc_stringify_seg(p, (*cookie_data).broken.version, PBC_VER_LEN);
     p = libpbc_stringify_seg(p, (*cookie_data).broken.appsrv_id, PBC_APPSRV_ID_LEN);
@@ -253,10 +333,11 @@ unsigned char *libpbc_stringify_cookie_data(pbc_cookie_data *cookie_data)
 /* encrypt a string                                                           */
 void libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
 {
-    int		i = 0;
-    des_cblock	ivec;
+    int			i = 0;
+    des_cblock		ivec;
+    unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
 
-    memcpy(&ivec,PBC_INIT_IVEC, PBC_INIT_IVEC_LEN);
+    memcpy(&ivec, ivec_tmp, PBC_INIT_IVEC_LEN);
 
     des_cfb64_encrypt(in, out, len, c_stuff->ks, &ivec, &i, DES_ENCRYPT);
 
@@ -265,13 +346,63 @@ void libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c
 /* decrypt a string                                                         */
 void libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_stuff, long len) 
 {
-    int		i = 0;
-    des_cblock	ivec;
+    int			i = 0;
+    des_cblock		ivec;
+    unsigned char	ivec_tmp[PBC_INIT_IVEC_LEN]=PBC_INIT_IVEC;
 
-    memcpy(&ivec,PBC_INIT_IVEC, PBC_INIT_IVEC_LEN);
+    memcpy(&ivec, ivec_tmp, PBC_INIT_IVEC_LEN);
 
     des_cfb64_encrypt(in, out, len, c_stuff->ks, &ivec, &i, DES_DECRYPT);
 
+}
+
+void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
+	                  char *user, 
+	                  unsigned char type, 
+			  unsigned char creds,
+			  unsigned char *appsrv_id,
+			  unsigned char *app_id) 
+{
+
+    strncpy((*cookie_data).broken.user, (unsigned char *)user, PBC_USER_LEN-1);
+    strncpy((*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
+    (*cookie_data).broken.type = type;
+    (*cookie_data).broken.creds = creds;
+    (*cookie_data).broken.create_ts = time(NULL);
+    (*cookie_data).broken.last_ts = time(NULL);
+    strncpy((*cookie_data).broken.appsrv_id, appsrv_id, PBC_APPSRV_ID_LEN-1);
+    strncpy((*cookie_data).broken.app_id, app_id, PBC_APP_ID_LEN-1);
+
+}
+
+/*                                                                            */
+unsigned char *libpbc_sign_bundle_cookie(unsigned char *cookie_string,
+			  md_context_plus *ctx_plus,
+			  crypt_stuff *c_stuff) 
+{
+
+    unsigned char		*cookie;
+    unsigned char		*sig;
+    unsigned char		buf[PBC_BUF_LEN];
+    unsigned char		buf2[PBC_BUF_LEN];
+
+    memset(&buf, 0, PBC_BUF_LEN);
+    memset(&buf2, 0, PBC_BUF_LEN);
+
+    if ( ! (sig = libpbc_sign_cookie(cookie_string, ctx_plus)) ) {
+        libpbc_debug("libpbc_sign_bundle_cookie: Cookie signing failed\n");
+	return (unsigned char *)NULL;
+    }
+    memcpy(buf, sig, PBC_SIG_LEN);
+    memcpy(buf+PBC_SIG_LEN, cookie_string, sizeof(pbc_cookie_data));
+
+    // encrypt cookie
+    libpbc_encrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN);
+
+    cookie = (unsigned char *)libpbc_alloc_init(PBC_BUF_LEN);
+    base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data));
+
+    return cookie;
 }
 
 /*                                                                            */
@@ -316,36 +447,13 @@ unsigned char *libpbc_get_cookie(char *user,
     pbc_cookie_data 		*cookie_data;
     unsigned char		*cookie_string;
     unsigned char		*cookie;
-    unsigned char		*sig;
-    unsigned char		buf[PBC_BUF_LEN];
-    unsigned char		buf2[PBC_BUF_LEN];
 
-    memset(&buf, 0, PBC_BUF_LEN);
-    memset(&buf2, 0, PBC_BUF_LEN);
+    libpbc_augment_rand_state(user, PBC_USER_LEN);
 
-    /* build a structure */
     cookie_data = libpbc_init_cookie_data();
-    strncpy((*cookie_data).broken.user, (unsigned char *)user, PBC_USER_LEN);
-    strncpy((*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN);
-    (*cookie_data).broken.type = type;
-    (*cookie_data).broken.creds = creds;
-    (*cookie_data).broken.create_ts = time(NULL);
-    (*cookie_data).broken.last_ts = time(NULL);
-    strncpy((*cookie_data).broken.appsrv_id, appsrv_id, PBC_APPSRV_ID_LEN);
-    strncpy((*cookie_data).broken.app_id, app_id, PBC_APP_ID_LEN);
+    libpbc_populate_cookie_data(cookie_data, user, type, creds, appsrv_id, app_id);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
-
-    /* sign cookie */
-    if ( ! (sig = libpbc_sign_cookie(cookie_string, ctx_plus)) )
-        libpbc_abend("Cookie signing failed\n");
-    memcpy(buf, sig, PBC_SIG_LEN);
-    memcpy(buf+PBC_SIG_LEN, cookie_string, sizeof(pbc_cookie_data));
-
-    // encrypt cookie
-    libpbc_encrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN);
-
-    cookie = pbc_malloc(PBC_BUF_LEN);
-    base64_encode(buf2, cookie, PBC_SIG_LEN + sizeof(pbc_cookie_data));
+    cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
 
     return cookie;
 }
@@ -368,15 +476,16 @@ pbc_cookie_data *libpbc_unbundle_cookie(char *in, md_context_plus *ctx_plus, cry
 	return 0;
     }
 
-    if( ! base64_decode((unsigned char *)in, buf) )
-        libpbc_abend("Could not decode cookie.\n");
+    if( ! base64_decode((unsigned char *)in, buf) ) {
+        libpbc_debug("libpbc_unbundle_cookie: Could not decode cookie.\n");
+	return 0;
+    }
 
     // decrypt cookie
     libpbc_decrypt_cookie(buf, buf2, c_stuff, sizeof(pbc_cookie_data)+PBC_SIG_LEN);
 
     /* break cookie in two */
     memcpy(sig, buf2, PBC_SIG_LEN);
-
     cookie_data = libpbc_init_cookie_data();
     memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
 
@@ -387,40 +496,24 @@ pbc_cookie_data *libpbc_unbundle_cookie(char *in, md_context_plus *ctx_plus, cry
     else {
         return NULL;
     }
-
-
 }
     
 /*                                                                            */
 /*  update last_ts in cookie                                                  */
 /*                                                                            */
-unsigned char *libpbc_update_lastts(char *cookie, md_context_plus *ctx_plus) 
+/* takes a cookie_data structure, updates the time, signs and packages up     */
+/* the cookie to be sent back into the world                                  */
+/*                                                                            */
+unsigned char *libpbc_update_lastts(pbc_cookie_data *cookie_data, md_context_plus *ctx_plus, crypt_stuff *c_stuff)
 {
-    pbc_cookie_data	*cookie_data;
-    unsigned char	*sig;
     unsigned char	*cookie_string;
+    unsigned char	*cookie;
 
-    if ( strlen(cookie) < (PBC_SIG_LEN) ) {
-	libpbc_debug("libpbc_unbundle_cookie: cookie %s too short\n", cookie);
-	return 0;
-    }
+    (*cookie_data).broken.last_ts = time(NULL);
+    cookie_string = libpbc_stringify_cookie_data(cookie_data);
+    cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
 
-    // decrypt cookie
-
-    /* break cookie in two */
-    sig = (unsigned char *)pbc_strndup(cookie, PBC_SIG_LEN);
-    cookie_string = (unsigned char *)pbc_strndup(cookie+PBC_SIG_LEN, strlen(cookie)-PBC_SIG_LEN+1);
-
-    cookie_data = libpbc_init_cookie_data();
-
-    if( (libpbc_verify_sig(sig, cookie_string, ctx_plus)) ) {
-        strcpy((*cookie_data).string, cookie_string);
-    }
-    else {
-        return cookie_string;
-    }
-
-    return cookie_string;
+    return cookie;
 
 }
     
