@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.58 2001-08-22 19:18:29 willey Exp $
+    $Id: mod_pubcookie.c,v 1.59 2001-08-24 01:17:38 willey Exp $
  */
 
 /* apache includes */
@@ -880,8 +880,10 @@ static void pubcookie_init(server_rec *s, pool *p) {
 #endif
 
     scfg->c_stuff = libpbc_init_crypt(fname);
-    if(scfg->c_stuff==0)
+    if(scfg->c_stuff==0) {
         ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read init crypt file '%s'",fname);
+	exit(1);
+    }
 
     /* read and init session public key */
 
@@ -894,8 +896,10 @@ static void pubcookie_init(server_rec *s, pool *p) {
 #endif
 
     scfg->session_verf_ctx_plus = libpbc_verify_init(fname);
-    if(scfg->session_verf_ctx_plus==0 )
+    if(scfg->session_verf_ctx_plus==0 ) {
         ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read session cert file '%s'",fname);
+	exit(1);
+    }
 
     /* read and init session private key */
 
@@ -908,8 +912,10 @@ static void pubcookie_init(server_rec *s, pool *p) {
 #endif
 
     scfg->session_sign_ctx_plus = libpbc_sign_init(fname);
-    if(scfg->session_sign_ctx_plus==0 )
+    if(scfg->session_sign_ctx_plus==0 ) {
       	ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read session crypt file '%s'",fname);
+	exit(1);
+    }
 
     /* read and init granting public key */
 
@@ -922,8 +928,10 @@ static void pubcookie_init(server_rec *s, pool *p) {
 #endif
 
     scfg->granting_verf_ctx_plus = libpbc_verify_init(fname);
-    if(scfg->granting_verf_ctx_plus==0 )
+    if(scfg->granting_verf_ctx_plus==0 ) {
         ap_log_error(APLOG_MARK,APLOG_EMERG,s,"cant read granting crypt file '%s'",fname);
+	exit(1);
+    }
 
 }
 
