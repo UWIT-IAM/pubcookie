@@ -1,6 +1,6 @@
 # -*- make -*-
 #
-#  $Id: Makefile.apxs,v 1.14 2002-06-07 21:15:41 jjminer Exp $
+#  $Id: Makefile.apxs,v 1.15 2002-06-26 20:59:23 willey Exp $
 
 include Makefile.settings
 
@@ -8,7 +8,6 @@ include Makefile.settings
 APXS=/usr/local/apache/bin/apxs
 
 # some mod_pubcookie compile flags
-#  -DAPACHE1_2 - for old apaches
 #  -DAPACHE1_3 - for to be old apaches
 #  -DAPACHE2 - for 2.x apaches
 #  -DPORT80_TEST - for non-ssl testing 

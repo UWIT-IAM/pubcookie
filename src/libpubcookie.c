@@ -18,10 +18,10 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.28 2002-06-26 13:58:00 greenfld Exp $
+    $Id: libpubcookie.c,v 2.29 2002-06-26 20:59:23 willey Exp $
  */
 
-#if defined (APACHE1_2) || defined (APACHE1_3)
+#if defined (APACHE1_3)
 #include "httpd.h"
 #include "http_config.h"
 #include "http_core.h"

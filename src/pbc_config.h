@@ -26,13 +26,13 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.56 2002-06-26 13:58:00 greenfld Exp $
+    $Id: pbc_config.h,v 1.57 2002-06-26 20:59:23 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
 #define PUBCOOKIE_CONFIG
 
-#if defined (APACHE1_2) || defined (APACHE1_3)
+#if defined (APACHE1_3)
 #define APACHE
 #endif
 
@@ -271,7 +271,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 /* p is the memory pool in apache */
 
-#if defined (APACHE1_2) || defined (APACHE1_3)
+#if defined (APACHE1_3)
 #define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) \
 		libpbc_gen_granting_req_p(p, a,b,c,d,e,f,g,h,i,j,k,l)
 #define libpbc_get_cookie(a,b,c,d,e,f,g,h) \
