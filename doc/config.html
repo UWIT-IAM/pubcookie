@@ -335,8 +335,18 @@ logout response msg for <i>appid</i> on <i>servername</i></td> </tr>
 </tr>
 
 <tr>
-<td>kerberos5_keytab</td><td> string</td><td> full path to the K5
-keytab file</td> </tr>
+ <td>kerberos5_keytab</td>
+ <td>string</td>
+ <td>Full path to the K5 keytab file that contains the service key. 
+  Default is "/etc/krb5.keytab".</td>
+</tr>
+
+<tr>
+ <td>kerberos5_service_name</td>
+ <td>string</td>
+ <td>Service name or "primary" used in the principal for
+  the service key. Default is "host".</td>
+</tr>
 
 <tr>
 <th colspan="3"><tt>ldap</tt> verifier options</th>

@@ -32,13 +32,14 @@ version of this document</a> is always the most up-to-date version.
 <li><a href="#templates">Login Page Templates</a></li>
 <li><a href="#ok_browsers">The "ok_browsers" File</a></li>
 <li><a href="#logout">Logout Configuration</a></li>
+<li><a href="#krb5">Kerberos 5 Verifier Configuration</a></li>
 <li><a href="#upgrading">Upgrading</a></li>  
 <li><a href="#advconfig">Advanced Configuration</a></li>
 <li><a href="#security">Security Considerations</a></li>
 <li><a href="#oldtools">Old Debugging Tools</a></li>
 </ul>
 
-<h4><a name="intro">Introduction</a></h2>
+<h4><a name="intro">Introduction</a></h4>
 
 <p>
 The Pubcookie login server has two primary functions: to authenticate
@@ -593,6 +594,51 @@ app_logout_string-webmail.example.edu-webmail: &lt;font size="+1"&gt;Webmail Log
 <p>Note: Since the login cgi reads the config file and its HTML templates on each request, 
 there's no need to recompile the login cgi in order to modify response text.</p>
 
+<h4><a name="krb5">Kerberos 5 Verifier Configuration</a></h4>
+
+<p>To build the login cgi with support for the Kerberos 5 verifier,
+run the configure script with the Kerberos option enabled:</p>
+
+<pre>
+./configure --enable-login --disable-apache --enable-krb5
+</pre>
+
+<p>If needed, the configure script has other options for adjusting the
+location of the Kerberos header files and libraries.</p>
+
+<p>To configure the login cgi to use the Kerberos verifier, edit your
+pubcookie config file and set <tt>basic_verifier</tt> to
+<tt>kerberos_v5</tt>. Additionally, two other <a href="config.html">config
+file variables</a> control the Kerberos 5 verifier:
+<tt>kerberos5_service_name</tt> and <tt>kerberos5_keytab</tt>. For 
+example:</p>
+
+<pre>
+# kerberos verifier config
+basic_verifier: kerberos_v5
+kerberos5_service_name: pubcookie
+kerberos5_keytab: /usr/local/pubcookie/keys/pubcookie.keytab
+</pre>
+
+<p>To authenticate responses from your Kerberos server, the login server and
+Kerberos server must share a service key. You can use an existing service key
+or generate a new one with the help of your Kerberos administrator. Keep in
+mind that the keytab file that contains your service key must be readable by
+the login cgi. Since the login cgi will most likely run as a non-root user,
+it's recommended that you use a service key other than the "host" service key
+typically stored in <tt>/etc/krb5.keytab</tt>.</p>
+
+<p>Similar to user keys, service keys have a principal of the form
+<tt>&lt;service_name&gt;/&lt;hostname&gt;@&lt;realm&gt;</tt>. The hostname is
+the fully qualified hostname for your login server, and the realm is the
+Kerberos realm. But the service name is what counts most to the Kerberos 5
+verifier. Your service name can be set with the
+<tt>kerberos5_service_name</tt> variable.</p>
+
+<p>Contact your local Kerberos domain administrator if you need help creating a
+service key, generating a keytab file, or otherwise configuring Kerberos
+(e.g. <tt>/etc/krb5.conf</tt>) on your login server.</p>
+
 <h4><a name="upgrading">Upgrading</a></h4>
 
 <h5>Upgrading from pre-3.0 pubcookie</h5>
@@ -712,7 +758,7 @@ Copyright 1999-2003, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.13 2003-06-25 16:55:33 dors Exp $
+$Id: install-login.html,v 1.14 2003-07-02 22:33:53 dors Exp $
 </pre>
 </body>
 
