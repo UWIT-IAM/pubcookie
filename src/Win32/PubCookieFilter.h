@@ -1,5 +1,5 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 2.9.1.1"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0-beta2"
 
 
 char Instance[3];
