@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.5 2000-01-27 22:18:53 willey Exp $
+    $Id: index.cgi.c,v 1.6 2000-06-15 00:09:48 willey Exp $
  */
 
 
@@ -279,16 +279,41 @@ void log_message(const char *format, ...)
 
 }
 
-/* send a message to pilot                                                    */
-void send_pilot_message(char *message) 
+void clear_error(const char *service, const char *message) 
+}
+
 {
 
-    /* pilot is no longer supported by ndc-sysmgt, so whatever */
+/* send a message to pilot                                                    */
+void send_pilot_message(int grade, const char *service, int self_clearing, char *message) 
+{
+
+    /* messages sent to pilot */
 
 }
 
 /* logs the message and forwards it on to pilot                               */
-void log_error(const char *format,...)
+/*                                                                            */
+/*   args: grade - same grades in pilot, 1 to 5, (5 is lowest)                */
+/*         service - a name to id the weblogin service (see note)             */
+/*         message - varg message                                             */
+/*         self-clearing - does it clear itself (1) or not (0)                */
+/*                                                                            */
+/*   the trick to services is that there needs to be a TRIGGER event          */
+/*      and then a CLEARING event.                                            */
+/*                                                                            */
+/* Service trigger/clear pairs (keep a log of messages here)                  */
+/*   uwnetid-err         uwnetid timeout / o.k. uwnet auth                    */
+/*   securid-err         securid timeout / o.k. securid auth                  */
+/*   abend               abend / not self-clearing                            */
+/*   system-problem      multiple / not self-clearing                         */
+/*   version             wrong major version / not self-clearing              */
+/*   misc                misc is misc        / not self-clearing              */
+/*   auth-kdc            auth_kdc code       / not self-clearing              */
+/*   auth-securid        auth securid code   / not self-clearing              */
+/*                                                                            */
+/*                                                                            */
+void log_error(int grade, const char *service, int self_clearing, const char *format,...)
 {
     va_list	args;
     char	new_format[PBC_4K];
@@ -298,7 +323,7 @@ void log_error(const char *format,...)
     snprintf(new_format, sizeof(new_format), "%s: %s", SYSERR_LOGINSRV_MESSAGE, format);
     vsnprintf(message, sizeof(message), new_format, args);
     log_message(message);
-    send_pilot_message(message);
+    send_pilot_message(grade, service, self_clearing, message);
     va_end(args);
 
 }
@@ -308,7 +333,7 @@ void log_error(const char *format,...)
 void abend(char *message) 
 {
 
-    log_error(message);
+    log_error(1, "abend", 0, message);
     notok(notok_generic);
     exit(0);
 
@@ -347,7 +372,7 @@ char *get_my_hostname()
     struct utsname	myname;
 
     if ( uname(&myname) < 0 )
-        log_error("problem doing uname lookup");
+        log_error(2, "system-problem", 0, "problem doing uname lookup");
 
     return(strdup(myname.nodename));
 
@@ -515,7 +540,6 @@ int cgiMain()
                     AUTH_FAILED_MESSAGE2);
             }
             else {
-                log_error("Login problem: %s", res);
                 snprintf(message, sizeof(message), "%s%s%s<P>",
                     PBC_EM1_START,
                     AUTH_TROUBLE,
@@ -631,19 +655,27 @@ char *check_login_uwnetid(char *user, char *pass)
     fprintf(stderr, "check_login_uwnetid: hello\n");
 #endif 
 
-    if( auth_kdc(user, pass) == OK )
+    if( auth_kdc(user, pass) == OK ) {
+        clear_error("uwnetid-fail", "securid auth ok");
         return(CHECK_LOGIN_RET_SUCCESS);
-    else
+    }
+    else {
+        log_error(2, "uwnetid-err", 1, "problem doing uwnetid auth"
         return(CHECK_LOGIN_RET_FAIL);
+    }
 
 }
 
 char *check_login_securid(char *user, char *sid, login_rec *l)
 {
-    if( auth_securid(user, sid, l) == OK )
+    if( auth_securid(user, sid, l) == OK ) {
+        clear_error("securid-fail", "uwnetid auth ok");
         return(CHECK_LOGIN_RET_SUCCESS);
-    else
+    }
+    else {
+        log_error(2, "securid-err", 1, "problem doing securid auth"
         return(CHECK_LOGIN_RET_FAIL);
+    }
 
 }
 
@@ -722,7 +754,7 @@ char *check_l_cookie(login_rec *l)
 
     /* look at what we got back from the cookie */
     if( ! lc->user ) {
-        log_error("no user from login cookie? user from g_req: %s", l->user);
+        log_error(5, "system-problem", 0, "no user from L cookie? user from g_req: %s", l->user);
         return "malformed";
     }
 
@@ -739,27 +771,23 @@ char *check_l_cookie(login_rec *l)
     if( lc->creds != l->creds ) {
         if( l->creds == PBC_CREDS_UWNETID ) {
             if( lc->creds != PBC_CREDS_UWNETID_SECURID ) {
-                log_error("wrong_creds: from login cookie: %s from request: %s",
-			lc->creds, l->creds);
+                log_message("wrong_creds: from login cookie: %s from request: %s", lc->creds, l->creds);
                 return("wrong_creds");
             }
         }
         else {
-            log_error("wrong_creds: from login cookie: %s from request: %s", 
-			lc->creds, l->creds);
+            log_message("wrong_creds: from login cookie: %s from request: %s", lc->creds, l->creds);
             return("wrong_creds");
         }
     }
 
     l_version = lc->version; g_version = l->version;
     if( *l_version != *g_version ) {
-        log_error("wrong major version: from l cookie %s, from g_req %s for host %s", 
-			l_version, g_version, l->host);
+        log_error(5, "version", 0, "wrong major version: from L cookie %s, from g_req %s for host %s", l_version, g_version, l->host);
         return("wrong major version");
     }
     if( *(l_version+1) != *(g_version+1) ) {
-        log_error("warn: wrong minor version: from l cookie %s, from g_req %s for host %s", 
-			l_version, g_version, l->host);
+        log_message("warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l_version, g_version, l->host);
     }
 
     l->user = lc->user;
@@ -1070,7 +1098,7 @@ int check_user_agent()
     FILE	*ifp;
 
     if ( !(ifp = fopen(OK_BROWSERS_FILE, "r")) ) {
-        log_error("can't open ok browsers file: %s, continuing", OK_BROWSERS_FILE);
+        log_error(2, "system-problem", 0, "can't open ok browsers file: %s, continuing", OK_BROWSERS_FILE);
         return(0);
     }
 
@@ -1156,8 +1184,7 @@ fprintf(stderr, "in print_redirect_page got cookies\n");
          	PBC_EM2_END);
           print_login_page(message, "cookie create failed", l->creds, 
 		NO_CLEAR_LOGIN);
-          log_error("Not able to create cookie for user %s at %s-%s", l->user, 
-		l->appsrvid, l->appid);
+          log_error(1, "system-problem", 0, "Not able to create cookie for user %s at %s-%s", l->user, l->appsrvid, l->appid);
           free(message);
           return;
     }
@@ -1215,7 +1242,7 @@ fprintf(stderr, "and they are: %s\n", args_enc);
         /* make them available to subsequent cgic calls */
         if( cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
                    != cgiParseSuccess ) {
-            log_error("couldn't parse the decoded granting request cookie");
+            log_error(5, "misc", "couldn't parse the decoded granting request cookie");
             notok(notok_generic);
             exit(0);
         }
@@ -1320,7 +1347,7 @@ login_rec *get_query()
     }
     else {
         if( !(g_req = get_granting_request()) ) {
-            log_error("no granting request cookie");
+            log_message("no granting request cookie");
             notok(notok_generic);
             return(NULL);
         }
@@ -1331,7 +1358,7 @@ fprintf(stderr, "this is the decoded greg %s\n", g_req_clear);
 
         if( cgiParseFormInput(g_req_clear, strlen(g_req_clear)) 
                    != cgiParseSuccess ) {
-            log_error("couldn't parse the decoded granting request cookie");
+            log_error(5, "misc", 0, "couldn't parse the decoded granting request cookie");
             notok(notok_generic);
             return(NULL);
         }
@@ -1488,26 +1515,26 @@ char *client_name;
 
     code = krb5_init_context(&kcontext);
     if(code) {
-        log_error("auth_kdc: %s while initializing krb5\n", 
+        log_error(2, "auth-kdc", 1, "auth_kdc: %s while initializing krb5\n", 
 			error_message(code));
 	abend("can't init krb5 context");
     }
 
     if((code = krb5_timeofday(kcontext, &now))) {
-	log_error("auth_kdc: %s while getting time of day\n", 
+	log_error(2, "auth-kdc", 1, "auth_kdc: %s while getting time of day\n", 
 			error_message(code));
 	abend("can't get the time of day");
     }
 
     /* just use the name we give you and default domain */
     if ((code = krb5_parse_name (kcontext, username, &me))) {
-	 log_error("auth_kdc: ABEND %s when parsing name %s\n", 
+	 log_error(2, "auth-kdc", 1, "auth_kdc: ABEND %s when parsing name %s\n", 
 			error_message(code), username);
 	 abend("krb5 can't parse username");
     }
     
     if ((code = krb5_unparse_name(kcontext, me, &client_name))) {
-	log_error("auth_kdc: %s when unparsing name\n", 
+	log_error(2, "auth-kdc", 1, "auth_kdc: %s when unparsing name\n", 
 			error_message(code));
 	abend("misc. krb5 problem");
     }
@@ -1525,7 +1552,7 @@ char *client_name;
                         krb5_princ_realm(kcontext, me)->length,
                         krb5_princ_realm(kcontext, me)->data,
                         0))) {
-	log_error("auth_kdc: %s while building kserver name\n", 
+	log_error(2, "auth-kdc", 1, "auth_kdc: %s while building kserver name\n", 
 			error_message(code));
 	return(FAIL);
     }
@@ -1559,6 +1586,8 @@ char *client_name;
 
     krb5_free_context(kcontext);
     
+    clear_error("auth-kdc", "auth_kdc ok");
+
     return(ret);
 
 }
