@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.62 2004-11-23 22:09:43 fox Exp $
+# $Id: Makefile.in,v 1.63 2004-12-04 18:19:34 dors Exp $
 
 @SET_MAKE@
 
@@ -182,6 +182,7 @@ MOD_SRC=$(srcdir)/src/mod_pubcookie.c \
         $(srcdir)/src/pbc_apacheconfig.c
 
 MOD_HEAD=$(srcdir)/src/mod_pubcookie.h \
+		 $(srcdir)/src/html.h \
 		 $(srcdir)/src/pbc_apacheconfig.h
 
 LIB_TESTS=base64 pbc_myconfig myconf
