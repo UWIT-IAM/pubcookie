@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.43 $)
+AC_REVISION($Revision: 1.44 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -89,11 +89,11 @@ AC_AIX
 AC_CANONICAL_HOST
 APXS_LDFLAGS=
 
-if test "$GCC" != "yes"; then
-
 case $host in
     *aix*)
 # Check for IBM xlc compiler.
+
+if test "$GCC" != "yes"; then
 
 AC_MSG_CHECKING([for IBM xlc Compiler])
 AC_TRY_RUN( [ 
@@ -116,10 +116,15 @@ AC_TRY_RUN( [
     [ AC_MSG_RESULT([no])
     ]
 )
+
+fi
+
 aix_system=yes
     ;;
     *sun*)
 # Check to see if this is the Sun Workshop compiler.
+
+if test "$GCC" != "yes"; then
 
 AC_MSG_CHECKING([for Sun Workshop Compiler])
 AC_TRY_RUN( [ 
@@ -141,10 +146,14 @@ AC_TRY_RUN( [
     [ AC_MSG_RESULT([no])
     ]
 )
+
+fi
     ;;
 esac
 
-fi
+if test "$aix_system" != "yes"; then
+    AC_SUBST( IF_AIX, [#] )
+fi;
 
 AC_SUBST(APXS_LDFLAGS, "$APXS_LDFLAGS")
 
@@ -192,9 +201,9 @@ fi
 if test "$aix_system" = "yes" && \
    test "x$GMAKE" = "x" && \
    test "$gnu_make" = "no"; then
-    AC_SUBST( AIX_MAKE, "" )
+    AC_SUBST( IF_AIX_MAKE, "" )
 else
-    AC_SUBST( AIX_MAKE, [#] )
+    AC_SUBST( IF_AIX_MAKE, [#] )
 fi
 
 if test "$enable_apache" = "yes"; then
@@ -272,6 +281,15 @@ AC_ARG_WITH(apxs,
     ]
   )
   CFLAGS=$OCFLAGS
+
+  AC_MSG_CHECKING( [if we are upgrading mod_pubcookie] )
+  if test -f `$APXS -q LIBEXECDIR`"/mod_pubcookie.so"; then
+      AC_MSG_RESULT([yes])
+      AC_SUBST( IF_MODULE_UPGRADE, "" )
+  else
+      AC_MSG_RESULT([no])
+      AC_SUBST( IF_MODULE_UPGRADE, [#] )
+  fi
 
 fi # If they disabled apache, don't look for apxs.
 

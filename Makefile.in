@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.42 2003-06-04 01:54:18 jjminer Exp $
+# $Id: Makefile.in,v 1.43 2003-06-10 17:21:34 jjminer Exp $
 
 @SET_MAKE@
 
@@ -236,14 +236,14 @@ VERSION = `echo @PACKAGE_VERSION@ | $(SED) "s/ /-/g" `
 BASENAME = @PACKAGE_TARNAME@
 DISTNAME = $(BASENAME)-$(VERSION)
 
-.PHONY: all clean install dist login_server apache_module ver
+.PHONY: all clean install dist login_server apache_module ver aix_warning
 
-all: $(builddir)/Makefile @login_server@ @apache_module@ keyclient
+all: $(builddir)/Makefile @login_server@ keyclient @apache_module@
 
 # Damned broken make on AIX..
 
-@AIX_MAKE@.c.o:
-@AIX_MAKE@	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+@IF_AIX_MAKE@.c.o:
+@IF_AIX_MAKE@	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(srcdir)/aclocal.m4
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
@@ -439,7 +439,16 @@ distclean:: clean
 
 APACHE_DEFINES= -DAPACHE1_3
 
-apache_module: a_ver mod_pubcookie.so
+apache_module: a_ver mod_pubcookie.so aix_warning 
+
+aix_warning:
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo "NOTE:"
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo "AIX keeps shared libraries in memory.  In order to for"
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo "\"make install\" to function, you need to do one of two things:"
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo "   1) Manually rm "`$(APXS) -q LIBEXECDIR`"/mod_pubcookie.so"
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo "   2) Stop Apache and run slibclean as root"
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo
+@IF_AIX@@IF_MODULE_UPGRADE@	@echo "Sorry for the inconvenience."
 
 a_ver:
 	@echo Making $(DISTNAME) apache module;
