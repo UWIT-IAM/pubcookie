@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.74 2002-03-26 01:14:21 willey Exp $
+    $Id: mod_pubcookie.c,v 1.75 2002-04-16 18:20:32 willey Exp $
  */
 
 /* apache includes */
@@ -1297,6 +1297,7 @@ static int pubcookie_user(request_rec *r) {
   pubcookie_dir_rec *cfg;
   pubcookie_server_rec *scfg;
   char *cookie;
+  char *isssl = NULL;
   pbc_cookie_data     *cookie_data;
   pool *p = r->pool;
   char *sess_cookie_name;
@@ -1354,6 +1355,17 @@ static int pubcookie_user(request_rec *r) {
 
   sess_cookie_name = make_session_cookie_name(p, appid(r));
 
+  /* force SSL */
+  if (ap_hook_call("ap::mod_ssl::var_lookup", &isssl, p, r->server, 
+                 r->connection, r, "HTTPS") && isssl && strcmp (isssl, "on")) {
+    if( cfg->super_debug )
+      libpbc_debug("pubcookie_user: Not SSL; uri: %s appid: %s\n", 
+                   r->uri, appid(r));
+      cfg->failed = PBC_BAD_AUTH;
+      cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
+      return OK;
+  }
+
   /* check if the granting cookie's appid matches.  if not, then act as
      if we don't have one.  This helps if there are any old g cookies */
   cookie_data = NULL;
@@ -1373,7 +1385,7 @@ static int pubcookie_user(request_rec *r) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
 
       if( cfg->super_debug )
-        libpbc_debug("pubcookie_user: No G or S cookie; uri: %s appid: %s cookie_data->broken.appid: %s sess_cookie_name: %s\n", r->uri, appid(r), ((NULL != NULL) ? cookie_data->broken.appid : (unsigned char *)"Null"), sess_cookie_name);
+        libpbc_debug("pubcookie_user: No G or S cookie; uri: %s appid: %s sess_cookie_name: %s\n", r->uri, appid(r), sess_cookie_name);
       cfg->failed = PBC_BAD_AUTH;
       cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
       return OK;
