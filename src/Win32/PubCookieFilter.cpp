@@ -805,7 +805,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	Read_Reg_Values (key, dcfg);
 
 
-	// Then Use application settings
+	// Then first node (current appid)
 
 	strcpy (key, PUBKEY);
 	strcat (key, dcfg->appid);
@@ -837,18 +837,20 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			if ( stricmp((const char *)szBuff, PBC_NETID_NAME) == 0 ) {
 				dcfg->AuthType = AUTH_NETID;
 				dcfg->legacy = true;
+				DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 			}
 			else if ( stricmp((const char *)szBuff, PBC_SECURID_NAME) == 0 ) {
 				dcfg->AuthType = AUTH_SECURID;
 				dcfg->legacy = true;
+				DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 			}
 			else if ( stricmp((const char *)szBuff, PBC_PUBLIC_NAME) == 0 ) {
 				dcfg->AuthType = AUTH_NONE;
 				dcfg->Set_Server_Values = true;
 				dcfg->legacy = true;
+				DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 			}
 			
-			DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 		}
 
 		strcat (key, "\\");
@@ -857,6 +859,12 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		Read_Reg_Values (key, dcfg);
 
 	}
+
+#ifndef COOKIE_PATH
+	// Convert appid to lower case
+	strlwr(dcfg->appid);
+#endif
+
 
 	DebugMsg((DEST,"  Values for: %s\n" ,key));
 	DebugMsg((DEST,"    AppId            : %s\n" ,dcfg->appid));
@@ -990,18 +998,11 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		strcpy((char *)dcfg->appid, pachUrl);
 	}
 
-	DebugMsg((DEST,"  appid        : %s\n",dcfg->appid));
-
 	// Save Path unchanged so cookies will be returned properly
 	// strcpy(dcfg->path_id,dcfg->appid);
 
 	// Get userid, timeouts, AuthType, etc for this app.  Could change appid.
 	Get_Effective_Values(pFC,pHeaderInfo,ptr);
-
-#ifndef COOKIE_PATH
-	// Convert appid to lower case
-	strlwr(dcfg->appid);
-#endif
 
     /* Log out if indicated */
 
