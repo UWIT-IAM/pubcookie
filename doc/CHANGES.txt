@@ -1,5 +1,17 @@
 Changes with 3.1.1:
 
+*) Fixed redirect back to apps that had sent POST arguments. 
+
+*) Fixed login server crash when the granting key is unreadable. A missing
+   or unreadable granting key is now a critical failure.
+
+*) Added form_expire_time variable to make the login form expiry
+   configurable. Default is 60 seconds.
+
+*) Added missing APR_CREATE mode in mod_pubcookie for Apache 2 when 
+   creating file for delegated Kerberos service tickets. Bug reported by
+   Marlow at Sandia National Laboratories. 
+
 *) Added relay_login_uri variable to allow relay to work on same system as
    login server. If it's missing the relay will fall back to the login_uri
    as before. 
