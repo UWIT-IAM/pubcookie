@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.159 2004-11-05 02:25:11 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.160 2004-11-18 23:34:59 fox Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -1476,6 +1476,7 @@ static int pubcookie_user_hook(request_rec *r)
     }
     else if( check_end_session(r) & PBC_END_SESSION_ANY ) { 
       clear_session_cookie(r);
+      r->USER = "";  /* rest of apache needs a user if there's an authtype */
     }
     else if( cfg->inact_exp > 0 || first_time_in_session ) {
       if ((!first_time_in_session) && (!rr->cookie_data)) {
