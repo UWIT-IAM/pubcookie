@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.39 2001-10-18 21:35:37 willey Exp $
+    $Id: pbc_config.h,v 1.40 2001-11-10 01:44:09 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -98,6 +98,8 @@
 
 #define PBC_OK   1
 #define PBC_FAIL 0
+#define PBC_TRUE   1
+#define PBC_FALSE  0
 
 /* the cookies; l, g, and s have the same format g request and pre s
    are different internally
