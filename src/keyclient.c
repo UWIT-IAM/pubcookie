@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.10 2002-06-27 22:51:42 jjminer Exp $
+    $Id: keyclient.c,v 2.11 2002-06-27 23:33:46 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -103,8 +103,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    libpbc_augment_rand_state(buf, 50);
-
     newkeyp = 1;
     while ((c = getopt(argc, argv, "apc:k:C:D:nudh:L:")) != -1) {
         switch (c) {
@@ -152,7 +150,8 @@ int main(int argc, char *argv[])
                 break;
 
             case 'h':
-                strlcpy(hostname, optarg, sizeof hostname);
+                free(hostname);
+                hostname = strdup(optarg);
                 break;
 
             case 'L':
@@ -287,7 +286,6 @@ int main(int argc, char *argv[])
     /* make the HTTP query */
     if (newkeyp == -1) {
         char enckey[PBC_DES_KEY_BUF * 2];
-
         if (libpbc_get_crypt_key(&c_stuff, hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
             exit(1);
@@ -360,19 +358,23 @@ int main(int argc, char *argv[])
                 if (noop) {
                     printf("would have set key to '%s'\n", p);
                 } else {
-                    int osize;
+		    int osize = 0;
                     int ret;
+                    if (strchr(p, '\r')) {
+                        /* chomp new line */
+                        *strchr(p, '\r') = '\0';
+                    }
                     ret = libpbc_base64_decode( (unsigned char *) p, thekey, &osize);
+		    if (osize != PBC_DES_KEY_BUF) {
+                        fprintf(stderr, "keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
+                        exit(1);
+                    }
 
                     if (! ret) {
                         fprintf( stderr, "Bad base64 decode.\n" );
                         exit(1);
                     }
 
-                    if (osize != PBC_DES_KEY_BUF) {
-                        fprintf(stderr, "keyserver returned wrong key size\n");
-                        exit(1);
-                    }
                     if (libpbc_set_crypt_key( (const char *) thekey, hostname) != PBC_OK) {
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
