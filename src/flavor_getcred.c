@@ -1,3 +1,28 @@
+/*
+
+    Copyright 1999-2002, University of Washington.  All rights reserved.
+    see doc/LICENSE.txt for copyright information
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More information: http://www.pubcookie.org/
+    Written by the Pubcookie Team
+
+    this is the experimental 3-tier flavor, which calls flavor_basic
+    for the basic authentication and then can use the verifiers to
+    derive credentials for the application, if supported and allowed
+    by policy.
+
+ */
+
+/*
+    $Id: flavor_getcred.c,v 1.8 2002-08-20 20:31:18 greenfld Exp $
+ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

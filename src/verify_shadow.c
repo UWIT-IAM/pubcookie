@@ -1,7 +1,29 @@
+/*
+
+    Copyright 1999-2002, University of Washington.  All rights reserved.
+    see doc/LICENSE.txt for copyright information
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More information: http://www.pubcookie.org/
+    Written by the Pubcookie Team
+
+    the shadow_verifier verifies a username and password 
+    against /etc/shadow.  sadly, it must be able to read
+    /etc/shadow.  
+
+ */
+
+/*
+    $Id: verify_shadow.c,v 1.7 2002-08-20 20:31:18 greenfld Exp $
+ */
+
 /**
- *  the shadow_verifier verifies a username and password 
- *  against /etc/shadow.  sadly, it must be able to read
- *  /etc/shadow.  
  *
  *  @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  */

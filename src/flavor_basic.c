@@ -1,8 +1,30 @@
-/* the basic flavor of logins.
-   expect a username and a password and checks against one of the defined
-   verifiers (see 'struct verifier' and verify_*.c for possible verifiers).
+/*
 
-   does not support multiple realms but requires the name of the local realm
+    Copyright 1999-2002, University of Washington.  All rights reserved.
+    see doc/LICENSE.txt for copyright information
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More information: http://www.pubcookie.org/
+    Written by the Pubcookie Team
+
+    the basic flavor of logins.  expect a username and a password and
+    checks against one of the defined verifiers (see 'struct verifier'
+    and verify_*.c for possible verifiers).
+    
+    will pass l->realm to the verifier and append it to the username when
+    'append_realm' is set
+
+ */
+
+/*
+    $Id: flavor_basic.c,v 1.22 2002-08-20 20:31:18 greenfld Exp $
+ */
  */
 
 #ifdef HAVE_CONFIG_H
