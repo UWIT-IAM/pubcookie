@@ -32,6 +32,7 @@ within <tt>&lt;IfDefine HAVE_SSL&gt;</tt>, you will need to put any
 <li><a href="#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a></li>
 <li><a href="#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a></li>
 <li><a href="#PubcookieAddlRequest">PubcookieAddlRequest</a></li>
+<li><a href="#PubcookieEgdDevice">PubcookieEgdDevice</a></li>
 <li><a href="#PubcookieSuperDebug">PubcookieSuperDebug</a></li>
 </ul>
 
@@ -362,6 +363,18 @@ responses from the login server and how these responses are
 returned. Eventually, there will be a standardized mechanism for
 returning answers. Likely they will be returned in extensions to the
 granting response and set as environment variables.</p>
+
+<h3><a name="PubcookieEgdDevice">PubcookieEgdDevice directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieEgdDevice <i>location</i><br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
+3.0 and higher and Apache 1.3 and later.</p>
+
+<p>Location of EGD socket (e.g. /dev/egd-pool).</p>
 
 <h3><a name="PubcookieSuperDebug">PubcookieSuperDebug directive</a></h3>
 
