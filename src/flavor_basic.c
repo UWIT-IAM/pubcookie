@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.72 2005-02-24 00:25:19 willey Exp $
+ * $Id: flavor_basic.c,v 1.73 2005-02-24 00:46:05 willey Exp $
  */
 
 
@@ -233,15 +233,15 @@ char *flb_get_hidden_user_field (pool * p, login_rec * l, login_rec * c,
 
 
 /**
- * get_custom_login_msg get custom login message if there is such
+ * flb_get_custom_login_msg get custom login message if there is such
  * @param p apache memory pool
  * @param appid application id
  * @param appsrvid application server id
  * @param mout output string
  * @return PBC_OK if ok or PBC_FAIL if a problem
  */
-int get_custom_login_msg (pool * p, const char *appid,
-                          const char *appsrvid, char **mout)
+int flb_get_custom_login_msg (pool * p, const char *appid,
+                              const char *appsrvid, char **mout)
 {
     char *new, *ptr, *filename;
     const char *s;
@@ -252,7 +252,7 @@ int get_custom_login_msg (pool * p, const char *appid,
     const char *cust_login_prefix = libpbc_config_getstring (p,
                                                              "custom_login_file_prefix",
                                                              CUSTOM_LOGIN_MSG);
-    const char func[] = "get_custom_login_msg";
+    const char func[] = "flb_get_custom_login_msg";
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "%s: hello appid: %s appsrvid: %s", func, appid,
@@ -292,14 +292,14 @@ int get_custom_login_msg (pool * p, const char *appid,
 
 }
 
-int get_reason_html (pool * p, int reason, login_rec * l, login_rec * c,
-                     char **out)
+int flb_get_reason_html (pool * p, int reason, login_rec * l,
+                         login_rec * c, char **out)
 {
     char *tag = NULL;
     char *subst = NULL;
     const char *reasonpage = NULL;
     int ret = PBC_FAIL;
-    char func[] = "get_reason_html";
+    char func[] = "flb_get_reason_html";
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello reason: %d",
                       func, reason);
@@ -423,9 +423,9 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
      */
     if (reason == FLB_REAUTH || reason == FLB_CACHE_CREDS_WRONG ||
         reason == FLB_LCOOKIE_EXPIRED || reason == FLB_LCOOKIE_ERROR)
-        if ((ret = get_custom_login_msg (p, l->appid,
-                                         l->appsrvid,
-                                         &login_msg)) == PBC_FAIL)
+        if ((ret = flb_get_custom_login_msg (p, l->appid,
+                                             l->appsrvid,
+                                             &login_msg)) == PBC_FAIL)
             goto done;
 
     /* if there is no custom login message go get the reason text 
@@ -434,7 +434,8 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
      */
     if (login_msg == NULL || reason == FLB_LCOOKIE_EXPIRED)
         if ((ret =
-             get_reason_html (p, reason, l, c, &reason_msg)) == PBC_FAIL)
+             flb_get_reason_html (p, reason, l, c,
+                                  &reason_msg)) == PBC_FAIL)
             goto done;
 
     while (hidden_needed_len > hidden_len) {

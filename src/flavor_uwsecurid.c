@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.12 2005-02-07 22:26:37 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.13 2005-02-24 00:46:05 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -211,6 +211,65 @@ char *flus_get_reason (pool * p, const char *reasonpage)
                       "flus_get_reason: goodbye");
 
     return reasonhtml;
+}
+
+/**
+ * flus_get_custom_login_msg get custom login message if there is such
+ * @param p apache memory pool
+ * @param appid application id
+ * @param appsrvid application server id
+ * @param mout output string
+ * @return PBC_OK if ok or PBC_FAIL if a problem
+ */
+int flus_get_custom_login_msg (pool * p, const char *appid,
+                               const char *appsrvid, char **mout)
+{
+    char *new, *ptr, *filename;
+    const char *s;
+    int len;
+    const char *template_dir = libpbc_config_getstring (p,
+                                                        "custom_login_message_dir",
+                                                        TMPL_FNAME);
+    const char *cust_login_prefix = libpbc_config_getstring (p,
+                                                             "custom_login_file_prefix",
+                                                             CUSTOM_LOGIN_MSG);
+    const char func[] = "flus_get_custom_login_msg";
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                      "%s: hello appid: %s appsrvid: %s", func, appid,
+                      appsrvid);
+
+    len =
+        strlen (appid) + strlen (appsrvid) + strlen (cust_login_prefix) +
+        3;
+    filename = calloc (len, sizeof (char));
+    snprintf (filename, len, "%s%c%s%c%s", cust_login_prefix,
+              APP_LOGOUT_STR_SEP, (appsrvid == NULL ? "" : appsrvid),
+              APP_LOGOUT_STR_SEP, (appid == NULL ? "" : appid));
+
+    /* clean non compliant chars from string */
+    ptr = new = filename;
+    while (*ptr) {
+        if (isalnum ((int) *ptr) || *ptr == '-' || *ptr == '_'
+            || *ptr == '.') {
+            *new++ = *ptr;
+        }
+        ptr++;
+    }
+    *new = '\0';
+
+    if (ntmpl_tmpl_exist (p, template_dir, filename))
+        *mout = ntmpl_sub_template (p, template_dir, filename, NULL);
+
+    if (filename != NULL)
+        free (filename);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                      "%s: bye message mout: %s ", func,
+                      *mout == NULL ? "(null)" : *mout);
+
+    return (PBC_OK);
+
 }
 
 /* for some n seconds after authenticating we don't ask the user to */
@@ -461,60 +520,23 @@ char *flus_get_hidden_user_field (pool * p, login_rec * l, login_rec * c,
 
 }
 
-static void print_login_page (pool * p, login_rec * l, login_rec * c,
-                              int reason)
+int flus_get_reason_html (pool * p, int reason, login_rec * l,
+                          login_rec * c, char **out)
 {
-    /* currently, we never clear the login cookie
-       we always clear the greq cookie */
-    int need_clear_login = 0;
-    int need_clear_greq = 1;
-    char message_out[1024];
+    char *tag = NULL;
+    char *subst = NULL;
     const char *reasonpage = NULL;
+    int ret = PBC_FAIL;
+    char func[] = "flus_get_reason_html";
 
-    char *hidden_fields = NULL;
-    int hidden_len = 0;
-    int hidden_needed_len = INIT_HIDDEN_SIZE;
-    char *getcred_hidden = NULL;
-
-    char *reason_html = NULL;
-    char *static_config = NULL;
-    char now[64];
-
-    char *user_field = NULL;
-    char *pass_field = NULL;
-    char *hidden_user = NULL;
-    char func[] = "print_login_page";
-
-    int ldur, ldurp;
-    char ldurtxt[64], *ldurtyp;
-
-
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello, reason: %d",
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello reason: %d",
                       func, reason);
-
-    /* set the cookies */
-    if (need_clear_login) {
-        print_header (p,
-                      "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
-                      PBC_L_COOKIENAME, PBC_CLEAR_COOKIE, PBC_LOGIN_HOST,
-                      LOGIN_DIR, EARLIEST_EVER);
-    }
-
-    if (need_clear_greq) {
-        add_app_cookie (PBC_G_REQ_COOKIENAME, PBC_CLEAR_COOKIE, NULL);
-    }
-
-    /* get the config about whether to use static user fields */
-    static_config =
-        (char *) libpbc_config_getstring (p, "static_user_field",
-                                          STATIC_USER_FIELD_KIND);
 
     switch (reason) {
     case FLUS_BAD_AUTH:
         /* username will be static and prefilled use a different bad
            auth message, one without comments about the username */
-        if (c != NULL && c->user != NULL &&
-            strcmp (static_config, STATIC_USER_FIELD_NEVER) != 0)
+        if (c != NULL && c->user != NULL)
             reasonpage = libpbc_config_getstring (p,
                                                   "tmpl_login_bad_auth_uwsecurid_static_user",
                                                   "login_bad_auth_uwsecurid_static_user");
@@ -558,7 +580,90 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
     }
 
     /* Get the HTML for the error reason */
-    reason_html = flus_get_reason (p, reasonpage);
+    *out =
+        ntmpl_sub_template (p, TMPL_FNAME, reasonpage, tag, subst, NULL);
+    if (*out == NULL)
+        ret = PBC_FAIL;
+    else
+        ret = PBC_OK;
+
+    if (tag != NULL)
+        pbc_free (p, tag);
+    if (subst != NULL)
+        pbc_free (p, subst);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: bye return: %d",
+                      func, reason);
+
+    return (ret);
+
+}
+
+static void print_login_page (pool * p, login_rec * l, login_rec * c,
+                              int reason)
+{
+    /* currently, we never clear the login cookie
+       we always clear the greq cookie */
+    int need_clear_login = 0;
+    int need_clear_greq = 1;
+    char message_out[1024];
+    const char *reasonpage = NULL;
+
+    char *hidden_fields = NULL;
+    int hidden_len = 0;
+    int hidden_needed_len = INIT_HIDDEN_SIZE;
+    char *getcred_hidden = NULL;
+    char now[64];
+    char *user_field = NULL;
+    char *pass_field = NULL;
+    char *hidden_user = NULL;
+    char func[] = "print_login_page";
+    char *login_msg = NULL;
+    char *reason_msg = NULL;
+    int ret = PBC_FAIL;
+
+    int ldur, ldurp;
+    char ldurtxt[64], *ldurtyp;
+
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello, reason: %d",
+                      func, reason);
+
+    /* set the cookies */
+    if (need_clear_login) {
+        print_header (p,
+                      "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+                      PBC_L_COOKIENAME, PBC_CLEAR_COOKIE, PBC_LOGIN_HOST,
+                      LOGIN_DIR, EARLIEST_EVER);
+    }
+
+    if (need_clear_greq) {
+        add_app_cookie (PBC_G_REQ_COOKIENAME, PBC_CLEAR_COOKIE, NULL);
+    }
+
+    /* if there is a custom login message AND the reason for logging-in is:
+       reauth, wrong creds (flavours), expired login cookie, or
+       login cookie error.  The later case is the catch-all and included
+       inital visits when the user doesn't hav a login cookie
+       else
+       use the traditional reason text
+     */
+    if (reason == FLUS_REAUTH || reason == FLUS_CACHE_CREDS_WRONG ||
+        reason == FLUS_LCOOKIE_EXPIRED || reason == FLUS_LCOOKIE_ERROR)
+        if ((ret = flus_get_custom_login_msg (p, l->appid,
+                                              l->appsrvid,
+                                              &login_msg)) == PBC_FAIL)
+            goto done;
+
+    /* if there is no custom login message go get the reason text
+       in the case of expired login messages we use both the
+       the custom message (itis) and the lcookie expired message
+     */
+    if (login_msg == NULL || reason == FLUS_LCOOKIE_EXPIRED)
+        if ((ret =
+             flus_get_reason_html (p, reason, l, c,
+                                   &reason_msg)) == PBC_FAIL)
+            goto done;
 
     while (hidden_needed_len > hidden_len) {
 
@@ -673,18 +778,22 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p, "tmpl_login_uwsecurid",
                                                "login_uwsecurid"),
-                      "loginuri", PBC_LOGIN_URI, "message",
-                      reason_html != NULL ? reason_html : "", "curtime",
-                      now, "hiddenuser",
-                      hidden_user != NULL ? hidden_user : "",
-                      "hiddenfields", hidden_fields, "user_field",
-                      user_field != NULL ? user_field : "", "pass_field",
-                      pass_field != NULL ? pass_field : "", "durationtext",
-                      ldurtxt, "version", PBC_VERSION_STRING, NULL);
+                      "loginuri", PBC_LOGIN_URI,
+                      "message", login_msg != NULL ? login_msg : "",
+                      "reason", reason_msg != NULL ? reason_msg : "",
+                      "curtime", now,
+                      "hiddenuser", hidden_user != NULL ? hidden_user : "",
+                      "hiddenfields", hidden_fields,
+                      "user_field", user_field != NULL ? user_field : "",
+                      "pass_field", pass_field != NULL ? pass_field : "",
+                      "durationtext", ldurtxt,
+                      "version", PBC_VERSION_STRING, NULL);
 
     /* this tags the incoming request as a form reply */
 
     print_html (p, "\n");
+
+  done:
 
     if (user_field != NULL)
         free (user_field);
@@ -695,8 +804,8 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
     if (hidden_user != NULL)
         free (hidden_user);
 
-    if (reason_html != NULL)
-        free (reason_html);
+    if (login_msg != NULL)
+        free (login_msg);
 
     if (hidden_fields != NULL)
         free (hidden_fields);
