@@ -8,10 +8,17 @@ H - only .h files changed
 O - other (Makefile, Makefile.apxs, etc.)
 
 
-----------------------------
-revision 1.59
-date: 2001/08/24 01:17:38;  author: willey;  state: Exp;  lines: +13 -5
+a5 1.63 17Oct2001 rcs references: m1.63
+M  - added JimFox's no blank cookie code
 
+a5 1.62 17Oct2001 rcs references: m1.62
+M  - added support for end_session, which clears the session cookie
+
+a5 1.61 11Oct2001 rcs references: m1.61
+M  - changed PubcookieSuperDebug to toggle with On/Off instead of True/False
+M  - cleaned-out some UWash-isms
+L  - moved libpbc_check_exp from module code to library
+L  - moded libpbc_check_version from module code to library
 
 a5 1.60 10Sep2001 rcs references: m1.60
 M  - added support for session reauth
