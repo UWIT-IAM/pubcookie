@@ -6,7 +6,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login.in,v 2.2 2002-07-08 23:55:23 jjminer Exp $
+# $Id: Makefile.login.in,v 2.3 2002-07-24 17:19:42 greenfld Exp $
 
 include Makefile.settings
 
@@ -133,8 +133,8 @@ candv:	candv.o $(LIB_OBJ)
 dtest:	dtest.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ dtest.o $(LIB_OBJ) $(LDFLAGS)
 
-vtest: $(VERIFIERS)
-	$(CC) ${CFLAGS} -DTEST_VERIFY -o $@ verify.c $(VERIFIERS) $(LIB_OBJ) $(LDFLAGS)
+vtest: $(VERIFIERS) $(LIB_OBJ) verify.c
+	$(CC) ${CFLAGS} -DTEST_VERIFY -o $@ verify.c $(VERIFIERS) $(LIB_OBJ) $(LDFLAGS) $(EXTRA_LIBS)
 
 check_crypted_blob:	check_crypted_blob.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ check_crypted_blob.o $(LIB_OBJ) $(LDFLAGS)
