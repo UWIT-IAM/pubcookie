@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.29 2003-07-02 22:04:04 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.30 2003-07-02 23:22:40 willey Exp $
  */
 
 
@@ -95,6 +95,11 @@ static void fatal(pool *p, const char *s, int ex);
 
 #ifndef WIN32
 
+/**
+ * libpbc_myconfig_init() 
+ * @param p memory pool
+ * @param alt_config different config file to read
+ */
 int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
 {
     const char *val;
