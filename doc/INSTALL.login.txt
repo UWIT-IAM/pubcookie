@@ -15,7 +15,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.21 2002-08-16 20:02:45 dors Exp $
+    $Id: INSTALL.login.txt,v 1.22 2002-08-16 20:06:42 dors Exp $
  */
 
 
@@ -144,10 +144,12 @@ of Wisconsin!) To build a barebones login server, run:
 
 $ ./configure --enable-login --disable-apache
 $ make
+$ make install
 
-This will build the index.cgi, keyserver, and keyclient binaries, using 
-the default directory prefix (/usr/local/pubcookie, henceforth called
-{PUBCOOKIE_DIR}) and "alwaystrue" verifier.
+This sequence will build and install the index.cgi, keyserver, and
+keyclient binaries, using the default directory prefix
+(/usr/local/pubcookie, henceforth called {PUBCOOKIE_DIR}) and "alwaystrue"
+verifier.
 
 To build the login server with other verifiers enabled (e.g. Kerberos 5, 
 LDAP, or Shadow) look at the configure options and adjust accordingly:
