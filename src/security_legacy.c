@@ -137,6 +137,8 @@ int security_init(void)
 
     FILE *fp;
 
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "security_init: hello\n");
+
     /* first we try to use the ssl files */
     keyfile = mystrdup(libpbc_config_getstring("ssl_key_file", NULL));
     if (keyfile && access(keyfile, R_OK | F_OK)) {
@@ -348,6 +350,7 @@ int security_init(void)
 	RAND_seed(buf, sizeof(tv.tv_usec));
     }
 #endif
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "security_init: goodbye\n");
 
     return 0;
 }
@@ -365,17 +368,25 @@ const char *libpbc_get_cryptname(void)
  */
 static void make_crypt_keyfile(const char *peername, char *buf)
 {
+    
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
+
     strlcpy(buf, PBC_KEY_DIR, 1024);
+
     if (buf[strlen(buf)-1] != '/') {
-	strlcat(buf, "/", 1024);
+        strlcat(buf, "/", 1024);
     }
     strlcat(buf, peername, 1024);
+    
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: goodbye\n");
 }
 
 static int get_crypt_key(const char *peername, char *buf)
 {
     FILE *fp;
     char keyfile[1024];
+    
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "get_crypt_key: hello\n");
 
     make_crypt_keyfile(peername, keyfile);
 	
@@ -393,6 +404,7 @@ static int get_crypt_key(const char *peername, char *buf)
     }
 
     fclose(fp);
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "get_crypt_key: goodbye\n");
 
     return 0;
 }
@@ -426,11 +438,15 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
     int siglen;
     int tries = 5;
     int c;
+    
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: hello\n");
 
     assert(outbuf != NULL && outlen != NULL);
     assert(buf != NULL && len > 0);
 
     peer2 = peer ? peer : libpbc_get_cryptname();
+
+
     if (get_crypt_key(peer2, (char *) keybuf) < 0) {
         pbc_log_activity(PBC_LOG_ERROR, 
                          "get_crypt_key(%s) failed", peer2);
@@ -491,6 +507,7 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
 	free(*outbuf);
 	*outbuf = NULL;
     }
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: goodbye\n");
 
     return r;
 }

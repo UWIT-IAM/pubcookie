@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.45 2002-10-01 19:19:17 greenfld Exp $
+    $Id: libpubcookie.c,v 2.46 2002-10-09 21:06:18 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -787,6 +787,8 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
     unsigned char		*cookie;
     char *out;
     int outlen;
+    
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_sign_bundle_cookie: hello\n");
 
     if (libpbc_mk_priv(peer, (const char *) cookie_string, sizeof(pbc_cookie_data), 
                        &out, &outlen)) {
@@ -803,6 +805,7 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
 
     libpbc_base64_encode( (unsigned char *) out, cookie, outlen);
     free(out);
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_sign_bundle_cookie: goodbye\n");
 
     return cookie;
 }
@@ -874,6 +877,8 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
     unsigned char			*cookie_string;
     unsigned char			*cookie;
 
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_get_cookie_with_expire: hello\n");
+
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
@@ -881,8 +886,11 @@ unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user,
                                 pre_sess_token, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     pbc_free(cookie_data);
+
     cookie = libpbc_sign_bundle_cookie(cookie_string, peer);
     pbc_free(cookie_string);
+    
+    pbc_log_activity(PBC_LOG_DEBUG_LOW, "libpbc_get_cookie_with_expire: goodbye\n");
 
     return cookie;
 }
