@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.19 2002-08-23 19:38:28 ryanc Exp $
+    $Id: keyclient.c,v 2.20 2002-08-24 00:10:17 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     int filetype = SSL_FILETYPE_PEM;
     const char *keymgturi = NULL;
     char *keyhost = NULL;
-    int keyport = 2222/*443*/;
+    int keyport = 443;
     int r;
 
 #ifdef WIN32
