@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.24 2002-12-06 00:56:01 jjminer Exp $
+# $Id: Makefile.in,v 1.25 2003-03-05 00:14:00 jjminer Exp $
 
 @SET_MAKE@
 
@@ -26,7 +26,7 @@ CERT_DB_DIR=$(PUBCOOKIE_DIR)/keys
 
 CERT_DB_SOURCE=@CERT_DB_PATH@
 
-INSTALL=@INSTALL@ -p -b
+INSTALL=@INSTALL@
 INSTALL_BIN=$(INSTALL) -m 755
 INSTALL_OTHER=$(INSTALL) -m 644
 INSTALL_DIR=$(INSTALL) -d

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.26 $)
+AC_REVISION($Revision: 1.27 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -60,6 +60,15 @@ fi
 
 # Checks for programs.
 AC_PROG_CC
+
+# Fix problems where we're using gcc without gnu ld
+# (Code by Bradford L. Barrett at University of Florida)
+if test "$GCC" = "yes"; then
+    GCC_LIB=`gcc -print-libgcc-file-name`
+    LIBS="$LIBS -lgcc";
+    LDFLAGS="$LDFLAGS -L`dirname $GCC_LIB`"
+fi
+
 AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
@@ -194,14 +203,28 @@ AC_ARG_WITH(general-log,
 
 # OpenSSL Fun
 
-AC_ARG_WITH(ssl-dir,
-    AC_HELP_STRING([--with-ssl-dir=PATH], [Openssl lib/include root]),
+ssl_include_path=
+ssl_lib_path=
+
+AC_ARG_WITH(ssl,
+    AC_HELP_STRING([--with-ssl=PATH], [Openssl lib/include root]),
 [ case "$withval" in
    no)
      ;;
    *)
-     CPPFLAGS="$CPPFLAGS -I$withval/include"
-     LDFLAGS="$LDFLAGS -L$withval/lib"
+     ssl_include_path="-I$withval/include"
+     ssl_lib_path="-L$withval/lib"
+     ;;
+  esac ])
+
+AC_ARG_WITH(ssl-dir,
+    AC_HELP_STRING([--with-ssl-dir=PATH], [Openssl lib/include root (deprecated)]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     ssl_include_path="-I$withval/include"
+     ssl_lib_path="-L$withval/lib"
      ;;
   esac ])
 
@@ -211,7 +234,7 @@ AC_ARG_WITH(ssl-inc-dir,
    no)
      ;;
    *)
-     CPPFLAGS="$CPPFLAGS -I$withval"
+     ssl_include_path="-I$withval"
      ;;
   esac ])
 
@@ -221,10 +244,26 @@ AC_ARG_WITH(ssl-lib-dir,
    no)
      ;;
    *)
-     LDFLAGS="$LDFLAGS -L$withval"
+     ssl_lib_path="-L$withval"
      ;;
   esac ])
 
+if test "x$ssl_include_path" = "x" -a -d "/usr/local/ssl/include"; then
+    ssl_include_path="-I/usr/local/ssl/include"
+fi
+
+if test "x$ssl_lib_path" = "x" -a -d "/usr/local/ssl/include"; then
+    ssl_lib_path="-L/usr/local/ssl/lib"
+fi
+
+if test "x$ssl_include_path" != "x"; then
+    CPPFLAGS="$CPPFLAGS $ssl_include_path"
+fi
+
+if test "x$ssl_lib_path" != "x"; then
+    LDFLAGS="$LDFLAGS $ssl_lib_path"
+fi
+  
 AC_CHECK_LIB(crypto,ERR_load_ASN1_strings)
 AC_CHECK_LIB(ssl,SSL_library_init)
 AC_CHECK_HEADERS([openssl/ssl.h])
