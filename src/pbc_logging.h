@@ -27,10 +27,20 @@
 # define LOG_FAC(fac) fac
 #endif /* NEED_LOG_FAC */
 
+/* callbacks for the logging subsystem */
+typedef void pbc_open_log(char *ident, int option, int facility);
+typedef void pbc_log_func(int priority, const char *msg);
+typedef void pbc_close_log(void);
+
 /**
- *Initializes the logging system.  Optional.
+ * Initializes the logging system.
+ * @param ident the identification of this process
+ * @param o optional function to replace openlog()
+ * @param l optional function to replace syslog()
+ * @param c optional function to replace closelog()
  */
-void pbc_log_init();
+void pbc_log_init(const char *ident,
+                  pbc_open_log *o, pbc_log_func *l, pbc_close_log *c);
 
 /**
  * Log activity messages
@@ -42,23 +52,23 @@ void pbc_log_activity(int logging_level, const char *message,...);
 
 /**
  * Log activity messages, takes a va_list.
- *@param logging_level the importance level of the message
- *@param message the message to be logged
- *@param arg a va_list to be logged.
+ * @param logging_level the importance level of the message
+ * @param message the message to be logged
+ * @param arg a va_list to be logged.
  */
 void pbc_vlog_activity(int logging_level, const char *format, va_list arg);
 
 /**
- *Create well-formed messages to be logged
- *@param info the string that contains the actual message
- *@param user the user's id
- *@param app_id the app_id of the requesting application
- *@return a nicely-formatted string to be logged
+ * Create well-formed messages to be logged
+ * @param info the string that contains the actual message
+ * @param user the user's id
+ * @param app_id the app_id of the requesting application
+ * @return a nicely-formatted string to be logged
  */
 char* pbc_create_log_message(char *info, char *user, char *app_id);
 
 /**
- *Closes the logging system.  Optional.
+ * Closes the logging system.  Optional.
  */
 void pbc_log_close();
 

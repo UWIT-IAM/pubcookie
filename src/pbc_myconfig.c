@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.15 2002-09-27 16:18:57 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.16 2002-09-27 17:46:30 greenfld Exp $
  */
 
 
@@ -42,10 +42,6 @@
 #ifdef HAVE_CTYPE_H
 # include <ctype.h>
 #endif /* HAVE_CTYPE_H */
-
-#ifdef HAVE_SYSLOG_H
-# include <syslog.h>
-#endif /* HAVE_SYSLOG_H */
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
@@ -436,7 +432,6 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 }
 
 extern char *SystemRoot;
-extern void syslog(int whichlog, const char *message, ...);
 
 const char *AddSystemRoot(const char *subdir) 
 {

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.102 2002-09-26 19:32:46 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.103 2002-09-27 17:46:30 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -51,6 +51,7 @@
 
 /* pubcookie stuff */
 #include "pbc_myconfig.h"
+#include "pbc_logging.h"
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
@@ -434,7 +435,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* encrypt */
         if (libpbc_mk_priv(NULL, cfg->cred_transfer, cfg->cred_transfer_len,
                            &blob, &bloblen)) {
-            syslog(LOG_ERR, "credtrans: libpbc_mk_priv() failed");
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, r,
+                          "credtrans: libpbc_mk_priv() failed");
             res = -1;
         }
 
@@ -443,7 +445,8 @@ static void set_session_cookie(request_rec *r, int firsttime)
             base64 = ap_palloc(r->pool, bloblen * 4 / 3 + 20);
             if (!libpbc_base64_encode( (unsigned char *) blob, 
                                        (unsigned char *) base64, bloblen)) {
-                syslog(LOG_ERR, "credtrans: libpbc_base64_encode() failed");
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
+                              "credtrans: libpbc_base64_encode() failed");
                 res = -1;
             }
         }
@@ -1048,6 +1051,17 @@ char *get_cookie(request_rec *r, char *name) {
 
 }
 
+static void mylog(int logging_level, const char *msg)
+{
+    int apri = APLOG_INFO;
+
+    /* convert pubcookie error level to apache error level */
+    if (logging_level == PBC_LOG_ERROR)
+        apri = APLOG_ERR;
+
+    ap_log_error(APLOG_MARK, apri, NULL, "%s", msg);
+}
+
 static void pubcookie_init(server_rec *s, pool *p) {
     pubcookie_server_rec 	*scfg;
     char 		 	*fname;
@@ -1071,6 +1085,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
     }
 
     libpbc_config_init(NULL, "mod_pubcookie");
+    pbc_log_init("mod_pubcookie", NULL, &mylog, NULL);
 
 #if 0
     /* xxx how to get this data to security_legacy.c ? 
@@ -1498,7 +1513,8 @@ static int pubcookie_user(request_rec *r) {
       /* base64 decode cookie */
       if (!libpbc_base64_decode( (unsigned char *) cookie, 
                                  (unsigned char *) blob, &bloblen)) {
-          syslog(LOG_ERR, "credtrans: libpbc_base64_decode() failed");
+          ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
+                        "credtrans: libpbc_base64_decode() failed");
           res = -1;
       }
   
@@ -1508,7 +1524,8 @@ static int pubcookie_user(request_rec *r) {
                                     ap_get_server_name(r) : NULL, 
                                  blob, bloblen, 
                                  &plain, &plainlen)) {
-          syslog(LOG_ERR, "credtrans: libpbc_rd_priv() failed");
+          ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
+                        "credtrans: libpbc_rd_priv() failed");
           res = -1;
       }
 
@@ -1526,12 +1543,14 @@ static int pubcookie_user(request_rec *r) {
           /* save these creds in that file */
           f = fopen(krb5ccname, "w");
           if (!f) {
-              syslog(LOG_ERR, "credtrans: setenv() failed");
+              ap_log_rerror(APLOG_MARK, APLOG_ERR, r,
+                            "credtrans: setenv() failed");
               res = -1;
           }
       }
       if (!res && (fwrite(cfg->cred_transfer, cfg->cred_transfer_len, 1, f) != 1)) {
-          syslog(LOG_ERR, "credtrans: setenv() failed");
+          ap_log_rerror(APLOG_MARK, APLOG_ERR, r, 
+                        "credtrans: setenv() failed");
           res = -1;
       }
 

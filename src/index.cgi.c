@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.86 $
+ * $Revision: 1.87 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1358,7 +1358,7 @@ int cgiMain()
 
     libpbc_config_init(NULL, "logincgi");
     debug = libpbc_config_getint("debug", 0);
-    pbc_log_init();
+    pbc_log_init("pubcookie login server", NULL, NULL, NULL);
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...\n");
 
