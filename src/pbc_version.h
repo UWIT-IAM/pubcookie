@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.51 2003-04-19 18:59:40 jjminer Exp $
+    $Id: pbc_version.h,v 1.52 2003-04-20 16:07:20 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
@@ -46,6 +46,6 @@
  * configure should probably set this.
  */
 
-#define PBC_VERSION_STRING "3.0.0 pre-beta4"
+#define PBC_VERSION_STRING "3.0.0 rc1"
 
 #endif /* !PUBCOOKIE_VERSION */
