@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: keyserver.c,v 2.24 2002-09-27 17:44:38 greenfld Exp $
+    $Id: keyserver.c,v 2.25 2002-10-23 16:35:25 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -545,23 +545,30 @@ int main(int argc, char *argv[])
 
     peer = X509_NAME_oneline (X509_get_subject_name (client_cert),0,0);
     if (peer == NULL) {
-	pbc_log_activity(PBC_LOG_ERROR, "peer == NULL???");
-	exit(1);
+        pbc_log_activity(PBC_LOG_ERROR, "peer == NULL???");
+        exit(1);
     }
     if (strstr(peer, "CN=")) {
-	peer = strstr(peer, "CN=");
-	peer += 3;
+        peer = strstr(peer, "CN=");
+        peer += 3;
     }
     if( strstr(peer, "/Email=") ) {
         *(strstr(peer, "/Email=")) = '\0';
     }
+
+    /* Not all certificate subjects go root->leaf, some go leaf->root */
+    
+    if ( strchr(peer, '/') ) {
+        *(strchr(peer, '/')) = '\0';
+    }
+
     pbc_log_activity(PBC_LOG_AUDIT, "peer identified as %s\n", peer);
 
     /* read HTTP query */
     if (SSL_read(ssl, buf, sizeof(buf)) <= 0) {
-	pbc_log_activity(PBC_LOG_ERROR, "SSL_read() failed");
-	ERR_print_errors_fp(stderr);
-	exit(1);
+        pbc_log_activity(PBC_LOG_ERROR, "SSL_read() failed");
+        ERR_print_errors_fp(stderr);
+        exit(1);
     }
 
     for (p = buf; *p != '\0'; p++) {

@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.22 2002-10-09 21:24:07 ryanc Exp $
+    $Id: keyclient.c,v 2.23 2002-10-23 16:35:25 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -123,6 +123,11 @@ static char *extract_cn(char *s)
     if (p) {
         p += 3;
         q = strstr(p, "/Email=");
+        if (q) {
+            *q = '\0';
+        }
+        /* fix for subjects that go leaf -> root */
+        q = strchr(p, '/');
         if (q) {
             *q = '\0';
         }
