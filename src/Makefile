@@ -1,26 +1,32 @@
 #defaults
 #
-# $Id: Makefile,v 1.1 1998-02-14 08:24:41 willey Exp $
+# $Id: Makefile,v 1.2 1998-06-25 03:00:58 willey Exp $
 #
 
 CC=gcc
-CFLAGS=-Wall -I/usr/local/ssl/include
-LDFLAGS=-L/usr/local/ssl/lib -lcrypto
+CFLAGS=-g -Wall -I/usr/local/src/ssl/include -Issl_include
+#CFLAGS=-g -I/usr/local/src/ssl/include -Issl_include
+LDFLAGS=-L/usr/local/src/ssl/lib -lcrypto
+GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h 
+MAKEFILE=Makefile
+ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c 
+ALLHEAD=${GEN_HEAD} pbc_version.h
 
-all:	create verify
+#all:	create verify mod_pubcookie.o
+all:	pbc_create pbc_verify base64.o
 
-create:		create.o base64.o
-		$(CC) -o $@ create.o base64.o $(LDFLAGS)
+pbc_create:	pbc_create.o libpubcookie.o
+		$(CC) ${CFLAGS} -o $@ pbc_create.o libpubcookie.o $(LDFLAGS)
 
-verify:		verify.o base64.o
-		$(CC) -o $@ verify.o base64.o $(LDFLAGS)
+pbc_verify:	pbc_verify.o libpubcookie.o
+		$(CC) ${CFLAGS} -o $@ pbc_verify.o libpubcookie.o $(LDFLAGS)
 
-create.o: create.c
-verify.o: verify.c
-base64.o: base64.c
+pbc_create.o: pbc_create.c ${GEN_HEAD} ${MAKEFILE}
+pbc_verify.o: pbc_verify.c ${GEN_HEAD} ${MAKEFILE}
+base64.o: base64.c ${GEN_HEAD} ${MAKEFILE}
+libpubcookie.o: libpubcookie.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 
-clean:
-	rm -f *.o *~ core
+#mod_pubcookie.o: mod_pubcookie.c
 
-realclean: 
-	rm -f *.o *~ core create
+clean: 
+	rm -f *.o *~ core pbc_create pbc_verify

@@ -1,6 +1,9 @@
 /*
-    $Id: mod_pubcookie.c,v 1.2 1998-03-06 02:38:27 willey Exp $
+    $Id: mod_pubcookie.c,v 1.3 1998-06-25 03:00:58 willey Exp $
  */
+
+#include <pem.h>
+#include "pubcookie.h"
 
 #include "httpd.h"
 #include "http_config.h"
@@ -9,7 +12,6 @@
 #include "http_main.h"
 #include "http_protocol.h"
 #include "util_script.h"
-#include <pem.h>
 /* #include <envelope.h> */
 
 #define CERTFILE "/usr/local/src/pubcookie/cookie_cert.pem"
@@ -17,9 +19,9 @@
 #define COOKIENAME "pubcookie"
 #define AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define BAD_USER_HANDLER "pubcookie-bad-user"
-#define LOGIN_PAGE_STAT "http://www.washington.edu/login/login-stat.html"
-#define LOGIN_PAGE_DYN "http://www.washington.edu/login/login-dyn.html"
-#define LOGIN_DESC "http://www.washington.edu/login/login-desc.html"
+#define LOGIN_PAGE_STAT "http://selby.cac.washington.edu/login/login-stat.html"
+#define LOGIN_PAGE_DYN "http://selby.cac.washington.edu/login/login-dyn.html"
+#define LOGIN_DESC "http://selby.cac.washington.edu/login/login-desc.html"
 #define DEFAULT_EXPIRE 1800
 #define BAD_AUTH 1
 #define BAD_USER 2
@@ -127,7 +129,7 @@ static void pubcookie_init(server_rec *s, pool*p) {
 						   &pubcookie_module);
 
   if(!(fp = pfopen(p, cfg->certfile ? cfg->certfile : CERTFILE, "r"))) {
-    fprintf(stderr, "PUBCOOKIE: Could not open the certificate file.\n");
+    fprintf(stderr, "PUBCOOKIE: Could not open the certificate file: %s.\n", cfg->certfile);
     exit(1);
   }
 
