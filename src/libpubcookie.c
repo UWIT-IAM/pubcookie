@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.16 1999-01-13 01:51:06 willey Exp $
+    $Id: libpubcookie.c,v 1.17 1999-01-25 04:31:00 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -17,6 +17,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
+#include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -300,9 +301,9 @@ unsigned char *libpbc_gethostip_p(pool *p)
 unsigned char *libpbc_gethostip_np()
 #endif
 {
+    struct utsname      myname;
     struct hostent      *h;
     unsigned char       *addr;
-    struct utsname      myname;
 
     if ( uname(&myname) < 0 )
 	libpbc_abend("problem doing uname lookup\n");
@@ -310,7 +311,7 @@ unsigned char *libpbc_gethostip_np()
     if ( (h = gethostbyname(myname.nodename)) == NULL ) 
        	libpbc_abend("%s: host unknown.\n", myname.nodename);
 
-    addr = libpbc_alloc_init(h->h_length);
+    addr = libpbc_alloc_init(h->h_length +1);
     memcpy(addr, h->h_addr_list[0], h->h_length);
     
     return addr;
@@ -554,9 +555,9 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
     strncpy((*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
-    (*cookie_data).broken.serial = serial;
-    (*cookie_data).broken.create_ts = time(NULL);
-    (*cookie_data).broken.last_ts = time(NULL);
+    (*cookie_data).broken.serial = htons(serial);
+    (*cookie_data).broken.create_ts = htonl(time(NULL));
+    (*cookie_data).broken.last_ts = htonl(time(NULL));
     strncpy((*cookie_data).broken.appsrv_id, appsrv_id, PBC_APPSRV_ID_LEN-1);
     strncpy((*cookie_data).broken.app_id, app_id, PBC_APP_ID_LEN-1);
 
@@ -685,6 +686,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     unsigned char	sig[PBC_SIG_LEN];
     unsigned char	buf[PBC_4K];
     unsigned char	buf2[PBC_4K];
+    time_t		temp;
 
     memset(buf, 0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
@@ -707,18 +709,22 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     cookie_data = libpbc_init_cookie_data();
     memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
 
-#ifndef NO_VERIFY
     if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
-#endif
         cookie_data = libpbc_destringify_cookie_data(cookie_data);
+
+	temp = ntohl((*cookie_data).broken.last_ts);
+	(*cookie_data).broken.last_ts = temp;
+	temp = ntohl((*cookie_data).broken.create_ts);
+	(*cookie_data).broken.create_ts = temp;
+	temp = ntohs((*cookie_data).broken.serial);
+	(*cookie_data).broken.serial = temp;
+
         return cookie_data;
-#ifndef NO_VERIFY
     }
     else {
 	libpbc_debug("libpbc_unbundle_cookie_p: sig verify failed\n");
         return NULL;
     }
-#endif
 }
     
 /*                                                                            */
@@ -736,7 +742,7 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
     unsigned char	*cookie_string;
     unsigned char	*cookie;
 
-    (*cookie_data).broken.last_ts = time(NULL);
+    (*cookie_data).broken.last_ts = htonl(time(NULL));
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
 
