@@ -18,11 +18,14 @@
  */
 
 /*
- * $Revision: 1.25 $
+ * $Revision: 1.26 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
 #define PUBCOOKIE_LOGIN_CGI
+
+/* cgic---needed for typenames */
+#include <cgic.h>
 
 #include <time.h>
 
@@ -61,6 +64,9 @@ typedef struct {
     int		alterable_username;
     int		pinit;
     char        *check_error;
+    void *flavor_extension; /* used for ad-hoc purposes until
+			       we add a general extension mechanism to the
+			       cookie structure */
 } login_rec;
 
 struct browser {
@@ -74,73 +80,10 @@ struct browser {
 
 typedef struct browser browser_rec;
 
-
-/*
-
-Each credential type is constituted by a set of credential fields.
-At the UWash the credential fields for CRED1 at uwnetid and password.
-
-a cred_field is a structure describing a credential field.
-
-credential fields may hav different attributes for different credential
-types
-
-a credential definition defines what how a credential acts and what
-credential fields it has.  The scructure that defines it is cred_def.
-
-
-credential fields attributes:
-        GRACE           - field may be subject to ride-free timer
-        ECHO_STARS      - form field entry should echo asterisks
-        PREFILL         - form field may be prefilled
-
-*/
-
-typedef struct {
-    char	*name;
-    char	*prompt;
-    int		attr;
-    char	*form_field;
-} cred_field;
-
-typedef struct {
-    char	*name;
-    cred_field  cred_fields;
-    int		cred_fields_extra_attrs;
-    char	*prompt_with;
-    char	*prompt_with_aux;
-    char	*auth_handler;
-} cred_def;
-
-cred_def	cred_defs[8];
-
-#define CRED_ATTR_NONE 0
-#define CRED_ATTR_GRACE 1		/* credential field honors ride free */
-#define CRED_ATTR_ECHO_STARs 2		/* form field echo astrisks */
-#define CRED_ATTR_PREFILL 4		/* pre-fill form field if possilble */
-
-/* transfered out of pbc_config.h, soon to be be gone.  */
-#define PBC_CREDS_CRED1 '1'
-#define PBC_CREDS_CRED2 '2'
-#define PBC_CREDS_CRED3 '3'
-
-/* defines conditions for describing behaviour and appearance of  */
-/* login page fields 						  */
-#define FIELD_TYPE_EMPTY_ALTERABLE 0
-#define FIELD_TYPE_PREFILLED_ALTERABLE 1
-#define FIELD_TYPE_PREFILLED_UNALTERABLE 2
-#define FIELD_TYPE_FREE_RIDE 3
-
-#define FIELD_ECHO_YES 0
-#define FIELD_ECHO_STARS 1
-
 #define FREE_RIDE_MESSAGE "You entered it less than 10 minutes ago.<BR>\n"
 
 /* prototypes */
 int cgiMain();
-char *auth_kdc(const char *, const char *);
-char *auth_ndcpasswd(const char *, const char *);
-char *auth_securid(char *, char *, int, login_rec *);
 void abend(char *);
 int cookie_test();
 void notok( void (*)() );
@@ -158,17 +101,7 @@ int check_user_agent();
 void log_message(const char *, ...);
 void log_error(int, const char *, int, const char *, ...);
 void clear_error(const char *, const char *);
-#if 0
-void print_login_page(login_rec *, login_rec *, char *, char *, int, int);
-#endif
-void print_login_page_lhs1(char *, char *, char *);
-void print_login_page_lhs2(login_rec *);
-void print_login_page_centre();
-void print_login_page_rhs();
-void print_login_page_bottom();
 void print_uwnetid_logo();
-void print_login_page_hidden_stuff(login_rec *);
-void print_login_page_expire_info();
 login_rec *verify_unload_login_cookie (login_rec *);
 int create_cookie(char *, char *, char *, char, char, int, time_t, char *, char *, int);
 login_rec *get_query();
@@ -179,13 +112,13 @@ int get_next_serial();
 char *url_encode();
 char *get_cookie_created(char *);
 char *decode_granting_request(char *, char **peerp);
-char ride_free_zone(login_rec *, login_rec *);
 const char *login_host();
 const char *enterprise_domain();
 char *login_private_keyfile();
 int init_crypt(char * peername);
 int set_pinit_cookie();
 int clear_pinit_cookie();
+char *get_string_arg(char *name, cgiFormResultType (*f)());
 
 const char *get_domain_hostname();
 

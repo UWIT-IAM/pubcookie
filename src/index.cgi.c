@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.61 $
+ * $Revision: 1.62 $
  */
 
 
@@ -43,6 +43,8 @@
 #include <pwd.h>
 /* openssl */
 #include <pem.h>
+/* cgic */
+#include <cgic.h>
 
 /* pubcookie things */
 #include "pubcookie.h"
@@ -52,9 +54,6 @@
 #include "index.cgi.h"
 
 #include "flavor.h"
-
-/* cgic */
-#include <cgic.h>
 
 /* the mirror file is a mirror of what gets written out of the cgi */
 /* of course it is overwritten each time this runs                 */
@@ -293,6 +292,7 @@ void init_login_rec(login_rec *r)
     r->pinit = PBC_FALSE;
     r->reply = PBC_FALSE;
 
+    r->flavor_extension = NULL;
 }
 
 /*
@@ -840,12 +840,12 @@ char *keyfile(char *prefix)
     host = get_my_hostname();
 
     /* plus one for \0 and plus one for the '.' in the format */
-    file = calloc(strlen(PBC_KEY_DIR) +
+    file = calloc(strlen(PBC_KEY_DIR) + 1 +
                   strlen(prefix) +
                   strlen(host=get_my_hostname()) + 1 + 1, sizeof(char));
     if (file == NULL ) 
         abend("out of memory");
-    sprintf(file, "%s%s.%s", PBC_KEY_DIR, prefix, host);
+    sprintf(file, "%s/%s.%s", PBC_KEY_DIR, prefix, host);
 
     if (debug > 3) {
 	log_message("keyfile(%s): returning %s", prefix, file);
@@ -973,7 +973,8 @@ char *decode_granting_request(char *in, char **peerp)
         if (peerp) *peerp = peer;
     } else {
         out = strdup(in);    
-        libpbc_base64_decode( (unsigned char *) in, (unsigned char *) out);
+        libpbc_base64_decode((unsigned char *) in, 
+			     (unsigned char *) out, NULL);
     }
 
     if (debug) {
@@ -1017,23 +1018,18 @@ char *decode_granting_request(char *in, char **peerp)
     /*                                                                   */
     /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
-/* xxx temporary hack before i do dynamic selection */
-#define GETFLAVOR_(fl) (login_flavor_ ## fl)
-#define GETFLAVOR(fl) (GETFLAVOR_(fl))
-
-extern struct login_flavor GETFLAVOR( FLAVOR );
-
 int vector_request(login_rec *l, login_rec *c)
 {
     login_result res;
     const char *errstr = NULL;
-    struct login_flavor *fl = & GETFLAVOR( FLAVOR );
+    struct login_flavor *fl = NULL;
 
     if (debug) {
 	fprintf(stderr, "vector_request: hello\n");
     }
 
-    /* xxx find flavor of authn requested --- currently hardcoded */
+    /* find flavor of authn requested */
+    fl = get_flavor(l->creds_from_greq);
 
     /* decode login cookie */
     l->check_error = check_l_cookie(l, c);
@@ -1378,7 +1374,22 @@ int pinit(login_rec *l, login_rec *c)
         log_message("pinit: hello");
 
     if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL ) {
-	l->creds = PBC_CREDS_CRED1;  /* this is hoakie */
+	/* what credentials should we default to if a user has
+	   come directly to us? */
+	const char *credname = 
+	    libpbc_config_getstring("pinit_default_authtype",
+				    "webiso-vanilla");
+	struct login_flavor *fl = NULL;
+	const char *errstr;
+	login_result res;
+	
+	/* find what the credential id is for that authtype */
+	l->creds_from_greq = l->creds = libpbc_get_credential_id(credname);
+	if (l->creds == PBC_CREDS_NONE) {
+	    /* xxx what are we suppose to do here? */
+	    log_message("pinit: pinit_default_authtype not recognized");
+	    abort();
+	}
 	l->pinit = PBC_TRUE;
 	l->host = strdup((char *)login_host());
 	l->appsrvid = strdup(l->host);
@@ -1386,9 +1397,28 @@ int pinit(login_rec *l, login_rec *c)
 	l->uri = strdup(cgiScriptName);
         if(debug)
             log_message("pinit: ready to print login page");
-         print_login_page(l, c, &l->appid);
-         do_output();
-         exit(0);
+	
+	/* find flavor of authn requested */
+	fl = get_flavor(l->creds_from_greq);
+
+	/* decode login cookie */
+	l->check_error = check_l_cookie(l, c);
+
+	fl->init_flavor();
+	res = fl->process_request(l, c, &errstr);
+	if (res != LOGIN_INPROGRESS) {
+	    log_message("unexpected response from fl->process_request: "
+			"%d %s", res, errstr ? errstr : "(no errstring)");
+
+	    /* xxx maybe this happens because the default flavor can
+	       verify authentication without any interactions with the user
+	       actually submitting a form? */
+
+	    /* xxx shouldn't we be using vector_request() instead of
+	       calling the flavor ourselves? */
+	}
+	do_output();
+	exit(0);
     }
     else {
         login_status_page(c);
@@ -1419,7 +1449,9 @@ int cgiMain()
     libpbc_config_init(NULL, "logincgi");
     debug = libpbc_config_getint("debug", 0);
     mirrorfile = libpbc_config_getstring("mirrorfile", NULL);
-    
+
+    libpbc_pubcookie_init();
+
     /* always print out the standard headers */
     print_http_header();
 
@@ -1505,9 +1537,6 @@ int cgiMain()
         l->fr = strdup("NFR");
     }
     
-    /* check early if we get to ride free */
-    l->ride_free_creds = ride_free_zone(l, c);
-    
     if (vector_request(l, c) == PBC_OK ) {
         /* the reward for a hard days work */
         log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
@@ -1530,70 +1559,9 @@ int cgiMain()
     return(0);  
 }
 
-
-/* for some n seconds after authenticating we don't ask the user to */
-/* retype their credentials                                         */
-/*    returns credentials ok for ride free                          */
-char ride_free_zone(login_rec *l, login_rec *c)
-{
-    time_t	t;
-
-    if (debug) {
-	fprintf(stderr, "ride_free_zone: hello\n");
-    }
-
-    if (init_crypt(NULL) == PBC_FAIL) {
-        log_message("ride_free_zone: can't initialize crypt key");
-        return(PBC_CREDS_NONE);
-    }
-
-    if (c == NULL )
-        c = verify_unload_login_cookie(l);
-
-    if (c == NULL )
-        return(PBC_CREDS_NONE);
-
-    if (debug) {
-	fprintf(stderr, "in ride_free_zone ready to look at cookie contents user: %s\n", c->user);
-    }
-
-    /* look at what we got back from the cookie */
-    if (! c->user ) {
-        log_error(5, "system-problem", 0, "no user from L cookie? user from g_req: %s", l->user);
-        return(PBC_CREDS_NONE);
-    }
-
-    if ((c->create_ts + RIDE_FREE_TIME) < (t=time(NULL)) ) {
-	if (debug) {
-	    log_message("%s No Free Ride login cookie created: %d now: %d user: %s",
-			l->first_kiss,
-			c->create_ts, 
-                        t,
-			c->user);
-	}
-        return(PBC_CREDS_NONE);
-    }
-    else {
-
-	if (debug) {
-	    log_message("%s Yeah! Free Ride!!! login cookie created: %d now: %d user: %s",
-			l->first_kiss,
-			c->create_ts, 
-                        t,
-			c->user);
-	}
-
-        if (l->user == NULL )
-            l->user = c->user;
-
-        return(PBC_CREDS_CRED1);
-    }
-
-}
-
-
 /* returns NULL if the L cookie is valid                                     */
 /*   else a description of it's invalid nature                               */
+/* xxx most of this work should probably be done inside of the flavor */
 char *check_l_cookie(login_rec *l, login_rec *c)
 {
     time_t	t;
@@ -1644,23 +1612,6 @@ char *check_l_cookie(login_rec *l, login_rec *c)
         return("no_creds");
     }
 
-    if (c->creds != l->creds ) {
-        if (l->creds == PBC_CREDS_CRED1 ) {
-            if (c->creds != PBC_CREDS_CRED3 ) {
-                log_message("%s wrong_creds: from login cookie: %s from request: %s", l->first_kiss, c->creds, l->creds);
-                return("wrong_creds");
-            }
-            else {
-                /* take the creds from the login cookie if they are higher */
-                l->creds = c->creds;
-            }
-        }
-        else {
-            log_message("%s wrong_creds: from login cookie: %s from request: %s", l->first_kiss, c->creds, l->creds);
-            return("wrong_creds");
-        }
-    }
-
     if (debug) 
 	fprintf(stderr, "check_l_cookie: done dorking with creds\n");
 
@@ -1677,7 +1628,7 @@ char *check_l_cookie(login_rec *l, login_rec *c)
 	fprintf(stderr, "check_l_cookie: done looking at version\n");
 
     l->user = c->user;
-    l->creds = c->creds;
+
     return((char *)NULL);
 }
 
@@ -2038,11 +1989,13 @@ void print_redirect_page(login_rec *l, login_rec *c)
     if (init_crypt(NULL) == PBC_FAIL) {
         log_message("print_redirect_page: can't initialize crypt key");
     }
+    /* the login cookie is encoded as having passed 'creds', which is what
+       the flavor verified. */
     l_res = create_cookie(url_encode(l->user),
         url_encode(l->appsrvid),
         url_encode(l->appid),
         PBC_COOKIE_TYPE_L,
-        l->creds,
+	l->creds,
         serial,
 	(c == NULL || c->expire_ts < time(NULL) ? compute_l_expire(l) : c->expire_ts),
         l_cookie,
@@ -2053,6 +2006,10 @@ void print_redirect_page(login_rec *l, login_rec *c)
         log_message("print_redirect_page: can't initialize crypt key for %s",
                     l->host);
     }
+
+    /* since the flavor responsible for 'creds_from_greq' returned
+       LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
+       was successful. */
     g_res = create_cookie(url_encode(l->user),
         url_encode(l->appsrvid),
         url_encode(l->appid),
@@ -2127,7 +2084,8 @@ void print_redirect_page(login_rec *l, login_rec *c)
 
     if (l->args ) {
         args_enc = calloc (1, strlen (l->args));
-	libpbc_base64_decode( (unsigned char *) l->args,  (unsigned char *) args_enc);
+	libpbc_base64_decode( (unsigned char *) l->args,  
+			      (unsigned char *) args_enc, NULL);
         snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
     } 
     else {
@@ -2296,7 +2254,7 @@ login_rec *get_query()
     if (l->reply != FORM_REPLY ) {
         /* get greq cookie */
         g_req = get_granting_request();
-     
+
         /* is granting cookie missing or "spent" */
         if( g_req != NULL && 
             strcmp(g_req, PBC_CLEAR_COOKIE) != 0 ) {
@@ -2415,6 +2373,7 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     new->appid = (char *) (*cookie_data).broken.appid;
     new->create_ts = (*cookie_data).broken.create_ts;
     new->expire_ts = (*cookie_data).broken.last_ts;
+    /* xxx login cookie extension data */
 
     if (check_l_cookie_expire(new, t=time(NULL)) == PBC_FAIL)
         new->alterable_username = PBC_TRUE;
