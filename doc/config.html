@@ -78,19 +78,6 @@ the public portion of the granting keypair (found on all servers)</td>
 </tr>
 
 <tr>
-<td>default_l_expire</td><td>    int </td>
-</tr>
-<tr>
-<td>min_countdown</td><td>       int </td>
-</tr>
-<tr>
-<td>kiosk_keys</td><td>      list</td>
-</tr>
-<tr>
-<td>kiosk_values</td><td>    list</td>
-</tr>
-
-<tr>
 <td>enterprise_domain</td><td> string</td><td> The DNS domain under
                             which all hosts will live.  must be at
                             least a second level domain
@@ -148,6 +135,29 @@ the "basic" flavor</td> </tr>
                         mirrored copy of all output sent to the client
                         by the most recent call to the login cgi</td>
                         </tr>
+<tr>
+ <td>default_l_expire</td><td>    int </td>
+ <td>The expiration for the login server.  Default: 8 hours.</td>
+</tr>
+
+<tr>
+ <td>kiosk_keys</td><td>      list</td>
+ <td>User-Agent strings that identify Kiosk Machines</td>
+</tr>
+<tr>
+ <td>kiosk_values</td><td>    list</td>
+ <td>Duration of login cookie for kiosk machines (same order as
+  <tt>kiosk_keys</tt>
+ </td>
+</tr>
+
+<tr>
+<td>min_countdown</td><td>       int </td>
+</tr>
+
+<tr>
+<td>countdown</td><td>       int </td>
+</tr>
 
 <tr>
 <th colspan="3"><tt>kerberos_v5</tt> verifier options</th>
