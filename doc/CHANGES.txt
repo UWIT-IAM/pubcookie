@@ -1,3 +1,11 @@
+*) Added Karl Schricker's patch to shadow verifier to make shadow password
+   file location configurable.
+
+*) Modified Apache module to exempt the server's /favicon.ico file location
+   from authentication. This fixes login problems when some browsers (like
+   Safari and Firefox) make parallel requests to a resource and the favicon
+   file and don't handle the various cookies very well. 
+
 *) Restrict use of POST login method to same app server host. This
    prevents a spoof of the granting-reply location in a man-in-the-middle
    attack. 
