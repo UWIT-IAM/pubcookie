@@ -44,4 +44,9 @@ error
    this page, but might also want to instruct users to call for more
    information.
 
-$Id: README,v 1.5 2002-06-25 22:22:28 greenfld Exp $
+copyright
+   Your copyright string.  currently only used on redirect with POST page
+logo
+   html that includes your logo.  currently only used on redirect with POST page
+
+$Id: README,v 1.6 2004-07-29 06:24:19 willey Exp $

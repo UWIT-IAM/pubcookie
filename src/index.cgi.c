@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.129 2004-07-29 00:50:39 willey Exp $
+ * $Id: index.cgi.c,v 1.130 2004-07-29 06:24:19 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2276,28 +2276,6 @@ int cookie_test(pool *p, const security_context *context, login_rec *l, login_re
     return(PBC_OK);
 }
 
-/*	################################### The beginning of the table       */
-void print_table_start(pool *p)
-{
-    print_html(p, "<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"580\">\n");
-
-}
-
-/*	################################### da copyright, it's ours!         */
-void print_copyright(pool *p)
-{
-    print_html(p, "<small>Copyright &#169; 2002 University of Washington</small>\n");
-
-}
-
-/*	################################### UWNetID Logo                     */
-void print_uwnetid_logo(pool *p)
-{
-    print_html(p, "<img src=\"/images/login/weblogin.gif\" alt=\"UW NetID Weblogin\" height=\"57\" width=\"198\" oncontextmenu=\"return false\">\n");
-
-}
-
-
 /**
  *  check_user_agent: checks the user_agent string from the browser
  *  to see if it contains any of the lines of OK_BROWSERS_FILE as
@@ -2551,6 +2529,14 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
         /* of elements in the first, and only, form. */
 	print_html(p, "<BODY BGCOLOR=\"white\">");
 
+        print_html(p, "<center>");
+        print_html(p, "<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"580\">\n");
+        print_html(p, "<tr><td align=\"LEFT\">\n");
+
+        print_html(p, "<form method=\"POST\" action=\"%s\" ", redirect_final);
+        print_html(p, "enctype=\"application/x-www-form-urlencoded\" ");
+        print_html(p, "name=\"query\">\n");
+
         cur = cgiFormEntryFirst;
         while (cur) {
             /* in the perl version we had to make sure we were getting */
@@ -2588,6 +2574,23 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
             cur = next;
         } /* while cur */
 
+
+        print_html(p, "</td></tr>\n");
+        ntmpl_print_html(p, TMPL_FNAME,
+               libpbc_config_getstring(p, "tmpl_logo", "logo"), NULL);
+        print_html(p, "<P>");
+        print_html(p, "%s\n", PBC_POST_NO_JS_TEXT);
+        print_html(p, "</td></tr></table>\n");
+
+        /* put submit at the bottom so it looks better and */
+        if (submit_value )
+            print_html(p, "<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
+        else
+            print_html(p, "<input type=\"submit\" value=\"%s\">\n",
+		      PBC_POST_NO_JS_BUTTON);
+
+        print_html(p, "</form>\n");
+
         /* depending on whether-or-not there is a SUBMIT field in the form */
         /* use the correct javascript to autosubmit the POST */
         /* this should probably be upgraded to only look for submits as */
@@ -2602,33 +2605,10 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
         else
             print_html(p, "document.query.submit");
 
-        print_html(p, "\">\n");
+        print_html(p, "\n-->\n</SCRIPT>\n");
 
-        print_html(p, "<center>");
-        print_table_start(p);
-        print_html(p, "<tr><td align=\"LEFT\">\n");
-
-        print_html(p, "<form method=\"POST\" action=\"%s\" ", redirect_final);
-        print_html(p, "enctype=\"application/x-www-form-urlencoded\" ");
-        print_html(p, "name=\"query\">\n");
-
-
-
-        print_html(p, "</td></tr>\n");
-        print_uwnetid_logo(p);
-        print_html(p, "<P>");
-        print_html(p, "%s\n", PBC_POST_NO_JS_TEXT);
-        print_html(p, "</td></tr></table>\n");
-
-        /* put submit at the bottom so it looks better and */
-        if (submit_value )
-            print_html(p, "<input type=\"submit\" name=\"submit\" value=\'%s\'>\n", submit_value);
-        else
-            print_html(p, "<input type=\"submit\" value=\"%s\">\n",
-		      PBC_POST_NO_JS_BUTTON);
-
-        print_html(p, "</form>\n");
-        print_copyright(p);
+        ntmpl_print_html(p, TMPL_FNAME,
+               libpbc_config_getstring(p, "tmpl_copyright", "copyright"), NULL);
         print_html(p, "</center>");
         print_html(p, "</BODY></HTML>\n");
     }

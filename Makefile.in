@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.59 2004-07-29 00:23:51 jteaton Exp $
+# $Id: Makefile.in,v 1.60 2004-07-29 06:24:19 willey Exp $
 
 @SET_MAKE@
 
@@ -186,7 +186,8 @@ MOD_HEAD=$(srcdir)/src/mod_pubcookie.h \
 
 LIB_TESTS=base64 pbc_myconfig myconf
 
-LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
+LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/copyright \
+                $(srcdir)/src/login_templates.generic/error \
 		$(srcdir)/src/login_templates.generic/form_expired \
 		$(srcdir)/src/login_templates.generic/login \
 		$(srcdir)/src/login_templates.generic/login_auth_prob_uwsecurid \
@@ -208,6 +209,7 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
 		$(srcdir)/src/login_templates.generic/login_user_hidden \
 		$(srcdir)/src/login_templates.generic/login_user_static \
 		$(srcdir)/src/login_templates.generic/login_uwsecurid \
+		$(srcdir)/src/login_templates.generic/logo \
 		$(srcdir)/src/login_templates.generic/logout_already_weblogin \
 		$(srcdir)/src/login_templates.generic/logout_app \
 		$(srcdir)/src/login_templates.generic/logout_app_custom \
