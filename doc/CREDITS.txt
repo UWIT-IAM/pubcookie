@@ -6,17 +6,17 @@
 
    Core Developers:
      * Jim Blankenship    University of Washington
-     * Ryan Campell       University of Washington
+     * Ryan Campell       University of Washington (former)
      * Rob Christ         University of Washington (former)
      * Jeff Eaton         Carnegie Mellon University
+     * Jim Fox            University of Washington
      * Larry Greenfield   Carnegie Mellon University (former)
      * Jon Miner          University of Wisconsin
      * Ryan Muldoon       University of Wisconsin
-     * Steve Willey       University of Washington
+     * Stephen Willey     University of Washington
 
    Core Contributors:
      * Nathan Dors        University of Washington
-     * Jim Fox            University of Washington
      * Frank Fugimoto     University of Washington
      * Scott Fullerton    University of Wisconsin
      * RL "Bob" Morgan    University of Washington
