@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.145 2004-05-04 19:07:25 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.146 2004-05-21 21:44:19 fox Exp $
  */
 
 
@@ -338,6 +338,7 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
     int truncate;
     pool *p = r->pool;
     pubcookie_server_rec *scfg;
+    char *a;
 
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                                        &pubcookie_module);
@@ -354,6 +355,7 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
         path_out = ap_make_dirstr_parent(p, path);
     }
 
+    for (a=path_out; *a; a++) if (*a!='/' && !isalnum(*a)) *a = '_';
     return (unsigned char *) path_out;
 
 }
