@@ -136,6 +136,8 @@ void ntmpl_print_html(const char *fname, ...)
 
 #ifdef TEST_NTMPL
 
+#include <stdio.h>
+
 /* the test will substitute 
  *   '%name%' with 'Harry Bovik'
  *   '%userid%' with 'bovik'
