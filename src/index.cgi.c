@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.85 $
+ * $Revision: 1.86 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -161,7 +161,8 @@ static char *get_file_template(const char *fname)
 
   tmpl_file = fopen (fname,"r");
   if (tmpl_file == NULL) {
-    pbc_log_activity(PBC_LOG_ERROR, "abend - cant open template file", fname);
+    pbc_log_activity(PBC_LOG_ERROR, "unable to pen template file %s",
+                     fname);
     return NULL;
   }
 
@@ -173,7 +174,7 @@ static char *get_file_template(const char *fname)
   template = malloc (len+1);
   if (template == NULL) {
        pbc_log_activity(PBC_LOG_ERROR, 
-		       "unable to mallow %d bytes for template file %s", 
+		       "unable to malloc %d bytes for template file %s", 
 		       len+1, fname);
       return NULL;
   }
