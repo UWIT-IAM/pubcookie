@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.36 2003-12-11 21:48:44 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.37 2004-01-15 23:57:16 fox Exp $
  */
 
 
@@ -217,14 +217,32 @@ char **libpbc_myconfig_getlist(pool *p, const char *key)
     return ret;
 }
 
+/* int=dddS, dddM, dddH */
+int libpbc_myconfig_str2int(char *val, int def)
+{
+    int v = 0;
+    int m = 1;
+    int n = 1;
+
+    if (!val) return (def);
+    if (*val=='-') val++, n=(-1);
+    
+    for (; *val; val++) {
+       if (isdigit(*val)) v = v*10 + *val - '0';
+       else if (m>1) return (def);     /* Not a valid time spec */
+       else if (*val=='S' || *val=='s') m = 1;
+       else if (*val=='M' || *val=='m') m = 60;
+       else if (*val=='H' || *val=='h') m = 3600;
+       else return (def);
+    }
+    return (v * n * m);
+}
+
 int libpbc_myconfig_getint(pool *p, const char *key, int def)
 {
     const char *val = libpbc_myconfig_getstring(p, key, (char *)0);
     
-    if (!val) return def;
-    if (!isdigit((int) *val) && (*val != '-' || !isdigit((int) val[1]))) 
-        return def;
-    return atoi(val);
+    return (libpbc_myconfig_str2int(val, def));
 }
 
 int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
@@ -251,9 +269,11 @@ static void myconfig_read(pool *p, const char *alt_config, int required)
     FILE *infile;
     const char *filename;
     int lineno = 0;
+    int plineno = 0;
     int alloced = 0;
     char buf[8192];
     char *ptr, *q, *key;
+    char *bp = buf;
     
     filename = alt_config ? alt_config : PBC_CONFIG;
     infile = pbc_fopen(p, filename, "r");
@@ -267,13 +287,24 @@ static void myconfig_read(pool *p, const char *alt_config, int required)
         fatal(p, buf, EX_CONFIG);
     }
     
-    while (fgets(buf, sizeof(buf), infile)) {
+    while (fgets(bp, sizeof(buf) + buf - bp, infile)) {
         lineno++;
-	
-        if (buf[strlen(buf)-1] == '\n') buf[strlen(buf)-1] = '\0';
-        for (ptr = buf; *ptr && isspace((int) *ptr); ptr++);
+        if (bp!=buf) plineno++;
+        /* remove trailing and leading spaces */
+        for (ptr=bp+strlen(bp)-1;
+            ptr>=bp&&(*ptr=='\n'||isspace(*ptr));
+            *ptr--='\0');
+        for (ptr = bp; *ptr && isspace(*ptr); ptr++);
         if (!*ptr || *ptr == '#') continue;
+        if (ptr>bp) memmove(bp, ptr, strlen(ptr)+1);
+        if (bp[strlen(bp)-1]=='\\') {
+           bp += strlen(bp)-1;
+           *bp = '\0';
+           continue;
+        }
 
+        /* OK, got a complete line */
+        ptr = buf;
         key = ptr;
         while (*ptr && (isalnum((int) *ptr) || *ptr == '-' || *ptr == '_' || *ptr == '.')) {
             if (isupper((unsigned char) *ptr)) *ptr = tolower((unsigned char) *ptr);
@@ -282,18 +313,13 @@ static void myconfig_read(pool *p, const char *alt_config, int required)
         if (*ptr != ':') {
             snprintf(buf, sizeof(buf),
 		     "invalid option name on line %d of configuration file %s",
-		     lineno, filename);
+		     plineno, filename);
             fatal(p, buf, EX_CONFIG);
         }
         *ptr++ = '\0';
 	
         while (*ptr && isspace((int) *ptr)) ptr++;
 	
-        /* remove trailing whitespace */
-        for (q = ptr + strlen(ptr) - 1; q > ptr && isspace((int) *q); q--) {
-            *q = '\0';
-        }
-        
         if (!*ptr) {
             snprintf(buf, sizeof(buf),
                      "empty option value on line %d of configuration file %s",
@@ -325,6 +351,9 @@ static void myconfig_read(pool *p, const char *alt_config, int required)
             fatal(p, "out of memory", EX_OSERR);
         }
         nconfiglist++;
+
+        bp = buf;
+        plineno = lineno;
     }
     pbc_fclose(p, infile);
 }

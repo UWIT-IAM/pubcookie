@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.112 2003-12-17 22:10:56 ryanc Exp $
+ * $Id: index.cgi.c,v 1.113 2004-01-15 23:57:16 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1074,33 +1074,179 @@ char *user_agent(pool *p)
 }
 
 /**
- * gets lifetime of a login cookie for a kiosk
+ * Kiosk lifetimes from the config files.
+ * See the documentation for syntax.
+ */
+
+#define KIOSK_VOID  0
+#define KIOSK_AGENT 1
+#define KIOSK_IP    2
+#define KIOSK_STAR  3
+#define KIOSK_RANGE 4
+
+typedef struct KioskDef__ {
+   struct KioskDef__ *next;
+   int type;
+   int time;
+   char *str;
+   int lo;
+   int hi;
+} KioskDef_, *KioskDef;
+
+KioskDef kiosks = NULL;
+
+static void get_kiosk_parameters(pool *p)
+{
+    int         i, t;
+    char	**keys;
+    char	**vals;
+    KioskDef *K = &kiosks;
+    KioskDef N;
+    int  ktime = 0;
+    char *v, *w;
+    int dc;
+    int dr;
+  
+    /* Process the time-and-value list */
+
+    vals = libpbc_config_getlist(p, "kiosk");
+   
+    for (i=0; vals && vals[i]; i++) {
+       if (t=libpbc_myconfig_str2int(vals[i],0)) {
+          ktime = t;
+          continue;
+       }
+       
+       if (ktime <= 0) {
+	    pbc_log_activity(p, PBC_LOG_ERROR,
+			     "kiosk: invalid kiosk time specification");
+	    abort();
+       }
+     
+       N = (KioskDef) malloc(sizeof(KioskDef_));
+       N->next = NULL;
+       *K = N;
+       K = &N->next;
+       N->time = ktime;
+       N->lo = N->hi = 0;
+      
+       /* See if ip or agent string */
+
+       for (dc=0,dr=0,v=vals[i]; *v; v++) {
+          if (isdigit(*v)) continue;
+          if (dr) break;
+          if (*v=='.') {
+             if (++dc>3) break;
+          } else if (*v=='*') {
+             if (*(v+1)) break;
+          } else if (*v=='-') {
+             if (++dr>1) break;
+             if (dc!=3) break;
+          }
+       }
+
+       if (*v || (dc<2)) {                   /* agent */
+          N->type = KIOSK_AGENT;
+          N->str = strdup(vals[i]);
+       } else {
+          if (v=strchr(vals[i],'*')) {      /* ip star format */
+             N->type = KIOSK_STAR; 
+             *v = '\0';
+             N->str = strdup(vals[i]);
+          } else if (dr) {                  /* ip range format */
+             N->type = KIOSK_RANGE;
+             /* have to split the range part */
+             v = strchr(vals[i],'-');
+             *v++ = '\0';
+             w = strrchr(vals[i],'.');
+             *w++ = '\0';
+             N->str = strdup(vals[i]);
+             N->lo = atoi(w);
+             N->hi = atoi(v);
+          } else {                       /* simple ip format */
+             N->type = KIOSK_IP;
+             N->str = strdup(vals[i]);
+          }
+       }
+       pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+              "kiosk: type=%d, time=%d, str=%s, lo=%d, hi=%d\n", 
+              N->type, N->time, N->str, N->lo, N->hi);
+    }               
+    if (vals) free(vals);
+
+    /* Add any old-style agent strings */
+    
+    keys = libpbc_config_getlist(p, "kiosk_keys");
+    vals = libpbc_config_getlist(p, "kiosk_values");
+
+    if(keys) {
+       for(i=0; keys[i] && vals[i]; i++) {
+          if (ktime=libpbc_myconfig_str2int(vals[i],0)) {
+            N = (KioskDef) malloc(sizeof(KioskDef_));
+            N->next = NULL;
+            *K = N;
+            K = &N->next;
+            N->type = KIOSK_AGENT;
+            N->time = ktime;;
+            N->str = strdup(keys[i]);
+            N->lo = N->hi = 0;
+            pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+              "kiosk: type=%d, time=%d, lo=%d, hi=%d\n", 
+              N->type, N->time, N->lo, N->hi);
+          }
+       }
+    }
+    if (vals) free(vals);
+    if (keys) free(keys);
+}
+
+/**
+ * gets lifetime of a login cookie if browser is a kiosk
  * @param *l from login session
  * @returns duration
  */
+
 int get_kiosk_duration(pool *p, login_rec *l)
 {
     int         i;
-    char	**keys;
-    char	**values;
+    KioskDef K;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
-			 "get_kiosk_duration: agent: %s", user_agent(p));
+	 "get_kiosk_duration: agent=%s, ip=%s",
+          user_agent(p), cgiRemoteAddr);
 
-    keys = libpbc_config_getlist(p, "kiosk_keys");
-    values = libpbc_config_getlist(p, "kiosk_values");
+    for (K=kiosks; K; K=K->next) {
 
-    if(keys != NULL) {
-       for(i=0; keys[i] != NULL && values[i] != NULL; i++) {
-           if( strstr(user_agent(p), keys[i]) != NULL ) {
-	     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,"is kiosk: %s duration: %s\n", 
-			      user_agent(p), values[i]);
-               return(atoi(values[i]));
-           }
-       }
+      if ((K->type==KIOSK_AGENT) && 
+          strstr(user_agent(p),K->str)) break;
+
+      if (!cgiRemoteAddr) continue;
+
+      if ((K->type==KIOSK_IP) &&
+          !strcmp(K->str, cgiRemoteAddr)) break;
+
+      if ((K->type==KIOSK_STAR) &&
+          !strncmp(K->str, cgiRemoteAddr, strlen(K->str))) break;
+
+      if ((K->type==KIOSK_RANGE) &&
+          !strncmp(K->str, cgiRemoteAddr, strlen(K->str))) {
+         char *v = strrchr(cgiRemoteAddr,'.');
+         if (v) {
+            int a = atoi(v+1);
+            if ((a>=K->lo) && (a<=K->hi)) break;
+         }
+      }
     }
-    /* not a kiosk */
-    return(PBC_FALSE); /* xxx false isn't a duration -leg */
+
+    if (K) {
+       pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
+              "kiosk: type=%d, time=%d, str=%s, lo=%d, hi=%d\n", 
+              K->type, K->time, K->str, K->lo, K->hi);
+       return (K->time);
+    }
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "Not a kiosk");
+    return(0); 
 
 }
 
@@ -1115,7 +1261,7 @@ time_t compute_l_expire(pool *p, login_rec *l)
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,"compute_l_expire: hello");
 
-    if((l->duration==0) && (l->duration=get_kiosk_duration(p, l))==PBC_FALSE)
+    if((l->duration==0) && (l->duration=get_kiosk_duration(p, l))==0)
         l->duration = 
         libpbc_config_getint(p, "default_l_expire",DEFAULT_LOGIN_EXPIRE);
 
@@ -1547,6 +1693,7 @@ int cgiMain()
     libpbc_config_init(p, NULL, "logincgi");
     debug = libpbc_config_getint(p, "debug", 0);
     pbc_log_init(p, "pubcookie login server", NULL, NULL, NULL);
+    get_kiosk_parameters(p);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "cgiMain() hello...\n");
 

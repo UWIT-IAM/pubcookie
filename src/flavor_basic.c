@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.44 2003-12-17 22:10:56 ryanc Exp $
+ * $Id: flavor_basic.c,v 1.45 2004-01-15 23:57:16 fox Exp $
  */
 
 
@@ -357,6 +357,8 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char *user_field = NULL;
     char *hidden_user = NULL;
     char now[64];
+    int ldur, ldurp;
+    char ldurtxt[64], *ldurtyp;
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello reason: %d", reason);
 
@@ -522,6 +524,14 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     /* if the user field should be hidden */
     hidden_user = flb_get_hidden_user_field(p, l, c, reason);
 
+    /* login session lifetime message */
+    if (!(ldur=get_kiosk_duration(p,l)))
+       ldur = libpbc_config_getint(p, "default_l_expire",DEFAULT_LOGIN_EXPIRE);
+    if (((ldurp=ldur/3600)*3600) == ldur) ldurtyp = "hour";
+    else if (((ldurp=ldur/60)*60) == ldur) ldurtyp = "minute";
+    else ldurp = ldur, ldurtyp = "second";
+    sprintf(ldurtxt, "%d %s%s", ldurp, ldurtyp, ldurp==1?"":"s");
+
     /* Display the login form. */
     ntmpl_print_html(p, TMPL_FNAME,
                      libpbc_config_getstring(p, "tmpl_login", "login"),
@@ -532,6 +542,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                     "hiddenfields", hidden_fields,
                     "user_field", user_field != NULL ? user_field : "",
                     "getcredhidden", getcred_hidden != NULL ? getcred_hidden : "",
+                    "durationtext", ldurtxt,
                     NULL
                    );
 

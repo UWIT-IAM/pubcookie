@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.1 2003-12-11 21:48:44 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.2 2004-01-15 23:57:16 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -450,6 +450,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char *pass_field = NULL;
     char *hidden_user = NULL;
     char func[] = "print_login_page";
+
+    int ldur, ldurp;
+    char ldurtxt[64], *ldurtyp;
+
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello, reason: %d", func, reason);
 
@@ -600,6 +604,14 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     /* if the user field should be hidden */
     hidden_user = flus_get_hidden_user_field(p, l, c, reason);
 
+    /* login session lifetime message */
+    if (!(ldur=get_kiosk_duration(p,l)))
+       ldur = libpbc_config_getint(p, "default_l_expire",DEFAULT_LOGIN_EXPIRE);
+    if (((ldurp=ldur/3600)*3600) == ldur) ldurtyp = "hour";
+    else if (((ldurp=ldur/60)*60) == ldur) ldurtyp = "minute";
+    else ldurp = ldur, ldurtyp = "second";
+    sprintf(ldurtxt, "%d %s%s", ldurp, ldurtyp, ldurp==1?"":"s");
+    
     /* Display the login form. */
     ntmpl_print_html(p, TMPL_FNAME,
                      libpbc_config_getstring(p, "tmpl_login_uwsecurid", "login_uwsecurid"),
@@ -610,6 +622,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                     "hiddenfields", hidden_fields,
                     "user_field", user_field != NULL ? user_field : "",
                     "pass_field", pass_field != NULL ? pass_field : "",
+                    "durationtext", ldurtxt,
                     NULL
                    );
 

@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.40 2003-12-11 21:48:44 willey Exp $
+ * $Id: keyserver.c,v 2.41 2004-01-15 23:57:16 fox Exp $
  */
 
 
@@ -307,13 +307,6 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
     /* no HTML headers for me */
     myprintf("\r\n");
-
-    /* check access list for client operations */
-    if( op != SETKEY && check_access_list(peer) == PBC_FAIL ) {
-        myprintf("you (%s) are not in keyserver client list\r\n", peer);
-        pbc_log_activity(p, PBC_LOG_ERROR, "operation not allowed: %s", peer);
-        return(1);
-    }
 
     switch (op) {
         case PERMIT:
