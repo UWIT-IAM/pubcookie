@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.4 1998-07-24 23:14:00 willey Exp $
+    $Id: pbc_config.h,v 1.5 1998-07-28 23:06:55 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -13,25 +13,31 @@
 #define PBC_S_COOKIENAME "pubcookie_s"
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
-#define PBC_LOGIN_PAGE_STAT "http://pcookiel1.cac.washington.edu/login/login-stat.html"
-#define PBC_LOGIN_PAGE_DYN "http://pcookiel1.cac.washington.edu/login/login-dyn.html"
-#define PBC_LOGIN_DESC "http://pcookiel1.cac.washington.edu/login/login-desc.html"
+#define PBC_LOGIN_PAGE "https://pcookiel1.cac.washington.edu/login/get_pubcookie/index.cgi"
 #define PBC_CRYPT_KEYFILE "/tmp/c_key"
 #define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
 #define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
-#define PBC_GRANTING_EXPIRE 30
+#define PBC_GRANTING_EXPIRE 60
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_NUWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
+#define PBC_REFRESH_TIME 2
+#define PBC_ENTRPRS_DOMAIN ".washington.edu"
 
 /* 
  things that are used both places
  */
 #define PBC_SIG_LEN 128
-#define PBC_CREDS_UWNETID 1
-#define PBC_CREDS_SECURID 2
-#define PBC_CREDS_MCIS    3
+#define PBC_CREDS_NONE    '0'
+#define PBC_CREDS_UWNETID '1'
+#define PBC_CREDS_SECURID '2'
+#define PBC_CREDS_MCIS    '3'
+
+#define PBC_COOKIE_TYPE_NONE '0'
+#define PBC_COOKIE_TYPE_G    '1'
+#define PBC_COOKIE_TYPE_S    '2'
+#define PBC_COOKIE_TYPE_L    '3'
 
 /* lives only on login servers */
 #define PBC_L_CERTFILE "/tmp/pubcookie_login.cert"
