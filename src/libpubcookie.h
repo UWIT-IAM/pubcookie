@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.29 2002-10-01 19:21:11 greenfld Exp $
+    $Id: libpubcookie.h,v 1.30 2002-11-14 20:18:11 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -187,7 +187,7 @@ enum {
 };
 
 /* string translations of the above reasons */
-extern const char *redirect_reason[12];
+extern const char *redirect_reason[13];
 
 int capture_cmd_output(char **cmd, char *out, int len);
 
