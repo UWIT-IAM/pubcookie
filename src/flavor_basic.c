@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.51 2004-03-19 17:18:26 fox Exp $
+ * $Id: flavor_basic.c,v 1.52 2004-03-21 04:46:59 fox Exp $
  */
 
 
@@ -786,7 +786,7 @@ static login_result process_basic(pool *p, const security_context *context,
     /* User not properly logged in.  Show login page unless quiet login */ 
     pbc_log_activity(p, PBC_LOG_ERROR,
             "flavor_basic: %s: %s", l->user?l->user:"(null)", *errstr);
-    if (strchr(l->flag, 'Q')) {
+    if (l->flag && strchr(l->flag, 'Q')) {
        pbc_log_activity(p, PBC_LOG_ERROR,
             "flavor_basic: quiet login, returning no user");
        l->user = strdup("");

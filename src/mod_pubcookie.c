@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.134 2004-03-19 17:18:26 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.135 2004-03-21 04:46:59 fox Exp $
  */
 
 
@@ -1945,6 +1945,13 @@ static int pubcookie_fixups(request_rec *r)
         char *krb5ccname = ap_psprintf(r->pool, "/tmp/k5cc_%d", getpid());
     
         ap_table_setn(e, "KRB5CCNAME", krb5ccname);
+    }
+
+    /* Clear the null user */
+    if( is_pubcookie_auth(cfg) && r->USER && !*r->USER) {
+       ap_log_rerror(PC_LOG_DEBUG, r, "pubcookie_fixup: clear authtype");
+       r->AUTH_TYPE = NULL;
+       r->USER = NULL;
     }
 
     return OK;
