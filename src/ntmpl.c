@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.16 2004-08-19 19:21:32 willey Exp $
+ * $Id: ntmpl.c,v 1.17 2004-10-06 21:26:39 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -47,6 +47,10 @@ typedef void pool;
 #ifdef HAVE_STDLIB_H
 # include <stdlib.h>
 #endif
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "pbc_logging.h"
 #include "pbc_config.h"
@@ -229,6 +233,44 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
     pbc_free(p, template);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye", func);
+
+}
+
+/* returns PBC_OK if template exists, PBC_FAIL if template doesn't exist      */
+int ntmpl_tmpl_exist(pool *p, const char *fpath, const char *fname)
+{
+    struct stat *buf;
+    int len, ret;
+    char *templatefile = NULL;
+
+    /* +2 for the "/" between and the trailing null */
+    len = strlen(fpath) + strlen(fname) + 2;
+    templatefile = (char *) malloc(len * sizeof(char));
+    if (templatefile == NULL) {
+       pbc_log_activity(p, PBC_LOG_ERROR,
+           "unable to malloc %d bytes for template filename %s", len, fname);
+       return(PBC_FAIL);
+    }
+    if ( snprintf(templatefile, len, "%s%s%s", fpath,
+                  fpath[strlen(fpath) - 1 ] == '/' ? "" : "/", fname) > len)  {
+       pbc_log_activity(p, PBC_LOG_ERROR,
+                       "template filename overflow");
+       return(PBC_FAIL);
+    }
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
+		"ntmpl_tmpl_exist: looking for: %s", templatefile);
+
+    buf = malloc(sizeof(struct stat));
+    if( stat(templatefile, buf) )
+        ret = PBC_FAIL;
+    else
+        ret = PBC_OK;
+
+    if( buf != NULL )
+        free(buf);
+
+    return(ret);
 
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.99 2004-07-29 18:56:41 dors Exp $
+     $Id: pbc_config.h,v 1.100 2004-10-06 21:26:39 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -37,6 +37,7 @@
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
 #define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "relay_template_path", "")
 #define PBC_RELAY_URI libpbc_config_getstring(p, "relay_uri", "https://relay.example.url/relay/index.cgi")
+#define CUSTOM_LOGIN_MSG "custom_login_msg"
 
 #if defined (WIN32)
 	#define PBC_PUBLIC_NAME (libpbc_config_getstring(p, "PUBLIC_dir_name", "PUBLIC")) 
