@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.18 1999-04-28 22:15:13 willey Exp $
+    $Id: pbc_config.h,v 1.19 1999-05-26 18:00:54 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -26,6 +26,12 @@
 
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
+
+#define PBC_POST_NO_JS_HTML1 "<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520> <TR> <TD WIDTH=300 VALIGN=\"MIDDLE\"> <IMG SRC=\""
+#define PBC_POST_NO_JS_HTML2 "\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\"><P>You do not have Javascript turned on and are penalized by having to press this button<P>\n" 
+#define PBC_HTML_COPYRIGHT "<P><address>&#169; 1999 University of Washington</address><P>\n" 
+#define PBC_POST_NO_JS_BUTTON "Click here to continue"
+#define PBC_UWNETID_LOGO "images/login.gif"
 
 #define PBC_LOGIN_PAGE "https://weblogin.washington.edu/"
 
