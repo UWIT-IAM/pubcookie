@@ -6,7 +6,7 @@ SSL_BASE=openssl
 # set your path to RSAref library
 RSA_BASE=rsaref
 
-CFLAGS=-DAPACHE1_3
+CFLAGS=-DAPACHE1_3 -DUSE_SECURID
 INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
 LIBS=-L$(SSL_BASE) -lssl -lcrypto -lRSAglue -L$(RSA_BASE) -lrsaref
 all: mod_pubcookie.so
