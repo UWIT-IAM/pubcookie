@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the pubcookie login cgi, YEAH!
@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.22 2001-05-15 01:19:16 willey Exp $
+    $Id: index.cgi.c,v 1.23 2001-05-29 20:49:48 willey Exp $
  */
 
 

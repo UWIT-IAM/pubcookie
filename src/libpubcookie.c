@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the pubcookie library
@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.15 2001-04-13 22:13:13 willey Exp $
+    $Id: libpubcookie.c,v 2.16 2001-05-29 20:49:48 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)

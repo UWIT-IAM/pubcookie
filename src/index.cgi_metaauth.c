@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the meta-auth portion of the pubcookie login cgi.
@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_metaauth.c,v 1.2 2000-09-25 17:58:31 willey Exp $
+    $Id: index.cgi_metaauth.c,v 1.3 2001-05-29 20:49:48 willey Exp $
  */
 
 

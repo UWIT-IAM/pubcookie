@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the securid auth portion of the pubcookie login cgi.
@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_securid.c,v 1.4 2001-04-03 22:04:44 willey Exp $
+    $Id: index.cgi_securid.c,v 1.5 2001-05-29 20:49:48 willey Exp $
  */
 
 

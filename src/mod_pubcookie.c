@@ -10,7 +10,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is the pubcookie apache module
@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.55 2001-05-02 18:43:04 willey Exp $
+    $Id: mod_pubcookie.c,v 1.56 2001-05-29 20:49:48 willey Exp $
  */
 
 /* apache includes */

@@ -11,7 +11,7 @@
 
 
     All comments and suggestions to pubcookie@cac.washington.edu
-    More info: https:/www.washington.edu/pubcookie/
+    More info: http://www.washington.edu/computing/pubcookie/
     Written by the Pubcookie Team
 
     this is a stub for testing the kdc stuff in the login cgi
@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: uwnetid_stub.c,v 1.1 2000-03-03 01:50:42 willey Exp $
+    $Id: uwnetid_stub.c,v 1.2 2001-05-29 20:49:48 willey Exp $
  */
 
 

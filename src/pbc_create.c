@@ -2,11 +2,11 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_create.c,v 1.9 1999-08-11 23:00:54 willey Exp $
+    $Id: pbc_create.c,v 1.10 2001-05-29 20:49:48 willey Exp $
  */
 
 /* this is not meant to be user friendly, no friendlyness for anyone          */
-/*   but me and i have the src code                                           */
+/*   but us and we have the src code                                          */
 /*                                                                            */
 /* the big news is that arguments come in on stdin not the command line!!!!   */
 /*                                                                            */

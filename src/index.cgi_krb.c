@@ -4,11 +4,10 @@
     Copyright 1995,1996,1997,1998 by the Massachusetts Institute of Technology.
        All Rights Reserved.
 
-
  */
 
 /*
-    $Id: index.cgi_krb.c,v 1.3 2001-05-15 01:09:42 willey Exp $
+    $Id: index.cgi_krb.c,v 1.4 2001-05-29 20:49:48 willey Exp $
  */
 
 
