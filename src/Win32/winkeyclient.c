@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.10 2004-03-17 02:07:40 ryanc Exp $
+  $Id: winkeyclient.c,v 1.11 2004-05-13 22:53:22 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,7 +86,8 @@ extern char * optarg;
 /* globals */
 int noop = 0;
 int newkeyp = 1;
-pool *p = NULL;
+pubcookie_dir_rec   ppool;
+pubcookie_dir_rec  *p=&ppool;
 char *hostname = NULL;
 BOOL silent = FALSE;
 char *gcert = NULL;
@@ -139,8 +140,8 @@ static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
     strlcpy(buf, PBC_KEY_DIR, 1024);
 
-	if (buf[strlen(buf)-1] != '/') {
-        strlcat(buf, "/", 1024);
+	if (buf[strlen(buf)-1] != '\\') {
+        strlcat(buf, "\\", 1024);
     }
     strlcat(buf, peername, 1024);
 }
@@ -421,7 +422,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
 
 	cp = Reply;
-	cp += 5;
 
 	/* look for the 'OK' */
 	while (*cp) {
@@ -459,9 +459,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 						}
 
 						if (set_crypt_key((const char *) thekey, hostname) != PBC_OK) {
-							Messagef("set_crypt_key() failed\n");
+							Messagef("Could not set key for %s\nCheck file permissions.\n",hostname);
 							exit(1);
+						} else if (!silent) {
+							Messagef("Created and stored encryption key for %s.\n",hostname);
 						}
+
 					}
 				} else if (gcert) {
 					/* If getting a cert, cp points to start of PEM cert */
@@ -509,8 +512,6 @@ jump:
 	if (!done) {
 		Messagef("Operation failed.\nYou will need to sucessfully run keyclient and obtain a key before using the Pubcookie filter.\n\nServer Reply:\n%s", Reply);
 		exit(ERROR_INSTALL_FAILURE);
-	} else if (!silent) {
-		Messagef("Operation succeeded");
 	}
 	// free memory pool
 	free(p);
