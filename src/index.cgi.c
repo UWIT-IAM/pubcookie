@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.6 2000-06-15 00:09:48 willey Exp $
+    $Id: index.cgi.c,v 1.7 2000-08-08 00:19:39 willey Exp $
  */
 
 
@@ -280,9 +280,9 @@ void log_message(const char *format, ...)
 }
 
 void clear_error(const char *service, const char *message) 
-}
-
 {
+
+}
 
 /* send a message to pilot                                                    */
 void send_pilot_message(int grade, const char *service, int self_clearing, char *message) 
@@ -660,7 +660,7 @@ char *check_login_uwnetid(char *user, char *pass)
         return(CHECK_LOGIN_RET_SUCCESS);
     }
     else {
-        log_error(2, "uwnetid-err", 1, "problem doing uwnetid auth"
+        log_error(2, "uwnetid-err", 1, "problem doing uwnetid auth");
         return(CHECK_LOGIN_RET_FAIL);
     }
 
@@ -673,7 +673,7 @@ char *check_login_securid(char *user, char *sid, login_rec *l)
         return(CHECK_LOGIN_RET_SUCCESS);
     }
     else {
-        log_error(2, "securid-err", 1, "problem doing securid auth"
+        log_error(2, "securid-err", 1, "problem doing securid auth");
         return(CHECK_LOGIN_RET_FAIL);
     }
 
@@ -1242,7 +1242,7 @@ fprintf(stderr, "and they are: %s\n", args_enc);
         /* make them available to subsequent cgic calls */
         if( cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
                    != cgiParseSuccess ) {
-            log_error(5, "misc", "couldn't parse the decoded granting request cookie");
+            log_error(5, "misc", 0, "couldn't parse the decoded granting request cookie");
             notok(notok_generic);
             exit(0);
         }
