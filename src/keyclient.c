@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.7 2002-06-25 14:41:18 jteaton Exp $
+    $Id: keyclient.c,v 2.8 2002-06-25 19:58:33 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     char buf[2 * PBC_DES_KEY_BUF]; /* plenty of room for base64 encoding */
     unsigned char thekey[PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
-    char hostname[1024];
+    char *hostname;
     int newkeyp;
     SSL_METHOD *meth;
     X509 *server_cert;
@@ -96,8 +96,9 @@ int main(int argc, char *argv[])
     cafile = libpbc_config_getstring("ssl_ca_file", NULL);
     cadir = libpbc_config_getstring("ssl_ca_path", NULL);
 
-    if (gethostname(hostname, sizeof(hostname)) < 0) {
-        perror("gethostname");
+    hostname = get_my_hostname();
+    if (!hostname) {
+        perror("get_my_hostname");
         exit(1);
     }
 
@@ -337,7 +338,12 @@ int main(int argc, char *argv[])
                     }
                     printf("would have set key to '%s'\n", p);
                 } else {
-                    libpbc_base64_decode( (unsigned char *) p, thekey);
+		    int osize;
+                    libpbc_base64_decode( (unsigned char *) p, thekey, &osize);
+		    if (osize != PBC_DES_KEY_BUF) {
+                        fprintf(stderr, "keyserver returned wrong key size\n");
+                        exit(1);
+		    }
                     if (libpbc_set_crypt_key( (const char *) thekey, hostname) != PBC_OK) {
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
