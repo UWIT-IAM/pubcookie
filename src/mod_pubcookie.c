@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.103 2002-09-27 17:46:30 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.104 2002-10-01 18:50:06 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -783,11 +783,10 @@ static int auth_failed_handler(request_rec *r) {
 
     /* if there is a non-standard port number just tack it onto the hostname  */
     /* the login server just passes it through and the redirect works         */
-    if ( r->server->port != 80 )
-        if ( r->server->port != 443 )
-            /* because of multiple passes through don't use r->hostname() */
-            host = ap_psprintf(p, 
-			"%s:%d", ap_get_server_name(r), r->server->port);
+    if ( (r->server->port != 80) && ( r->server->port != 443 )) {
+        /* because of multiple passes through don't use r->hostname() */
+        host = ap_psprintf(p, "%s:%d", ap_get_server_name(r), r->server->port);
+    }
 
     if ( ! host ) 
         /* because of multiple passes through on www don't use r->hostname() */
@@ -1065,11 +1064,6 @@ static void mylog(int logging_level, const char *msg)
 static void pubcookie_init(server_rec *s, pool *p) {
     pubcookie_server_rec 	*scfg;
     char 		 	*fname;
-    char hostname[1024];
-
-    /* xxx do we want this or do we actually want the name given in the
-       certificate? */
-    gethostname(hostname, sizeof(hostname));
 
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
