@@ -1,8 +1,3 @@
-Pragma: No-Cache
-Cache-Control: no-store, no-cache, must-revalidate
-Expires: Sat, 1 Jan 2000 01:01:01 GMT
-Content-Type: text/html
-
 <!-- begin tmpl pinit_response1 -->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <HTML>

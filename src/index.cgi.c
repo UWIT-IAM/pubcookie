@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.100 $
+ * $Revision: 1.101 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1587,7 +1587,7 @@ int cgiMain()
 
     /* check to see what cookies we have */
     /* pinit detected in here */
-    /* pinit responce detected in here */
+    /* pinit response detected in here */
     if (cookie_test(p, l, c) == PBC_FAIL) {
         goto done;
     }
@@ -1812,16 +1812,16 @@ int clear_pinit_cookie(pool *p) {
 
 }
 
-int pinit_responce(pool *p, login_rec *l, login_rec *c)
+int pinit_response(pool *p, login_rec *l, login_rec *c)
 {
   
-    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "pinit_responce: hello");
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "pinit_response: hello");
 
     clear_pinit_cookie(p);
 
     tmpl_print_html(p, TMPL_FNAME,
-                    libpbc_config_getstring(p, "tmpl_pinit_responce1",
-                                            "pinit_responce1"));
+                    libpbc_config_getstring(p, "tmpl_pinit_response1",
+                                            "pinit_response1"));
     tmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_welcome_back",
                                             "welcome_back"),
@@ -1831,8 +1831,8 @@ int pinit_responce(pool *p, login_rec *l, login_rec *c)
                                             "logout_time_remaining"),
                     time_remaining_text(p, c));
     tmpl_print_html(p, TMPL_FNAME,
-                    libpbc_config_getstring(p, "tmpl_pinit_responce2",
-                                            "pinit_responce2"));
+                    libpbc_config_getstring(p, "tmpl_pinit_response2",
+                                            "pinit_response2"));
     return(PBC_OK);
 
 }
@@ -1878,7 +1878,7 @@ int cookie_test(pool *p, login_rec *l, login_rec *c)
 
     /* after a pinit login we give the user something nice to look at */
     if ( strstr(cookies, PBC_PINIT_COOKIENAME) != NULL ) {
-        pinit_responce(p, l, c);
+        pinit_response(p, l, c);
         return(PBC_FAIL);
     }
 

@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.32 2003-03-24 21:28:14 jjminer Exp $
+    $Id: flavor_basic.c,v 1.33 2003-04-02 23:55:29 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -294,6 +294,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
                                       PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : ""),
                                       PBC_GETVAR_APPID, (l->appid ? l->appid : ""),
@@ -314,6 +315,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                       PBC_GETVAR_SESSION_REAUTH, l->session_reauth,
                                       PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok,
                                       "first_kiss", (l->first_kiss ? l->first_kiss : ""),
+                                      PBC_GETVAR_PINIT, l->pinit,
                                       PBC_GETVAR_REPLY, FORM_REPLY
                                     );
     }
