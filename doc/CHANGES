@@ -1,0 +1,19 @@
+
+
+this is were version changes are recorded
+(i'll hunt down change info for earlier changes later)
+
+a4: release date: 1999Mar4 willey
+
+ - doesn't send a new session cookie every time if Session Inactivity
+ Timeout is disabled (NOTE: the magic number to turn off the inactivity 
+ timeout is -1 not 0)
+ - fixed passing of args through the login circuit
+ - changed where default timeouts are set 
+ - granting request now transits to the login server via a cookie
+ - cookie blanking and get_cookie fixed to deal with only the spec. cookie.
+ - the directory merge function was returned to the code
+ - removed used Login Description directive
+ - some code clean-up and renaming
+
+
