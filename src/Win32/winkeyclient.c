@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.12 2004-05-15 21:37:08 ryanc Exp $
+  $Id: winkeyclient.c,v 1.13 2004-12-21 16:55:24 dors Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -445,7 +445,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 			/* we're uploading! */
 			snprintf(buf, sizeof(buf),
-				"%s?genkey=put?setkey=%s;%s",
+				"%s?genkey=put&setkey=%s;%s",
 				keymgtpath, hostname, enckey);
 		}
 	} else {
