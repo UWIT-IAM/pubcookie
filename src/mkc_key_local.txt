@@ -4,8 +4,8 @@ Web administrators need these keys along with the granting
 cookie certificate.
 
 The input key file is that master key that all other keys are
-simply hashes of.  this file located at
-pcookiel1:/usr/local/pubcookie/m_key.  
+simply hashes of.  At the University of Wahington this file located at
+/usr/local/pubcookie/m_key.  
 
 You must use the primary ip address for the server machine.
 
