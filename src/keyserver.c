@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.49 2004-04-28 21:04:49 willey Exp $
+ * $Id: keyserver.c,v 2.50 2004-04-28 21:23:04 fox Exp $
  */
 
 
@@ -40,6 +40,8 @@ typedef void pool;
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif /* HAVE_SYS_WAIT_H */
+
+#include <sys/signal.h>
 
 #ifdef OPENSSL_IN_DIR
 # include <openssl/pem.h>
@@ -552,6 +554,16 @@ static int verify_callback(int ok, X509_STORE_CTX * ctx)
     return ok;
 }
 
+/* Catch an idle connection. Logging ought to be ok here, since we suspect
+   this is always caused by a bogus connection that is passing no data,
+   and we are leaving right afterwards. */
+
+void sig_alarm() {
+  pbc_log_activity(NULL, PBC_LOG_ERROR, "Bogus connection terminated by alarm");
+  exit (1);
+}
+
+
 /* run as if invoked by inetd */
 int main(int argc, char *argv[])
 {
@@ -567,6 +579,7 @@ int main(int argc, char *argv[])
     int r;
     pool *p = NULL;
     security_context *context = NULL;
+    int max_wait = 0;
 
     libpbc_config_init(p, NULL, "keyserver");
     pbc_log_init_syslog(p, "keyserver");
@@ -578,6 +591,8 @@ int main(int argc, char *argv[])
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
     cadir = libpbc_config_getstring(p, "ssl_ca_path", NULL);
     gcfile = libpbc_config_getstring(p, "granting_cert_file", NULL);
+    max_wait = libpbc_config_getint(p, "keyserver_max_wait_time", 0);
+    if (max_wait<0) max_wait = 0;
 
     while ((c = getopt(argc, argv, "apc:k:C:D:")) != -1) {
 	switch (c) {
@@ -665,11 +680,18 @@ int main(int argc, char *argv[])
     SSL_set_wfd(ssl, 1);
     SSL_set_accept_state(ssl);
 
+    /* If no data in max_wait seconds, give up */
+    if (max_wait) {
+      signal(SIGALRM, sig_alarm);
+      alarm(max_wait);
+    }
+
     if (SSL_accept(ssl) <= 0) {
 	logerrstr("SSL_accept");
 	ERR_print_errors_fp(stderr);
 	exit(1);
     }
+    if (max_wait) alarm(0);
 
     /* check certificate */
     client_cert = SSL_get_peer_certificate (ssl);
