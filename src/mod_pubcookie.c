@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.27 1999-06-02 21:43:03 willey Exp $
+    $Id: mod_pubcookie.c,v 1.28 1999-06-25 22:10:12 willey Exp $
  */
 
 /* apache includes */
@@ -270,11 +270,15 @@ static int auth_failed(request_rec *r) {
     char 		 *new_cookie = palloc(r->pool, PBC_1K);
     char 		 *g_req_contents = palloc(r->pool, PBC_1K);
     char 		 *e_g_req_contents = palloc(r->pool, PBC_1K);
+    const char *tenc = table_get(r->headers_in, "Transfer-Encoding");
+    const char *lenp = table_get(r->headers_in, "Content-Length");
 #else
     char 		 *refresh = ap_palloc(r->pool, PBC_1K);
     char 		 *new_cookie = ap_palloc(r->pool, PBC_1K);
     char 		 *g_req_contents = ap_palloc(r->pool, PBC_1K);
     char 		 *e_g_req_contents = ap_palloc(r->pool, PBC_1K);
+    const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
+    const char *lenp = ap_table_get(r->headers_in, "Content-Length");
 #endif
     char		 *args;
     char		 *refresh_e;
@@ -335,12 +339,13 @@ static int auth_failed(request_rec *r) {
 	  PBC_GETVAR_FR, 
 	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
 
-    /* the redirect for POSTs is different than GETs */
+    /* the redirect for requests with POST args are  */
+    /* different then reqs with only GET args        */
     /* for GETs:                                     */
     /*   granting request is sent in a cookie and    */
     /*   a simple redirect is used to get the user   */
     /*   to the login server                         */
-    /* for POSTs and PUTs:                           */
+    /* for POSTs or (POST and GET args)              */
     /*   granting request is still sent in a cookie  */
     /*   redirect is done with javascript in the     */
     /*   body or a button if the user has javascript */
@@ -373,7 +378,7 @@ static int auth_failed(request_rec *r) {
     refresh_e = os_escape_path(r->pool, refresh, 0);
 
 #ifdef REDIRECT_IN_HEADER
-    if ( r->method_number != M_POST )
+    if ( !(tenc || lenp) )
         table_add(r->headers_out, "Refresh", refresh); */
 #endif
     send_http_header(r);
@@ -387,14 +392,17 @@ static int auth_failed(request_rec *r) {
 
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
 #ifdef REDIRECT_IN_HEADER
-    if ( r->method_number != M_POST )
+    if ( !(tenc || lenp) )
         ap_table_add(r->headers_out, "Refresh", refresh);
 #endif
     ap_send_http_header(r);
 #endif
 
     /* now send a body */
-    if ( r->method_number == M_POST ) {
+    if ( tenc && !strcmp(tenc,"multipart/form-data") ) {
+        put_out_post(r);
+    }
+    else if ( tenc || lenp ) {
 #ifdef APACHE1_2
         rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
         rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
