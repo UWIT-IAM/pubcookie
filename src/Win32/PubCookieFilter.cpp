@@ -76,7 +76,7 @@ int get_pre_s_token() {
         syslog(LOG_ERR,	"get_pre_s_token: OpenSSL error");
     }
 
-		DebugMsg(( DEST, "get_pre_s_token: token is %d", i));
+		DebugMsg(( DEST, "get_pre_s_token: token is %d\n", i));
     return(i);
 
 }
@@ -418,15 +418,16 @@ void Add_No_Cache(HTTP_FILTER_CONTEXT* pFC)
 void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_contents)
 {
 	char			szHeaders[PBC_1K];
+	pubcookie_dir_rec* dcfg;
 
-
+	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	DebugMsg((DEST,"  Adding cookie %s=%s\n",cookie_name,cookie_contents));
 
 	sprintf(szHeaders, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\n",
 		cookie_name, 
 		cookie_contents,
-		PBC_ENTRPRS_DOMAIN);
+		dcfg->Enterprise_Domain);
 
 	pFC->AddResponseHeaders(pFC,szHeaders,0);
 
@@ -757,34 +758,33 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* dcfg)
 		RegQueryValueEx (hKey, "Error_Page",
 							 NULL, NULL, (LPBYTE) dcfg->Error_Page, &dwRead);
 
+
+		if (dcfg->logout_action != LOGOUT_NONE) {   //Local logout cannot be authenticated. Redirect could, but isn't
+			dcfg->AuthType = AUTH_NONE;
+		}
+		sprintf(dcfg->s_cookiename,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
+		
+		DebugMsg((DEST,"  Values for: %s\n" ,key));
+		DebugMsg((DEST,"    NtUserId         : %s\n" ,dcfg->pszUser));
+		DebugMsg((DEST,"    Password?        : %d\n" ,(strlen(dcfg->pszPassword) > 0) ));
+		DebugMsg((DEST,"    Inact_Exp        : %d\n" ,dcfg->inact_exp));
+		DebugMsg((DEST,"    Hard_Exp         : %d\n" ,dcfg->hard_exp));
+		DebugMsg((DEST,"    Force_Reauth     : %s\n" ,dcfg->force_reauth));
+		DebugMsg((DEST,"    Session_Reauth   : %1d\n" ,dcfg->session_reauth));
+		DebugMsg((DEST,"    Logout_Action    : %1d\n" ,dcfg->logout_action));
+		DebugMsg((DEST,"    AuthType         : %c\n" ,dcfg->AuthType));
+		DebugMsg((DEST,"    Default_Url      : %s\n" ,dcfg->default_url));
+		DebugMsg((DEST,"    Timeout_Url      : %s\n" ,dcfg->timeout_url));
+		DebugMsg((DEST,"    Web_Login        : %s\n" ,dcfg->Web_Login));
+		DebugMsg((DEST,"    Enterprise_Domain: %s\n" ,dcfg->Enterprise_Domain));
+		DebugMsg((DEST,"    Error_Page       : %s\n" ,dcfg->Error_Page));
 		
 	} else {
-		DebugMsg((DEST, "*** Could not read Pubcookie registry key %s.  %s\n",key,strerror(rslt)));
+		DebugMsg((DEST, "  Could not read Pubcookie registry key %s.  %s\n",key,strerror(rslt)));
 	}
     
 	RegCloseKey (hKey); 
 	
-	if (dcfg->logout_action != LOGOUT_NONE) {   //Local logout cannot be authenticated. Redirect could, but isn't
-		dcfg->AuthType = AUTH_NONE;
-	}
-	sprintf(dcfg->s_cookiename,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
-
-	DebugMsg((DEST,"  Values for: %s\n" ,key));
-	DebugMsg((DEST,"    NtUserId         : %s\n" ,dcfg->pszUser));
-	DebugMsg((DEST,"    Password?        : %d\n" ,(strlen(dcfg->pszPassword) > 0) ));
-	DebugMsg((DEST,"    Inact_Exp        : %d\n" ,dcfg->inact_exp));
-	DebugMsg((DEST,"    Hard_Exp         : %d\n" ,dcfg->hard_exp));
-	DebugMsg((DEST,"    Force_Reauth     : %s\n" ,dcfg->force_reauth));
-	DebugMsg((DEST,"    Session_Reauth   : %1d\n" ,dcfg->session_reauth));
-	DebugMsg((DEST,"    Logout_Action    : %1d\n" ,dcfg->logout_action));
-	DebugMsg((DEST,"    AuthType         : %c\n" ,dcfg->AuthType));
-	DebugMsg((DEST,"    Default_Url      : %s\n" ,dcfg->default_url));
-	DebugMsg((DEST,"    Timeout_Url      : %s\n" ,dcfg->timeout_url));
-	DebugMsg((DEST,"    Web_Login        : %s\n" ,dcfg->Web_Login));
-	DebugMsg((DEST,"    Enterprise_Domain: %s\n" ,dcfg->Enterprise_Domain));
-	DebugMsg((DEST,"    Error_Page       : %s\n" ,dcfg->Error_Page));
-
-
 }
 
 void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
