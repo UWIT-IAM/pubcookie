@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.34 $
+ * $Revision: 1.35 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -113,7 +113,7 @@ void clear_error(const char *, const char *);
 void print_uwnetid_logo();
 login_rec *verify_unload_login_cookie (login_rec *);
 int create_cookie(char *, char *, char *, char, char, int, time_t, char *, 
-		  const char *peer, int);
+		  const char *host, int);
 login_rec *get_query();
 char *check_login(login_rec *, login_rec *);
 char *check_l_cookie(login_rec *, login_rec *);
