@@ -150,14 +150,20 @@
 /* Define to 1 if you have the `ssldap50' library (-lssldap50). */
 #undef HAVE_LIBSSLDAP50
 
+/* Define to 1 if you have the <mango/messages.h> header file. */
+#undef HAVE_MANGO_MESSAGES_H
+
+/* Define to 1 if you have the <mango/mgoapi2.h> header file. */
+#undef HAVE_MANGO_MGOAPI2_H
+
+/* Define to 1 if you have the <mango/sidapi.h> header file. */
+#undef HAVE_MANGO_SIDAPI_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
-
-/* Define to 1 if you have the <mango/mgoapi2.h> header file. */
-#undef HAVE_MANGO_MGOAPI2_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
