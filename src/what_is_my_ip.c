@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     }
     printf("myname.nodename: %s\n", myname.nodename);
 
-//    printf("ip: %s\n", inet_ntoa((struct in_addr)libpbc_gethostip()));
+/*    printf("ip: %s\n", inet_ntoa((struct in_addr)libpbc_gethostip())); */
     printf("libpubcookie calls: ip: %d-%d-%d-%d\n", libpbc_gethostip()[0],
                                 libpbc_gethostip()[1],
                                 libpbc_gethostip()[2],
