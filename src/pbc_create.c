@@ -1,11 +1,13 @@
 /*
-    $Id: pbc_create.c,v 1.7 1999-04-16 23:15:11 willey Exp $
+    $Id: pbc_create.c,v 1.8 1999-05-05 16:20:18 willey Exp $
  */
 
 /* this is not meant to be user friendly, no friendlyness for anyone          */
 /*   but me and i have the src code                                           */
 /*                                                                            */
-/* args are: user appsrv_id app_id type creds serial [crypt_file] [cert_key_file]  */
+/* the big news is that arguments come in on stdin not the command line!!!!   */
+/*                                                                            */
+/* args are: user appsrv_id app_id type creds serial crypt_file cert_key_file */
 /*    (anything too big is just truncated)                                    */
 /*      since i'm lazy the argments aren't at all parsed, if you              */
 /*	want to specify a cert_file you must also specifiy a crypt key        */
@@ -31,37 +33,43 @@ int main(int argc, char **argv) {
     unsigned char 	creds;
     int 		serial;
 
+    unsigned char	crypt_keyfile[PBC_1K];
+    unsigned char	cert_keyfile[PBC_1K];
+
+    unsigned char	user_buf[PBC_1K];
+    unsigned char	appsrv_id_buf[PBC_1K];
+    unsigned char	app_id_buf[PBC_1K];
+
     unsigned char 	*cookie;
 
-    if(argc < 7)
-        exit(1);
+    if( fscanf( stdin, "%1023s%1023s%1023s %c %c %d %1023s%1023s\n", 
+                       user_buf,                 
+		       appsrv_id_buf, 
+		       app_id_buf,
+		       &type,
+		       &creds,
+		       &serial,
+		       crypt_keyfile,
+		       cert_keyfile) != 8 ) {
+	exit(1);
+    }
 
-    strncpy(user, argv[1], sizeof(user));
+    /* move the arguments out of buffers and right size them */
+    strncpy(user, user_buf, sizeof(user));
     user[sizeof(user)-1] = '\0';
-    strncpy(appsrv_id, argv[2], sizeof(appsrv_id));
+    strncpy(appsrv_id, appsrv_id_buf, sizeof(appsrv_id));
     appsrv_id[sizeof(appsrv_id)-1] = '\0';
-    strncpy(app_id, argv[3], sizeof(app_id));
+    strncpy(app_id, app_id_buf, sizeof(app_id));
     appsrv_id[sizeof(app_id)-1] = '\0';
-    type = argv[4][0];
-    creds = argv[5][0];
-    serial = atoi(argv[6]);
 
-    if ( argv[7] ) 
-        c_stuff = libpbc_init_crypt(argv[7]);
-    else
-        c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+    crypt_keyfile[sizeof(crypt_keyfile)-1] = '\0';
+    cert_keyfile[sizeof(cert_keyfile)-1] = '\0';
 
-    if ( argv[7] && argv[8] ) 
-        ctx_plus = libpbc_sign_init(argv[8]);
-    else if ( type == PBC_COOKIE_TYPE_G ) 
-        ctx_plus = libpbc_sign_init(PBC_G_KEYFILE);
-    else if ( type == PBC_COOKIE_TYPE_L ) 
-        ctx_plus = libpbc_sign_init(PBC_L_KEYFILE);
-    else if ( type == PBC_COOKIE_TYPE_S ) 
-        ctx_plus = libpbc_sign_init(PBC_S_KEYFILE);
-    else
-        exit(1);
+    /* read in and initialize crypt and signing structures */
+    c_stuff = libpbc_init_crypt(crypt_keyfile);
+    ctx_plus = libpbc_sign_init(cert_keyfile);
 
+    /* go get the cookie */
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, ctx_plus, c_stuff);
 
     printf("%s", cookie);
