@@ -2,17 +2,44 @@
 #include <time.h>
 #include <stdlib.h>
 #include <pem.h>
+#include <unistd.h>
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
 
-int *main() {
+void usage(const char *progname) {
+    printf("%s [-k key_file] [-h]\n\n", progname);
+    printf("\t key_file:\tdefault is %s\n\n", PBC_CRYPT_KEYFILE);
+    exit (1);
+}
+
+int main(int argc, char **argv) {
+    char		*key_file = NULL;
+    int 		c, barfarg = 0;
     crypt_stuff		*c1_stuff;
     unsigned char	in[PBC_1K];
     unsigned char	intermediate[PBC_1K];
     unsigned char	out[PBC_1K];
 
-    c1_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+    optarg = NULL;
+    while (!barfarg && ((c = getopt(argc, argv, "hk:")) != -1)) {
+	switch (c) {
+	case 'h' :
+	    usage(argv[0]);
+	    break;
+	case 'k' :
+	    key_file = strdup(optarg);
+	    break;
+	default :
+	    barfarg++;
+	    usage(argv[0]);
+	}
+    }
+
+    if ( key_file )
+        c1_stuff = libpbc_init_crypt(key_file);
+    else
+        c1_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
 
     bzero(in, 1024);
     bzero(out, 1024);
