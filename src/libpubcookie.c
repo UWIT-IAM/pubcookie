@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 2.2 1999-04-28 22:12:40 willey Exp $
+    $Id: libpubcookie.c,v 2.3 1999-05-24 22:23:43 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -448,7 +448,7 @@ void libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
     if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF)
         libpbc_abend("libpbc_crypt_key: Failed read: %s\n", keyfile);
     
-    fclose(fp);
+    pbc_fclose(fp);
 
     addr = libpbc_gethostip();
     memcpy(c_stuff->key_a, libpbc_mod_crypt_key(key_in, addr), sizeof(c_stuff->key_a));
