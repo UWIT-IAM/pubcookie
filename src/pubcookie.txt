@@ -83,8 +83,12 @@ test_local_c_key.c
 Apache Module Installation Notes
 --------------------------------
 
-The apache server needs to have been built with SSL.  apache-ssl patches,
-openssl, and mod_ssl have all been tested with pubcookie.
+The apache server needs to have been built with SSL.  apache-ssl patches
+and mod_ssl have all been tested with pubcookie.  SSLeay and 
+openSSL have both been tested as sources for ssl libraries.
+
+You will have to rely on Apache documentation or the documention
+from the other packages for help on building them.
 
 The module can be built either as a static module (the only option for
 apache 1.2.x) or as a dso.  
@@ -96,7 +100,8 @@ version 1.3.* is being used.
 
 Basic steps are:
 
-1 - Get and build apache (with openssl, mod_ssl or apache-ssl patches), ssleay, RSAref (as long and the patent lasts).
+1 - Get and build apache (with mod_ssl or apache-ssl patches), ssleay 
+(or openssl), and RSAref (as long and the patent lasts).
 2 - Verify that apache with SSL builds and works before you add pubcookie.
 3 - If you are compiling pubcookie as a DSO you will need to link ssleay (and
 maybe RSAref) into axps (the apache DSO module builder).
@@ -105,9 +110,11 @@ where you untar the distribution, if you are not then untar the distribution
 where you would put other modules (like src/modules/pubcookie in 1.3.x)
 5 - If you are using DSO, build the dso modules with axps.  if you are 
 not using DSO move on to the next step.
-6 - Regardless of which method you use to build Apache you will need to add 
-the module listing to one of the Configuration files and run one of the 
-Configure scripts.
+6a - If you use the top level Configure script you will need to add
+the options: "--activate-module=src/modules/pubcookie/mod_pubcookie.a --enable-module=pubcookie"
+  or
+6b - If you use src level Configure script add 
+the module listing to the Configuration file and run the Configure scripts.
 7 - If the Configuration goes file then you should be able to do a make
 and eventually get an apache web daemon.
 8 - A key/cert pairs should be generated for the server.
@@ -243,6 +250,37 @@ Descriptions of Some Logged Error Messages
 	the cookie was no good (couldn't be decrypted, too short, signature
 	verifyication failed, etc.)
 
-$Id: pubcookie.txt,v 1.3 1999-01-09 01:08:40 willey Exp $
+Platform/Architecture Specific Notes
+------------------------------------
+
+Systems with 64bit longs (alphas):
+
+Patch to rsaref for systems with 64 bit longs.  in
+src/global.h, line 26 needs to change from 'unsigned long int' to
+'unsigned int':
+
+    *** ../../src2.0/source/global.h        Fri Mar 25 11:01:46 1994
+    --- global.h    Wed Oct 21 16:19:23 1998
+    ***************
+    *** 23,29 ****
+    typedef unsigned short int UINT2;
+    
+    /* UINT4 defines a four byte word */
+    ! typedef unsigned long int UINT4;
+    
+    #ifndef NULL_PTR
+    #define NULL_PTR ((POINTER)0)
+    --- 23,29 ----
+    typedef unsigned short int UINT2;
+    
+    /* UINT4 defines a four byte word */
+    ! typedef unsigned int UINT4;
+    
+    #ifndef NULL_PTR
+    #define NULL_PTR ((POINTER)0)
+
+
+
+$Id: pubcookie.txt,v 1.4 1999-01-11 21:47:43 willey Exp $
 
 
