@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.56 2004-05-16 19:43:14 dors Exp $
+# $Id: Makefile.in,v 1.57 2004-05-16 19:54:37 dors Exp $
 
 @SET_MAKE@
 
@@ -243,6 +243,8 @@ DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/install-mod_pubcookie.html \
 	 $(srcdir)/doc/mod_pubcookie-directives.html \
 	 $(srcdir)/doc/install-login.html \
+	 $(srcdir)/doc/install-filter.html \
+	 $(srcdir)/doc/krb5-getcred.html \
 	 $(srcdir)/doc/HACKING.txt \
 	 $(srcdir)/doc/pubcookie.css
 
