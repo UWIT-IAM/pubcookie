@@ -8,7 +8,7 @@ L - library changes
 H - only .h files changed
 O - other (Makefile, Makefile.apxs, etc.)
 
-a5 release9 07Apr2000 rcs references: m1.47 l2.11
+a5 release9 07Apr2000 rcs references: m1.48 l2.11
 M  - added directive for PubCookieDirDepthforAppID to set the max path length
      for default App IDs.
 M  - added directive for PubCookieAppSrvID to specify the App Server ID.
