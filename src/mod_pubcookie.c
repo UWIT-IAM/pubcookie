@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.25 1999-05-26 18:24:25 willey Exp $
+    $Id: mod_pubcookie.c,v 1.26 1999-06-02 00:18:30 willey Exp $
  */
 
 /* apache includes */
@@ -157,15 +157,22 @@ unsigned char *get_app_path(pool *p, const char *uri, const char *filename) {
 
 }
 
+request_rec *main_rrec (request_rec *r) {
+    request_rec *mr = r;
+    while (mr->main)
+	mr = mr->main;
+    return mr;
+}
+
 /* figure out the app_id                                                      */
 unsigned char *genr_app_id(request_rec *r, pubcookie_dir_rec *cfg)
 {
-
-    return cfg->app_id ? cfg->app_id : get_app_path(r->pool, r->unparsed_uri, r->filename);
+    request_rec *rmain = main_rrec (r);
+    return cfg->app_id ? cfg->app_id : get_app_path(r->pool, rmain->unparsed_uri, r->filename);
 
 }
 
-request_rec *main_rrec (request_rec *r) {
+request_rec *top_rrec (request_rec *r) {
     request_rec *mr = r;
 
     for (;;) {
@@ -183,7 +190,7 @@ int blank_cookie(request_rec *r, char *name) {
   const char *cookie_header; 
   char *cookie;
   char *ptr;
-  request_rec *mr = main_rrec (r);
+  request_rec *mr = top_rrec (r);
   char *c2;
   char *name_w_eq;
 
@@ -191,10 +198,17 @@ int blank_cookie(request_rec *r, char *name) {
 #ifdef APACHE1_2
   if(table_get(mr->notes, name) ||
       !(cookie_header = table_get(r->headers_in, "Cookie")))
+    return 0;
+
+  /* if we aint got an authtype they we definately aint pubcookie */
+  if(!auth_type(r))
+    return DECLINED;
+
+  /* add an equal on the end */
+  name_w_eq = pstrcat(r->pool, name, "=", NULL);
 #else
   if(ap_table_get(mr->notes, name) ||
       !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
-#endif
     return 0;
 
   /* if we aint got an authtype they we definately aint pubcookie */
@@ -202,9 +216,6 @@ int blank_cookie(request_rec *r, char *name) {
     return DECLINED;
 
   /* add an equal on the end */
-#ifdef APACHE1_2
-  name_w_eq = pstrcat(r->pool, name, "=", NULL);
-#else
   name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
 #endif
 
@@ -272,7 +283,7 @@ static int auth_failed(request_rec *r) {
     char		 *refresh_e;
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec 	 *cfg;
-    request_rec		 *mr = main_rrec (r);
+    request_rec		 *mr = top_rrec (r);
 
 #ifdef APACHE1_2
     cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
@@ -346,7 +357,7 @@ static int auth_failed(request_rec *r) {
     table_add(r->headers_out, "Set-Cookie", new_cookie);
 
     /* we want to make sure agents don't cache the redirect */
-    table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
+    table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
     table_set(r->headers_out, "Cache-Control", "no-cache");
     table_set(r->headers_out, "Pragma", "no-cache");
 
@@ -379,9 +390,9 @@ static int auth_failed(request_rec *r) {
     /* a bad mix of stuff here and stuff in pbc_config.h */
 #ifdef APACHE1_2
         rprintf(r, "<HTML><HEAD>\n");
-        rptintf(r, "</HEAD>\n");
+        rprintf(r, "</HEAD>\n");
         rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
-        rptintf(r, "<CENTER>\n");
+        rprintf(r, "<CENTER>\n");
 
         rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
         rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
@@ -399,7 +410,7 @@ static int auth_failed(request_rec *r) {
         rprintf(r, "%s", PBC_HTML_COPYRIGHT);
 
         rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
-        rptintf(r, "</CENTER>\n");
+        rprintf(r, "</CENTER>\n");
         rprintf(r, "</BODY></HTML>\n");
 #else
         ap_rprintf(r, "<HTML><HEAD>\n");
@@ -548,7 +559,7 @@ char *make_session_cookie_name(pool *p, unsigned char *app_id)
 char *get_cookie(request_rec *r, char *name) {
   const char *cookie_header; 
   char *cookie, *ptr;
-  request_rec *mr = main_rrec (r);
+  request_rec *mr = top_rrec (r);
   char *name_w_eq;
 
   /* get cookies */
@@ -957,6 +968,7 @@ static int pubcookie_typer(request_rec *r) {
        in the app
      */
     if( cfg->inact_exp > 0 || first_time_in_session ) {
+      request_rec *rmain = main_rrec (r);
 
       /* make session cookie */
       cookie = libpbc_get_cookie_p(r->pool, (unsigned char *) r->connection->user, PBC_COOKIE_TYPE_S, cfg->creds, scfg->serial_s_sent++, scfg->appsrv_id, genr_app_id(r, cfg), scfg->session_sign_ctx_plus, scfg->c_stuff);
@@ -969,7 +981,7 @@ static int pubcookie_typer(request_rec *r) {
 #ifdef NO_JIMB_SESSION_NAMES
               "/");
 #else
-              get_app_path(r->pool, r->unparsed_uri), r->filename);
+              get_app_path(r->pool, rmain->unparsed_uri, r->filename));
 #endif
 
       table_add(r->headers_out, "Set-Cookie", new_cookie);
@@ -981,7 +993,7 @@ static int pubcookie_typer(request_rec *r) {
 #ifdef NO_JIMB_SESSION_NAMES
               "/");
 #else
-              get_app_path(r->pool, r->unparsed_uri, r->filename));
+              get_app_path(r->pool, rmain->unparsed_uri, r->filename));
 #endif
 
       ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
