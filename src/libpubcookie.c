@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.77 2005-02-07 22:26:37 willey Exp $
+ * $Id: libpubcookie.c,v 2.78 2005-02-24 19:56:09 willey Exp $
  */
 
 
@@ -1114,3 +1114,36 @@ const char *libpbc_time_text (pool * p, int secs, int use_numbers, int cap)
     return string;
 
 }
+
+/** 
+ * find any '%' and escape them as "%%"
+ * @param string to be escaped
+ * @returns escaped content, memory must be freed
+ */
+char *escape_percs (pool * p, char *in)
+{
+    char *out;
+    char *ptr;
+    int i=0;
+
+    /* count the number of '%' */
+    for ( ptr=in; ptr=strchr(ptr+1, '%'); i++ )
+        ;
+    
+    if (!(out = malloc (strlen (in) + i))) {
+        libpbc_abend (p, "out of memory");
+    }
+
+    ptr = out;
+    while (*in) {
+        *ptr = *in;
+        if ( *in == '%' )
+            *(++ptr) = '%';
+        ptr++;
+        in++;
+    }
+    *ptr = '\0';
+    return (out);
+
+}
+

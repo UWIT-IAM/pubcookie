@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.148 2005-02-07 22:26:37 willey Exp $
+ * $Id: index.cgi.c,v 1.149 2005-02-24 19:56:09 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2521,7 +2521,7 @@ void print_redirect_page (pool * p, const security_context * context,
     char *submit_value = NULL;
     cgiFormEntry *cur;
     cgiFormEntry *next;
-    time_t now;
+    char *redirect_final_trunc = NULL;
 
     char *user;
     char *appsrvid;
@@ -2644,18 +2644,30 @@ void print_redirect_page (pool * p, const security_context * context,
         strcpy (redirect_final, redirect_dest);
     }
 
-    /* we don't use the fab log_message funct here because the url encoding */
-    /* will look like format chars in future *printf's */
-    now = time (NULL);
-    fprintf (stderr,
-             "%s: PUBCOOKIE_DEBUG: %s: %s Redirect user: %s redirect: %s reason: %s\n",
-             libpbc_time_string (p, now),
-             ANY_LOGINSRV_MESSAGE,
+    /* log redirect */
+    /* truncate GET args for log AUDIT but give full args for DEBUG */
+    redirect_final_trunc = strdup(redirect_final);
+    if ( (ptr=strchr(redirect_final_trunc, '?')) != NULL ) {
+        if ( strlen(redirect_final_trunc) - (ptr-redirect_final_trunc) >= 3 )
+            strcpy(ptr+1, "...");
+
+        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                 "%s Redirect user: %s redirect(full): %s reason: %s\n",
+                 l->first_kiss,
+                 (l->user == NULL ? "" : l->user),
+                 redirect_final,
+                 l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
+    }
+    pbc_log_activity (p, PBC_LOG_AUDIT,
+             "%s Redirect user: %s redirect%s: %s reason: %s\n",
              l->first_kiss,
              (l->user == NULL ? "" : l->user),
-             redirect_final,
-             l->appsrv_err_string ==
-             NULL ? "(null)" : l->appsrv_err_string);
+             (ptr == NULL) ? "" : "(truncated)",
+             redirect_final_trunc,
+             l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
+
+    if ( redirect_final_trunc != NULL )
+        pbc_free(p, redirect_final_trunc);
 
     /* Send local cookies */
     if (l->pinit == PBC_TRUE)
