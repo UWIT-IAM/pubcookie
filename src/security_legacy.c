@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.39 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: security_legacy.c,v 1.40 2004-04-22 18:36:02 fox Exp $
  */
 
 
@@ -476,7 +476,7 @@ int security_init(pool *p, security_context **contextp)
         make_crypt_keyfile(p, context->myname, cryptkey);
         if (access(cryptkey, R_OK | F_OK) == -1) {
             pbc_log_activity(p, PBC_LOG_ERROR, "security_init: can't access crypt key file %s (try setting crypt_key)", cryptkey);
-            free(cryptkey);
+            pbc_free(cryptkey);
             return -2;
         }
     }
