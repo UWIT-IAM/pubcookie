@@ -1,9 +1,12 @@
 /*
-    $Id: pbc_verify.c,v 1.7 1998-12-18 16:03:49 willey Exp $
+    $Id: pbc_verify.c,v 1.8 1999-05-26 17:59:33 willey Exp $
  */
 
 /*                                                                            */
-/* args are: type                                                             */
+/* args are:                                                                  */
+/*   cookie_type [encryption_key] [cert_file]                                 */
+/*      since i'm lazy the argments aren't at all parsed, if you              */
+/*	want to specify a cert_file you must also specifiy a crypt key        */
 /*                                                                            */
 
 #include <stdio.h>
@@ -23,11 +26,21 @@ int main(int argc, char **argv) {
 
     fgets(in, sizeof(in), stdin);
 
-    if ( argc != 2 )
+    if ( argc < 2 )
 	exit(1);
 
     type = argv[1][0];
-    if ( type == PBC_COOKIE_TYPE_G )
+
+    /* if we're given a keyfile, use it */
+    if ( argv[2] )
+        c_stuff = libpbc_init_crypt(argv[2]);
+    else 
+        c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+
+    /* if we're given a certfile to use, use it */
+    if ( argv[2] && argv[3] )
+        ctx_plus = libpbc_verify_init(argv[3]);
+    else if ( type == PBC_COOKIE_TYPE_G )
         ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
     else if ( type == PBC_COOKIE_TYPE_L )
         ctx_plus = libpbc_verify_init(PBC_L_CERTFILE);
@@ -35,8 +48,6 @@ int main(int argc, char **argv) {
         ctx_plus = libpbc_verify_init(PBC_S_CERTFILE);
     else
 	exit (1);
-
-    c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
 
     if( ! (cookie_data = libpbc_unbundle_cookie(in, ctx_plus, c_stuff)) )
 	exit(1);
@@ -54,4 +65,3 @@ int main(int argc, char **argv) {
     exit(0);
 
 }
-    
