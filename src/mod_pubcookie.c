@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.99 2002-08-30 21:58:35 willey Exp $
+    $Id: mod_pubcookie.c,v 1.100 2002-09-24 21:35:39 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -76,7 +76,6 @@
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
-
 
 /* misc prototype */
 char *make_session_cookie_name(pool *, char *, unsigned char *);
@@ -965,10 +964,10 @@ static int bad_user_handler(request_rec *r) {
 /*                                                                            */
 static int is_pubcookie_auth(pubcookie_dir_rec *cfg) {
   if ( cfg->creds && cfg->creds != PBC_CREDS_NONE ) {
-    return TRUE;
+    return(PBC_TRUE);
   }
   else {
-    return FALSE;
+    return(PBC_FALSE);
   }
 
 }
@@ -1089,6 +1088,7 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
   scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
 
   scfg->login = ap_pstrcat(p, PBC_LOGIN_URI, NULL);
+ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, s, "pubcookie_server_create(): login from PBC_LOGIN_URI: %s", scfg->login);
   scfg->dirdepth = PBC_DEFAULT_DIRDEPTH;
   scfg->authtype_names = NULL;
 
