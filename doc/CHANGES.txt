@@ -159,12 +159,11 @@ Changes with 3.1.0:
    done for the relay cgi for example. 
    [ryanc]
 
-*) Added relay capability for cross-domain authentication
+*) Added relay capability for cross-domain authentication.
    [fox]
 
-*) Added login form timeout and corresponding form_expired template
+*) Added login form timeout and corresponding form_expired template.
    [fox]
-
 
 *) Merged security-context branch for better virtual host support in 
    Apache module. 
@@ -174,8 +173,9 @@ Changes with 3.1.0:
    parameter. If the user has entered a password in less time than
    this parameter they don't have to reenter a password. Added 
    necessary changes login cgi too.
+   [fox]
 
-*) Apache 2.0 now supported
+*) Apache 2.0 now supported.
    [fox]
 
 *) Changed the behavior of the module install to prepend a '#' to the
@@ -197,6 +197,10 @@ Changes with 3.1.0:
    [fox]
 
 *) Send keyclient errors to stderr instead of syslog so they're seen.
+   [jeaton]
+
+*) Changed getcred flavor to support transfer of multiple kerberos tickets
+   from the login server to an application server (instead of just one). 
    [jeaton]
 
 *) Added granting cert download option to Win32 keyclient.
