@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: pbc_apacheconfig.c,v 2.2 2003-04-15 17:26:09 jjminer Exp $
+    $Id: pbc_apacheconfig.c,v 2.3 2003-04-16 16:07:25 jjminer Exp $
  */
 
 
@@ -125,7 +125,7 @@ int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident)
     /* xxx check that we can read our symmetric key */
 
     /* xxx check that the granting certificate (public key) is readable */
-    
+
     return 0;
 }
 

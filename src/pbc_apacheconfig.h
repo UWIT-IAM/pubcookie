@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: pbc_apacheconfig.h,v 2.2 2003-04-15 17:26:09 jjminer Exp $
+    $Id: pbc_apacheconfig.h,v 2.3 2003-04-16 16:07:25 jjminer Exp $
  */
 
 
@@ -97,8 +97,6 @@ int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident);
 
 const char *libpbc_apacheconfig_getstring(pool *p, const char *key,
     const char *def);
-const char **libpbc_apacheconfig_getlist(pool *p, const char *key);
-const int libpbc_apacheconfig_getint(pool *p, const char *key,
-    const char *def);
-const int libpbc_apacheconfig_getswitch(pool *p, const char *key,
-    const char *def);
+char **libpbc_apacheconfig_getlist(pool *p, const char *key);
+int libpbc_apacheconfig_getint(pool *p, const char *key, int def);
+int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def);

@@ -12,7 +12,7 @@
 #include "pbc_myconfig.h"
 
 /* callbacks for the configure subsystem */
-typedef void config_initialize(pool *p, const char *alt_config, 
+typedef int config_initialize(pool *p, void *alt_config, 
                                       const char *ident);
 typedef int config_getint(pool *p, const char *key, int def);
 typedef char** config_getlist(pool *p, const char *key);

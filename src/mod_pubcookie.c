@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.113 2003-04-14 13:30:51 jteaton Exp $
+    $Id: mod_pubcookie.c,v 1.114 2003-04-16 16:07:25 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,6 +59,7 @@
 #include "security.h"
 #include "mod_pubcookie.h"
 #include "pbc_apacheconfig.h"
+#include "pbc_configure.h"
 
 /* system stuff */
 #ifdef HAVE_TIME_H
@@ -1052,8 +1053,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
         &libpbc_apacheconfig_getint,
         &libpbc_apacheconfig_getlist,
         &libpbc_apacheconfig_getstring,
-        &libpbc_apacheconfig_getswitch,
-        NULL);
+        &libpbc_apacheconfig_getswitch);
 
 
     /* libpubcookie initialization */
