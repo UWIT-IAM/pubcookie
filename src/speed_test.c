@@ -1,5 +1,5 @@
 /*
-    $Id: speed_test.c,v 1.1 2000-03-29 01:35:23 willey Exp $
+    $Id: speed_test.c,v 1.2 2000-04-07 17:37:29 willey Exp $
  */
 
 /* Copyright 1999, University of Washington.  All rights reserved. */
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/times.h>
 #include <string.h>
 #include <pem.h>
 #include <unistd.h>
@@ -14,6 +15,76 @@
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
+
+typedef struct {
+    clock_t	begin_uclock;
+    clock_t	save_uclock;
+    clock_t	begin_sclock;
+    clock_t	save_sclock;
+    time_t	begin_time;
+    time_t	save_time;
+} time_keeper;
+static time_keeper	tk;
+
+void start_time() {
+    tk.begin_uclock = tk.save_uclock = clock();
+    tk.begin_time = tk.save_time = time(NULL);
+}
+
+void prn_time(int n) {
+    char	s1[PBC_1K];
+    char	s2[PBC_1K];
+    int		wid, len1, len2;
+    double	clocks_per_sec = (double)CLOCKS_PER_SEC;
+    double	user_clocks, user_time;
+    double	real_time;
+    double	c;
+
+    c = clock();
+    user_clocks = c - tk.save_uclock;
+    user_time = user_clocks / clocks_per_sec;
+
+    real_time = difftime(time(NULL), tk.save_time);
+
+    tk.save_uclock = c;
+    tk.save_time = time(NULL);
+
+    printf("\t%d interations:\n", n);
+
+    len1 = sprintf(s1, "%.1f", user_time);
+    len2 = sprintf(s2, "%.1f", real_time);
+    wid = (len1>len2) ? len1 : len2;
+    printf("User time: %*.4f seconds, %*.4f clocks\nReal time: %*.1f seconds\n",
+        wid, user_time, wid, user_clocks, wid, real_time);
+    printf("\t%f per second\n", n / real_time);
+    
+}
+
+void tot_time(int n) {
+    char	s1[PBC_1K];
+    char	s2[PBC_1K];
+    int		wid, len1, len2;
+    double	clocks_per_sec = (double)CLOCKS_PER_SEC;
+    double	user_clocks, user_time;
+    double	real_time;
+    double	c;
+
+    c = clock();
+    user_clocks = c - tk.begin_uclock;
+    user_time = user_clocks / clocks_per_sec;
+
+    real_time = difftime(time(NULL), tk.begin_time);
+
+    printf("\t%d interations total:\n", n);
+
+    len1 = sprintf(s1, "%.1f", user_time);
+    len2 = sprintf(s2, "%.1f", real_time);
+    wid = (len1>len2) ? len1 : len2;
+    printf("User time: %*.4f seconds, %*.4f clocks\nReal time: %*.1f seconds\n",
+        wid, user_time, wid, user_clocks, wid, real_time);
+    printf("\t%f per second\n", n / real_time);
+    
+}
 
 void usage(const char *progname) {
     printf("%s [-k key_file] [-c cert_file] [-s key_for_cert_file][-h]\n\n", progname);
@@ -39,15 +110,21 @@ int main(int argc, char **argv) {
     char		*g_key_file = NULL;
     int 		c, barfarg = 0;
 
+    int			i, iterations = 500;
+    int			iter_chunk = 100;
+
     md_context_plus 	*s_ctx_plus;
     md_context_plus	*v_ctx_plus;
     crypt_stuff         *c_stuff;
 
     optarg = NULL;
-    while (!barfarg && ((c = getopt(argc, argv, "hk:c:s:")) != -1)) {
+    while (!barfarg && ((c = getopt(argc, argv, "hk:c:s:i:")) != -1)) {
 	switch (c) {
 	case 'h' :
 	    usage(argv[0]);
+	    break;
+	case 'i' :
+	    iterations = atoi(optarg);
 	    break;
 	case 'k' :
 	    key_file = strdup(optarg);
@@ -85,35 +162,36 @@ int main(int argc, char **argv) {
     else
         v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
 
-    printf("cook up a cookie\n");
-    cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
+    start_time();
 
-    if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
-        printf("test failed: cookie couldn't be unbundled\n");
-	exit (1);
+    for( i = 1; i <= iterations; i++ ) {
+        cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
+
+        if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
+            printf("test failed: cookie couldn't be unbundled\n");
+	    exit (1);
+        }
+        updated_cookie = libpbc_update_lastts(cookie_data, s_ctx_plus, c_stuff);
+    
+        cookie_data2 = libpbc_unbundle_cookie(updated_cookie, v_ctx_plus, c_stuff);
+        if( cookie_data2 ) {
+//	    printf("!");
+        } 
+        else {
+	    printf("this sucks\n");
+        } 
+
+        if( i % iter_chunk == 0 ) {
+            printf("\n\t%d iterations:\n", iter_chunk);
+            prn_time(iter_chunk);
+        }
+        else
+            fflush(stdout);
     }
-    printf("update that cookie\n");
-    updated_cookie = libpbc_update_lastts(cookie_data, s_ctx_plus, c_stuff);
+ 
+    printf("\n");
 
-    printf("verify and show me the cookie\n");
-    cookie_data2 = libpbc_unbundle_cookie(updated_cookie, v_ctx_plus, c_stuff);
-    if( cookie_data2 ) {
-/* 
-	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
-	printf("version is:\t>%s<\n", (*cookie_data2).broken.version);
-	printf("type is:\t>%c<\n", (*cookie_data2).broken.type);
-	printf("cred is:\t>%c<\n", (*cookie_data2).broken.creds);
-	printf("serial is:\t>%d<\n", (*cookie_data2).broken.serial);
-	printf("appsrv_id is:\t>%s<\n", (*cookie_data2).broken.appsrv_id);
-	printf("app_id is:\t>%s<\n", (*cookie_data2).broken.app_id);
-	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.create_ts));
-	printf("last is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.last_ts));
- */
-    } 
-    else {
-	printf("this sucks\n");
-    } 
-
+    tot_time(iterations);
     exit(0);
 }
     
