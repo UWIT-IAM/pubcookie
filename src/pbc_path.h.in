@@ -9,7 +9,7 @@
  * So that we can just #include this file instead of having to 
  * worry about shell escapes and whatnot.
  * 
- * $Id: pbc_path.h.in,v 2.10 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: pbc_path.h.in,v 2.11 2004-11-22 19:04:42 willey Exp $
  */
 
 
@@ -49,5 +49,7 @@
 /* The path to the cert db, if this is using the Netscape SDK */
 
 #define CERT_DB_PATH (libpbc_config_getstring(p, "cert_db_path", "@prefix@/keys"))
+
+#define SHADOW_PATH (libpbc_config_getstring(p, "shadow_path", "/etc/shadow"))
 
 #endif

@@ -12,7 +12,7 @@
  *  
  *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  *  
- * $Id: verify_shadow.c,v 1.15 2004-02-10 00:42:15 willey Exp $
+ * $Id: verify_shadow.c,v 1.16 2004-11-22 19:04:42 willey Exp $
  */
  
 
@@ -58,8 +58,9 @@ static int shadow_v(pool * p, const char *userid,
 		    const char **errstr)
 {
 
-    struct spwd * shadow;
-    char * crypted;
+    struct spwd *shadow;
+    char *crypted;
+    FILE *pwfile;
 
     if (errstr) *errstr = NULL;
     if (creds) *creds = NULL;
@@ -74,12 +75,18 @@ static int shadow_v(pool * p, const char *userid,
        return -1;
     }
 
+
+    pwfile = fopen(SHADOW_PATH, "r");
     setspent();
-    shadow = getspnam(userid);
+    while (shadow = fgetspent(pwfile))
+       if (strcmp(userid, shadow->sp_namp) == 0)
+           break;
     endspent();
 
+    fclose(pwfile);
+
     if (shadow == NULL) {
-       *errstr = "unable to get entry from /etc/shadow";
+       *errstr = "unable to get entry from shadow file";
        return -2;
     }
 
