@@ -25,6 +25,7 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
 
 # site-specific policies
 default_l_expire: 8h
+form_expire_time: 120
 
 # custom logout msgs
 app_logout_string-appserver.example.edu-testapp: <font size="+1">Testapp logout worked just fine.</font>
