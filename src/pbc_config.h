@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.54 2002-06-25 23:53:03 willey Exp $
+    $Id: pbc_config.h,v 1.55 2002-06-26 00:47:44 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -222,6 +222,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_PASS "pass"
 #define PBC_GETVAR_PASS2 "pass2"
 #define PBC_GETVAR_GREQ_CREDS "creds_from_greq"
+/* added May 2002 willey*/
+#define PBC_GETVAR_PINIT "pinit"
 /* added June 2002 leg */
 #define PBC_GETVAR_CRED_TARGET "cred_target"
 
