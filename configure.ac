@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.39 $)
+AC_REVISION($Revision: 1.40 $)
 AC_INIT(Pubcookie, [3.0.0 pre-rc2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -33,6 +33,26 @@ AC_ARG_ENABLE(apache,
                    ;;
                esac ])
 
+if test "x$enable_apache_static" = "x"; then
+    enable_apache_static=no
+fi
+
+AC_MSG_CHECKING([if I should build the static apache module])
+
+AC_ARG_ENABLE(apache-static,
+              AC_HELP_STRING( [--enable-apache-static],
+                              [Enable building the static apache module
+                              (default: off)]),
+              [ case "${enableval}" in
+                yes)
+                   AC_MSG_RESULT(yes)
+                   ;;
+                *)
+                   AC_MSG_RESULT(no)
+                   enable_apache_static=no
+                   ;;
+                esac ])
+
 if test "x$enable_login" = "x"; then
     enable_login=no
 fi
@@ -54,7 +74,9 @@ AC_ARG_ENABLE(login,
                    ;;
                esac ])
 
-if test "$enable_login" = "no" && test "$enable_apache" = "no"; then
+if test "$enable_login" = "no" && \
+   test "$enable_apache" = "no" && \
+   test "$enable_apache_static" = "no"; then
     AC_MSG_ERROR([the login server or apache module must be enabled], 1)
 fi
 

@@ -4,7 +4,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.56 2003-06-03 06:03:05 jjminer Exp $
+    $Id: libpubcookie.c,v 2.57 2003-06-03 22:59:43 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -234,8 +234,10 @@ void libpbc_augment_rand_state(pool *p, unsigned char *array, int len)
     memcpy(buf, &ts.wMilliseconds, sizeof(ts.wMilliseconds));
     RAND_seed(buf, sizeof(ts.wMilliseconds));
 #else
-    const char * egd_sock;
+    const char * egd_sock = NULL;
     int alloc;
+
+    pbc_log_activity( p, PBC_LOG_DEBUG_LOW, "libpbc_augment_rand_state: hello" );
 
     if (RAND_status()) {
         pbc_log_activity( p, PBC_LOG_DEBUG_LOW,
@@ -243,8 +245,9 @@ void libpbc_augment_rand_state(pool *p, unsigned char *array, int len)
         return;
     }
 
-    if ( ( egd_sock = libpbc_myconfig_getstring( p, "egd_socket", NULL ) )
-         != NULL ) {
+    egd_sock = libpbc_config_getstring( p, "egd_socket", NULL );
+
+    if ( egd_sock != NULL ) {
 
         pbc_log_activity( p, PBC_LOG_DEBUG_LOW, "Querying EGD Socket: %s",
                           egd_sock );
@@ -258,7 +261,11 @@ void libpbc_augment_rand_state(pool *p, unsigned char *array, int len)
             pbc_log_activity( p, PBC_LOG_ERROR, 
                               "Continuing, but it probably won't work." );
         }
+    } else {
+        pbc_log_activity( p, PBC_LOG_ERROR, "egd_socket not specified." );
     }
+    pbc_log_activity( p, PBC_LOG_DEBUG_LOW, "libpbc_augment_rand_state: bye" );
+
 #endif
 
 }

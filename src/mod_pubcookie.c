@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.119 2003-06-03 06:03:05 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.120 2003-06-03 22:59:43 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -991,11 +991,11 @@ static void mylog(pool *p, int logging_level, const char *msg)
 
     /* convert pubcookie error level to apache error level */
     if (logging_level == PBC_LOG_ERROR)
-        apri = APLOG_ERR;
+        apri = APLOG_ERR|APLOG_NOERRNO;
     else if (logging_level == PBC_LOG_DEBUG_LOW ||
              logging_level == PBC_LOG_DEBUG_VERBOSE ||
              logging_level == PBC_LOG_DEBUG_OUTPUT )
-        apri = APLOG_DEBUG;
+        apri = APLOG_DEBUG|APLOG_NOERRNO;
 
     ap_log_error(APLOG_MARK, apri, NULL, "%s", msg);
 /*    fprintf(stderr, msg); */

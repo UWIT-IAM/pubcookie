@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.40 2003-05-29 21:40:30 jjminer Exp $
+# $Id: Makefile.in,v 1.41 2003-06-03 22:59:43 jjminer Exp $
 
 @SET_MAKE@
 
@@ -238,7 +238,7 @@ DISTNAME = $(BASENAME)-$(VERSION)
 
 .PHONY: all clean install dist login_server apache_module ver
 
-all: $(builddir)/Makefile @login_server@ @apache_module@
+all: $(builddir)/Makefile @login_server@ @apache_module@ keyclient
 
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(srcdir)/aclocal.m4
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
@@ -321,6 +321,7 @@ keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 # Installation Targets
 
 install: $(KEY_DIR) @install_login@ @install_apache@
+	$(INSTALL_BIN) keyclient $(PUBCOOKIE_DIR)
 
 install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
 	@for file in $(INDEX_FILES); do \
@@ -368,7 +369,6 @@ install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMP
 
 install-apache: apache_module
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
-	$(INSTALL_BIN) keyclient $(PUBCOOKIE_DIR)
 
 $(PUBCOOKIE_DIR):
 	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
@@ -434,7 +434,7 @@ distclean:: clean
 
 APACHE_DEFINES= -DAPACHE1_3
 
-apache_module: a_ver mod_pubcookie.so keyclient
+apache_module: a_ver mod_pubcookie.so
 
 a_ver:
 	@echo Making $(DISTNAME) apache module;
