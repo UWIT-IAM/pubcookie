@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.103 $
+ * $Revision: 1.104 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1340,6 +1340,8 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
     char *ptr;
     char *ptr2;
 
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "check_logout: hello\n");
+
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			 "check_logout: program name: %s\n", cgiScriptName);
 
@@ -1353,7 +1355,7 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
         do_output(p);
         exit(0);
     }
- 
+
     ptr = ptr2 = uri = strdup(cgiScriptName);
     /* remove multiple slashes from uri */
     while( *ptr2 ) {
@@ -1367,13 +1369,15 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
     ptr = ptr2 = logout_prog = 
 		(char *)libpbc_config_getstring(p, "logout_prog", NULL);
     /* remove multiple slashes from config file entry */
-    while( *ptr2 ) {
+
+    while( ptr2 != NULL && *ptr2 ) {
         if( ptr2 != logout_prog && *ptr2 == '/' &&  *(ptr2-1) == '/' )
             ptr2++;
          else 
             *ptr++ = *ptr2++;
     }
-    *ptr = '\0';
+    if (ptr != NULL) 
+        *ptr = '\0';
 
     if(logout_prog != NULL && uri != NULL &&
        strcasecmp(logout_prog, uri) == 0 ) {
@@ -1386,6 +1390,8 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
 
     if (uri != NULL)
         free(uri);
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "check_logout: bye\n");
 
     return(PBC_OK);
 
