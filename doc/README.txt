@@ -1,12 +1,21 @@
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
 
 
 Pubcookie / Weblogin Authentication Service documentation lives at:
 
 http://www.washington.edu/computing/pubcookie/
 
+
 Apache module (mod_pubcookie) Installation specific docs live at:
 
 http://www.washington.edu/computing/pubcookie/apache/install.html
+
+
+Login server installation documentation, lives in INSTALL.login
 
 
 The Apache module (mod_pubcookie) distribution contains the following files: 
@@ -35,8 +44,11 @@ The WAS login server distribution contains the following files:
 	index.cgi.c
 	index.cgi.h
 	index.cgi_krb.c
+	index.cgi_securid.c
 	libpubcookie.c
 	libpubcookie.h
+	securid.c
+	securid.h
 	make_crypted_bit.c
 	mkc_key_generic.c
 	mkc_key_local.c
@@ -44,4 +56,6 @@ The WAS login server distribution contains the following files:
 	pbc_version.h
 	pubcookie.h
 
-24Mar2001 steve
+
+$Id: README.txt,v 1.8 2001-05-15 17:51:41 willey Exp $
+
