@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.26 2003-04-14 13:30:51 jteaton Exp $
+# $Id: Makefile.in,v 1.27 2003-04-15 19:21:05 jjminer Exp $
 
 @SET_MAKE@
 
@@ -90,11 +90,11 @@ VERIFIERS=$(builddir)/src/verify_alwaystrue.o \
 		  $(builddir)/src/verify_kerberos5.o \
 		  $(builddir)/src/verify_shadow.o \
 		  $(builddir)/src/verify_ldap.o \
-		  $(builddir)/src/snprintf.o \
+		  @SNPRINTF_0@ \
 		  $(builddir)/src/verify.o
 
 VERIFY_SRC=$(srcdir)/src/verify.c \
-		   $(srcdir)/src/snprintf.c \
+		   @SNPRINTF_C@ \
 		   $(srcdir)/src/verify_alwaystrue.c \
 		   $(srcdir)/src/verify_kerberos4.c \
 		   $(srcdir)/src/verify_kerberos5.c \
@@ -103,7 +103,7 @@ VERIFY_SRC=$(srcdir)/src/verify.c \
 
 FLAVOR_SRC=$(srcdir)/src/flavor.c \
 		   $(srcdir)/src/ntmpl.c \
-		   $(srcdir)/src/snprintf.c \
+		   @SNPRINTF_C@ \
 		   $(srcdir)/src/flavor_basic.c \
 		   $(srcdir)/src/flavor_getcred.c
 
@@ -111,13 +111,13 @@ INDEX_OBJ=$(builddir)/src/index.cgi.o $(builddir)/src/flavor.o \
 		  $(builddir)/src/flavor_basic.o \
 		  $(builddir)/src/flavor_getcred.o \
 		  $(builddir)/src/ntmpl.o \
-		  $(builddir)/src/snprintf.o \
+		  @SNPRINTF_0@ \
 		  $(VERIFIERS)
 
 INDEX_FILES=$(builddir)/index.cgi
 
 INDEX_SRC=$(srcdir)/src/index.cgi.c \
-		  $(srcdir)/src/snprintf.c \
+		  @SNPRINTF_C@ \
 		  $(VERIFY_SRC) \
 		  $(FLAVOR_SRC)
 
@@ -145,7 +145,7 @@ LIB_HEAD=$(srcdir)/src/pbc_config.h \
 LIB_SRC=$(srcdir)/src/libpubcookie.c \
 		$(srcdir)/src/base64.c \
 		$(srcdir)/src/strlcpy.c \
-		$(srcdir)/src/snprintf.c \
+		@SNPRINTF_C@ \
 		$(srcdir)/src/pbc_myconfig.c \
 		$(srcdir)/src/security_legacy.c \
 		$(srcdir)/src/pbc_logging.c \
@@ -155,7 +155,7 @@ LIB_SRC=$(srcdir)/src/libpubcookie.c \
 LIB_OBJ=$(builddir)/src/libpubcookie.o \
 		$(builddir)/src/base64.o \
 		$(builddir)/src/strlcpy.o \
-		$(builddir)/src/snprintf.o \
+		@SNPRINTF_0@ \
 		$(builddir)/src/pbc_myconfig.o \
 		$(builddir)/src/security_legacy.o \
 		$(builddir)/src/pbc_logging.o \
