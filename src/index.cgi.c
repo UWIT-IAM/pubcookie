@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.89 $
+ * $Revision: 1.90 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1958,12 +1958,13 @@ void print_redirect_page(login_rec *l, login_rec *c)
     else
         redirect_uri = l->fr;
 
+    snprintf(redirect_dest, PBC_4K-1, 
 #ifdef PORT80_TEST
-    snprintf(redirect_dest, PBC_4K-1, "http://%s%s%s", 
+             "http://%s%s%s", 
 #else
-    snprintf(redirect_dest, PBC_4K-1, "https://%s%s%s", 
+             "https://%s%s%s", 
 #endif
-		l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
+             l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
 
     if (l->args ) {
         args_enc = calloc (1, strlen (l->args));

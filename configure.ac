@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.17 $)
+AC_REVISION($Revision: 1.18 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -389,7 +389,7 @@ AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname getspnam gettimeofday \
                 memset socket strcasecmp strchr strdup strerror strncasecmp \
-                strstr uname strlcpy strlcat])
+                strstr uname strlcpy strlcat sprintf snprintf])
 
 AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
