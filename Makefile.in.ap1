@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in.ap1,v 1.3 2004-04-14 17:08:35 jteaton Exp $
+# $Id: Makefile.in.ap1,v 1.4 2004-05-03 21:50:24 willey Exp $
 
 prefix=@prefix@
 srcdir=@srcdir@
@@ -14,6 +14,7 @@ builddir=@builddir@
 CC=@CC@
 
 RM=@RM@
+SED=@SED@
 FORCE_RM=$(RM) -f
 
 APXS=@APXS@
@@ -31,8 +32,10 @@ OBJ=@MOD_OBJ@
 
 HDR=@MOD_HDR@
 
-DISTNAME=@DISTNAME@
+VERSION = `echo @PACKAGE_VERSION@ | $(SED) "s/ /-/g" `
 
+BASENAME = @PACKAGE_TARNAME@
+DISTNAME = $(BASENAME)-$(VERSION)
 
 .c.o:
 	$(CC) -c $(CFLAGS) $< -o $@
