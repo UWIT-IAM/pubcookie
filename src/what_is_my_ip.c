@@ -21,6 +21,7 @@
 void usage(const char *progname) {
     printf("%s [-h]\n\n", progname);
     exit (1);
+
 }
 
 int main(int argc, char **argv) {
