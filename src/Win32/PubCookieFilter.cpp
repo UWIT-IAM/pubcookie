@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.41 2005-02-09 05:09:51 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.42 2005-02-15 05:18:27 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -315,6 +315,45 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 
 }
 
+int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
+
+    char    szBuff[2048];
+	DWORD	dwBuffSize;
+    pubcookie_dir_rec   *p;
+
+	p = (pubcookie_dir_rec *)pFC->pFilterContext;
+
+    sprintf(szBuff,"Content-Type: text/html\r\n");
+		
+	filterlog(p, LOG_INFO," Adding POST data");
+
+	pFC->AddResponseHeaders(pFC,szBuff,0);
+
+	pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
+		"200 OK",NULL,NULL);
+
+	sprintf(szBuff, "<html>\r\n"
+					" <body onLoad=\"document.relay.submit()\">\r\n"
+					"  <form method=post action=\"%s\" name=relay>\r\n\r\n"
+					"   <input type=hidden name=pubcookie_g_req value=\"%s\">\r\n"
+					"   <input type=hidden name=relay_url value=\"%s\">\r\n\r\n"
+					"   <noscript>\r\n"
+					"    <p align=center>You do not have Javascript enabled.\r\n"
+					"       Please click the button to continue.</p>\r\n"
+					"    <p align=center> <input type=submit name=go value=\"Continue\"></p>\r\n"
+					"   </noscript>\r\n\r\n"
+					"  </form>\r\n"
+					" </body>\r\n"
+					"</html>\r\n",p->Login_URI,greq,p->Relay_URI);
+	
+	dwBuffSize=strlen(szBuff);
+
+	pFC->WriteClient (pFC, szBuff, &dwBuffSize, 0);
+
+	return OK;
+
+}
+
 BOOL Pubcookie_Init () 
 {
 	int rslt;
@@ -537,7 +576,9 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents)); //to avoid illegal cookie characters
 
+#ifdef PBC_USE_GET_METHOD
 	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, p->appsrvid);
+#endif
 
 	/* make the pre-session cookie ; sign it*/
     pre_s = libpbc_get_cookie(  
@@ -556,10 +597,18 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	
 	Add_No_Cache(pFC);
 
-	// Redirect to local Pubcookie extension
-	snprintf(szTemp,1024,"/%s?login_uri=%s&domain=%s",PBC_POST_NAME,p->Login_URI,p->Enterprise_Domain);
-	//snprintf(szTemp,1024,p->Login_URI);
+#ifdef PBC_USE_GET_METHOD
+	snprintf(szTemp,1024,p->Login_URI);
 	return (Redirect(pFC,szTemp));
+#else
+	// POST directly to login server
+	snprintf(szTemp,1024,"https://%s/%s?login_uri=%s&domain=%s",p->appsrvid,PBC_POST_NAME,p->Login_URI,p->Enterprise_Domain);
+	p->Relay_URI = strdup(szTemp);
+	Add_Post_Data(pFC, e_g_req_contents);
+	free(p->Relay_URI);
+	return OK;
+#endif
+
 
 }  /* Auth_Failed */
 
@@ -2253,9 +2302,12 @@ void output_debug_page(EXTENSION_CONTROL_BLOCK *pECB, const char *msg) {
    WriteString(pECB,"</HTML>\r\n");
 }
 
-//todo: change PBC_RELAY name to PBC_EXTENSION   
+
 /* Requests from an application will have a granting request
-   and possibly post data.  Relay these to the login server. */
+   and possibly post data.  Relay these to the login server. 
+   
+   This function is obsolete.  Filter will initiate POST 
+   for granting request */
    
 void relay_granting_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *greq)
 {
@@ -2387,7 +2439,10 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 
 
 /* Logout requests from an application will have a the
-   logout action variable.  Relay to the login server. */
+   logout action variable.  Relay to the login server. 
+   
+   Function is obsolete
+   Filter will initate logout directly*/
   
 void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *act, const char *qs)
 {
