@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.60 2004-08-11 00:41:00 willey Exp $
+ * $Id: flavor_basic.c,v 1.61 2004-08-17 23:53:26 willey Exp $
  */
 
 
@@ -198,7 +198,7 @@ char *flb_get_hidden_user_field(pool *p, login_rec *l, login_rec *c, int reason)
                         : (c != NULL ? c->user : NULL));
 
     if ( l != NULL && l->hide_user == PBC_TRUE )
-        return(ntmpl_sub_template(p, libpbc_config_getstring(p,
+        return(ntmpl_sub_template(p, TMPL_FNAME, libpbc_config_getstring(p,
                                         "tmpl_login_user_hidden",
                                         "login_user_hidden" ), 
 				  "contents", loser));
