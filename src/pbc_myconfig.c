@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.40 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.41 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -61,7 +61,6 @@
 
 #ifndef WIN32  /* See below for WIN32 code */
 
-#include "pbc_logging.h"
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -217,7 +216,7 @@ char **libpbc_myconfig_getlist(pool *p, const char *key)
 }
 
 /* int=dddS, dddM, dddH */
-int libpbc_myconfig_str2int(char *val, int def)
+int libpbc_myconfig_str2int(const char *val, int def)
 {
     int v = 0;
     int m = 1;

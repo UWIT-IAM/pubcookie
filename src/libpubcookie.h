@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.43 2004-02-10 00:42:15 willey Exp $
+    $Id: libpubcookie.h,v 1.44 2004-02-16 17:05:31 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -31,7 +31,7 @@
 
 #include "pubcookie.h"
 
-const char *get_my_hostname(pool *p);
+const char *get_my_hostname(pool *p, const security_context *context);
 
 /** 
  * find the credential id value for an authtype name
@@ -42,7 +42,7 @@ const char libpbc_get_credential_id(pool *p, const char *name);
 
 int libpbc_get_crypt_key(pool *p, crypt_stuff *c_stuff, const char *peer);
 
-unsigned char *libpbc_get_cookie(pool *p, unsigned char *, 
+unsigned char *libpbc_get_cookie(pool *p, const security_context *, unsigned char *, 
 				    unsigned char, 
 				    unsigned char, 
 				    int,
@@ -51,7 +51,8 @@ unsigned char *libpbc_get_cookie(pool *p, unsigned char *,
 				    const char *peer,
 					const char use_granting);
 /* for now we use the last_ts field in login cookie as expire_ts */
-unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *, 
+unsigned char *libpbc_get_cookie_with_expire(pool *p, const security_context *,
+                                                unsigned char *, 
 						unsigned char, 
 						unsigned char, 
 						int,
@@ -61,17 +62,19 @@ unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *,
 						unsigned char *, 
 						const char *peer,
 						const char use_granting);
-pbc_cookie_data *libpbc_unbundle_cookie(pool *p, char *, 
-					   const char *peer, char);
-unsigned char *libpbc_update_lastts(pool *p, pbc_cookie_data *,
-				       const char *peer, const char use_granting);
+pbc_cookie_data *libpbc_unbundle_cookie(pool *p, const security_context *,
+                                        char *in, const char *peer,
+                                        const char use_granting);
+unsigned char *libpbc_update_lastts(pool *p, const security_context *, 
+                                    pbc_cookie_data *, const char *peer,
+                                    const char use_granting);
 md_context_plus *libpbc_sign_init(pool *p, char *);
 #ifdef WIN32
 int
 #else
 void 
 #endif
-libpbc_pubcookie_init(pool *p);
+libpbc_pubcookie_init(pool *p, security_context **);
 unsigned char *libpbc_alloc_init(pool *p, int);
 unsigned char *libpbc_gethostip(pool *p);
 void libpbc_free_md_context_plus(pool *p, md_context_plus *);

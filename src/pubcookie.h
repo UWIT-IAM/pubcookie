@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.18 2004-02-10 00:42:15 willey Exp $
+    $Id: pubcookie.h,v 1.19 2004-02-16 17:05:31 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -23,6 +23,8 @@
 #else
 # include <pem.h>
 #endif /* OPENSSL_IN_DIR */
+
+#include <security.h>
 
 #define PBC_USER_LEN 42
 #define PBC_VER_LEN 4

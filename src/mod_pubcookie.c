@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.127 2004-02-13 18:57:04 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.128 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -339,10 +339,11 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* just update the idle timer */
         /* xxx it would be nice if the idle timeout has been disabled
            to avoid recomputing and resigning the cookie? */
-        cookie = libpbc_update_lastts(r->pool, cfg->cookie_data, NULL, 0);
+        cookie = libpbc_update_lastts(r->pool, scfg->sectext, cfg->cookie_data, NULL, 0);
     } else {
         /* create a brand new cookie, initialized with the present time */
         cookie = libpbc_get_cookie(r->pool, 
+                                     scfg->sectext,
 				     (unsigned char *)r->connection->user, 
                                      PBC_COOKIE_TYPE_S, 
 				     cfg->creds, 
@@ -373,7 +374,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
          the first time since our cred cookie doesn't expire (which is poor
          and why we need cookie extensions) */
         /* encrypt */
-        if (libpbc_mk_priv(r->pool, NULL, 0, cfg->cred_transfer,
+        if (libpbc_mk_priv(r->pool, scfg->sectext, NULL, 0, cfg->cred_transfer,
                            cfg->cred_transfer_len,
                            &blob, &bloblen)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, r,
@@ -828,6 +829,7 @@ static int auth_failed_handler(request_rec *r) {
     /* make the pre-session cookie */
 
     pre_s = (char *) libpbc_get_cookie(p,
+                                   scfg->sectext,
                                    (unsigned char *) "presesuser",
                                    PBC_COOKIE_TYPE_PRE_S, 
                                    PBC_CREDS_NONE, 
@@ -1006,9 +1008,14 @@ static void mylog(pool *p, int logging_level, const char *msg)
 
 }
 
-static void pubcookie_init(server_rec *s, pool *p) {
+static void pubcookie_init(server_rec *main_s, pool *p) {
+    server_rec                        *s;
     pubcookie_server_rec 	*scfg;
     char 		 	*fname;
+
+    /* initialize each virtual server */
+    /* some of the code should be pulled out of the loop */
+    for (s = main_s; s != NULL; s=s->next) {
 
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
@@ -1056,7 +1063,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
 
 
     /* libpubcookie initialization */
-    libpbc_pubcookie_init(p);
+    libpbc_pubcookie_init(p, &scfg->sectext);
 
     if (!scfg->login) {
         /* if the user didn't explicitly configure a login server,
@@ -1069,6 +1076,8 @@ static void pubcookie_init(server_rec *s, pool *p) {
 
     ap_log_error(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, s,
         "pubcookie_init: bye");
+
+    }
 }
 
 /*                                                                            */
@@ -1116,6 +1125,9 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
     scfg->authtype_names = nscfg->authtype_names ? 
 		nscfg->authtype_names : pscfg->authtype_names;
 
+    scfg->configlist = ap_overlay_tables(p, nscfg->configlist,
+                                         pscfg->configlist);
+
     return (void *)scfg;
 }
 
@@ -1154,6 +1166,17 @@ static void *pubcookie_dir_merge(pool *p, void *parent, void *newloc) {
 	cfg->addl_requests = ncfg->addl_requests;
     }
 
+    cfg->strip_realm = ncfg->strip_realm ?
+                       ncfg->strip_realm : pcfg->strip_realm;
+
+    if (ncfg->accept_realms) {
+        cfg->accept_realms = ap_pstrdup(p, ncfg->accept_realms);
+    } else if (pcfg->accept_realms) {
+        cfg->accept_realms = ap_pstrdup(p, pcfg->accept_realms);
+    } else {
+        cfg->accept_realms = NULL;
+    }
+
     return (void *) cfg;
 
 }
@@ -1178,6 +1201,7 @@ void pubcookie_server_defaults(pubcookie_server_rec *scfg)
 int get_pre_s_from_cookie(request_rec *r)
 {
     pubcookie_dir_rec   *cfg;
+    pubcookie_server_rec *scfg;
     pbc_cookie_data     *cookie_data = NULL;
     char 		*cookie = NULL;
     pool 		*p = r->pool;
@@ -1185,12 +1209,16 @@ int get_pre_s_from_cookie(request_rec *r)
     cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config, 
                 &pubcookie_module);
 
+    scfg = (pubcookie_server_rec *)ap_get_module_config(r->server->module_config,
+                &pubcookie_module);
+
+
     if( (cookie = get_cookie(r, PBC_PRE_S_COOKIENAME)) == NULL )
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
       		"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", 
 		r->uri);
     else
-        cookie_data = libpbc_unbundle_cookie(p, cookie, NULL, 0);
+        cookie_data = libpbc_unbundle_cookie(p, scfg->sectext, cookie, NULL, 0);
 
     if( cookie_data == NULL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
@@ -1228,6 +1256,12 @@ static int pubcookie_user(request_rec *r) {
 
   ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
       "pubcookie_user: hello, uri: %s auth_type: %s", r->uri, ap_auth_type(r));
+
+  /* stash the server_rec away so the get_config callbacks know
+     which virtual server they are running under
+     this uses a global variable, and will definately break under apache2 */
+  libpbc_apacheconfig_storeglobal(scfg);
+
 
   /* get defaults for unset args */
   pubcookie_dir_defaults(cfg);
@@ -1272,7 +1306,7 @@ static int pubcookie_user(request_rec *r) {
      if we don't have one.  This helps if there are any old g cookies */
   cookie_data = NULL;
   if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 ) {
-      cookie_data = libpbc_unbundle_cookie(p, cookie, ap_get_server_name(r), 1);
+      cookie_data = libpbc_unbundle_cookie(p, scfg->sectext, cookie, ap_get_server_name(r), 1);
       if( !cookie_data) {
           ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
 	  		"can't unbundle G cookie; uri: %s\n", r->uri);
@@ -1299,7 +1333,7 @@ static int pubcookie_user(request_rec *r) {
     }
     else {  /* hav S cookie */
 
-      cookie_data = libpbc_unbundle_cookie(p, cookie, NULL, 0);
+      cookie_data = libpbc_unbundle_cookie(p, scfg->sectext, cookie, NULL, 0);
       if( ! cookie_data ) {
           ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
 	  		"can't unbundle S cookie; uri: %s\n", r->uri);
@@ -1314,6 +1348,44 @@ static int pubcookie_user(request_rec *r) {
       /* we tell everyone what authentication check we did */
       r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
       r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+
+      /* save the full user/realm for later */
+      cfg->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+
+      /* check for acceptable realms and strip realm */
+      if (1==1) {
+          char *tmprealm, *tmpuser;
+          tmpuser = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+          tmprealm = index(tmpuser, '@');
+          if (tmprealm) {
+              tmprealm[0] = 0;
+              tmprealm++;
+              r->connection->user = tmpuser;
+              ap_table_set(r->subprocess_env, "REMOTE_REALM", tmprealm);
+          }
+          ap_table_set(r->subprocess_env, "REMOTE_REALM", tmprealm);
+
+          if (cfg->strip_realm == 1) {
+             r->connection->user = tmpuser;
+          } else {
+             r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+          }
+
+          if (cfg->accept_realms != NULL) {
+              int realmmatched = 0;
+              char *thisrealm;
+              char *okrealms = ap_pstrdup(r->pool, cfg->accept_realms);
+              while (*okrealms && !realmmatched &&
+                     (thisrealm=ap_getword_white_nc(r->pool,&okrealms))){
+                  if (strcmp(thisrealm,tmprealm) == 0) {
+                     realmmatched++;
+                  }
+              }
+              if (realmmatched == 0) {
+                 return HTTP_UNAUTHORIZED;
+              }
+          }
+      }
 
       if( libpbc_check_exp(p, (*cookie_data).broken.create_ts, cfg->hard_exp) == PBC_FAIL ) {
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
@@ -1381,6 +1453,44 @@ static int pubcookie_user(request_rec *r) {
 
     r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
     r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+
+      /* save the full user/realm for later */
+      cfg->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+
+      /* check for acceptable realms and strip realm */
+      if (1==1) {
+          char *tmprealm, *tmpuser;
+          tmpuser = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+          tmprealm = index(tmpuser, '@');
+          if (tmprealm) {
+              tmprealm[0] = 0;
+              tmprealm++;
+              r->connection->user = tmpuser;
+              ap_table_set(r->subprocess_env, "REMOTE_REALM", tmprealm);
+          }
+          ap_table_set(r->subprocess_env, "REMOTE_REALM", tmprealm);
+
+          if (cfg->strip_realm == 1) {
+             r->connection->user = tmpuser;
+          } else {
+             r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
+          }
+
+          if (cfg->accept_realms != NULL) {
+              int realmmatched = 0;
+              char *thisrealm;
+              char *okrealms = ap_pstrdup(r->pool, cfg->accept_realms);
+              while (*okrealms && !realmmatched &&
+                     (thisrealm=ap_getword_white_nc(r->pool,&okrealms))){
+                  if (strcmp(thisrealm,tmprealm) == 0) {
+                     realmmatched++;
+                  }
+              }
+              if (realmmatched == 0) {
+                 return HTTP_UNAUTHORIZED;
+              }
+          }
+      }
 
     if( libpbc_check_exp(p, (*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) == PBC_FAIL ) {
       ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, r, 
@@ -1468,7 +1578,7 @@ static int pubcookie_user(request_rec *r) {
   
       /* decrypt cookie. if credtrans is set, then it's from login server
        to me. otherwise it's from me to me. */
-      if (!res && libpbc_rd_priv(p, cred_from_trans ? 
+      if (!res && libpbc_rd_priv(p, scfg->sectext, cred_from_trans ? 
                                     ap_get_server_name(r) : NULL, 
 									cred_from_trans ? 1 : 0,
                                  blob, bloblen, 
@@ -1838,6 +1948,39 @@ const char *pubcookie_add_request(cmd_parms *cmd,
 
 }
 
+const char *pubcookie_accept_realms(cmd_parms *cmd,
+                                   void *mconfig,
+                                   unsigned char *v)
+{
+    server_rec *s = cmd->server;
+    pubcookie_server_rec *scfg;
+    pubcookie_dir_rec *cfg;
+
+    cfg = (pubcookie_dir_rec *) mconfig;
+    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
+                                                         &pubcookie_module);
+
+    if (!scfg) return "pubcookie_accept_realms(): scfg is NULL ?!";
+
+    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, s,
+                "pubcookie_accept_realms(): %s", v);
+    cfg->accept_realms =  ap_pstrcat(cmd->pool,
+                             cfg->accept_realms ? cfg->accept_realms :
+                             "", " ", v, NULL);
+    return NULL;
+}
+
+const char *pubcookie_strip_realm(cmd_parms *cmd, void *mconfig, int f) {
+    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+
+    if(f != 0) {
+        cfg->strip_realm = 1;
+    } else {
+        cfg->strip_realm = 0;
+    }
+    return NULL;
+}
+
 /*                                                                            */
 const char *pubcookie_set_appsrvid(cmd_parms *cmd, void *mconfig, unsigned char *v) {
     server_rec *s = cmd->server;
@@ -2000,7 +2143,7 @@ const char *set_super_debug(cmd_parms *cmd, void *mconfig, int f) {
     server_rec *s = cmd->server;
 
     ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, s, 
-		"PubcookieSuperDebug depreciated, please remove.");
+		"PubcookieSuperDebug deprecated, please remove.");
 
     return NULL;
 
@@ -2039,9 +2182,9 @@ const char *set_authtype_names(cmd_parms *cmd, void *mconfig, char *args) {
 
 /*                                                                            */
 command_rec pubcookie_commands[] = {
-    {"PubCookieInactiveExpire", pubcookie_set_inact_exp, NULL, OR_AUTHCFG, TAKE1,
+    {"PubCookieInactiveExpire", pubcookie_set_inact_exp, NULL, OR_OPTIONS|OR_AUTHCFG, TAKE1,
      "Set the inactivity expire time for PubCookies."},
-    {"PubCookieHardExpire", pubcookie_set_hard_exp, NULL, OR_AUTHCFG, TAKE1,
+    {"PubCookieHardExpire", pubcookie_set_hard_exp, NULL, OR_OPTIONS|OR_AUTHCFG, TAKE1,
      "Set the hard expire time for PubCookies."},
     {"PubCookieLogin", pubcookie_set_login, NULL, RSRC_CONF, TAKE1,
      "Set the login page for PubCookies."},
@@ -2066,7 +2209,7 @@ command_rec pubcookie_commands[] = {
     {"PubCookieAuthTypeNames", set_authtype_names, NULL, RSRC_CONF, RAW_ARGS,
      "Sets the text names for authtypes."},
 
-    {"PubCookieAppID", pubcookie_set_appid, NULL, OR_AUTHCFG, TAKE1,
+    {"PubCookieAppID", pubcookie_set_appid, NULL, OR_OPTIONS|OR_AUTHCFG, TAKE1,
      "Set the name of the application."},
     {"PubCookieAppSrvID", pubcookie_set_appsrvid, NULL, RSRC_CONF, TAKE1,
      "Set the name of the server(cluster)."},
@@ -2079,6 +2222,10 @@ command_rec pubcookie_commands[] = {
      "End application session and possibly login session"},
     {"PubCookieAddlRequest", pubcookie_add_request, NULL, OR_AUTHCFG, ITERATE,
      "Send the following options to the login server along with authentication requests"},
+    {"PubCookieAcceptRealm", pubcookie_accept_realms, NULL, OR_OPTIONS|OR_AUTHCFG, ITERATE,
+     "Only accept realms in this list"},
+    {"PubCookieStripRealm", pubcookie_strip_realm, NULL, OR_OPTIONS|OR_AUTHCFG, FLAG,
+     "Strip the realm (and set the REMOTE_REALM envirorment variable)"},
 
     {"PubCookieSuperDebug", set_super_debug, NULL, OR_AUTHCFG, FLAG,
      "Deprecated, do not use"},

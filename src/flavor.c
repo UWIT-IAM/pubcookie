@@ -6,7 +6,7 @@
 /** @file flavor.c
  * Flavor generic code
  *
- * $Id: flavor.c,v 1.13 2004-02-10 00:42:14 willey Exp $
+ * $Id: flavor.c,v 1.14 2004-02-16 17:05:31 jteaton Exp $
  */
 
 

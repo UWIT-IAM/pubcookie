@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.116 2004-02-13 21:51:37 dors Exp $
+ * $Id: index.cgi.c,v 1.117 2004-02-16 17:05:31 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -410,7 +410,6 @@ void init_login_rec(pool *p, login_rec *r)
     r->creds_from_greq = PBC_CREDS_NONE;
     r->ride_free_creds = PBC_CREDS_NONE;
     r->relay_uri = NULL;
-
 }
 
 /*
@@ -555,7 +554,7 @@ char *clean_username(pool *p, char *in)
  * @returns PBC_FAIL on error
  * @returns PBC_OK if everything went ok
  */
-int expire_login_cookie(pool *p, login_rec *l, login_rec *c) {
+int expire_login_cookie(pool *p, const security_context *context, login_rec *l, login_rec *c) {
     char	*l_cookie;
     char	*message = NULL;
     int		l_res;
@@ -582,7 +581,7 @@ int expire_login_cookie(pool *p, login_rec *l, login_rec *c) {
         user = c->user;
     }
 
-    l_res = create_cookie( p, urluser = url_encode(p, user),
+    l_res = create_cookie( p, context, urluser = url_encode(p, user),
                            urlappsrvid = url_encode(p, "expired"),
                            urlappid = url_encode(p, "expired"),
                            PBC_COOKIE_TYPE_L,
@@ -1004,7 +1003,7 @@ char *decode_granting_request(pool *p, char *in, char **peerp)
 /*                                                                   */
 /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
 
-int vector_request(pool *p, login_rec *l, login_rec *c)
+int vector_request(pool *p, const security_context *context, login_rec *l, login_rec *c)
 {
     login_result res;
     const char *errstr = NULL;
@@ -1036,10 +1035,10 @@ int vector_request(pool *p, login_rec *l, login_rec *c)
     }
 
     /* decode login cookie */
-    l->check_error = check_l_cookie(p, l, c);
+    l->check_error = check_l_cookie(p, context, l, c);
 
     /* call authn flavor to determine correct result */
-    res = fl->process_request(p, l, c, &errstr);
+    res = fl->process_request(p, context, l, c, &errstr);
 
     switch (res) {
         case LOGIN_OK:
@@ -1377,7 +1376,7 @@ int app_logged_out(pool *p, login_rec *c, const char *appid, const char *appsrvi
 
 }
 
-int logout(pool *p, login_rec *l, login_rec *c, int logout_action)
+int logout(pool *p, const security_context *context, login_rec *l, login_rec *c, int logout_action)
 {
     char	*appid;
     char	*appsrvid;
@@ -1435,7 +1434,7 @@ int logout(pool *p, login_rec *l, login_rec *c, int logout_action)
                         NULL);
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L ) {
-        expire_login_cookie(p, l, c);
+        expire_login_cookie(p, context, l, c);
         ntmpl_print_html(p, TMPL_FNAME,
                         libpbc_config_getstring(p, "tmpl_logout_part1",
                                                 "logout_part1"),
@@ -1506,7 +1505,7 @@ int logout(pool *p, login_rec *l, login_rec *c, int logout_action)
  *
  * @returns PBC_OK if not a logout, or never returns if a logout
  */
-int check_logout(pool *p, login_rec *l, login_rec *c) 
+int check_logout(pool *p, const security_context *context, login_rec *l, login_rec *c) 
 {
     int logout_action;
     char *logout_prog;
@@ -1525,7 +1524,7 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
     if ( logout_action != LOGOUT_ACTION_UNSET ) {
 	pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			 "check_logout: logout_action : %s\n", cgiScriptName);
-        logout(p, l, c, logout_action);
+        logout(p, context, l, c, logout_action);
         do_output(p);
         exit(0);
     }
@@ -1555,7 +1554,7 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
 
     if(logout_prog != NULL && uri != NULL &&
        strcasecmp(logout_prog, uri) == 0 ) {
-        logout(p, l, c, LOGOUT_ACTION_CLEAR_L_NO_APP);
+        logout(p, context, l, c, LOGOUT_ACTION_CLEAR_L_NO_APP);
         do_output(p);
         if (uri != NULL)
             free(uri);
@@ -1622,7 +1621,7 @@ void login_status_page(pool *p, login_rec *c)
  * @param l info for login session
  * @param c contents of login cookie
  */
-int pinit(pool *p, login_rec *l, login_rec *c)
+int pinit(pool *p, const security_context *context, login_rec *l, login_rec *c)
 {
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,"pinit: hello");
@@ -1658,10 +1657,10 @@ int pinit(pool *p, login_rec *l, login_rec *c)
 	fl = get_flavor(p, l->creds_from_greq);
 
 	/* decode login cookie */
-	l->check_error = check_l_cookie(p, l, c);
+	l->check_error = check_l_cookie(p, context, l, c);
 
 	fl->init_flavor();
-	res = fl->process_request(p, l, c, &errstr);
+	res = fl->process_request(p, context, l, c, &errstr);
 	if (res != LOGIN_INPROGRESS) {
 	    pbc_log_activity(p, PBC_LOG_ERROR,
 			     "unexpected response from fl->process_request: "
@@ -1696,6 +1695,8 @@ int cgiMain()
     const char *mirrorfile;
     void *p; /* we pass a pointer around that is an Apache memory pool if we're
                 using apache, here we just pass a void pointer */
+    security_context *context; /* to hold all of the certs for a transaction */
+
 
     libpbc_config_init(p, NULL, "logincgi");
     debug = libpbc_config_getint(p, "debug", 0);
@@ -1712,7 +1713,7 @@ int cgiMain()
 
     mirrorfile = libpbc_config_getstring(p, "mirrorfile", NULL);
 
-    libpbc_pubcookie_init(p);
+    libpbc_pubcookie_init(p, &context);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "cgiMain() done initializing...\n");
 
@@ -1768,7 +1769,7 @@ int cgiMain()
     l = get_query(p); 
 
     /* unload the login cookie if we have it */
-    c = verify_unload_login_cookie(p, l);
+    c = verify_unload_login_cookie(p, context, l);
 
     /* log the arrival */
     pbc_log_activity(p, PBC_LOG_AUDIT,
@@ -1800,12 +1801,12 @@ int cgiMain()
     }
     
     /* look for various logout conditions */
-    check_logout(p, l, c);
+    check_logout(p, context, l, c);
 
     /* check to see what cookies we have */
     /* pinit detected in here */
     /* pinit response detected in here */
-    if ((!l->relay_uri) && (cookie_test(p, l, c) == PBC_FAIL)) {
+    if ((!l->relay_uri) && (cookie_test(p, context, l, c) == PBC_FAIL)) {
         goto done;
     }
 
@@ -1817,7 +1818,7 @@ int cgiMain()
         l->fr = strdup("NFR");
     }
     
-    if (vector_request(p, l, c) == PBC_OK ) {
+    if (vector_request(p, context, l, c) == PBC_OK ) {
         /* the reward for a hard days work */
         pbc_log_activity(p, PBC_LOG_AUDIT,
     "%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
@@ -1828,7 +1829,7 @@ int cgiMain()
 			 l->appid);
     
         /* generate the cookies and print the redirect page */
-        print_redirect_page(p, l, c);
+        print_redirect_page(p, context, l, c);
     }
 
 done:
@@ -1933,7 +1934,7 @@ done:
 /* returns NULL if the L cookie is valid                                     */
 /*   else a description of it's invalid nature                               */
 /* xxx most of this work should probably be done inside of the flavor */
-char *check_l_cookie(pool *p, login_rec *l, login_rec *c)
+char *check_l_cookie(pool *p, const security_context *context, login_rec *l, login_rec *c)
 {
     time_t	t;
     char	*g_version;
@@ -1942,7 +1943,7 @@ char *check_l_cookie(pool *p, login_rec *l, login_rec *c)
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "check_l_cookie: hello\n");
 
     if (c == NULL )
-        c = verify_unload_login_cookie(p, l);
+        c = verify_unload_login_cookie(p, context, l);
 
     if (c == NULL)
         return("couldn't decode login cookie");
@@ -2116,7 +2117,7 @@ int clear_pinit_cookie(pool *p) {
 
 }
 
-int pinit_response(pool *p, login_rec *l, login_rec *c)
+int pinit_response(pool *p, const security_context *context, login_rec *l, login_rec *c)
 {
     const char *remaining = time_remaining_text(p, c);
  
@@ -2161,7 +2162,7 @@ int pinit_response(pool *p, login_rec *l, login_rec *c)
  * @returns PBC_FAIL if the program should finish
  * @returns PBC_OK   if the program should continue
  */
-int cookie_test(pool *p, login_rec *l, login_rec *c) 
+int cookie_test(pool *p, const security_context *context, login_rec *l, login_rec *c) 
 {
     char        *cookies;
     char        cleared_g_req[PBC_1K];
@@ -2175,7 +2176,7 @@ int cookie_test(pool *p, login_rec *l, login_rec *c)
 
     /* if no cookies, then must be pinit */
     if ((cookies = getenv("HTTP_COOKIE")) == NULL) {
-        pinit(p, l, c);
+        pinit(p, context, l, c);
         return(PBC_FAIL);
     }
     
@@ -2210,7 +2211,7 @@ int cookie_test(pool *p, login_rec *l, login_rec *c)
 
     /* after a pinit login we give the user something nice to look at */
     if ( strstr(cookies, PBC_PINIT_COOKIENAME) != NULL ) {
-        pinit_response(p, l, c);
+        pinit_response(p, context, l, c);
         return(PBC_FAIL);
     }
 
@@ -2223,7 +2224,7 @@ int cookie_test(pool *p, login_rec *l, login_rec *c)
          strstr(cookies, cleared_g_req) != NULL ) {
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
 			"cookie_test: no g_req or empty g_req");
-        pinit(p, l, c);
+        pinit(p, context, l, c);
         return(PBC_FAIL);
     }
 
@@ -2324,7 +2325,7 @@ int check_user_agent(pool *p)
 }
 
 
-void print_redirect_page(pool *p, login_rec *l, login_rec *c)
+void print_redirect_page(pool *p, const security_context *context, login_rec *l, login_rec *c)
 {
     char		*g_cookie;
     char		*l_cookie;
@@ -2372,20 +2373,20 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
 
-    l_res = create_cookie( p, 
-                           user = url_encode(p, l->user),
-                           appsrvid = url_encode(p, l->appsrvid),
-                           appid = url_encode(p, l->appid),
-                           PBC_COOKIE_TYPE_L,
-                           l->creds,
-                           0,
-                           (c != NULL ? c->create_ts : 0),
-                           (c == NULL || c->expire_ts < time(NULL) 
-                                ? compute_l_expire(p, l) 
-                                : c->expire_ts),
-                           l_cookie,
-                           NULL, /* sending it to myself */
-                           PBC_4K);
+    l_res = create_cookie(p, context,
+                          user = url_encode(p, l->user),
+                          appsrvid = url_encode(p, l->appsrvid),
+                          appid = url_encode(p, l->appid),
+                          PBC_COOKIE_TYPE_L,
+                          l->creds,
+                          0,
+                          (c != NULL ? c->create_ts : 0),
+                          (c == NULL || c->expire_ts < time(NULL) 
+                               ? compute_l_expire(p, l) 
+                               : c->expire_ts),
+                          l_cookie,
+                          NULL, /* sending it to myself */
+                          PBC_4K);
 
     if (user != NULL)
         pbc_free(p, user);
@@ -2398,7 +2399,7 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
        LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
        was successful. */
 
-    g_res = create_cookie(p, user = url_encode(p, l->user),
+    g_res = create_cookie(p, context, user = url_encode(p, l->user),
                           appsrvid =url_encode(p, l->appsrvid),
                           appid = url_encode(p, l->appid),
                           PBC_COOKIE_TYPE_G,
@@ -2547,29 +2548,7 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
 	/* when the page loads click on the last element */
         /* (which will always be the submit) in the array */
         /* of elements in the first, and only, form. */
-	print_html(p, "<BODY BGCOLOR=\"white\" onLoad=\"");
-
-        /* depending on whether-or-not there is a SUBMIT field in the form */
-        /* use the correct javascript to autosubmit the POST */
-        /* this should probably be upgraded to only look for submits as */
-        /* field names, not anywhere else */
-        post_stuff_lower = strdup(l->post_stuff);
-        for(ptr=post_stuff_lower; *ptr != '\0'; ptr++)
-            *ptr = tolower(*ptr);
-        if (strstr(post_stuff_lower, "submit") != NULL )
-            print_html(p, "document.query.submit.click()");
-        else
-            print_html(p, "document.query.submit");
-
-        print_html(p, "\">\n");
-
-	print_html(p, "<center>");
-        print_table_start(p);
-	print_html(p, "<tr><td align=\"LEFT\">\n");
-
-	print_html(p, "<form method=\"POST\" action=\"%s\" ", redirect_final);
-        print_html(p, "enctype=\"application/x-www-form-urlencoded\" ");
-        print_html(p, "name=\"query\">\n");
+	print_html(p, "<BODY BGCOLOR=\"white\">");
 
         cur = cgiFormEntryFirst;
         while (cur) {
@@ -2607,6 +2586,31 @@ void print_redirect_page(pool *p, login_rec *l, login_rec *c)
             next = cur->next;
             cur = next;
         } /* while cur */
+
+        /* depending on whether-or-not there is a SUBMIT field in the form */
+        /* use the correct javascript to autosubmit the POST */
+        /* this should probably be upgraded to only look for submits as */
+        /* field names, not anywhere else */
+        print_html(p, "<script type=\"text/javascript\" language=\"javascript\"><!--\n");
+
+        post_stuff_lower = strdup(l->post_stuff);
+        for(ptr=post_stuff_lower; *ptr != '\0'; ptr++)
+            *ptr = tolower(*ptr);
+        if (strstr(post_stuff_lower, "submit") != NULL )
+            print_html(p, "document.query.submit.click()");
+        else
+            print_html(p, "document.query.submit");
+
+        print_html(p, "\">\n");
+
+        print_html(p, "<center>");
+        print_table_start(p);
+        print_html(p, "<tr><td align=\"LEFT\">\n");
+
+        print_html(p, "<form method=\"POST\" action=\"%s\" ", redirect_final);
+        print_html(p, "enctype=\"application/x-www-form-urlencoded\" ");
+        print_html(p, "name=\"query\">\n");
+
 
 
         print_html(p, "</td></tr>\n");
@@ -2770,7 +2774,7 @@ login_rec *get_query(pool *p)
 
 /* uses libpubcookie calls to check the cookie and load the login rec with  */
 /* cookie contents                                                          */
-login_rec *verify_unload_login_cookie (pool *p, login_rec *l)
+login_rec *verify_unload_login_cookie (pool *p, const security_context *context, login_rec *l)
 {
     pbc_cookie_data     *cookie_data;
     char		*cookie = NULL;
@@ -2794,7 +2798,7 @@ login_rec *verify_unload_login_cookie (pool *p, login_rec *l)
     new = malloc(sizeof(login_rec));
     init_login_rec(p, new);
 
-    cookie_data = libpbc_unbundle_cookie(p, cookie, NULL, 0);
+    cookie_data = libpbc_unbundle_cookie(p, context, cookie, NULL, 0);
 
     /* Done with cookie */
     if (cookie != NULL)
@@ -2829,7 +2833,8 @@ login_rec *verify_unload_login_cookie (pool *p, login_rec *l)
 
 }
 
-int create_cookie(pool *p, char *user_buf,
+int create_cookie(pool *p, const security_context *context,
+                  char *user_buf,
                   char *appsrvid_buf,
                   char *appid_buf,
                   char type,
@@ -2886,8 +2891,8 @@ int create_cookie(pool *p, char *user_buf,
         create = time(NULL);
 
     cookie_local = (char *) 
-        libpbc_get_cookie_with_expire(p, user, type, creds, pre_sess_tok,
-		create, expire, appsrvid, appid, peer, peer ? 1 : 0);
+        libpbc_get_cookie_with_expire(p, context, user, type, creds, pre_sess_tok,
+                                      create, expire, appsrvid, appid, peer);
 
     if (peer != NULL)
         free(peer);

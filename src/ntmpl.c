@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.11 2004-02-10 00:42:15 willey Exp $
+ * $Id: ntmpl.c,v 1.12 2004-02-16 17:05:31 jteaton Exp $
  */
 
 

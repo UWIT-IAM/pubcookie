@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.48 2004-02-13 21:51:36 dors Exp $
+ * $Id: flavor_basic.c,v 1.49 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -252,7 +252,7 @@ char *flb_get_field_html(pool *p, const char *field_page, const char *contents)
     buf[field_len] = '\0';
     strcpy(field_html, buf);
 
-    /* if there is a substiturion to be made, make it */
+    /* if there is a substituion to be made, make it */
     while ( strstr(buf, "%contents%") != NULL ) {
         /* cheesy non-generic substitution for field */
         /* chop up the strings */
@@ -270,6 +270,59 @@ char *flb_get_field_html(pool *p, const char *field_page, const char *contents)
                 func, field_html);
 
     return field_html;
+}
+
+/* figure out what html to use for user field */
+char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
+{
+    char func[] = "flb_get_user_field";
+    const char *loser = (l != NULL && l->user != NULL ? l->user
+                        : (c != NULL ? c->user : NULL));
+    const char *static_config = libpbc_config_getstring(p, "static_user_field",
+                                STATIC_USER_FIELD_KIND);
+    char *user_field_html;
+
+    if ( strcmp(static_config, STATIC_USER_FIELD_KIND) == 0 ) {
+        if ( c != NULL && c->user != NULL & reason == FLB_REAUTH ||
+             c != NULL && c->user != NULL & reason == FLB_CACHE_CREDS_WRONG ||
+             l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
+            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
+                                        "tmpl_login_user_static",
+                                        "login_user_static" ), loser);
+            l->hide_user = PBC_TRUE;
+        }
+        else {
+            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
+                                        "tmpl_login_user_form_field",
+                                        "login_user_form_field" ), loser);
+            l->hide_user = PBC_FALSE;
+        }
+    }
+    else if ( strcmp(static_config, STATIC_USER_FIELD_FASCIST) == 0 ) {
+        if ( c != NULL && c->user != NULL ||
+             l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
+            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
+                                        "tmpl_login_user_static",
+                                        "login_user_static" ), loser);
+            l->hide_user = PBC_TRUE;
+        }
+        else {
+            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
+                                        "tmpl_login_user_form_field",
+                                        "login_user_form_field" ), loser);
+            l->hide_user = PBC_FALSE;
+        }
+    }
+    else { /* STATIC_USER_FIELD_NEVER */
+        user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
+                                        "tmpl_login_user_form_field",
+                                        "login_user_form_field" ), loser);
+        l->hide_user = PBC_FALSE;
+    }
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
+                func, field_html);
+    return(user_field_html);
 
 }
 
@@ -588,7 +641,8 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
    if authentication has succeeded, no output is generated and it returns
    LOGIN_OK.
  */
-static login_result process_basic(pool *p, login_rec *l, login_rec *c,
+static login_result process_basic(pool *p, const security_context *context,
+                                  login_rec *l, login_rec *c,
 				  const char **errstr)
 {
     struct credentials *creds = NULL;
@@ -695,7 +749,7 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
                 int outlen;
                 char *out64;
 
-                if (!libpbc_mk_priv(p, NULL, 0, creds->str, creds->sz,
+                if (!libpbc_mk_priv(p, context, NULL, creds->str, creds->sz,
                                     &outbuf, &outlen)) {
                     /* save for later */
                     out64 = malloc(outlen * 4 / 3 + 20);

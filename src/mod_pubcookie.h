@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.5 2004-02-10 00:42:15 willey Exp $
+    $Id: mod_pubcookie.h,v 2.6 2004-02-16 17:05:31 jteaton Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -80,6 +80,7 @@ typedef struct {
   char			*login;
   unsigned char		*appsrvid;
   char			*authtype_names; /* raw arg string from conf */
+  security_context      *sectext;
 } pubcookie_server_rec;
 
 typedef struct {
@@ -96,10 +97,15 @@ typedef struct {
   int           session_reauth;
   pbc_cookie_data *cookie_data;
   unsigned char *addl_requests;
+  char          *user;
 
     /* for flavor_getcred */
     char *cred_transfer;
     int cred_transfer_len;
+
+
+  int strip_realm;
+  char *accept_realms;
 } pubcookie_dir_rec;
 
 #endif /* INCLUDED_MOD_PUBCOOKIE_H */

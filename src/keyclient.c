@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.39 2004-02-10 00:42:15 willey Exp $
+ * $Id: keyclient.c,v 2.40 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
     int keyport = 443;
     int r;
     pool *p = NULL;
+    security_context *context = NULL;
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
@@ -183,7 +184,7 @@ int main(int argc, char *argv[])
 
     libpbc_config_init(p, NULL, "keyclient");
     pbc_log_init(p, "keyclient", NULL, NULL, NULL);
-    libpbc_pubcookie_init(p);
+    libpbc_pubcookie_init(p, &context);
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
@@ -401,14 +402,14 @@ int main(int argc, char *argv[])
         hostname = extract_cn(str);
         if (hostname) {
             /* warn if hostname != get_my_hostname(p) */
-            if (strcasecmp(hostname, get_my_hostname(p))) {
+            if (strcasecmp(hostname, get_my_hostname(p, context))) {
                 fprintf(stderr, "warning: certificate name (%s) doesn't match"
-                        " my hostname (%s)\n", hostname, get_my_hostname(p));
+                        " my hostname (%s)\n", hostname, get_my_hostname(p, context));
             }
         } else {
             fprintf(stderr, 
                     "warning: no hostname in my certificate? trying anyway.\n");
-            hostname = get_my_hostname(p);
+            hostname = get_my_hostname(p, context);
         }
     }
 

@@ -10,7 +10,7 @@
  * - the policy of when freerides are allowed
  * - what the layout of the login page is, how login messages are printed. 
  *
- * $Id: flavor.h,v 1.10 2004-02-10 00:42:14 willey Exp $
+ * $Id: flavor.h,v 1.11 2004-02-16 17:05:31 jteaton Exp $
  */
 
 #ifndef INCLUDED_FLAVOR_H
@@ -49,7 +49,8 @@ struct login_flavor {
     /* given a login request 'l' and a (possibly NULL) login cookie 'c',
        process the request.  if there are insufficient credentials,
        print out a login form and return accordingly. */
-    login_result (*process_request)(pool *p, login_rec *l, login_rec *c, 
+    login_result (*process_request)(pool *p, const security_context *context,
+                                    login_rec *l, login_rec *c, 
 				    const char **errstr);
 }; 
 

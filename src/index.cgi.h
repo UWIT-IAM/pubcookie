@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.46 2004-02-13 21:51:37 dors Exp $
+  $Id: index.cgi.h,v 1.47 2004-02-16 17:05:31 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -23,6 +23,8 @@
 #ifdef HAVE_TIME_H
 # include <time.h>
 #endif /* HAVE_TIME_H */
+
+#include "security.h"
 
 typedef struct {
     char	*args;
@@ -82,7 +84,7 @@ typedef struct browser browser_rec;
 /* prototypes */
 int cgiMain();
 void abend(pool *, char *);
-int cookie_test(pool *, login_rec *, login_rec *);
+int cookie_test(pool *, const security_context *, login_rec *, login_rec *);
 void notok(pool *, void (*)() );
 void notok_no_g_or_l(pool *);
 void print_http_header(pool *);
@@ -99,14 +101,14 @@ void log_message(pool *,const char *, ...);
 void log_error(pool *,int, const char *, int, const char *, ...);
 void clear_error(pool *,const char *, const char *);
 void print_uwnetid_logo(pool *);
-login_rec *verify_unload_login_cookie (pool *,login_rec *);
-int create_cookie(pool *, char *, char *, char *, char, char, int, time_t, 
+login_rec *verify_unload_login_cookie (pool *, const security_context *, login_rec *);
+int create_cookie(pool *, const security_context *, char *, char *, char *, char, char, int, time_t, 
 		time_t, char *, const char *host, int);
 int get_cookie(pool *p, char *name, char *result, int max);
 login_rec *get_query(pool *);
 char *check_login(pool *, login_rec *, login_rec *);
-char *check_l_cookie(pool *, login_rec *, login_rec *);
-void print_redirect_page(pool *, login_rec *, login_rec *);
+char *check_l_cookie(pool *, const security_context *, login_rec *, login_rec *);
+void print_redirect_page(pool *, const security_context *, login_rec *, login_rec *);
 char *url_encode(pool *, char *);
 char *get_cookie_created(pool *, char *);
 char *decode_granting_request(pool *, char *, char **peerp);

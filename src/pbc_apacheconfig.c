@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.8 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_apacheconfig.c,v 2.9 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -77,6 +77,10 @@ typedef void pool;
 #endif /* HAVE_DMALLOC_H */
 
 pubcookie_server_rec * globalsr;
+
+void libpbc_apacheconfig_storeglobal(pubcookie_server_rec *scfg) {
+   globalsr = (pubcookie_server_rec *) scfg;
+}
 
 int libpbc_apacheconfig_init(pool *p, void *initarg, const char *ident)
 {

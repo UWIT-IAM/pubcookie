@@ -6,7 +6,7 @@
 /** @file verify.c
  * Verifier base stuff
  *
- * $Id: verify.c,v 1.22 2004-02-10 00:42:15 willey Exp $
+ * $Id: verify.c,v 1.23 2004-02-16 17:05:31 jteaton Exp $
  */
 
 

@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.43 2004-02-10 00:42:15 willey Exp $
+ * $Id: keyserver.c,v 2.44 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -73,6 +73,7 @@ typedef void pool;
 #include "pbc_logging.h"
 #include "pbc_configure.h"
 #include "libpubcookie.h"
+#include "security.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
@@ -157,7 +158,7 @@ enum optype {
  * @return the number of login servers we failed to set the key on
  * (thus 0 is success)
  */
-int pushkey(const char *peer)
+int pushkey(const char *peer, const security_context *context)
 {
     pool *p = NULL;
     char **lservers = libpbc_config_getlist(p, "login_servers");
@@ -172,7 +173,7 @@ int pushkey(const char *peer)
         return(0);
     }
 
-    hostname = get_my_hostname(p);
+    hostname = get_my_hostname(p, context);
     if (!hostname) {
         pbc_log_activity(p, PBC_LOG_ERROR, "get_my_hostname() failed? %m");
         perror("get_my_hostname");
@@ -296,7 +297,7 @@ static int check_access_list(const char *peer)
  * @param newkey if the operation is SETKEY, "peer;base64(key)"
  * @return 0 on success, non-zero on error
  */
-int doit(const char *peer, enum optype op, const char *newkey)
+int doit(const char *peer, security_context *context, enum optype op, const char *newkey)
 {
     char buf[4 * PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
@@ -363,6 +364,61 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 break;
             }
 
+    switch (op) {
+        case PERMIT:
+            {
+                /* 'peer' has asked us to authorize a new CN (newkey) */
+                if(check_access_list(peer) == PBC_FAIL ) {
+                   myprintf("NO you (%s) are not authorized to authorize\r\n",
+                        peer);
+                   pbc_log_activity(p, PBC_LOG_ERROR,
+                        "operation not allowed: %s", peer);
+                   return(1);
+                }
+
+                /* find <cn>;<test> */
+                thepeer = strdup(newkey);
+                thekey64 = strchr(thepeer, ';');
+                if (!thekey64) {
+                    myprintf("NO bad form for authorize\r\n");
+                    /* xxx log */
+                    return(1);
+                }
+                *thekey64++ = '\0';
+
+                if (libpbc_test_crypt_key(p, thepeer) == PBC_OK) {
+                    myprintf("OK already authorized\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "already authorized");
+                    return(1);
+                }
+
+                /* if just a test, return now */
+                if (!strncmp(thekey64, "test", 4)) {
+                    myprintf("NO server is not authorized\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "test - not yet");
+                    return(1);
+                }
+   
+
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                        "authorizing %s", thepeer);
+
+                if (libpbc_generate_crypt_key(p, thepeer) != PBC_OK) {
+                    myprintf("NO generate_new_key() failed\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "generate_new_key() failed");
+                    return(1);
+                }
+
+                /* push the new key to the other login servers */
+                pushkey(thepeer, context);
+
+                dokeyret = 0; /* don't return the key to this client */
+                break;
+            }
+
         case GENKEY:
             {
                 /* 'peer' has asked us to generate a new key */
@@ -387,7 +443,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 }
 
                 /* push the new key to the other login servers */
-                pushkey(peer);
+                pushkey(peer, context);
 
                 dokeyret = 1;
                 break;
@@ -542,10 +598,11 @@ int main(int argc, char *argv[])
     X509 *client_cert;
     int r;
     pool *p = NULL;
+    security_context *context = NULL;
 
     libpbc_config_init(p, NULL, "keyserver");
     pbc_log_init(p, "keyserver", NULL, NULL, NULL);
-    libpbc_pubcookie_init(p);
+    libpbc_pubcookie_init(p, &context);
 
     debug = libpbc_config_getint(p, "debug", 0);
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
@@ -721,7 +778,7 @@ int main(int argc, char *argv[])
 
     /* call doit */
 
-    r = doit(peer, op, setkey);
+    r = doit(peer, context, op, setkey);
     SSL_shutdown(ssl);
 
     return r;

@@ -6,7 +6,7 @@
 /** @file security.c
  * Support for security structure
  *
- * $Id: security.c,v 1.8 2004-02-10 00:42:15 willey Exp $
+ * $Id: security.c,v 1.9 2004-02-16 17:05:31 jteaton Exp $
  */
 
 
@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
     char *outbuf, *out2buf;
     char *in;
     int inlen;
+    security_context *sectext;
 
     if (argc != 2) {
 	fprintf(stderr, "%s <string>\n", argv[0]);
@@ -48,7 +49,7 @@ int main(int argc, char *argv[])
     libpbc_config_init(p, NULL, "security");
 
     printf("initializing...\n");
-    if (security_init(p)) {
+    if (security_init(p, &sectext)) {
 	printf("failed\n");
 	exit(1);
     }
@@ -57,28 +58,28 @@ int main(int argc, char *argv[])
     in = argv[1];
     inlen = strlen(in);
     printf("signing '%s'...\n", in);
-    if (libpbc_mk_safe(p, NULL, 0, in, inlen, &outbuf, &outlen)) {
+    if (libpbc_mk_safe(p, sectext, NULL, 0, in, inlen, &outbuf, &outlen)) {
 	printf("libpbc_mk_safe() failed\n");
 	exit(1);
     }
     printme(p, "sig", outbuf, outlen);
 
     printf("verifying sig...");
-    if (libpbc_rd_safe(p, NULL, 0, in, inlen, outbuf, outlen)) {
+    if (libpbc_rd_safe(p, sectext, NULL, 0, in, inlen, outbuf, outlen)) {
 	printf("libpbc_rd_safe() failed\n");
 	exit(1);
     }
     printf("ok\n");
 
     printf("encrypting '%s'...\n", in);
-    if (libpbc_mk_priv(p, NULL, 0, in, inlen, &outbuf, &outlen)) {
+    if (libpbc_mk_priv(p, sectext, NULL, 0, in, inlen, &outbuf, &outlen)) {
 	printf("libpbc_mk_priv() failed\n");
 	exit(1);
     }
     printme(p, "blob", outbuf, outlen);
 
     printf("decrypting blob...\n");
-    if (libpbc_rd_priv(p, NULL, 0, outbuf, outlen, &out2buf, &out2len)) {
+    if (libpbc_rd_priv(p, sectext, NULL, 0, outbuf, outlen, &out2buf, &out2len)) {
 	printf("libpbc_rd_priv() failed\n");
 	exit(1);
     }
