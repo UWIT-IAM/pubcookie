@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.46 2001-12-20 18:37:57 willey Exp $
+#   $Id: Makefile,v 1.47 2001-12-20 18:41:34 willey Exp $
 #
 
 # your compiler here
@@ -73,7 +73,7 @@ LOGINMISC=CHANGES.login.txt \
           Makefile \
           Makefile.index.cgi \
           contrib/* \
-	  INSTALL.login
+	  INSTALL.login.txt
 TESTMISC=Makefile
 ALLMISC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
 
