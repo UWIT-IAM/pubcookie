@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_etcpasswd.c,v 1.1 2001-08-15 21:57:27 willey Exp $
+    $Id: index.cgi_etcpasswd.c,v 1.2 2001-12-09 09:12:22 willey Exp $
  */
 
 
@@ -26,52 +26,34 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-/* securid */
-#include "securid.h"
+#include <sys/types.h>
+#include <pwd.h>
+#include <shadow.h>
 /* pubcookie things */
 #include "index.cgi.h"
 
-/* all of the securid stuff is in files name securid_                         */
-char *auth_securid(char *user, char *sid, int next, login_rec *l) 
+char *auth_etcpasswd(char *user, char *passwd, login_rec *l) 
 {
-    int		intret;
-    char	*reason = NULL;
-    char        *card_id;
-    char        *prn = NULL;
-    char        *p;
-
-    /* if the securid field is really in the form card_id=prn seperate it */
-    card_id = malloc((strlen(sid)>strlen(user) ? strlen(sid) : strlen(user))+1);
-    p = card_id = sid;
-    while( *p ) {
-      if( *p == '=' ) {
-          *p = '\0';
-          prn = ++p;
-      } 
-      p++;
-    }
-    if( prn == NULL ) {
-        card_id = user;
-        prn = sid;
-    }
-
-    /* take back being root */
-    if( setreuid(65534, 0) != 0 )
-        log_message("%s auth_securid: unable to setuid root", l->first_kiss);
-
-#ifdef DEBUG
-    log_message("%s auth_securid: about to securid check user: %s card_id: %s prn: %s ", l->first_kiss, user, card_id, prn);
-#endif
-
-    /* securid and next prn */
-#ifdef DEBUG
-    intret = securid(reason, user, card_id, prn, 1, SECURID_TYPE_NORM, SECURID_DO_SID);
+#ifdef SHADOW 
+    const char		*shadow = "/etc/shadow";
+    struct spwd 	*spwd;
 #else
-    intret = securid(reason, user, card_id, prn, 0, SECURID_TYPE_NORM, SECURID_DO_SID);
+    const char		*pwfile = "/etc/passwd"; 
+    struct passwd	*passwd;
 #endif
+    char		*crypted;
 
 #ifdef DEBUG
-    log_message("auth_securid: message from securid %s", reason);
+    log_message("%s auth_etcpasswd: gonna look for: %s", l->first_kiss, user);
+#endif
+
+
+#ifdef SHADOW 
+    spwd = getspnam(user);
+    crypted = spwd->sp_pwdp;
+#else
+    pwd = getpwnam(user);
+    crypted = pwd->pw_password;
 #endif
 
     /* give it up permanently */
