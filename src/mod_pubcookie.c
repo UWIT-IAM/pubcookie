@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.100 2002-09-24 21:35:39 willey Exp $
+    $Id: mod_pubcookie.c,v 1.101 2002-09-25 21:06:25 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -109,6 +109,7 @@ typedef struct {
   int           redir_reason_no;
   char          *stop_message;
   int           session_reauth;
+  pbc_cookie_data *cookie_data;
   unsigned char *addl_requests;
 
     /* for flavor_getcred */
@@ -393,14 +394,17 @@ static void set_session_cookie(request_rec *r, int firsttime)
                                          &pubcookie_module);
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, 					 &pubcookie_module);
 
-    cookie = libpbc_get_cookie_p(r->pool, 
-                                 (unsigned char *)r->connection->user, 
-                                 PBC_COOKIE_TYPE_S, 
-				 cfg->creds, 
-				 23, 
-				 (unsigned char *)appsrvid(r), 
-				 appid(r), 
-				 NULL);
+    if( firsttime != 1 )
+        cookie = libpbc_update_lastts_p(r->pool, cfg->cookie_data, NULL);
+    else
+        cookie = libpbc_get_cookie_p(r->pool, 
+                                     (unsigned char *)r->connection->user, 
+                                     PBC_COOKIE_TYPE_S, 
+				     cfg->creds, 
+				     23, 
+				     (unsigned char *)appsrvid(r), 
+				     appid(r), 
+				     NULL);
 
     new_cookie = ap_psprintf(r->pool, "%s=%s; path=%s;%s", 
 			     make_session_cookie_name(r->pool, 
@@ -1334,8 +1338,11 @@ static int pubcookie_user(request_rec *r) {
 	  cfg->redir_reason_no = PBC_RR_BADS_CODE;
 	  return OK;
       }
+      else {
+          cfg->cookie_data = cookie_data;
+      }
 
-	/* we tell everyone what authentication check we did */
+      /* we tell everyone what authentication check we did */
       r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
       r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 
