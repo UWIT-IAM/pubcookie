@@ -1,0 +1,18 @@
+
+This is what exists of a pubcookie coding style guide.
+
+This is an effort to hav consistant formatting in the pubcookie source (if
+not consistant spelling).  Currently some of the indenting and white space 
+isn't consistant, even in the same file.  As i go i'm trying to iron out 
+any inconsistancies.
+
+This is not carved in stone but alot has already been traced out so unless it's
+worth changing it's easist to stick to this.
+
+23Aug2001 steve
+
+- indentions are four spaces (not a tab)
+- there should be a space between statement operators and their parantentisis
+e.g. "if (blah)" not "if(blah)"
+- use whitespace generiously.  
+
