@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.51 2001-02-08 21:45:33 fmf Exp $
+    $Id: mod_pubcookie.c,v 1.52 2001-03-30 00:27:16 fmf Exp $
  */
 
 /* apache includes */
@@ -730,7 +730,7 @@ static int bad_user(request_rec *r) {
 
 /*                                                                            */
 static int is_pubcookie_auth(pubcookie_dir_rec *cfg) {
-  if ( cfg->creds != PBC_CREDS_NONE ) {
+  if ( cfg->creds && cfg->creds != PBC_CREDS_NONE ) {
     return TRUE;
   }
   else {
@@ -1087,7 +1087,20 @@ static int pubcookie_user(request_rec *r) {
 
   sess_cookie_name = make_session_cookie_name(p, app_id(r));
 
-  if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 ) {
+  /* check if the granting cookie's appid matches.  if not, then act as
+     if we don't have one */
+  cookie_data = NULL;
+  if( (cookie = get_cookie(r, PBC_G_COOKIENAME)) && strcmp(cookie, "") != 0 )
+    if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
+              scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
+      libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
+      libpbc_debug("pubcookie_user: cookie is:\n%s\n", cookie);
+      cfg->failed = PBC_BAD_AUTH;
+      cfg->redir_reason_no = PBC_RR_BADG_CODE;
+      return OK;
+    }
+  /*if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 )*/
+  if( ! cookie_data || strncasecmp(app_id(r), cookie_data->broken.app_id, sizeof(cookie_data->broken.app_id)-1) != 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
       libpbc_debug("pubcookie_user: no G or S cookie; uri: %s\n", r->uri);
       cfg->failed = PBC_BAD_AUTH;
@@ -1206,6 +1219,7 @@ static int pubcookie_user(request_rec *r) {
       return OK;
     }
 
+    /* - we've unbundled the cookie above
     if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
               scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
       libpbc_debug("pubcookie_user: can't unbundle G cookie; uri: %s\n", r->uri);
@@ -1214,6 +1228,7 @@ static int pubcookie_user(request_rec *r) {
       cfg->redir_reason_no = PBC_RR_BADG_CODE;
       return OK;
     }
+    */
 
 #ifdef APACHE1_2
     r->connection->auth_type = pstrdup(r->pool, auth_type(r));
@@ -1257,8 +1272,9 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check creds */
-  if( check_creds( atoi(&cfg->creds), atoi(&(*cookie_data).broken.creds) ) 
-		== PBC_FAIL ) {
+  /*if( check_creds( atoi(&cfg->creds), atoi(&(*cookie_data).broken.creds) ) 
+		== PBC_FAIL ) {*/
+  if( cfg->creds != cookie_data->broken.creds ) {
     libpbc_debug("pubcookie_user: wrong creds; required: %c cookie: %c uri: %s\n", cfg->creds, (*cookie_data).broken.creds, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGCREDS_CODE;
@@ -1276,19 +1292,28 @@ static int pubcookie_user(request_rec *r) {
 /*                                                                            */
 int pubcookie_auth (request_rec *r) {
   pubcookie_dir_rec *cfg;
+  pubcookie_server_rec *scfg;
 
 #ifdef APACHE1_2
   cfg = (pubcookie_dir_rec *)get_module_config(r->per_dir_config,
                                            &pubcookie_module);
+  scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
+                                            &pubcookie_module);
 #else
   cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
                                            &pubcookie_module);
+  scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
+                                            &pubcookie_module);
 #endif
 
+  if (scfg->super_debug)
+    libpbc_debug("super-debug: pubcookie_auth: in\n", cfg->failed);
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
 
   if(cfg->failed) {  /* pubcookie_user has failed so pass to typer */
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_auth: failed with %d\n", cfg->failed);
     return OK;
   }
   return DECLINED;
@@ -1329,6 +1354,7 @@ static int pubcookie_typer(request_rec *r) {
   scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
                                             &pubcookie_module);
 
+  ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG,r,"in typer, creds=0x%x",(int)cfg->creds);
   if( !is_pubcookie_auth(cfg) ) 
     return DECLINED;
   if(!ap_requires(r)) {
@@ -1338,11 +1364,15 @@ static int pubcookie_typer(request_rec *r) {
 #endif
 
   if( cfg->has_granting ) {
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_typer: coming in with granting\n");
     first_time_in_session = 1;
     cfg->has_granting = 0;
   }
 
   if(!cfg->failed) {
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_typer: no failure\n");
     /* if the inactivity timeout is turned off don't send a session cookie 
        everytime, but be sure to send a session cookie if it's the first time
        in the app
@@ -1390,15 +1420,23 @@ static int pubcookie_typer(request_rec *r) {
     }
     return DECLINED;
   } else if(cfg->failed == PBC_BAD_AUTH) {
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_typer: bad auth\n");
     r->handler = PBC_AUTH_FAILED_HANDLER;
     return OK;
   } else if (cfg->failed == PBC_BAD_USER) {
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_typer: bad user\n");
     r->handler = PBC_BAD_USER_HANDLER;
     return OK;
   } else if(cfg->failed == PBC_FORCE_REAUTH) {
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_typer: force reauth\n");
     r->handler = PBC_AUTH_FAILED_HANDLER;
     return OK;
   } else {
+    if (scfg->super_debug)
+      libpbc_debug("super-debug: pubcookie_typer: unknown failure\n");
     return DECLINED;
   }
 }
