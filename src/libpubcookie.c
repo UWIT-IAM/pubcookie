@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.15 1999-01-09 00:10:35 willey Exp $
+    $Id: libpubcookie.c,v 1.16 1999-01-13 01:51:06 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -253,10 +253,13 @@ md_context_plus *libpbc_init_md_context_plus_np()
         case 0:
             ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
             ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+	    break;
         case 1:
             ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
             ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+	    break;
 	}
+	break;
     case 1:
         ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
         RAND_bytes(lil_buf, 1);
@@ -264,10 +267,13 @@ md_context_plus *libpbc_init_md_context_plus_np()
         case 0:
             ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
             ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+	    break;
         case 1:
             ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
             ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
-	}
+	    break;
+	}    
+	break;
     case 2:
         ctx_plus->private_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
         RAND_bytes(lil_buf, 1);
@@ -275,10 +281,13 @@ md_context_plus *libpbc_init_md_context_plus_np()
         case 0:
             ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
             ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
+	    break;
         case 1:
             ctx_plus->public_key=(EVP_PKEY *)libpbc_alloc_init(sizeof(EVP_PKEY));
             ctx_plus->ctx=(EVP_MD_CTX *)libpbc_alloc_init(sizeof(EVP_MD_CTX));
+	    break;
 	}
+	break;
     }
 
     return ctx_plus;
