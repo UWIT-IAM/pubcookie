@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
     bzero(in, 1024);
     bzero(out, 1024);
     bzero(intermediate, 1024);
-    strcpy(in, "Maybe this plaintext is another world's ciphertext.");
+    strcpy( (char *) in, "Maybe this plaintext is another world's ciphertext.");
 
     optarg = NULL;
     while (!barfarg && ((c = getopt(argc, argv, "hc:k:")) != -1)) {
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 	usage(argv[0]);
     }
 
-    if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen(in)) ) {
+    if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen( (char *) in)) ) {
 	printf("\n*** Libpbc_decrypt_cookie failed\n");
         exit(1);
     }

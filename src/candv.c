@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.14 2002-04-03 20:02:06 willey Exp $
+    $Id: candv.c,v 1.15 2002-06-03 20:50:01 jjminer Exp $
  */
 
 /*                                                                            */
@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
 
     type='1';
     creds='9';
-    strncpy(appsrvid, "appserver id is blah", PBC_APPSRV_ID_LEN);
-    strncpy(appid, "app id is googoo", PBC_APP_ID_LEN);
+    strncpy( (char *) appsrvid, "appserver id is blah", PBC_APPSRV_ID_LEN);
+    strncpy( (char *) appid, "app id is googoo", PBC_APP_ID_LEN);
     strncpy(user, "bongo", PBC_USER_LEN);
 
     if ( key_file )
@@ -89,9 +89,9 @@ int main(int argc, char **argv) {
         v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
 
     printf("cook up a cookie\n");
-    cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie( (unsigned char *) user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
 
-    if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
+    if ( ! (cookie_data=libpbc_unbundle_cookie( (char *) cookie, v_ctx_plus, c_stuff)) ) {
         printf("test failed: cookie couldn't be unbundled\n");
 	exit (1);
     }
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
     updated_cookie = libpbc_update_lastts(cookie_data, s_ctx_plus, c_stuff);
 
     printf("verify and show me the cookie\n");
-    cookie_data2 = libpbc_unbundle_cookie(updated_cookie, v_ctx_plus, c_stuff);
+    cookie_data2 = libpbc_unbundle_cookie( (char *) updated_cookie, v_ctx_plus, c_stuff);
     if( cookie_data2 ) {
 	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
 	printf("version is:\t>%s<\n", (*cookie_data2).broken.version);
@@ -116,10 +116,10 @@ int main(int argc, char **argv) {
     } 
 
     printf("cook up another cookie\n");
-    cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie( (unsigned char *) user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
 
     printf("verify and show me the cookie\n");
-    if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
+    if ( ! (cookie_data=libpbc_unbundle_cookie( (char *) cookie, v_ctx_plus, c_stuff)) ) {
 	printf("test failed: cookie couldn't be unbundled\n");
         exit (1);
     }

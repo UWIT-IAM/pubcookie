@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: make_crypted_blob.c,v 1.3 2002-01-11 23:40:05 willey Exp $
+    $Id: make_crypted_blob.c,v 1.4 2002-06-03 20:50:01 jjminer Exp $
  */
 
 
@@ -119,10 +119,10 @@ int main(int argc, char **argv) {
 
     bzero(in, 1024);
     bzero(intermediate, 1024);
-    strcpy(in, "Maybe this plaintext is another world's ciphertext.");
+    strcpy( (char *) in, "Maybe this plaintext is another world's ciphertext.");
 
     
-    if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) ) {
+    if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen( (char *) in)) ) {
         printf("\n*** Libpbc_encrypt_cookie failed\n");
         exit(1);
     }

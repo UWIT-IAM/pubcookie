@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.77 2002-05-18 02:08:47 willey Exp $
+    $Id: mod_pubcookie.c,v 1.78 2002-06-03 20:50:01 jjminer Exp $
  */
 
 /* apache includes */
@@ -253,7 +253,7 @@ unsigned char *get_app_path(request_rec *r, const char *path) {
     }
 #endif
 
-    return path_out;
+    return (unsigned char *) path_out;
 
 }
 
@@ -414,9 +414,9 @@ unsigned char *appsrvid(request_rec *r)
     else
         /* because of multiple passes through don't use r->hostname() */
 #ifdef APACHE1_2
-        return pstrdup(r->pool, get_server_name(r));
+        return (unsigned char *) pstrdup(r->pool, get_server_name(r));
 #else
-        return ap_pstrdup(r->pool, ap_get_server_name(r));
+        return (unsigned char *) ap_pstrdup(r->pool, ap_get_server_name(r));
 #endif
 
 }
@@ -691,7 +691,7 @@ static int auth_failed(request_rec *r) {
 #else
         args = ap_pcalloc (r->pool, (strlen (r->args) + 3) / 3 * 4 + 1);
 #endif
-        libpbc_base64_encode(r->args, args, strlen(r->args));
+        libpbc_base64_encode( (unsigned char *) r->args, (unsigned char *) args, strlen(r->args));
         if( cfg->super_debug ) {
             libpbc_debug("super-debug: GET args before encoding length %d, string: %s\n", strlen(r->args), r->args);
             libpbc_debug("super-debug: GET args after encoding length %d, string: %s\n", strlen(args), args);
@@ -800,7 +800,7 @@ static int auth_failed(request_rec *r) {
     libpbc_encrypt_cookie(g_req_contents, tmp, scfg->c_stuff, strlen(g_req_contents));
     libpbc_base64_encode(tmp, e_g_req_contents, strlen(g_req_contents));
 #else
-    libpbc_base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
+    libpbc_base64_encode( (unsigned char *) g_req_contents, (unsigned char *) e_g_req_contents, strlen(g_req_contents));
 #endif
 
     /* create whole g req cookie */
@@ -817,8 +817,8 @@ static int auth_failed(request_rec *r) {
         libpbc_debug("super-debug: g_req length %d cookie: %s\n", strlen(g_req_cookie), g_req_cookie);
 
     /* make the pre-session cookie */
-    pre_s = libpbc_get_cookie_p(r->pool, 
-                                   "presesuser",
+    pre_s = (char *) libpbc_get_cookie_p(r->pool, 
+                                   (unsigned char *) "presesuser",
                                    PBC_COOKIE_TYPE_PRE_S, 
                                    PBC_CREDS_NONE, 
                                    get_pre_s_token(),
@@ -1388,7 +1388,9 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* do we hav a session cookie for this appid? if not check the g cookie */
-  if( ! cookie_data || strncasecmp(appid(r), cookie_data->broken.appid, sizeof(cookie_data->broken.appid)-1) != 0 ) {
+  if( ! cookie_data || strncasecmp( (const char *) appid(r), 
+                                    (const char *) cookie_data->broken.appid, 
+                                    sizeof(cookie_data->broken.appid)-1) != 0 ) {
     if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
 
       if( cfg->super_debug )
@@ -1526,7 +1528,9 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check appid */
-  if( strncasecmp(appid(r), (*cookie_data).broken.appid, sizeof((*cookie_data).broken.appid)-1) != 0 ) {
+  if( strncasecmp( (const char *) appid(r), 
+                   (const char *) (*cookie_data).broken.appid, 
+                   sizeof((*cookie_data).broken.appid)-1) != 0 ) {
     libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s uri: %s\n", appid(r), (*cookie_data).broken.appid, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGAPPID_CODE;
@@ -1534,7 +1538,9 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check appsrv id */
-  if( strncasecmp(appsrvid(r), (*cookie_data).broken.appsrvid, sizeof((*cookie_data).broken.appsrvid)-1) != 0 ) {
+  if( strncasecmp( (const char *) appsrvid(r), 
+                   (const char *) (*cookie_data).broken.appsrvid, 
+                   sizeof((*cookie_data).broken.appsrvid)-1) != 0 ) {
     libpbc_debug("pubcookie_user: wrong app server id; current: %s cookie: %s uri: %s\n", appsrvid(r), (*cookie_data).broken.appsrvid, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGAPPSRVID_CODE;
@@ -1820,9 +1826,9 @@ const char *pubcookie_set_appid(cmd_parms *cmd, void *mconfig, unsigned char *v)
     unsigned char *c;
 
 #ifdef APACHE1_2
-    cfg->appid = palloc (cmd->pool, strlen (v) * 3 + 1);
+    cfg->appid = palloc (cmd->pool, strlen ( (const char *) v) * 3 + 1);
 #else
-    cfg->appid = ap_palloc (cmd->pool, strlen (v) * 3 + 1);
+    cfg->appid = ap_palloc (cmd->pool, strlen ( (const char *) v) * 3 + 1);
 #endif
     for (c = cfg->appid; *v; ++v) {
         switch (*v) {
@@ -1856,9 +1862,9 @@ const char *pubcookie_set_appsrvid(cmd_parms *cmd, void *mconfig, unsigned char 
 #endif
 
 #ifdef APACHE1_2
-    scfg->appsrvid = palloc (cmd->pool, strlen (v) * 3 + 1);
+    scfg->appsrvid = palloc (cmd->pool, strlen ( (const char *) v) * 3 + 1);
 #else
-    scfg->appsrvid = ap_palloc (cmd->pool, strlen (v) * 3 + 1);
+    scfg->appsrvid = ap_palloc (cmd->pool, strlen ( (const char *) v) * 3 + 1);
 #endif
     for (c = scfg->appsrvid; *v; ++v) {
         switch (*v) {
@@ -1890,7 +1896,7 @@ const char *pubcookie_set_dirdepth(cmd_parms *cmd, void *mconfig, unsigned char 
                                                    &pubcookie_module);
 #endif
 
-    if((scfg->dirdepth = atoi(v)) < 0 ) {
+    if((scfg->dirdepth = atoi( (const char *) v)) < 0 ) {
         return "PUBCOOKIE: Could not convert Directory Depth for AppID parameter to nonnegative number.";
     }
     

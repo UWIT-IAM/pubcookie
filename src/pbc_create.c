@@ -2,7 +2,7 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_create.c,v 1.12 2001-11-28 22:36:41 willey Exp $
+    $Id: pbc_create.c,v 1.13 2002-06-03 20:50:01 jjminer Exp $
  */
 
 /*                                                                            */
@@ -54,19 +54,19 @@ int main(int argc, char **argv) {
     }
 
     /* move the arguments out of buffers and right size them */
-    strncpy(user, user_buf, sizeof(user));
+    strncpy( (char *) user, (const char *) user_buf, sizeof(user));
     user[sizeof(user)-1] = '\0';
-    strncpy(appsrvid, appsrvid_buf, sizeof(appsrvid));
+    strncpy( (char *) appsrvid, (const char *) appsrvid_buf, sizeof(appsrvid));
     appsrvid[sizeof(appsrvid)-1] = '\0';
-    strncpy(appid, appid_buf, sizeof(appid));
+    strncpy( (char *) appid, (const char *) appid_buf, sizeof(appid));
     appsrvid[sizeof(appid)-1] = '\0';
 
     crypt_keyfile[sizeof(crypt_keyfile)-1] = '\0';
     cert_keyfile[sizeof(cert_keyfile)-1] = '\0';
 
     /* read in and initialize crypt and signing structures */
-    c_stuff = libpbc_init_crypt(crypt_keyfile);
-    ctx_plus = libpbc_sign_init(cert_keyfile);
+    c_stuff = libpbc_init_crypt( (char *) crypt_keyfile);
+    ctx_plus = libpbc_sign_init( (char *) cert_keyfile);
 
     /* go get the cookie */
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, ctx_plus, c_stuff);

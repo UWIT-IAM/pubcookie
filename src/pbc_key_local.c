@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     addr = inet_addr(ip);
     memcpy(addr_s, &addr, sizeof(addr));
 
-    key_buf = libpbc_mod_crypt_key(key_buf, addr_s);
+    key_buf = (unsigned char *) libpbc_mod_crypt_key( (char *) key_buf, addr_s);
     
     if( fwrite(key_buf, sizeof(char), PBC_DES_KEY_BUF, ofp) != PBC_DES_KEY_BUF)
 	libpbc_abend("libpbc_crypt_key: Failed write\n");

@@ -49,13 +49,13 @@ int main(int argc, char **argv) {
     bzero(in, 1024);
     bzero(out, 1024);
     bzero(intermediate, 1024);
-    strcpy(in, "fasdfasdfsadfak2eiojslkdjf2io3erjlskdfjsdalkj asdfdf");
+    strcpy( (char *) in, "fasdfasdfsadfak2eiojslkdjf2io3erjlskdfjsdalkj asdfdf");
 
     printf("in is %s\n", in);
-    if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) )
+    if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen( (char *) in)) )
         exit(0);
 /*    printf("intermediate out is %s\n", intermediate); */
-    if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen(in)) )
+    if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen( (char *) in)) )
         exit(0);
     printf("out is %s\n", out);
 
@@ -65,10 +65,10 @@ int main(int argc, char **argv) {
 	printf("it the first time worked\n");
 
     printf("in is %s\n", in);
-    if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen(in)) )
+    if ( ! libpbc_encrypt_cookie(in, intermediate, c1_stuff, strlen( (char *) in)) )
         exit(0);
 /*    printf("intermediate out is %s\n", intermediate); */
-    if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen(in)) )
+    if ( ! libpbc_decrypt_cookie(intermediate, out, c1_stuff, strlen( (char *) in)) )
         exit(0);
     printf("out is %s\n", out);
 

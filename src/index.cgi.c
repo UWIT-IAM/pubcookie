@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.47 $
+ * $Revision: 1.48 $
  */
 
 
@@ -40,6 +40,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pwd.h>
 /* openssl */
 #include <pem.h>
 
@@ -875,9 +876,9 @@ int init_crypt()
 	return(PBC_OK);
     }
 #else
-    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s",
-	     PBC_KEY_DIR, PBC_CRYPT_KEY_PREFIX, get_my_hostname());
-    if ((c_stuff = libpbc_init_crypt(crypt_keyfile)) == NULL) {
+    snprintf( (char *) crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s",
+	     PBC_KEY_DIR, PBC_CRYPT_KEY_PREFIX, (char *) get_my_hostname());
+    if ((c_stuff = libpbc_init_crypt( (char *) crypt_keyfile)) == NULL) {
 	return PBC_FAIL;
     } else {
 	return PBC_OK;
@@ -928,7 +929,7 @@ char *decode_granting_request(char *in)
     }
 
     out = strdup(in);    
-    libpbc_base64_decode(in, out);
+    libpbc_base64_decode( (unsigned char *) in,  (unsigned char *) out);
 
     if (debug) {
 	fprintf(stderr, "decode_granting_request: out: %s\n", out);
@@ -2051,7 +2052,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
 
     if (l->args ) {
         args_enc = calloc (1, strlen (l->args));
-	libpbc_base64_decode(l->args, args_enc);
+	libpbc_base64_decode( (unsigned char *) l->args,  (unsigned char *) args_enc);
         snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
     } 
     else {
@@ -2318,13 +2319,13 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     if ((cookie_data=libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff))	== NULL)
         return((login_rec *)NULL);
 
-    new->user = (*cookie_data).broken.user;
-    new->version = (*cookie_data).broken.version;
+    new->user =  (char *) (*cookie_data).broken.user;
+    new->version = (char *) (*cookie_data).broken.version;
     new->type = (*cookie_data).broken.type;
     new->creds = (*cookie_data).broken.creds;
     new->serial = (*cookie_data).broken.serial;
-    new->appsrvid = (*cookie_data).broken.appsrvid;
-    new->appid = (*cookie_data).broken.appid;
+    new->appsrvid = (char *) (*cookie_data).broken.appsrvid;
+    new->appid = (char *) (*cookie_data).broken.appid;
     new->create_ts = (*cookie_data).broken.create_ts;
     new->expire_ts = (*cookie_data).broken.last_ts;
 
@@ -2364,11 +2365,11 @@ int create_cookie(char *user_buf,
         fprintf(stderr, "create_cookie: hello\n"); 
     
     /* right size the args */
-    strncpy(user, user_buf, sizeof(user));
+    strncpy( (char *) user, user_buf, sizeof(user));
     user[sizeof(user)-1] = '\0';
-    strncpy(appsrvid, appsrvid_buf, sizeof(appsrvid));
+    strncpy( (char *) appsrvid, appsrvid_buf, sizeof(appsrvid));
     appsrvid[sizeof(appsrvid)-1] = '\0';
-    strncpy(appid, appid_buf, sizeof(appid));
+    strncpy( (char *) appid, appid_buf, sizeof(appid));
     appid[sizeof(appid)-1] = '\0';
 
     if ((ctx_plus = libpbc_sign_init(priv_key_file)) == NULL ) {
@@ -2379,7 +2380,7 @@ int create_cookie(char *user_buf,
         fprintf(stderr, "create_cookie: ready to go get cookie, with expire_ts: %d\n", (int)expire); 
     
     /* go get the cookie */
-    cookie_local = libpbc_get_cookie_with_expire(user, type, creds, serial, 
+    cookie_local = (char *) libpbc_get_cookie_with_expire(user, type, creds, serial, 
 			             expire, appsrvid, appid, ctx_plus, 
                                      c_stuff);
     

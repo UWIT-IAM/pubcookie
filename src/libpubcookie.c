@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.23 2002-05-15 21:01:10 willey Exp $
+    $Id: libpubcookie.c,v 2.24 2002-06-03 20:50:01 jjminer Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -1143,7 +1143,7 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
 int libpbc_check_version(pbc_cookie_data *cookie_data)
 {
     unsigned char *a = (*cookie_data).broken.version;
-    unsigned char *b = PBC_VERSION;
+    unsigned char *b = (unsigned char *) PBC_VERSION;
 
     if( a[0] == b[0] && a[1] == b[1] )
         return(PBC_OK);
