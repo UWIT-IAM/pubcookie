@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.75 2002-04-16 18:20:32 willey Exp $
+    $Id: mod_pubcookie.c,v 1.76 2002-05-09 22:48:22 willey Exp $
  */
 
 /* apache includes */
@@ -485,7 +485,12 @@ void clear_session_cookie(request_rec *r) {
 
 }
 
-void do_end_session_redirect(request_rec *r) {
+/**
+ * handler to process end session redirects
+ * @param r the apache request rec
+ * @return OK to let Apache know to finish the request
+ */
+static int do_end_session_redirect_handler(request_rec *r) {
     pubcookie_dir_rec    *cfg;
     pubcookie_server_rec *scfg;
     char                 *refresh;
@@ -495,8 +500,9 @@ void do_end_session_redirect(request_rec *r) {
     scfg=(pubcookie_server_rec *) ap_get_module_config(r->server->module_config, 					 &pubcookie_module);
 
     if(cfg->super_debug)
-        libpbc_debug("super-debug: do_end_session_redirect: hello\n");
+        libpbc_debug("super-debug: do_end_session_redirect_handler: hello\n");
       
+    r->content_type = "text/html";
     clear_session_cookie(r);
     set_no_cache_headers(r);
 
@@ -517,10 +523,11 @@ void do_end_session_redirect(request_rec *r) {
     ap_rprintf(r, " <HEAD>\n");
     ap_rprintf(r, "  <meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\">\n", refresh);
     ap_rprintf(r, " </HEAD>\n");
-    ap_rprintf(r, " <BODY BGCOLOR=\"#FFFFFF\">");
-    ap_rprintf(r, " </BODY>");
+    ap_rprintf(r, " <BODY BGCOLOR=\"#FFFFFF\">\n");
+    ap_rprintf(r, " </BODY>\n");
     ap_rprintf(r, "</HTML>\n");
 
+    return(OK);
 }
 
 request_rec *top_rrec (request_rec *r) {
@@ -1650,7 +1657,8 @@ static int pubcookie_typer(request_rec *r) {
       libpbc_debug("super-debug: pubcookie_typer: no failure\n");
 
     if( check_end_session(r) & PBC_END_SESSION_REDIR_MASK ) { 
-      do_end_session_redirect(r);
+      r->handler = PBC_END_SESSION_REDIR_HANDLER;
+      return OK;
     }
     else if( check_end_session(r) & PBC_END_SESSION_MASK ) { 
       clear_session_cookie(r);
@@ -2095,6 +2103,7 @@ command_rec pubcookie_commands[] = {
 /*                                                                            */
 handler_rec pubcookie_handlers[] = {
     { PBC_AUTH_FAILED_HANDLER, auth_failed},
+    { PBC_END_SESSION_REDIR_HANDLER, do_end_session_redirect_handler},
     { PBC_BAD_USER_HANDLER, bad_user},
     { NULL }
 };
