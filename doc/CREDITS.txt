@@ -14,16 +14,20 @@
      * Ryan Muldoon       University of Wisconsin
      * Steve Willey       University of Washington
 
-   Other Contributors:
+   Core Contributors:
      * Nathan Dors        University of Washington
      * Jim Fox            University of Washington
      * Frank Fugimoto     University of Washington
      * Scott Fullerton    University of Wisconsin
-     * Maurizio Marini    Cost Srl, Milan, Italy
      * RL "Bob" Morgan    University of Washington
      * Lori Stevens       University of Washington
      * Russell Tokuyama   University of Hawaii
      * Pascal Wallenius   University of Washington (former)
+
+   Other Contributors:
+     * Bradford Barrett   University of Florida
+     * Maurizio Marini    Cost Srl, Milan, Italy
+     * Gary Mills         University of Manitoba, Canada
 
    Sponsors:
      * The Andrew W. Mellon Foundation
