@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.63 2004-12-04 18:19:34 dors Exp $
+# $Id: Makefile.in,v 1.64 2004-12-23 15:51:57 dors Exp $
 
 @SET_MAKE@
 
@@ -81,18 +81,13 @@ SRC_CONFIGURE_FILES=$(srcdir)/src/config.h.in \
 
 TEST_SRC=$(srcdir)/src/pbc_create.c \
 		 $(srcdir)/src/pbc_verify.c \
-		 $(srcdir)/src/candv.c \
-		 $(srcdir)/src/dtest.c \
-		 $(srcdir)/src/make_crypted_blob.c \
 		 $(srcdir)/src/check_crypted_blob.c \
 		 $(srcdir)/src/what_is_my_ip.c
 
-TEST_FILES=pbc_create pbc_verify candv dtest make_crypted_blob check_crypted_blob \
+TEST_FILES=pbc_create pbc_verify check_crypted_blob \
 		   verify what_is_my_ip
 
-UTIL_SRC=$(srcdir)/src/pbc_key_local.c \
-		 $(srcdir)/src/pbc_key_generic.c \
-		 $(srcdir)/src/keyserver.c \
+UTIL_SRC=$(srcdir)/src/keyserver.c \
 		 $(srcdir)/src/keyclient.c
 
 VERIFIERS=$(builddir)/src/verify_alwaystrue.o \
