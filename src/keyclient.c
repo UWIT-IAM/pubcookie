@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.47 2004-04-28 23:26:57 willey Exp $
+ * $Id: keyclient.c,v 2.48 2004-04-28 23:48:02 willey Exp $
  */
 
 
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
     security_context *context = NULL;
 #endif
     char *gcert = NULL;
-    const char *cluster = libpbc_config_getstring(p, "login_host", "");
+    const char *cluster = NULL;
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
@@ -215,6 +215,7 @@ int main(int argc, char *argv[])
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
     cadir = libpbc_config_getstring(p, "ssl_ca_path", NULL);
+    cluster = libpbc_config_getstring(p, "login_host", "");
 
     hostname = NULL;
 
