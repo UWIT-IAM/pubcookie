@@ -162,8 +162,14 @@
 /* Define to 1 if you have the <shadow.h> header file. */
 #undef HAVE_SHADOW_H
 
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
+
+/* Define to 1 if you have the `sprintf' function. */
+#undef HAVE_SPRINTF
 
 /* Define to 1 if you have the <ssl.h> header file. */
 #undef HAVE_SSL_H
