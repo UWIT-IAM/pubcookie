@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.107 2002-11-07 19:54:27 willey Exp $
+    $Id: mod_pubcookie.c,v 1.108 2002-12-11 01:34:38 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -84,13 +84,6 @@ char *make_session_cookie_name(pool *, char *, unsigned char *);
 module pubcookie_module;
 
 typedef struct {
-  char                  *g_certfile;
-  char                  *s_keyfile;
-  char                  *s_certfile;
-  md_context_plus       *session_sign_ctx_plus;
-  md_context_plus       *session_verf_ctx_plus;
-  md_context_plus       *granting_verf_ctx_plus;
-  crypt_stuff           *c_stuff;
   int                   dirdepth;
   int                   noblank;
   char			*login;
@@ -121,25 +114,11 @@ typedef struct {
 void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG|APLOG_NOERRNO, r,
                "dump_server_rec:\n\
-		g_certfile: %s\n\
-		s_keyfile: %s\n\
-		s_certfile: %s\n\
-		session_sign_ctx_plus: %s\n\
-		session_verf_ctx_plus: %s\n\
-		granting_verf_ctx_plus: %s\n\
-		c_stuff: %s\n\
 		dirdepth: %d\n\
 		noblank: %d\n\
 		login: %s\n\
 		appsrvid: %s\n\
 		authtype_names: %s", 
-  		(scfg->g_certfile == NULL ? "" : scfg->g_certfile),
-  		(scfg->s_keyfile == NULL ? "" : scfg->s_keyfile),
-  		(scfg->s_certfile == NULL ? "" : scfg->s_certfile),
-  		(scfg->session_sign_ctx_plus == NULL ? "unset" : "set"),
-  		(scfg->session_verf_ctx_plus == NULL ? "unset" : "set"),
-  		(scfg->granting_verf_ctx_plus == NULL ? "unset" : "set"),
-  		(scfg->c_stuff == NULL ? "unset" : "set"),
 		scfg->dirdepth, 
 		scfg->noblank, 
   		(scfg->login == NULL ? "" : scfg->login),
@@ -869,12 +848,7 @@ static int auth_failed_handler(request_rec *r) {
     /*   the body of the redirect                    */
 
     e_g_req_contents = ap_palloc(p, (strlen(g_req_contents) + 3) / 3 * 4);
-#ifdef PHASEII
-    libpbc_encrypt_cookie(g_req_contents, tmp, scfg->c_stuff, strlen(g_req_contents));
-    libpbc_base64_encode(tmp, e_g_req_contents, strlen(g_req_contents));
-#else
     libpbc_base64_encode( (unsigned char *) g_req_contents, (unsigned char *) e_g_req_contents, strlen(g_req_contents));
-#endif
 
     /* create whole g req cookie */
     ap_snprintf(g_req_cookie, PBC_4K-1, 
@@ -1069,7 +1043,6 @@ static void pubcookie_init(server_rec *s, pool *p) {
                                                    &pubcookie_module);
     ap_add_version_component(
             ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION_STRING, NULL));
-    /* sanity checks */
 
     /* bail if PubcookieAuthTypes not set */
     if( scfg->authtype_names == NULL ) {
@@ -1080,22 +1053,6 @@ static void pubcookie_init(server_rec *s, pool *p) {
 
     libpbc_config_init(NULL, "mod_pubcookie");
     pbc_log_init("mod_pubcookie", NULL, &mylog, NULL);
-
-#if 0
-    /* xxx how to get this data to security_legacy.c ? 
-     we need some sort of config_override() call ? */
-    /* read and init session public key */
-    fname = ap_server_root_relative (p,
-	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
-
-    /* read and init session private key */
-    fname = ap_server_root_relative (p,
-	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
-
-    /* read and init granting public key */
-    fname = ap_server_root_relative (p,
-	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
-#endif
 
     /* libpubcookie initialization */
     libpbc_pubcookie_init();
@@ -1150,22 +1107,6 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
 		nscfg->dirdepth : pscfg->dirdepth;
     scfg->noblank = nscfg->noblank ? 
 		nscfg->noblank : pscfg->noblank;
-
-    scfg->g_certfile = nscfg->g_certfile ? 
-		nscfg->g_certfile : pscfg->g_certfile;
-    scfg->s_keyfile = nscfg->s_keyfile ? 
-		nscfg->s_keyfile : pscfg->s_keyfile;
-    scfg->s_certfile = nscfg->s_certfile ? 
-		nscfg->s_certfile : pscfg->s_certfile;
-
-    scfg->session_sign_ctx_plus = nscfg->session_sign_ctx_plus ? 
-		nscfg->session_sign_ctx_plus : pscfg->session_sign_ctx_plus;
-    scfg->session_verf_ctx_plus = nscfg->session_verf_ctx_plus ? 
-		nscfg->session_verf_ctx_plus : pscfg->session_verf_ctx_plus;
-    scfg->granting_verf_ctx_plus = nscfg->granting_verf_ctx_plus ? 
-		nscfg->granting_verf_ctx_plus : pscfg->granting_verf_ctx_plus;
-    scfg->c_stuff = nscfg->c_stuff ? 
-		nscfg->c_stuff : pscfg->c_stuff;
     scfg->authtype_names = nscfg->authtype_names ? 
 		nscfg->authtype_names : pscfg->authtype_names;
 
@@ -1918,50 +1859,36 @@ const char *pubcookie_set_dirdepth(cmd_parms *cmd, void *mconfig, unsigned char 
 
 /*                                                                            */
 const char *pubcookie_set_g_certf(cmd_parms *cmd, void *mconfig, char *v) {
-    server_rec *s = cmd->server;
-    pubcookie_server_rec *scfg;
 
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
-                                                   &pubcookie_module);
-
-    scfg->g_certfile = ap_pstrdup(cmd->pool, v);
+    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
+		"PubCookieGrantingCertfile: Defunk directive, please remove.");
 
     return NULL;
 }
 
 /*                                                                            */
 const char *pubcookie_set_s_keyf(cmd_parms *cmd, void *mconfig, char *v) {
-    server_rec *s = cmd->server;
-    pubcookie_server_rec *scfg;
 
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
-                                                   &pubcookie_module);
-
-    scfg->s_keyfile = ap_pstrdup(cmd->pool, v);
+    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
+		"PubCookieSessionKeyfile: Defunk directive, please remove.");
 
     return NULL;
 }
 
 /*                                                                            */
 const char *pubcookie_set_s_certf(cmd_parms *cmd, void *mconfig, char *v) {
-    server_rec *s = cmd->server;
-    pubcookie_server_rec *scfg;
 
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
-                                                   &pubcookie_module);
-
-    scfg->s_certfile = ap_pstrdup(cmd->pool, v);
+    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
+		"PubCookieSessionCertfile: Defunk directive, please remove.");
 
     return NULL;
 }
 
 /*                                                                            */
 const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
-    server_rec *s = cmd->server;
-    pubcookie_server_rec *scfg;
 
-    scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
-                                                   &pubcookie_module);
+    ap_log_error(APLOG_MARK, APLOG_EMERG|APLOG_NOERRNO, cmd->server, 
+		"PubCookieCryptKeyfile: Defunk directive, please remove.");
 
     return NULL;
 }
