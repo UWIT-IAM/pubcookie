@@ -7,7 +7,12 @@
 
 <body>
 
-<h1>Pubcookie Apache Module - Install Guide 3.0.0-beta3</h1>
+<h1>Pubcookie Apache Module - Install Guide 3.0.0 RC1</h1>
+
+                <p>Note: Documentation can contain bugs too. The
+                   <a href="http://www.pubcookie.org/docs/install-mod_pubcookie-3.0.html">online 
+                   version of this document</a> is always the most up-to-date version.
+                </p>
 
                 <p><i>Included on this page:</i></p>
                   <ul>
@@ -29,7 +34,7 @@
                   <p>This guide helps you install mod_pubcookie on Apache 1.3.x.
                      Objectives include:</p>
                   <ul>
-                    <li>how to build and install mod_pubcookie 3.0.0-beta3 on 
+                    <li>how to build and install mod_pubcookie 3.0.0 RC1 on 
                       Apache 1.3.x</li>
                     <li>how to use the Pubcookie keyclient to obtain an encryption 
                       key</li>
@@ -38,9 +43,7 @@
                     <li>how to test mod_pubcookie to confirm that authentication 
                       works</li>
                   </ul>
-                  <p>Note: Documentation can contain bugs too. The
-                    <a href="http://www.washington.edu/pubcookie/docs/install-mod_pubcookie-3.0.html">online 
-                      version of this document</a> is always the most up-to-date.</p>
+
                   <h4><a name="new"></a>What's New</h4>
                   <p>Significant changes since mod_pubcookie-3.0.0-beta3:</p>
                   <ul>
@@ -183,14 +186,13 @@
                   <p><b>To build mod_pubcookie as a DSO using apxs:</b></p>
                   <ol>
                     <li> 
-                      <p><a href="../downloads.html">Download</a> the Pubcookie 
-                        3.0.0-beta3 distribution.</p>
+                      <p>Download the Pubcookie distribution.</p>
                     <li> 
                       <p>Untar a copy of the source, e.g.:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0-beta3.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0-rc1.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE></p>
                       
@@ -227,7 +229,7 @@
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0-beta3.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0-rc1.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE></p>
                     <li> 
@@ -236,7 +238,7 @@
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0-beta3/src/mod_pubcookie.a</pre></TD>
+                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0-rc1/src/mod_pubcookie.a</pre></TD>
                         </TR>
                       </TABLE></p>
                       <p>Or, if you use a src level Configure script, add an AddModule 
@@ -253,7 +255,7 @@
                       <p>
 		      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% cd pubcookie-3.0.0-beta3
+                          <TD> <pre>% cd pubcookie-3.0.0-rc1
 % ./configure
 % make keyclient</pre></TD>
                         </TR>
