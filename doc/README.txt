@@ -15,9 +15,9 @@ Installation specific docs live at:
 http://www.washington.edu/computing/pubcookie/apache/install.html
 
 The Apache module (mod_pubcookie) distribution contains the following files: 
-	README - this file
-       	CHANGES.mod_pubcookie - version history
-       	LICENSE - you hav the right ...
+	README.txt - this file
+       	CHANGES.mod_pubcookie.txt - version history
+       	LICENSE.txt - you hav the right ...
        	Makefile.tmpl - makefile template for mod_pubcookie
        	Makefile.axps - makefile to make mod_pubcookie as a DSO object
        	base64.c
@@ -36,12 +36,13 @@ The Apache module (mod_pubcookie) distribution contains the following files:
 Login server installation documentation, lives in INSTALL.login
 
 The pubcookie login server distribution contains the following files:
-	CHANGES.login - version history
-	INSTALL.login - installation docs
+        NEW_SITE.txt - overview for new site installations
+	CHANGES.login.txt - version history
+	INSTALL.login.txt - installation docs
 	Makefile.index.cgi - Makefile for login cgi
 	Makefile - Makefile for tools and junk
-	README - this file
-       	LICENSE - you hav the right ...
+	README.txt - this file
+       	LICENSE.txt - you hav the right ...
 	base64.c
 	index.cgi.c
 	index.cgi.h
@@ -66,5 +67,5 @@ The pubcookie login server distribution contains the following files:
 	contrib/*   
 
 
-$Id: README.txt,v 1.11 2001-12-12 23:19:57 willey Exp $
+$Id: README.txt,v 1.12 2001-12-13 23:30:37 willey Exp $
 
