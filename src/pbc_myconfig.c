@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.18 2002-11-14 21:12:12 jjminer Exp $
+    $Id: pbc_myconfig.c,v 1.19 2002-11-21 23:48:21 ryanc Exp $
  */
 
 
@@ -422,8 +422,7 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 				break;
 				
 			case REG_DWORD: //store DWORD as string for function spec. compatability
-				
-				configlist[nconfiglist].value = strdup(itoa((DWORD)dataBuff,fmtstr,10));
+				configlist[nconfiglist].value = strdup(itoa((DWORD)*dataBuff,fmtstr,10));
 				if (!configlist[nconfiglist].value) {
 					RegCloseKey (hKey);
 					return FALSE;

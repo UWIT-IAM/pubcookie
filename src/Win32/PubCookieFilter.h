@@ -1,5 +1,5 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 beta-1"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 beta-2"
 
 typedef struct {
 	char				*g_certfile;
@@ -11,33 +11,34 @@ typedef struct {
 } pubcookie_server_rec;
 
 typedef struct {
-	char		remote_host[MAX_PATH];
-	int			inact_exp;
-	int			hard_exp;
-	int			failed;
-	int			has_granting;
-	char		pszUser[SF_MAX_USERNAME];
-	char		pszPassword[SF_MAX_PASSWORD];
-	char		appid[PBC_APP_ID_LEN];
-	char		s_cookiename[64];
-	char		force_reauth[4];
-	char		AuthType;
-	char		default_url[1024];
-	char		timeout_url[1024];
-	char		user[PBC_USER_LEN];
-	char		appsrvid[PBC_APPSRV_ID_LEN];
-	char		appsrv_port[6];
-	char		uri[1024];		              // *** size ??
-	char		args[4096];                   // ***
-	char		method[8];		              // ***
-	char		handler;
-	DWORD		session_reauth;
-	DWORD		logout_action;
-	char		Error_Page[MAX_PATH];
-	char		Enterprise_Domain[1024];
-	char		Web_Login[1024];
+	char			remote_host[MAX_PATH];
+	DWORD			inact_exp;
+	DWORD			hard_exp;
+	DWORD			failed;
+	DWORD			has_granting;
+	char			pszUser[SF_MAX_USERNAME];
+	char			pszPassword[SF_MAX_PASSWORD];
+	char			appid[PBC_APP_ID_LEN];
+	char			s_cookiename[64];
+	char			force_reauth[4];
+	char			AuthType;
+	char			default_url[1024];
+	char			timeout_url[1024];
+	char			user[PBC_USER_LEN];
+	char			appsrvid[PBC_APPSRV_ID_LEN];
+	char			appsrv_port[6];
+	char			uri[1024];		              // *** size ??
+	char			args[4096];                   // ***
+	char			method[8];		              // ***
+	char			handler;
+	DWORD			session_reauth;
+	DWORD			logout_action;
+	char			Error_Page[MAX_PATH];
+	char			Enterprise_Domain[1024];
+	char			Web_Login[1024];
     pbc_cookie_data *cookie_data;
-	int         Set_Server_Values;
+	DWORD			Set_Server_Values;
+	DWORD			legacy;
 
 } pubcookie_dir_rec;
 

@@ -106,7 +106,7 @@ BOOL Open_Debug_Trace ()
 	time_t ltime;
 	struct tm *today;
 
-	DebugMsg((DEST,"Open_Debug_Trace\n"));  //debug
+//	DebugMsg((DEST,"Open_Debug_Trace\n"));  //debug
 
 
 	time(&ltime);

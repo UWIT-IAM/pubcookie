@@ -5,7 +5,7 @@
 //  PubcookieFilter.cpp
 
 
-#define COOKIE_PATH
+//#define COOKIE_PATH
 
 #include <windows.h>
 #include <stdio.h>
@@ -156,8 +156,6 @@ VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_doma
 			secure_string);
 
 	
-		DebugMsg((DEST,"  AddResponseHeaders= \n%s",new_cookie));
-	
 		pFC->AddResponseHeaders(pFC,new_cookie,0);
 
 		DebugMsg((DEST,"  Cleared Cookie %s\n",cookie_name));
@@ -205,11 +203,9 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 
     sprintf(szBuff,"Content-Type: text/html\r\n");
 		
-	DebugMsg((DEST,"  AddResponseHeaders Redirect-------------- \n%s",szBuff));
+	DebugMsg((DEST," Redirect\n"));
 
 	pFC->AddResponseHeaders(pFC,szBuff,0);
-
-	DebugMsg((DEST,"  REQ_SEND_RESPONSE_HEADER (Redirect) \n"));
 
 	pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 		"200 OK",NULL,NULL);
@@ -224,8 +220,6 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 					,PBC_REFRESH_TIME, RUrl);
 	
 	dwBuffSize=strlen(szBuff);
-
-	DebugMsg((DEST,"  WriteClient Redirect----------- \n%s",szBuff));
 
 	pFC->WriteClient (pFC, szBuff, &dwBuffSize, 0);
 
@@ -536,8 +530,6 @@ int Bad_User (HTTP_FILTER_CONTEXT* pFC)
 
 	if ( strlen(Error_Page) == 0 ) {
 
-		DebugMsg((DEST,"  REQ_SEND_RESPONSE_HEADER",szTemp));
-
 		pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 								"200 OK",NULL,NULL);
 
@@ -545,8 +537,6 @@ int Bad_User (HTTP_FILTER_CONTEXT* pFC)
 			           " Please contact <a href=\"mailto:ntadmin@%s\">ntadmin@%s</a> </B> <br>",
 			scfg.server_hostname,scfg.server_hostname);
 		dwSize=strlen(szTemp);
-
-		DebugMsg((DEST,"  WriteClient Bad_User----------- \n%s",szTemp));
 
 		pFC->WriteClient (pFC, szTemp, &dwSize, 0);
 
@@ -759,7 +749,7 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* dcfg)
 			NULL, NULL, (LPBYTE) dcfg->Error_Page, &dwRead);
 		dwRead = sizeof (dcfg->Set_Server_Values);
 		RegQueryValueEx (hKey, "SetHeaderValues",
-			NULL, NULL, (LPBYTE) dcfg->Set_Server_Values, &dwRead);
+			NULL, NULL, (LPBYTE) &dcfg->Set_Server_Values, &dwRead);
 
 #	ifndef COOKIE_PATH
 		dwRead = sizeof (dcfg->appid);
@@ -771,22 +761,6 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* dcfg)
 			dcfg->AuthType = AUTH_NONE;
 		}
 		
-		DebugMsg((DEST,"  Values for: %s\n" ,key));
-		DebugMsg((DEST,"    AppId            : %s\n" ,dcfg->appid));
-		DebugMsg((DEST,"    NtUserId         : %s\n" ,dcfg->pszUser));
-		DebugMsg((DEST,"    Password?        : %d\n" ,(strlen(dcfg->pszPassword) > 0) ));
-		DebugMsg((DEST,"    Inact_Exp        : %d\n" ,dcfg->inact_exp));
-		DebugMsg((DEST,"    Hard_Exp         : %d\n" ,dcfg->hard_exp));
-		DebugMsg((DEST,"    Force_Reauth     : %s\n" ,dcfg->force_reauth));
-		DebugMsg((DEST,"    Session_Reauth   : %1d\n" ,dcfg->session_reauth));
-		DebugMsg((DEST,"    Logout_Action    : %1d\n" ,dcfg->logout_action));
-		DebugMsg((DEST,"    AuthType         : %c\n" ,dcfg->AuthType));
-		DebugMsg((DEST,"    Default_Url      : %s\n" ,dcfg->default_url));
-		DebugMsg((DEST,"    Timeout_Url      : %s\n" ,dcfg->timeout_url));
-		DebugMsg((DEST,"    Web_Login        : %s\n" ,dcfg->Web_Login));
-		DebugMsg((DEST,"    Enterprise_Domain: %s\n" ,dcfg->Enterprise_Domain));
-		DebugMsg((DEST,"    Error_Page       : %s\n" ,dcfg->Error_Page));
-		DebugMsg((DEST,"    Set_Server_Values: %d\n",dcfg->Set_Server_Values));
 	}
     
 	RegCloseKey (hKey); 
@@ -821,7 +795,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	strcpy(dcfg->Web_Login, PBC_LOGIN_URI);
 	strcpy(dcfg->Error_Page,"");
 	dcfg->Set_Server_Values = false;
-
+	dcfg->legacy = false;
 	
     // Then Look in default key
 	
@@ -860,17 +834,20 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		// Legacy hack for special tokens PBC_PUBLIC, UWNETID and SECURID
 
 		if (PBC_LEGACY_DIR_NAMES) {
-			if ( stricmp((const char *)szBuff, PBC_NETID_NAME) == 0 )
+			if ( stricmp((const char *)szBuff, PBC_NETID_NAME) == 0 ) {
 				dcfg->AuthType = AUTH_NETID;
-			else
-				if ( stricmp((const char *)szBuff, PBC_SECURID_NAME) == 0 )
-					dcfg->AuthType = AUTH_SECURID;
-				else
-					if ( stricmp((const char *)szBuff, PBC_PUBLIC_NAME) == 0 ) {
-						dcfg->AuthType = AUTH_NONE;
-					    dcfg->Set_Server_Values = true;
-					}
-
+				dcfg->legacy = true;
+			}
+			else if ( stricmp((const char *)szBuff, PBC_SECURID_NAME) == 0 ) {
+				dcfg->AuthType = AUTH_SECURID;
+				dcfg->legacy = true;
+			}
+			else if ( stricmp((const char *)szBuff, PBC_PUBLIC_NAME) == 0 ) {
+				dcfg->AuthType = AUTH_NONE;
+				dcfg->Set_Server_Values = true;
+				dcfg->legacy = true;
+			}
+			
 			DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 		}
 
@@ -880,6 +857,23 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		Read_Reg_Values (key, dcfg);
 
 	}
+
+	DebugMsg((DEST,"  Values for: %s\n" ,key));
+	DebugMsg((DEST,"    AppId            : %s\n" ,dcfg->appid));
+	DebugMsg((DEST,"    NtUserId         : %s\n" ,dcfg->pszUser));
+	DebugMsg((DEST,"    Password?        : %d\n" ,(strlen(dcfg->pszPassword) > 0) ));
+	DebugMsg((DEST,"    Inact_Exp        : %d\n" ,dcfg->inact_exp));
+	DebugMsg((DEST,"    Hard_Exp         : %d\n" ,dcfg->hard_exp));
+	DebugMsg((DEST,"    Force_Reauth     : %s\n" ,dcfg->force_reauth));
+	DebugMsg((DEST,"    Session_Reauth   : %1d\n" ,dcfg->session_reauth));
+	DebugMsg((DEST,"    Logout_Action    : %1d\n" ,dcfg->logout_action));
+	DebugMsg((DEST,"    AuthType         : %c\n" ,dcfg->AuthType));
+	DebugMsg((DEST,"    Default_Url      : %s\n" ,dcfg->default_url));
+	DebugMsg((DEST,"    Timeout_Url      : %s\n" ,dcfg->timeout_url));
+	DebugMsg((DEST,"    Web_Login        : %s\n" ,dcfg->Web_Login));
+	DebugMsg((DEST,"    Enterprise_Domain: %s\n" ,dcfg->Enterprise_Domain));
+	DebugMsg((DEST,"    Error_Page       : %s\n" ,dcfg->Error_Page));
+	DebugMsg((DEST,"    Set_Server_Values: %d\n",dcfg->Set_Server_Values));
 
 	sprintf(dcfg->s_cookiename,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
 	
@@ -932,9 +926,6 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	char *ptr;
 	pubcookie_dir_rec* dcfg;
 	int pre_sess_from_cookie;
-
-	DebugMsg((DEST,"User"));  //debug
-
 
     dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
@@ -1004,12 +995,13 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	// Save Path unchanged so cookies will be returned properly
 	// strcpy(dcfg->path_id,dcfg->appid);
 
-	// Convert appid to lower case
-#ifndef COOKIE_PATH
-	strlwr(dcfg->appid);
-#endif
 	// Get userid, timeouts, AuthType, etc for this app.  Could change appid.
 	Get_Effective_Values(pFC,pHeaderInfo,ptr);
+
+#ifndef COOKIE_PATH
+	// Convert appid to lower case
+	strlwr(dcfg->appid);
+#endif
 
     /* Log out if indicated */
 
@@ -1298,7 +1290,6 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 int Pubcookie_Auth (HTTP_FILTER_CONTEXT* pFC)
 {
 	pubcookie_dir_rec* dcfg;
- 	DebugMsg((DEST,"Auth"));  //debug
 
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
@@ -1394,8 +1385,6 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 #endif
 			pbc_free(cookie);
 			pbc_free(dcfg->cookie_data);
-			
-			DebugMsg((DEST,"  AddResponseHeaders1= \n%s",new_cookie));
 			
 			pFC->AddResponseHeaders(pFC,new_cookie,0);
 			
@@ -1540,8 +1529,6 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 		if (!Reset_Defaults()) { 
 			return SF_STATUS_REQ_ERROR;
 		}
-
-		DebugMsg((DEST,"  REQ_SEND_RESPONSE_HEADER \n"));
 
 		pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 								"200 OK",NULL,NULL);
@@ -1772,7 +1759,7 @@ DWORD OnAuthentication (HTTP_FILTER_CONTEXT* pFC,
 //	DebugMsg((DEST,"  Old Password: %s\n",pAuthInfo->pszPassword));
 
 	if ( dcfg )
-	if ( strlen(dcfg->pszUser) > 0 ) {
+	if ( strlen(dcfg->pszUser) > 0 && dcfg->legacy) {
 		// Give the mapped user/password back to the server
 		strcpy(pAuthInfo->pszUser    , dcfg->pszUser);
 		strcpy(pAuthInfo->pszPassword, dcfg->pszPassword);
