@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.37 2003-11-26 22:18:43 willey Exp $
+ * $Id: keyclient.c,v 2.38 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -109,6 +109,7 @@ static void usage(void)
     printf("  -K <URI>           : base URL of key management server\n");  
     printf("  -C <cert file>     : CA cert to use for client verification\n");
     printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
+    printf("  -1                 : permit <hostname>\n");
 
     exit(1);
 }
@@ -148,6 +149,7 @@ int main(int argc, char *argv[])
     crypt_stuff c_stuff;
     const char *hostname;
     int newkeyp;
+    int permit;
     X509 *server_cert;
     const char *keyfile;
     const char *certfile;
@@ -190,7 +192,8 @@ int main(int argc, char *argv[])
     hostname = NULL;
 
     newkeyp = 1;
-    while ((c = getopt(argc, argv, "apc:k:C:D:nudH:L:K:")) != -1) {
+    permit = 0;
+    while ((c = getopt(argc, argv, "01apc:k:C:D:nudH:L:K:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -244,6 +247,18 @@ int main(int argc, char *argv[])
                 /* connect to the specified key management server
 				   Overrides PBC_KEYMGT_URI */
                 keymgturi = strdup(optarg);
+                break;
+
+            case '0':
+                /* deny access to a cn */
+                newkeyp = -1;
+                permit = -1;
+                break;
+
+            case '1':
+                /* permit access to a cn */
+                newkeyp = -1;
+                permit = 1;
                 break;
 
             case '?':
@@ -401,17 +416,24 @@ int main(int argc, char *argv[])
     if (newkeyp == -1) {
         char enckey[PBC_DES_KEY_BUF * 2];
 
-        if (libpbc_get_crypt_key(p, &c_stuff, hostname) != PBC_OK) {
+        if (permit) {
+           snprintf(buf, sizeof(buf),
+                  "GET %s?genkey=%s?setkey=%s;\r\n\r\n",
+                   keymgturi, (permit<0?"deny":"permit"), hostname);
+               
+        } else {
+          if (libpbc_get_crypt_key(p, &c_stuff, hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
             exit(1);
-        }
+          }
 
-        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+          libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
 
-        /* we're uploading! */
-        snprintf(buf, sizeof(buf),
+          /* we're uploading! */
+          snprintf(buf, sizeof(buf),
                  "GET %s?genkey=put?setkey=%s;%s\r\n\r\n",
                  keymgturi, hostname, enckey);
+        }
     } else {
         snprintf(buf, sizeof(buf), 
                  "GET %s?genkey=%s HTTP/1.0\r\n\r\n", keymgturi,

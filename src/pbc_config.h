@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.83 2003-11-26 22:19:23 willey Exp $
+    $Id: pbc_config.h,v 1.84 2003-12-11 21:48:44 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -152,10 +152,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 <INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\""
 	/* button text (PBC_POST_NO_JS_BUTTON) */
 #define PBC_POST_NO_JS_HTML5 "\">\n </FORM>\n"
-	/* copyright (PBC_HTML_COPYRIGHT) */
 #define PBC_POST_NO_JS_HTML6 "</CENTER>\n </BODY></HTML>\n"
 
-#define PBC_HTML_COPYRIGHT "<P><address>&#169; 1999 University of Washington</address><P>\n" 
 #define PBC_POST_NO_JS_BUTTON "Click here to continue"
 #define PBC_WEBISO_LOGO "images/login.gif"
 
@@ -188,7 +186,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_LOGOUT_ACTION "logout_action"
 /* added previously but only now as defines March 2002 */
 #define PBC_GETVAR_FIRST_KISS "first_kiss"
-#define PBC_GETVAR_NEXT_SECURID "next_securid"
 #define PBC_GETVAR_USER "user"
 #define PBC_GETVAR_REALM "realm"
 #define PBC_GETVAR_PASS "pass"
@@ -206,6 +203,17 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
  */
 #define PBC_CREDS_NONE    '0'
 
+/* never make the username field static */
+#define STATIC_USER_FIELD_NEVER "never"
+/* allow the use to change the username field if the login
+   cookie is expired to 'logged out
+ */
+#define STATIC_USER_FIELD_KIND "kind"
+/* username field is static whenever there is a login cookie 
+   with a username available
+ */
+#define STATIC_USER_FIELD_FASCIST "always"
+
 #define PBC_COOKIE_TYPE_NONE  '0'
 #define PBC_COOKIE_TYPE_G     '1'
 #define PBC_COOKIE_TYPE_S     '2'
@@ -214,6 +222,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 #define PBC_BASIC_CRED_ID '1'
 #define PBC_GETCRED_CRED_ID '2'
+#define PBC_UWSECURID_CRED_ID '3'
 
 /* macros to support older version of apache */
 

@@ -6,7 +6,7 @@
 /** @file pbc_key_generic.c
  * old key management
  *
- * $Id: pbc_key_generic.c,v 1.6 2003-07-10 19:06:40 willey Exp $
+ * $Id: pbc_key_generic.c,v 1.7 2003-12-11 21:48:44 willey Exp $
  */
 
 

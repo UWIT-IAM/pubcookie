@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.39 2003-11-26 22:18:43 willey Exp $
+ * $Id: keyserver.c,v 2.40 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -146,7 +146,8 @@ enum optype {
     NOOP,
     GENKEY,
     SETKEY,
-    FETCHKEY
+    FETCHKEY,
+    PERMIT
 };
 
 /**
@@ -287,6 +288,7 @@ static int check_access_list(const char *peer)
  * do the keyserver operation
  * @param peer the name of the client that's connected to us
  * @param op the operation to perform, one of: 
+ *	PERMIT - authorize a keyserver client
  *	GENKEY - generate a new key for peer
  *      SETKEY - key from friend login server
  *      FETCHKEY - peer requests it's key
@@ -299,6 +301,9 @@ int doit(const char *peer, enum optype op, const char *newkey)
     char buf[4 * PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
     pool *p = NULL;
+    int dokeyret = 0;
+    char *thepeer;
+    char *thekey64;
 
     /* no HTML headers for me */
     myprintf("\r\n");
@@ -311,13 +316,74 @@ int doit(const char *peer, enum optype op, const char *newkey)
     }
 
     switch (op) {
+        case PERMIT:
+            {
+                /* 'peer' has asked us to authorize a new CN (newkey) */
+                if(check_access_list(peer) == PBC_FAIL ) {
+                   myprintf("NO you (%s) are not authorized to authorize\r\n",
+                        peer);
+                   pbc_log_activity(p, PBC_LOG_ERROR,
+                        "operation not allowed: %s", peer);
+                   return(1);
+                }
+
+                /* find <cn>;<test> */
+                thepeer = strdup(newkey);
+                thekey64 = strchr(thepeer, ';');
+                if (!thekey64) {
+                    myprintf("NO bad form for authorize\r\n");
+                    /* xxx log */
+                    return(1);
+                }
+                *thekey64++ = '\0';
+
+                if (libpbc_test_crypt_key(p, thepeer) == PBC_OK) {
+                    myprintf("OK already authorized\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "already authorized");
+                    return(1);
+                }
+
+                /* if just a test, return now */
+                if (!strncmp(thekey64, "test", 4)) {
+                    myprintf("NO server is not authorized\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "test - not yet");
+                    return(1);
+                }
+   
+
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                        "authorizing %s", thepeer);
+
+                if (libpbc_generate_crypt_key(p, thepeer) != PBC_OK) {
+                    myprintf("NO generate_new_key() failed\r\n");
+                    pbc_log_activity(p, PBC_LOG_ERROR, 
+                                     "generate_new_key() failed");
+                    return(1);
+                }
+
+                /* push the new key to the other login servers */
+                pushkey(thepeer);
+
+                dokeyret = 0; /* don't return the key to this client */
+                break;
+            }
+
         case GENKEY:
             {
                 /* 'peer' has asked us to generate a new key */
+                if(libpbc_test_crypt_key(p, peer) == PBC_FAIL ) {
+                   myprintf("NO you (%s) are not authorized for keys\r\n",
+                        peer);
+                   pbc_log_activity(p, PBC_LOG_ERROR,
+                        "operation not allowed: %s", peer);
+                   return(1);
+                }
                 assert(newkey == NULL);
 
-                pbc_log_activity(p, PBC_LOG_AUDIT, "generating a new key for %s",
-                                 peer);
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                        "generating a new key for %s", peer);
 
                 if (libpbc_generate_crypt_key(p, peer) < 0) {
                     myprintf("NO generate_new_key() failed\r\n");
@@ -330,6 +396,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
                 /* push the new key to the other login servers */
                 pushkey(peer);
 
+                dokeyret = 1;
                 break;
             }
 
@@ -395,6 +462,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
             /* noop; we always return the new key */
             assert(newkey == NULL);
+            dokeyret = 1;
             break;
 
         case NOOP:
@@ -404,14 +472,16 @@ int doit(const char *peer, enum optype op, const char *newkey)
            break;
     }
 
-    /* return the key */
-    if (libpbc_get_crypt_key(p, &c_stuff, (char *) peer) != PBC_OK) {
-        myprintf("NO couldn't retrieve key\r\n");
-        return 1;
-    }
+    if (dokeyret) {
+       /* return the key */
+       if (libpbc_get_crypt_key(p, &c_stuff, (char *) peer) != PBC_OK) {
+           myprintf("NO couldn't retrieve key\r\n");
+           return 1;
+       }
 
-    /* now give the key back to the application */
-    libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) buf, PBC_DES_KEY_BUF);
+       /* now give the key back to the application */
+       libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) buf, PBC_DES_KEY_BUF);
+    } else buf[0] = '\0';
 
     myprintf("OK %s\r\n", buf);
     fflush(stdout);
@@ -629,6 +699,10 @@ int main(int argc, char *argv[])
 
 	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=put", 10)) {
 	    op = SETKEY;
+	}
+
+	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=permit", 10)) {
+	    op = PERMIT;
 	}
 
 	/* look for 'setkey' */

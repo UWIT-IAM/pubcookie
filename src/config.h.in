@@ -10,6 +10,9 @@
 #undef ENABLE_LDAP
 
 /* Define to 1 to support shadow verifiers */
+#undef ENABLE_UWSECURID
+
+/* Define to 1 to support shadow verifiers */
 #undef ENABLE_SHADOW
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */

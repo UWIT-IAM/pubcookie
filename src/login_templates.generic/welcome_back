@@ -1,6 +1,6 @@
 <!-- begin tmpl welcome_back -->
 <p>
 <img src="/images/check.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">Log in successful - welcome back <b>%user%</b></font></p>
+<font size="+1">Log in successful - welcome back <b>%contents%</b></font></p>
 <!-- end tmpl welcome_back -->
 

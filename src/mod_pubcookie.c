@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.123 2003-07-03 04:25:21 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.124 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -885,7 +885,6 @@ static int auth_failed_handler(request_rec *r) {
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML4);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_BUTTON);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML5);
-        ap_rprintf(r, "%s", PBC_HTML_COPYRIGHT);
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML6);
     }
     else {

@@ -6,7 +6,7 @@
 /** @file base64.c
  * Base64 functions
  *
- * $Id: base64.c,v 1.16 2003-07-10 19:06:39 willey Exp $
+ * $Id: base64.c,v 1.17 2003-12-11 21:48:44 willey Exp $
  */
                                                                                 
 

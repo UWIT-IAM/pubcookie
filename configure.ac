@@ -1,9 +1,10 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.47 $)
-AC_INIT(Pubcookie, [3.0.1 pre-beta1], pubcookie-dev@u.washington.edu)
+AC_REVISION($Revision: 1.48 $)
+AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
+AC_LANG(C)
 
 # Set default prefix to /usr/local/pubcookie
 AC_PREFIX_DEFAULT(/usr/local/pubcookie)
@@ -305,7 +306,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h shadow.h stdlib.h \
                   string.h strings.h sys/param.h sys/socket.h sys/time.h \
                   unistd.h getopt.h ctype.h stdarg.h stdio.h varargs.h\
                   sys/utsname.h time.h pwd.h sys/types.h assert.h sys/stat.h \
-                  sysexits.h mgoapi.h securid.h sys/resource.h fnmatch.h \
+                  sysexits.h mgoapi.h sys/resource.h fnmatch.h \
                   errno.h ])
 
 AC_CHECK_HEADER([syslog.h], 
@@ -686,6 +687,51 @@ AC_ARG_ENABLE(shadow,
 if test "$enable_shadow" = "yes"; then
     AC_CHECK_HEADERS([shadow.h crypt.h])
     AC_CHECK_LIB(crypt, crypt)
+fi
+
+AC_ARG_ENABLE(uwsecurid,
+    AC_HELP_STRING([--enable-uwsecurid],[Enable U. Wash. SecurID Verifier ]),
+[ case "${enableval}" in
+   yes)
+    AC_DEFINE(ENABLE_UWSECURID, 1, [Define to 1 to support U. Wash. SecurID verifiers])
+    ;;
+  esac ])
+
+if test "$enable_uwsecurid" = "yes"; then
+
+# Find the mango Libraries!
+
+if test -d "/usr/local/include"; then
+    CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+fi
+
+if test -d "/usr/local/lib"; then
+    LDFLAGS="$LDFLAGS -L/usr/local/lib"
+fi
+
+AC_ARG_WITH(mango-inc-dir,
+    AC_HELP_STRING([--with-mango-inc-dir=PATH], [U WASH ONLY: Mango include path]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     CPPFLAGS="$CPPFLAGS -I$withval"
+     ;;
+  esac ])
+
+AC_ARG_WITH(mango-lib-dir,
+    AC_HELP_STRING([--with-mango-lib-dir=PATH], [U WASH ONLY: Mango lib path]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     LDFLAGS="$LDFLAGS -L$withval"
+     ;;
+  esac ])
+
+    AC_CHECK_HEADERS([mgoapi.h mgostuff.h])
+    LIBS="$LIBS -lmgoapi";
+    AC_CHECK_LIB(mgoapi)
 fi
 
 AC_ARG_ENABLE(dmalloc,

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.42 2003-07-03 04:25:21 willey Exp $
+  $Id: index.cgi.h,v 1.43 2003-12-11 21:48:44 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -37,6 +37,7 @@ typedef struct {
     char	*appsrvid;
     char	*fr;
     char	*user;
+    int		hide_user;
     char	*realm;
     char	*pass;
     char	*pass2;
@@ -51,7 +52,6 @@ typedef struct {
     time_t	create_ts;
     time_t	expire_ts;
     int		pre_sess_token;
-    int		next_securid;
     int		session_reauth;
     int		duration;
     char	*first_kiss;
@@ -100,7 +100,7 @@ void clear_error(pool *,const char *, const char *);
 void print_uwnetid_logo(pool *);
 login_rec *verify_unload_login_cookie (pool *,login_rec *);
 int create_cookie(pool *, char *, char *, char *, char, char, int, time_t, 
-		char *, const char *host, int);
+		time_t, char *, const char *host, int);
 int get_cookie(pool *p, char *name, char *result, int max);
 login_rec *get_query(pool *);
 char *check_login(pool *, login_rec *, login_rec *);

@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.31 2003-11-21 06:50:48 ryanc Exp $
+ * $Id: security_legacy.c,v 1.32 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -688,6 +688,9 @@ int libpbc_rd_priv(pool *p, const char *peer, const char *buf, const int len,
 
     /* verify signature */
     r = libpbc_rd_safe(p, peer, *outbuf, *outlen, mysig, sig_len);
+
+    if( mysig != NULL )
+        pbc_free(p, mysig);
 
     if (!r) return 0;
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,

@@ -6,7 +6,7 @@
 /** @file verify.c
  * Verifier base stuff
  *
- * $Id: verify.c,v 1.20 2003-09-24 00:48:48 willey Exp $
+ * $Id: verify.c,v 1.21 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -45,6 +45,7 @@ extern verifier ldap_verifier;
 extern verifier alwaystrue_verifier;
 extern verifier shadow_verifier;
 extern verifier fork_verifier;
+extern verifier uwsecurid_verifier;
 
 /* verifiers that we actually compiled */
 static verifier *verifiers[] = {
@@ -54,6 +55,7 @@ static verifier *verifiers[] = {
     &alwaystrue_verifier,
     &shadow_verifier,
     &fork_verifier,
+    &uwsecurid_verifier,
     NULL
 };
 
@@ -101,7 +103,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    r = v->v(argv[2], argv[3], 
+    /* first arg is pool */
+    r = v->v(NULL, argv[2], argv[3], 
              argc > 4 ? argv[5] : NULL, 
              argc > 3 ? argv[4] : NULL,
              &creds, &errstr);
@@ -126,7 +129,7 @@ int main(int argc, char *argv[])
         printf("\n"
                "attempting to get imap/cyrus.andrew.cmu.edu credential...\n");
 
-        if (!v->cred_derive(creds, "vtest", "imap/cyrus.andrew.cmu.edu",
+        if (!v->cred_derive(NULL, creds, "vtest", "imap/cyrus.andrew.cmu.edu",
                             &newcreds) &&
             newcreds) {
             printf("got newcreds, size %d:\n", newcreds->sz);

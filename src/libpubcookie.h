@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.40 2003-11-21 06:50:48 ryanc Exp $
+    $Id: libpubcookie.h,v 1.41 2003-12-11 21:48:44 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -55,6 +55,7 @@ unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *,
 						unsigned char, 
 						int,
 						time_t,
+						time_t,
 						unsigned char *, 
 						unsigned char *, 
 						const char *peer);
@@ -89,6 +90,13 @@ int libpbc_generate_crypt_key(pool *p, const char *peer);
  * @return PBC_OK for success, PBC_FAIL for failure
  */
 int libpbc_set_crypt_key(pool *p, const char *key, const char *peer);
+
+/**
+ * tests for presence of the keyfile for 'peer' (key permission)
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for existance, PBC_FAIL for not
+ */
+int libpbc_test_crypt_key(pool *p, const char *peer);
 
 char *libpbc_time_string(pool *p, time_t);
 void *libpbc_abend(pool *p, const char *,...);

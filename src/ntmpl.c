@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.9 2003-07-03 04:25:21 willey Exp $
+ * $Id: ntmpl.c,v 1.10 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -50,6 +50,7 @@ typedef void pool;
 
 /* hmm, bad place for this prototype. */
 extern FILE *htmlout;
+extern FILE *mirror;
 
 /*
  * return the length of the passed file in bytes or 0 if we cant tell
@@ -73,7 +74,7 @@ static long file_size(FILE *afile)
 static char *get_file_template(pool *p, const char * fpath, const char *fname)
 {
     char *templatefile;
-    char *template;
+    char *template = NULL;
     long len, readlen;
     FILE *tmpl_file;
 
@@ -84,14 +85,14 @@ static char *get_file_template(pool *p, const char * fpath, const char *fname)
         pbc_log_activity(p, PBC_LOG_ERROR, 
                          "unable to malloc %d bytes for template filename %s", 
                          len, fname);
-        return NULL;
+        goto done;
     }
     if ( snprintf(templatefile, len, "%s%s%s", fpath,
                   fpath[strlen(fpath) - 1 ] == '/' ? "" : "/",
                   fname) > len)  {
        pbc_log_activity(p, PBC_LOG_ERROR, 
 		       "template filename overflow");
-      return NULL;
+      goto done;
    }
 
 
@@ -99,12 +100,14 @@ static char *get_file_template(pool *p, const char * fpath, const char *fname)
   if (tmpl_file == NULL) {
     pbc_log_activity(p, PBC_LOG_ERROR, "cant open template file %s",
                      templatefile);
+      template = NULL;
+      goto done;
     return NULL;
   }
 
   len=file_size(tmpl_file);
   if (len==0) {
-      return NULL;
+      goto done;
   }
 
   template = (char *) malloc((len+1) * sizeof (char));
@@ -112,7 +115,7 @@ static char *get_file_template(pool *p, const char * fpath, const char *fname)
        pbc_log_activity(p, PBC_LOG_ERROR, 
 		       "unable to malloc %d bytes for template file %s", 
 		       len+1, fname);
-      return NULL;
+      goto done;
   }
 
   *template=0;
@@ -122,12 +125,21 @@ static char *get_file_template(pool *p, const char * fpath, const char *fname)
 		 "read %d bytes when expecting %d for template file %s", 
 		 readlen, len, fname);
       pbc_free(p, template);
-      return NULL;
+      template = NULL;
+      goto done;
   }
 
   template[len]=0;
+
   pbc_fclose(p, tmpl_file);
+
+done:
+
+  if(templatefile != NULL)
+      pbc_free(p, templatefile);
+
   return template;
+
 }
 
 /**
@@ -156,6 +168,8 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
     /* look for the next possible substitution */
     while ((percent = strchr(t, '%')) != NULL) {
         fwrite(t, percent - t, 1, htmlout);
+        if( mirror != NULL)
+            fwrite(t, percent - t, 1,  mirror);
 
         /* look to see if this is a legitimate candidate for substitution */
         for (i = 1; percent[i] && (i < sizeof(candidate) - 1); i++) {
@@ -184,11 +198,15 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
         if (attr != NULL && subst != NULL) {
             /* we found a match; print that out instead */
             fputs(subst, htmlout);
+            if( mirror != NULL)
+                fputs(subst,  mirror);
             /* move to the trailing % */
             percent = strchr(percent + 1, '%');
         } else {
             /* false alarm, not a substitution */
             fputc('%', htmlout);
+            if( mirror != NULL)
+                fputc('%', mirror);
         }
         /* skip after the % */
         t = percent + 1;
@@ -196,6 +214,8 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
     
     /* print out everything from the last % on */
     fputs(t, htmlout);
+    if( mirror != NULL)
+        fputs(t, mirror);
 
     pbc_free(p, template);
 }

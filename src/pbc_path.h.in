@@ -9,7 +9,7 @@
  * So that we can just #include this file instead of having to 
  * worry about shell escapes and whatnot.
  * 
- * $Id: pbc_path.h.in,v 2.7 2003-07-10 19:06:40 willey Exp $
+ * $Id: pbc_path.h.in,v 2.8 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -31,7 +31,7 @@
 #define TMPL_FNAME (libpbc_config_getstring(p, "template_root", "@prefix@/login_templates"))
 
 /* suffix for seperate config files for components */
-#define PBC_SUBCONFIG (libpbc_config_getstring(p, "pbc_subconfig", ".conf"))
+#define PBC_SUBCONFIG (libpbc_config_getstring(p, "subconfig_suffix", ".conf"))
 
 /* file to get the list of ok browsers from */
 #define OK_BROWSERS_FILE (libpbc_config_getstring(p, "ok_browsers", "@prefix@/ok_browsers"))

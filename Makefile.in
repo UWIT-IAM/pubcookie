@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.46 2003-09-24 00:48:48 willey Exp $
+# $Id: Makefile.in,v 1.47 2003-12-11 21:48:43 willey Exp $
 
 @SET_MAKE@
 
@@ -96,6 +96,7 @@ VERIFIERS=$(builddir)/src/verify_alwaystrue.o \
 		  $(builddir)/src/verify_kerberos4.o \
 		  $(builddir)/src/verify_kerberos5.o \
 		  $(builddir)/src/verify_shadow.o \
+		  $(builddir)/src/verify_uwsecurid.o \
 		  $(builddir)/src/verify_ldap.o \
 		  @SNPRINTF_0@ \
 		  $(builddir)/src/verify.o
@@ -107,17 +108,20 @@ VERIFY_SRC=$(srcdir)/src/verify.c \
 		   $(srcdir)/src/verify_kerberos4.c \
 		   $(srcdir)/src/verify_kerberos5.c \
 		   $(srcdir)/src/verify_shadow.c \
+		   $(srcdir)/src/verify_uwsecurid.c \
 		   $(srcdir)/src/verify_ldap.c
 
 FLAVOR_SRC=$(srcdir)/src/flavor.c \
 		   $(srcdir)/src/ntmpl.c \
 		   @SNPRINTF_C@ \
 		   $(srcdir)/src/flavor_basic.c \
+		   $(srcdir)/src/flavor_uwsecurid.c \
 		   $(srcdir)/src/flavor_getcred.c
 
 INDEX_OBJ=$(builddir)/src/index.cgi.o $(builddir)/src/flavor.o \
 		  $(builddir)/src/flavor_basic.o \
 		  $(builddir)/src/flavor_getcred.o \
+		  $(builddir)/src/flavor_uwsecurid.o \
 		  $(builddir)/src/ntmpl.o \
 		  @SNPRINTF_0@ \
 		  $(VERIFIERS)
@@ -179,31 +183,46 @@ MOD_HEAD=$(srcdir)/src/mod_pubcookie.h \
 LIB_TESTS=base64 pbc_myconfig myconf
 
 LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
-				$(srcdir)/src/login_templates.generic/login \
-			    $(srcdir)/src/login_templates.generic/login_bad_auth \
-			    $(srcdir)/src/login_templates.generic/login_cache_creds_wrong \
-			    $(srcdir)/src/login_templates.generic/login_nolcookie \
-				$(srcdir)/src/login_templates.generic/login_reauth \
-				$(srcdir)/src/login_templates.generic/logout_already_weblogin \
-				$(srcdir)/src/login_templates.generic/logout_app \
-				$(srcdir)/src/login_templates.generic/logout_app_custom \
-				$(srcdir)/src/login_templates.generic/logout_part1 \
-				$(srcdir)/src/login_templates.generic/logout_part2 \
-				$(srcdir)/src/login_templates.generic/logout_postscript_still_others \
-				$(srcdir)/src/login_templates.generic/logout_postscript_still_weblogin \
-				$(srcdir)/src/login_templates.generic/logout_still_weblogin \
-				$(srcdir)/src/login_templates.generic/logout_time_remaining \
-				$(srcdir)/src/login_templates.generic/logout_weblogin \
-				$(srcdir)/src/login_templates.generic/nonpost_redirect \
-				$(srcdir)/src/login_templates.generic/notok_part1 \
-				$(srcdir)/src/login_templates.generic/notok_part2 \
-				$(srcdir)/src/login_templates.generic/pinit_response1 \
-				$(srcdir)/src/login_templates.generic/pinit_response2 \
-				$(srcdir)/src/login_templates.generic/status \
-				$(srcdir)/src/login_templates.generic/welcome_back \
-				$(srcdir)/src/login_templates.generic/login_user_static \
-				$(srcdir)/src/login_templates.generic/login_user_form_field \
-				$(srcdir)/src/login_templates.generic/login_pinit
+		$(srcdir)/src/login_templates.generic/login \
+		$(srcdir)/src/login_templates.generic/login_auth_prob_uwsecurid \
+		$(srcdir)/src/login_templates.generic/login_bad_auth \
+		$(srcdir)/src/login_templates.generic/login_bad_auth_static_user \
+		$(srcdir)/src/login_templates.generic/login_bad_auth_static_user \
+		$(srcdir)/src/login_templates.generic/login_bad_auth_static_user \
+		$(srcdir)/src/login_templates.generic/login_cache_creds_wrong \
+		$(srcdir)/src/login_templates.generic/login_expired \
+		$(srcdir)/src/login_templates.generic/login_next_prn \
+		$(srcdir)/src/login_templates.generic/login_expired \
+		$(srcdir)/src/login_templates.generic/login_nolcookie \
+		$(srcdir)/src/login_templates.generic/login_pass_form_field \
+		$(srcdir)/src/login_templates.generic/login_pass_static \
+		$(srcdir)/src/login_templates.generic/login_pinit \
+		$(srcdir)/src/login_templates.generic/login_reauth \
+		$(srcdir)/src/login_templates.generic/login_unauth_grant \
+		$(srcdir)/src/login_templates.generic/login_user_form_field \
+		$(srcdir)/src/login_templates.generic/login_user_hidden \
+		$(srcdir)/src/login_templates.generic/login_user_static \
+		$(srcdir)/src/login_templates.generic/login_uwsecurid \
+		$(srcdir)/src/login_templates.generic/logout_already_weblogin \
+		$(srcdir)/src/login_templates.generic/logout_app \
+		$(srcdir)/src/login_templates.generic/logout_app_custom \
+		$(srcdir)/src/login_templates.generic/logout_part1 \
+		$(srcdir)/src/login_templates.generic/logout_part2 \
+		$(srcdir)/src/login_templates.generic/logout_postscript_still_others \
+		$(srcdir)/src/login_templates.generic/logout_postscript_still_weblogin \
+		$(srcdir)/src/login_templates.generic/logout_still_known \
+		$(srcdir)/src/login_templates.generic/logout_still_weblogin \
+		$(srcdir)/src/login_templates.generic/logout_time_remaining \
+		$(srcdir)/src/login_templates.generic/logout_weblogin \
+		$(srcdir)/src/login_templates.generic/nonpost_redirect \
+		$(srcdir)/src/login_templates.generic/notok_part1 \
+		$(srcdir)/src/login_templates.generic/notok_part2 \
+		$(srcdir)/src/login_templates.generic/pinit_response1 \
+		$(srcdir)/src/login_templates.generic/pinit_response2 \
+		$(srcdir)/src/login_templates.generic/status \
+		$(srcdir)/src/login_templates.generic/welcome_back \
+		$(srcdir)/src/login_templates.generic/README
+
 
 LOGIN_IMAGES=$(srcdir)/src/login_templates.generic/images/check.gif \
 			 $(srcdir)/src/login_templates.generic/images/icon-excl.gif \
@@ -283,9 +302,6 @@ candv:	$(builddir)/src/candv.o $(LIB_OBJ)
 
 dtest:	$(builddir)/src/dtest.o $(LIB_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(builddir)/src/dtest.o $(LIB_OBJ) $(LDFLAGS)
-
-vtest: $(VERIFIERS) $(LIB_OBJ)
-	$(CC) ${CFLAGS} -DTEST_VERIFY -o $@ $(VERIFIERS) $(LIB_OBJ) $(LDFLAGS) $(EXTRA_LIBS)
 
 ntmpl_test: $(srcdir)/src/ntmpl.c $(LIB_OBJ)
 	$(CC) ${CFLAGS} -DTEST_NTMPL -o $@ $(srcdir)/src/ntmpl.c $(LIB_OBJ) $(LDFLAGS) $(EXTRA_LIBS)
@@ -403,10 +419,11 @@ $(LIB_OBJ): $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 # Test Targets
 
 test:: verify
+	touch vtest
 	./verify alwaystrue nobody nothing
 
 verify: $(VERIFY_SRC) $(LIB_OBJ) $(builddir)/cgic/libcgic.a
-	$(CC) $(CFLAGS) -g -o verify -DTEST_VERIFY $(VERIFY_SRC) $(LDFLAGS) $(LOGINLIBS) $(LIB_OBJ)
+	$(CC) $(CFLAGS) -o verify -DTEST_VERIFY $(VERIFY_SRC) $(LDFLAGS) $(LIB_OBJ) $(LOGINLIBS)
 
 tests: $(TEST_FILES)
 

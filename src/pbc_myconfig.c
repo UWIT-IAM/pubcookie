@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.35 2003-09-26 22:27:02 ryanc Exp $
+ * $Id: pbc_myconfig.c,v 1.36 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -57,6 +57,7 @@ typedef void pool;
 # define EX_OSERR 71
 #endif /* HAVE_SYSEXITS_H */
 
+#include "pbc_logging.h"
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -168,7 +169,7 @@ const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
             libpbc_abend( p, "Option key suddenly became NULL!  Somebody fudged a pointer!" );
         }
         if ( *key == configlist[opt].key[0] &&
-            !strcmp(key, configlist[opt].key))
+            !strcasecmp(key, configlist[opt].key))
 	    return configlist[opt].value;
     }
     return def;
@@ -348,10 +349,11 @@ int main(int argc, char *argv[])
 {
     char **v;
     int c;
+    pool *p = NULL;
 
-    libpbc_myconfig_init((argc > 1) ? argv[1] : "myconf", NULL);
+    libpbc_myconfig_init(p, (argc > 1) ? argv[1] : "myconf", NULL);
 
-    v = libpbc_myconfig_getlist("foo");
+    v = libpbc_myconfig_getlist(p, "foo");
     if (v) {
         c = 0;
         while (v[c]) {

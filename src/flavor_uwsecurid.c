@@ -3,24 +3,23 @@
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/** @file flavor_basic.c
- * The basic flavor of logins
- *
- *   expect a username and a password and
- *   checks against one of the defined verifiers (see 'struct verifier'
- *   and verify_*.c for possible verifiers).
- *   
- *   will pass l->realm to the verifier and append it to the username when
- *   'append_realm' is set
- *
- * $Id: flavor_basic.c,v 1.43 2003-12-11 21:48:44 willey Exp $
+/*
+    the u of Wa flavor of logins.  expect a username and a password and
+    checks against one of the defined verifiers (see 'struct verifier'
+    and verify_*.c for possible verifiers).
+    
  */
 
+/*
+    $Id: flavor_uwsecurid.c,v 2.1 2003-12-11 21:48:44 willey Exp $
+ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#ifdef ENABLE_UWSECURID
 
 #if defined (APACHE1_3)
 # include "httpd.h"
@@ -66,48 +65,57 @@ typedef void pool;
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
 
-static verifier *v = NULL;
-extern int debug;
+static verifier *v1 = NULL;
+static verifier *v2 = NULL;
 
 /* The types of reasons for printing the login page.. 
  * Should this be in a header?  I don't think I need it outside this file.. */
 
-#define FLB_BAD_AUTH          1
-#define FLB_REAUTH            2
-#define FLB_LCOOKIE_ERROR     3
-#define FLB_CACHE_CREDS_WRONG 4
-#define FLB_PINIT             5
-#define FLB_PLACE_HOLDER      6  /* for consistancy btwn flavors, why? */
-#define FLB_LCOOKIE_EXPIRED   7
+#define FLUS_BAD_AUTH          1
+#define FLUS_REAUTH            2
+#define FLUS_LCOOKIE_ERROR     3
+#define FLUS_CACHE_CREDS_WRONG 4
+#define FLUS_NEXT_PRN          6
+#define FLUS_LCOOKIE_EXPIRED   7
+#define FLUS_AUTH_PROB         8
 
 /* The beginning size for the hidden fields */
 #define INIT_HIDDEN_SIZE 2048
 #define GETCRED_HIDDEN_MAX 512
 
-static int init_basic()
+/* no reason to leave this in except that we might want to change verifiers */
+static int init_uwsecurid()
 {
-    const char *vname;
+    const char *vname1;
+    const char *vname2;
     void *p;
     
-    /* find the verifier configured */
-    vname = libpbc_config_getstring(p, "basic_verifier", NULL);
+    /* find the first verifier configured */
+    vname1 = libpbc_config_getstring(p, "uwsecurid_verifier1", "kerberos_v5");
 
-    if (!vname) {
+    v1 = get_verifier(vname1);
+
+    if (!v1 || !v1->v) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-			 "flavor_basic: no verifier configured");
+			 "flavor_uwsecurid: verifier not found: %s", vname1);
+	v1 = NULL;
 	return -1;
     }
 
-    v = get_verifier(vname);
+    /* find the second verifier configured */
+    vname2 = libpbc_config_getstring(p, "uwsecurid_verifier2", "uwsecurid");
 
-    if (!v || !v->v) {
+    v2 = get_verifier(vname2);
+
+    if (!v2 || !v2->v) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-			 "flavor_basic: verifier not found: %s", vname);
-	v = NULL;
+			 "flavor_uwsecurid: verifier not found: %s", vname2);
+	v2 = NULL;
 	return -1;
     }
+
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
-		     "init_basic: using %s verifier", vname);
+    	        "init_uwsecurid: using %s and %s verifiers", vname1, vname2);
     return 0;
 }
 
@@ -127,17 +135,16 @@ static long file_size(pool *p, FILE *afile)
 }
 
 /* get the reason for our existing.  Returns NULL for an empty file. */
-
-char * get_reason(pool *p, const char * reasonpage ) {
-    char * reasonfile;
-    const char * reasonpath = TMPL_FNAME;
+char *flus_get_reason(pool *p, const char *reasonpage ) {
+    char *reasonfile;
+    const char *reasonpath = TMPL_FNAME;
     int reasonfilelen;
     int reason_len;
     FILE *reason_file;
-    char * reasonhtml;
+    char *reasonhtml;
     int readlen;
 
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_reason: hello");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "flus_get_reason: hello");
 
     reasonfilelen = strlen(reasonpath) + strlen("/") + strlen(reasonpage) + 1;
 
@@ -180,13 +187,74 @@ char * get_reason(pool *p, const char * reasonpage ) {
     pbc_fclose(p, reason_file);
     free(reasonfile);
 
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_reason: goodbye");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "flus_get_reason: goodbye");
 
     return reasonhtml;
 }
 
+/* for some n seconds after authenticating we don't ask the user to */
+/* retype their credentials                                         */
+/*    returns credentials ok for ride free                          */
+char ride_free_zone(login_rec *l, login_rec *c)
+{
+    char        *cookie;
+    time_t      t;
+    pool 	*p = NULL;
+    char	func[] = "ride_free_zone";
+
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello", func);
+
+    if (!(cookie = pbc_malloc(p, PBC_4K)) ) {
+        abend(p, "out of memory");
+    }
+
+    if (c == NULL )
+        return(PBC_CREDS_NONE);
+    if (l != NULL && l->check_error != NULL)
+        return(PBC_CREDS_NONE);
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
+	  "%s: in ride_free_zone ready to look at cookie contents user: %s", 
+          func, c->user ? c->user : "Null");
+    
+    /* look at what we got back from the cookie */
+    if (! c->user ) {
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+           "%s: no user from L cookie? user from g_req: %s", 
+           func, l->user ? l->user : "Null");
+        return(PBC_CREDS_NONE);
+    }
+
+    if ((c->create_ts + RIDE_FREE_TIME) < (t=time(NULL)) ) {
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
+		"%s %s: No Free Ride login cookie created: %d now: %d user: %s",
+		func,
+                l->first_kiss,
+                c->create_ts,
+                t,
+                c->user);
+        return(PBC_CREDS_NONE);
+    }
+    else {
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
+            "%s%s Yeah! Free Ride!!! login cookie created: %d now: %d user: %s",
+            func, 
+            l->first_kiss,
+            c->create_ts,
+            t,
+            c->user);
+
+        if (l->user == NULL )
+            l->user = c->user;
+
+        return(PBC_BASIC_CRED_ID);
+    }
+
+}
+
 /* get the html for user or password or whatever field, static or dynamic */
-char *flb_get_field_html(pool *p, const char *field_page, const char *contents)
+char *flus_get_field_html(pool *p, const char *field_page, const char *contents) 
 {
     char *field_html = NULL;   /* net result */
     char *fieldfile;
@@ -199,7 +267,7 @@ char *flb_get_field_html(pool *p, const char *field_page, const char *contents)
     char *start = NULL;
     char *end = NULL;
     int len = ( contents != NULL ? strlen(contents) : 0 );
-    char func[] = "flb_get_field_html";
+    char func[] = "flus_get_field_html";
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello", func);
 
@@ -265,57 +333,60 @@ char *flb_get_field_html(pool *p, const char *field_page, const char *contents)
         strncpy(buf, field_html, PBC_1K);
     }
 
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
-                func, field_html);
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s", 
+		func, field_html);
 
     return field_html;
 
 }
 
 /* figure out what html to use for user field */
-char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
+char *flus_get_user_field(pool *p, login_rec *l, login_rec *c, int reason) 
 {
-    char func[] = "flb_get_user_field";
-    const char *loser = (l != NULL && l->user != NULL ? l->user
-                        : (c != NULL ? c->user : NULL));
-    const char *static_config = libpbc_config_getstring(p, "static_user_field",
-                                STATIC_USER_FIELD_KIND);
+    char func[] = "flus_get_user_field";
+    const char *loser = (l != NULL && l->user != NULL ? l->user 
+			: (c != NULL ? c->user : NULL));
+    const char *static_config = libpbc_config_getstring(p, "static_user_field", 
+	                	STATIC_USER_FIELD_KIND);
     char *user_field_html;
 
+
+
     if ( strcmp(static_config, STATIC_USER_FIELD_KIND) == 0 ) {
-        if ( c != NULL && c->user != NULL & reason == FLB_REAUTH ||
-             c != NULL && c->user != NULL & reason == FLB_CACHE_CREDS_WRONG ||
+        if ( c != NULL && c->user != NULL & reason == FLUS_REAUTH || 
+             c != NULL && c->user != NULL & reason == FLUS_NEXT_PRN || 
+             c != NULL && c->user != NULL & reason == FLUS_CACHE_CREDS_WRONG || 
              l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_static",
-                                        "login_user_static" ), loser);
+            user_field_html = flus_get_field_html(p, libpbc_config_getstring(p,
+				        "tmpl_login_user_static", 
+					"login_user_static" ), loser);
             l->hide_user = PBC_TRUE;
         }
         else {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
+            user_field_html = flus_get_field_html(p, libpbc_config_getstring(p, 
+					"tmpl_login_user_form_field",
                                         "login_user_form_field" ), loser);
             l->hide_user = PBC_FALSE;
         }
     }
     else if ( strcmp(static_config, STATIC_USER_FIELD_FASCIST) == 0 ) {
-        if ( c != NULL && c->user != NULL ||
+        if ( c != NULL && c->user != NULL || 
              l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_static",
-                                        "login_user_static" ), loser);
+            user_field_html = flus_get_field_html(p, libpbc_config_getstring(p,
+				        "tmpl_login_user_static", 
+					"login_user_static" ), loser);
             l->hide_user = PBC_TRUE;
         }
         else {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
+            user_field_html = flus_get_field_html(p, libpbc_config_getstring(p, 
+					"tmpl_login_user_form_field",
                                         "login_user_form_field" ), loser);
             l->hide_user = PBC_FALSE;
         }
     }
-    else { /* STATIC_USER_FIELD_NEVER */
-        user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
+    else { /* STATIC_USER_FIELD_NEVER */ 
+        user_field_html = flus_get_field_html(p, libpbc_config_getstring(p, 
+					"tmpl_login_user_form_field",
                                         "login_user_form_field" ), loser);
         l->hide_user = PBC_FALSE;
     }
@@ -323,22 +394,40 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
     return(user_field_html);
 
 }
-
-/* get the html for user field, static or dynamic */
-char *flb_get_hidden_user_field(pool *p, login_rec *l, login_rec *c, int reason)
+ 
+/* figure out what html to use for pass field */
+char *flus_get_pass_field(pool *p, login_rec *l, login_rec *c, int reason) 
 {
-    const char *loser = (l != NULL && l->user != NULL ? l->user
-                        : (c != NULL ? c->user : NULL));
+    if ( l->ride_free_creds == PBC_BASIC_CRED_ID ) {
+        return(flus_get_field_html(p, 
+		libpbc_config_getstring(p,  "tmpl_login_pass_static",
+                                                  "login_pass_static" ), 
+		""));
+    }
+    else {
+        return(flus_get_field_html(p,
+		libpbc_config_getstring(p,  "tmpl_login_pass_form_field",
+                                                  "login_pass_form_field" ),
+		""));
+    }
+
+}
+ 
+/* get the html for user field, static or dynamic */
+char *flus_get_hidden_user_field(pool *p, login_rec *l, login_rec *c, int reason)
+{
+    const char *loser = (l != NULL && l->user != NULL ? l->user 
+			: (c != NULL ? c->user : NULL));
 
     if ( l != NULL && l->hide_user == PBC_TRUE )
-        return(flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_hidden",
-                                        "login_user_hidden" ), loser));
+        return(flus_get_field_html(p, libpbc_config_getstring(p,
+				        "tmpl_login_user_hidden", 
+					"login_user_hidden" ), loser));
     else
         return(NULL);
 
 }
-
+ 
 static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
@@ -346,7 +435,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     int need_clear_login = 0;
     int need_clear_greq = 1;
     char message_out[1024];
-    const char * reasonpage = NULL;
+    const char *reasonpage = NULL;
 
     char *hidden_fields = NULL;
     int hidden_len = 0;
@@ -354,11 +443,15 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char *getcred_hidden = NULL;
 
     char *reason_html = NULL;
-    char *user_field = NULL;
-    char *hidden_user = NULL;
+    char *static_config = NULL;
     char now[64];
+
+    char *user_field = NULL;
+    char *pass_field = NULL;
+    char *hidden_user = NULL;
+    char func[] = "print_login_page";
     
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello reason: %d", reason);
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello, reason: %d", func, reason);
 
     /* set the cookies */
     if (need_clear_login) {
@@ -378,37 +471,47 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 
     }
 
+    /* get the config about whether to use static user fields */
+    static_config = (char *)libpbc_config_getstring(p, "static_user_field", 
+		STATIC_USER_FIELD_KIND);
+
     switch (reason) {
-        case FLB_BAD_AUTH:
+        case FLUS_BAD_AUTH:
             /* username will be static and prefilled use a different bad
                auth message, one without comments about the username */
-            /* left the default file the same only config key is different */
-            if( c != NULL && c->user != NULL )
-                reasonpage = libpbc_config_getstring(p,  "tmpl_login_bad_auth_static_user",
-                                                  "login_bad_auth" );
+            if( c != NULL && c->user != NULL && 
+			strcmp(static_config, STATIC_USER_FIELD_NEVER) != 0 )
+                reasonpage = libpbc_config_getstring(p,  
+			"tmpl_login_bad_auth_uwsecurid_static_user",
+                        "login_bad_auth_uwsecurid_static_user" );
             else
-                reasonpage = libpbc_config_getstring(p,  "tmpl_login_bad_auth",
-                                                  "login_bad_auth" );
+                reasonpage = libpbc_config_getstring(p,  
+			"tmpl_login_bad_auth_uwsecurid",
+                        "login_bad_auth_uwsecurid" );
             break;
-        case FLB_REAUTH:
-            reasonpage = libpbc_config_getstring(p,  "tmpl_login_reauth",
+        case FLUS_REAUTH:
+            reasonpage = libpbc_config_getstring(p, "tmpl_login_reauth",
                                                   "login_reauth" );
             break;
-        case FLB_CACHE_CREDS_WRONG:
-            reasonpage = libpbc_config_getstring(p,  "tmpl_login_cache_creds_wrong",
+        case FLUS_CACHE_CREDS_WRONG:
+            reasonpage = libpbc_config_getstring(p, "tmpl_login_cache_creds_wrong",
                                                   "login_cache_creds_wrong" );
             break;
-        case FLB_PINIT:
-            reasonpage = libpbc_config_getstring(p,  "tmpl_login_pinit",
-                                                  "login_pinit" );
+        case FLUS_NEXT_PRN:
+            reasonpage = libpbc_config_getstring(p, "tmpl_login_next_prn",
+                                                  "login_next_prn" );
             break;
-        case FLB_LCOOKIE_EXPIRED:
+        case FLUS_LCOOKIE_EXPIRED:
             reasonpage = libpbc_config_getstring(p, "tmpl_login_expired",
                                                   "login_expired" );
             break;
-        case FLB_LCOOKIE_ERROR:
+        case FLUS_AUTH_PROB:
+            reasonpage = libpbc_config_getstring(p, "tmpl_login_auth_prob_uwsecurid",
+                                                  "login_auth_prob_uwsecurid" );
+            break;
+        case FLUS_LCOOKIE_ERROR:
         default:
-            reasonpage = libpbc_config_getstring(p,  "tmpl_login_nolcookie",
+            reasonpage = libpbc_config_getstring(p, "tmpl_login_nolcookie",
                                                   "login_nolcookie" );
             break;
     }
@@ -419,8 +522,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     }
     
     /* Get the HTML for the error reason */
-    
-    reason_html = get_reason(p, reasonpage);
+    reason_html = flus_get_reason(p, reasonpage);
 
     while (hidden_needed_len > hidden_len) {
 
@@ -487,51 +589,27 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                                     );
     }
 
-    /* xxx save add'l requests */
-    {
-        /* xxx sigh, i have to explicitly save this */
-        char *target = get_string_arg(p, PBC_GETVAR_CRED_TARGET,
-                                      NO_NEWLINES_FUNC);
-
-        if (target) {
-            int needed_len;
-
-            getcred_hidden = malloc( GETCRED_HIDDEN_MAX * sizeof(char) );
-
-            if (getcred_hidden == NULL) {
-                /* Out of memory */
-                libpbc_abend(p,  "Out of memory allocating for GetCred" );
-            }
-
-            needed_len = snprintf( getcred_hidden, GETCRED_HIDDEN_MAX, 
-                                   "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
-                                   PBC_GETVAR_CRED_TARGET, target );
-
-            if ( needed_len > GETCRED_HIDDEN_MAX ) {
-                /* We were going to overflow, oops. */
-                libpbc_abend(p,  "Almost overflowed writing GetCred" );
-            }
-        } 
-    }
-
     snprintf(now, sizeof(now), "%d", time(NULL));
 
-    /* what should the user field look like? */
-    user_field = flb_get_user_field(p, l, c, reason);
+    /* what should the uwnetid field look like? */
+    user_field = flus_get_user_field(p, l, c, reason);
+
+    /* what should the password field look like? */
+    pass_field = flus_get_pass_field(p, l, c, reason);
 
     /* if the user field should be hidden */
-    hidden_user = flb_get_hidden_user_field(p, l, c, reason);
+    hidden_user = flus_get_hidden_user_field(p, l, c, reason);
 
     /* Display the login form. */
     ntmpl_print_html(p, TMPL_FNAME,
-                     libpbc_config_getstring(p, "tmpl_login", "login"),
+                     libpbc_config_getstring(p, "tmpl_login_uwsecurid", "login_uwsecurid"),
                     "loginuri", PBC_LOGIN_URI,
                     "message", reason_html != NULL ? reason_html : "",
                     "curtime", now, 
                     "hiddenuser", hidden_user != NULL ? hidden_user : "",
                     "hiddenfields", hidden_fields,
                     "user_field", user_field != NULL ? user_field : "",
-                    "getcredhidden", getcred_hidden != NULL ? getcred_hidden : "",
+                    "pass_field", pass_field != NULL ? pass_field : "",
                     NULL
                    );
 
@@ -542,11 +620,14 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     if (user_field != NULL)
         free( user_field );
 
-    if (reason_html != NULL)
-        free( reason_html );
+    if (pass_field != NULL)
+        free( pass_field );
 
     if (hidden_user != NULL)
         free( hidden_user );
+
+    if (reason_html != NULL)
+        free( reason_html );
 
     if (hidden_fields != NULL)
         free( hidden_fields );
@@ -554,10 +635,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     if (getcred_hidden != NULL)
         free( getcred_hidden );
 
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye", func);
 }
 
-/* process_basic():
+/* process_uwsecurid():
    this routine is responsible for authenticating the user.
    if authentication is not possible (either the user hasn't logged in
    or the password was incorrect) it displays the login page and returns
@@ -568,17 +649,16 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
    if authentication has succeeded, no output is generated and it returns
    LOGIN_OK.
  */
-static login_result process_basic(pool *p, login_rec *l, login_rec *c,
+static login_result process_uwsecurid(pool *p, login_rec *l, login_rec *c,
 				  const char **errstr)
 {
-    struct credentials *creds = NULL;
-    struct credentials **credsp = NULL;
-    int also_allow_cred = 0;
+    int result1, result2;
 
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n" );
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: hello\n" );
 
     /* make sure we're initialized */
-    assert(v != NULL);
+    assert(v1 != NULL);
+    assert(v2 != NULL);
     assert(l != NULL);
     /* c seems to always be null here. */
     /* XXX need to re-examine exactly what l and c should contain here */
@@ -587,14 +667,16 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
 
     *errstr = NULL;
 
-    if (!v) {
+    if (!v1) {
         pbc_log_activity(p, PBC_LOG_ERROR,
-                         "flavor_basic: flavor not correctly configured");
+                         "flavor_uwsecurid: flavor not correctly configured");
         return LOGIN_ERR;
     }
-
-    /* allow flavor basic to honor login cookies from other flavors */
-    also_allow_cred = libpbc_config_getint(p, "basic_also_accepts", 0) + 48;
+    if (!v2) {
+        pbc_log_activity(p, PBC_LOG_ERROR,
+                         "flavor_uwsecurid: flavor not correctly configured");
+        return LOGIN_ERR;
+    }
 
     /* choices, choices */
 
@@ -616,22 +698,26 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
        i should return LOGIN_OK.
      */
 
-    if (l->reply == FORM_REPLY) {
-        if (libpbc_config_getswitch(p, "save_credentials", 0)) {
-            credsp = &creds;
-        }
+    l->ride_free_creds = ride_free_zone(l, c);
 
-        if (v->v(p, l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
-            if (debug) {
-                /* xxx log realm */
-                pbc_log_activity(p,  PBC_LOG_AUDIT,
+    if (l->reply == FORM_REPLY) {
+
+        result1 = v1->v(p, l->user, l->pass, NULL, l->realm, NULL, errstr);
+        /* only do securid check if necessary */
+        if( l->ride_free_creds == PBC_BASIC_CRED_ID || result1 == 0 )
+            result2 = v2->v(p, l->user, l->pass2, NULL, l->realm, NULL, errstr);
+        
+        if ( (l->ride_free_creds == PBC_BASIC_CRED_ID || result1 == 0) 
+		&& result2 == 0) {
+
+            pbc_log_activity(p,  PBC_LOG_AUDIT,
                     	"Authentication success: %s IP: %s type: %c\n", 
 			l->user,
                         (cgiRemoteAddr == NULL ? "(null)" : cgiRemoteAddr),
 			l->creds);
-            }
 
             /* authn succeeded! */
+
 
             /* set the create time */
             l->create_ts = time(NULL);
@@ -640,144 +726,113 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
 
             /* xxx modify 'l' accordingly ? */
 
-            /* optionally stick @REALM into the username */
-            if (l->user && l->realm &&
-                libpbc_config_getswitch(p, "append_realm", 0)) {
-                /* append @REALM onto the username */
-                char * tmp;
-                tmp = pbc_malloc(p, strlen(l->user)+strlen(l->realm)+1);
-                memset(tmp, 0, strlen(l->user)+strlen(l->realm)+1);
-                if (tmp) {
-                    strncat(tmp, l->user, strlen(l->user));
-                    strncat(tmp, "@", 1);
-                    strncat(tmp, l->realm, strlen(l->realm));
-                    free (l->user);
-                    l->user = tmp;
-                }
-            }
-
-            /* if we got some long-term credentials, save 'em for later */
-            if (creds != NULL) {
-                char *outbuf;
-                int outlen;
-                char *out64;
-
-                if (!libpbc_mk_priv(p, NULL, creds->str, creds->sz,
-                                    &outbuf, &outlen)) {
-                    /* save for later */
-                    out64 = malloc(outlen * 4 / 3 + 20);
-                    libpbc_base64_encode(p, (unsigned char *) outbuf,
-                                          (unsigned char *) out64,
-                                          outlen );
-
-                    print_header(p, "Set-Cookie: %s=%s; domain=%s; secure\n",
-                                 PBC_CRED_COOKIENAME, out64, PBC_LOGIN_HOST);
-
-                    /* free buffer */
-                    free(outbuf);
-                    free(out64);
-                } else {
-                    pbc_log_activity(p, PBC_LOG_ERROR, 
-                                     "libpbc_mk_priv failed: can't save credentials");
-                }
-
-                /* xxx save creds for later just in case we're
-                   really flavor_getcred. this leaks. */
-                l->flavor_extension = creds;
-
-                creds = NULL;
-            }
-
             pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                             "process_basic: good login, goodbye\n" );
+                             "process_uwsecurid: good login, goodbye\n" );
 
             return LOGIN_OK;
         } else {
-            /* authn failed! */
-            if (!*errstr) {
-                *errstr = "authentication failed";
+            
+            /* see if the securid server had a problem */
+            if ( result2 == -2 ) {
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                             "flavor_uwsecurid: SecurID had a problem %s", 
+                             l->user == NULL ? "(null)" : l->user);
+
+                print_login_page(p, l, c, FLUS_AUTH_PROB);
             }
-            pbc_log_activity(p, PBC_LOG_AUDIT,
-                             "flavor_basic: login failed for %s: %s", 
+            /* see if the securid server wants next prn */
+            else if ( result2 == -3 ) {
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                             "flavor_uwsecurid: SecurID wants next prn %s", 
+                             l->user == NULL ? "(null)" : l->user);
+
+                print_login_page(p, l, c, FLUS_NEXT_PRN);
+            }
+            else {
+
+                /* authn failed! */
+                if (!*errstr)
+                    *errstr = "authentication failed";
+                
+                pbc_log_activity(p, PBC_LOG_AUDIT,
+                             "flavor_uwsecurid: login failed for %s: %s", 
                              l->user == NULL ? "(null)" : l->user,
                              *errstr);
 
-            /* make sure 'l' reflects that */
+                /* make sure 'l' reflects that */
 
-            if ( ! libpbc_config_getswitch(p, "retain_username_on_failed_authn", 0)) {
-                l->user = NULL;	/* in case wrong username */
+		if ( ! libpbc_config_getswitch(p, 
+				"retain_username_on_failed_authn", 0)) {
+                    l->user = NULL;	/* in case wrong username */
+                }
+
+                print_login_page(p, l, c, FLUS_BAD_AUTH);
+
             }
-            print_login_page(p, l, c, FLB_BAD_AUTH);
 
             pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                             "process_basic: login in progress, goodbye\n" );
+                             "process_uwsecurid: login in progress, goodbye\n" );
             return LOGIN_INPROGRESS;
         }
     } else if (l->session_reauth) {
         *errstr = "reauthentication required";
-        pbc_log_activity(p, PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
+        pbc_log_activity(p, PBC_LOG_AUDIT, 
+                         "flavor_uwsecurid: %s: %s", l->user, *errstr);
 
-        print_login_page(p, l, c, FLB_REAUTH);
+        print_login_page(p, l, c, FLUS_REAUTH);
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
-        return LOGIN_INPROGRESS;
-
-        /* If the pinit flag is set, show a pinit login page */
-    } else if (l->pinit == PBC_TRUE) {
-        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: pinit");
-
-        print_login_page(p, l, c, FLB_PINIT);
-        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
+                         "process_uwsecurid: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
         /* l->check_error will be set whenever the l cookie isn't valid
-           including (for example) when the login cookie has expired.
+           including (for example) when the login cookie has expired. 
          */
     } else if (l->check_error) {
         *errstr = l->check_error;
-        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
-
+        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_uwsecurid: %s", *errstr);
 
         if ( strcmp(l->check_error, "expired") == 0 )
-            print_login_page(p, l, c, FLB_LCOOKIE_EXPIRED);
+            print_login_page(p, l, c, FLUS_LCOOKIE_EXPIRED);
         else
-            print_login_page(p, l, c, FLB_LCOOKIE_ERROR);
+            print_login_page(p, l, c, FLUS_LCOOKIE_ERROR);
 
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
+                         "process_uwsecurid: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
         /* if l->check_error is NULL, then 'c' must be set and must
            contain the login cookie information */
     } else if (!c) {
         pbc_log_activity(p, PBC_LOG_ERROR,
-                         "flavor_basic: check_error/c invariant violated");
+                         "flavor_uwsecurid: check_error/c invariant violated");
         abort();
 
         /* make sure the login cookie represents credentials for this flavor */
-    } else if (c->creds != PBC_BASIC_CRED_ID && c->creds != also_allow_cred) {
+    } else if (c->creds != PBC_UWSECURID_CRED_ID) {
         *errstr = "cached credentials wrong flavor";
-        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
+        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_uwsecurid: %s", *errstr);
 
-        print_login_page(p, l, c, FLB_CACHE_CREDS_WRONG);
+        print_login_page(p, l, c, FLUS_CACHE_CREDS_WRONG);
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: login in progress, goodbye\n" );
+                         "process_uwsecurid: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
     } else { /* valid login cookie */
         pbc_log_activity(p, PBC_LOG_AUDIT,
-                         "flavor_basic: L cookie valid user: %s", l->user);
+                         "flavor_uwsecurid: L cookie valid user: %s", l->user);
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
-                         "process_basic: L cookie valid, goodbye\n" );
+                         "process_uwsecurid: L cookie valid, goodbye\n" );
         return LOGIN_OK;
     }
+
 }
 
-struct login_flavor login_flavor_basic =
+struct login_flavor login_flavor_uwsecurid =
 {
-    "basic", /* name */
-    PBC_BASIC_CRED_ID, /* id; see libpbc_get_credential_id() */
-    &init_basic, /* init_flavor() */
-    &process_basic /* process_request() */
+    "uwsecurid", /* name */
+    PBC_UWSECURID_CRED_ID, /* id; see libpbc_get_credential_id() */
+    &init_uwsecurid, /* init_flavor() */
+    &process_uwsecurid /* process_request() */
 };
+
+#endif  /* ENABLE_UWSECURID */

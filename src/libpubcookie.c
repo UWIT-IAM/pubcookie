@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.62 2003-09-26 22:27:02 ryanc Exp $
+ * $Id: libpubcookie.c,v 2.63 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -149,6 +149,8 @@ const char libpbc_get_credential_id(pool *p, const char *name)
     if (!strcasecmp(name, "webiso") ||
         !strcasecmp(name, "webiso-vanilla")) {
 	return PBC_BASIC_CRED_ID; /* flavor_basic */
+    } else if (!strcasecmp(name, "uwsecurid")) {
+	return PBC_UWSECURID_CRED_ID; /* flavor_uwsecurid */
     } else if (!strcasecmp(name, "webiso-getcred")) {
 	return PBC_GETCRED_CRED_ID; /* flavor_getcred */
     } else {
@@ -286,7 +288,7 @@ libpbc_pubcookie_init(pool *p)
     unsigned char	buf[sizeof(pid_t)];
     pid_t		pid;
 
-    /*  pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_pubcookie_init\n"); */
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_pubcookie_init\n");
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(p, buf, sizeof(pid));
@@ -469,6 +471,25 @@ int libpbc_get_crypt_key(pool *p, crypt_stuff *c_stuff, const char *peer)
     return PBC_OK;
 }
 
+/*                                                                           */
+int libpbc_test_crypt_key(pool *p, const char *peer)
+{
+    FILE             *fp;
+    char keyfile[1024];
+
+/*  pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_test_crypt_key\n"); */
+
+    make_crypt_keyfile(p, peer, keyfile);
+
+    if( ! (fp = pbc_fopen(p, keyfile, "rb")) ) { 
+        return PBC_FAIL;
+    }
+    
+    pbc_fclose(p, fp);
+
+    return PBC_OK;
+}
+
 unsigned char *libpbc_stringify_seg(pool *p, unsigned char *start, unsigned char *seg, unsigned len)
 {
     int			seg_len;
@@ -570,6 +591,7 @@ void libpbc_populate_cookie_data(pool *p, pbc_cookie_data *cookie_data,
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int pre_sess_token,
+                          time_t create,
                           time_t expire,
 			  unsigned char *appsrvid,
 			  unsigned char *appid) 
@@ -582,7 +604,7 @@ void libpbc_populate_cookie_data(pool *p, pbc_cookie_data *cookie_data,
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
     (*cookie_data).broken.pre_sess_token = pre_sess_token;
-    (*cookie_data).broken.create_ts = time(NULL);
+    (*cookie_data).broken.create_ts = create;
     (*cookie_data).broken.last_ts = expire;
     strncpy((char *)(*cookie_data).broken.appsrvid, (const char *)appsrvid, PBC_APPSRV_ID_LEN-1);
     strncpy((char *)(*cookie_data).broken.appid, (const char *)appid, PBC_APP_ID_LEN-1);
@@ -654,6 +676,7 @@ unsigned char *libpbc_get_cookie(pool *p, unsigned char *user,
 					 creds,
 				    	 pre_sess_token,
 					 time(NULL),
+					 time(NULL),
 					 appsrvid,
 					 appid,
 					 peer));
@@ -671,6 +694,7 @@ unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *user,
 						unsigned char type, 
 						unsigned char creds,
 						int pre_sess_token,
+						time_t create,
 						time_t expire,
 						unsigned char *appsrvid,
 						unsigned char *appid,
@@ -688,7 +712,7 @@ unsigned char *libpbc_get_cookie_with_expire(pool *p, unsigned char *user,
 
     cookie_data = libpbc_init_cookie_data(p);
     libpbc_populate_cookie_data(p, cookie_data, user, type, creds, 
-                                pre_sess_token, expire, appsrvid, appid);
+                          pre_sess_token, create, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(p, cookie_data);
     pbc_free(p, cookie_data);
 
@@ -732,8 +756,7 @@ pbc_cookie_data *libpbc_unbundle_cookie(pool *p, char *in, const char *peer)
     }
 
     if (plainlen != sizeof(pbc_cookie_data)) {
-        pbc_log_activity(p, PBC_LOG_ERROR, "libpbc_unbundle_cookie: cookie wrong size: %d != %d\n",
-                     plainlen, sizeof(pbc_cookie_data));
+        pbc_log_activity(p, PBC_LOG_ERROR, "libpbc_unbundle_cookie: cookie wrong size: %d != %d\n", plainlen, sizeof(pbc_cookie_data));
         return 0;
     }
 
@@ -752,6 +775,8 @@ pbc_cookie_data *libpbc_unbundle_cookie(pool *p, char *in, const char *peer)
     (*cookie_data).broken.last_ts = ntohl((*cookie_data).broken.last_ts);
     (*cookie_data).broken.create_ts = ntohl((*cookie_data).broken.create_ts);
     (*cookie_data).broken.pre_sess_token = ntohl((*cookie_data).broken.pre_sess_token);
+
+    pbc_free(p, buf);
 
     return cookie_data;
 }

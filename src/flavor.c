@@ -6,7 +6,7 @@
 /** @file flavor.c
  * Flavor generic code
  *
- * $Id: flavor.c,v 1.11 2003-07-03 04:25:21 willey Exp $
+ * $Id: flavor.c,v 1.12 2003-12-11 21:48:44 willey Exp $
  */
 
 
@@ -26,15 +26,19 @@ typedef void pool;
 #endif /* HAVE_DMALLOC_H */
 
 extern struct login_flavor login_flavor_basic;
-/* extern struct login_flavor login_flavor_uwash; */
 extern struct login_flavor login_flavor_getcred;
+#ifdef ENABLE_UWSECURID
+extern struct login_flavor login_flavor_uwsecurid;
+#endif
 
 /**
  */
 static struct login_flavor *flavors[] = {
     &login_flavor_basic,
     &login_flavor_getcred,
-/*    &login_flavor_uwash, */
+#ifdef ENABLE_UWSECURID
+    &login_flavor_uwsecurid,
+#endif
     NULL
 }; /*! list of available flavors */
 

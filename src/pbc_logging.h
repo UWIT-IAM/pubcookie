@@ -6,7 +6,7 @@
 /** @file pbc_logging.h
  * Header file for logging stuff
  *
- * $Id: pbc_logging.h,v 1.17 2003-07-10 19:06:40 willey Exp $
+ * $Id: pbc_logging.h,v 1.18 2003-12-11 21:48:44 willey Exp $
  */
 
 
