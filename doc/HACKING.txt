@@ -10,12 +10,18 @@ Here are some guidelines for writing code in the Pubcookie style:
     * use a space between statement operators and their parentheses
          e.g. "if (blah)" not "if(blah)"
 
-    * use whitespace generiously
+    * use whitespace generously
 
-    * wrap lines at 80 characters
+    * wrap lines at 75 characters
+
+    * braces for statements should start on the same line as the statement.
+
+    * braces for functions should start on a new line.
 
     * document your functions using Doxygen comments:
          http://www.stack.nl/%7Edimitri/doxygen/
+
+    * style is tidied by "indent -gnu -i4 -npsl -bad -br -ce -nut -l75"
 
 2) Logging in mod_pubcookie
 
@@ -37,5 +43,5 @@ server (s) record handy. Note: ap_log_rerror() logs the client ip.
     AP_LOG_INFO  - normal logging of redirects and the like
     AP_LOG_DEBUG - super-debug or other really verbose crap
 
-$Id: HACKING.txt,v 1.2 2004-11-03 19:28:50 suh Exp $
+$Id: HACKING.txt,v 1.3 2004-12-21 17:16:45 willey Exp $
 
