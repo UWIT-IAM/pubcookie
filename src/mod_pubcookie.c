@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.14 1999-01-11 17:21:07 willey Exp $
+    $Id: mod_pubcookie.c,v 1.15 1999-01-11 21:37:53 willey Exp $
  */
 
 #include "httpd.h"
@@ -79,6 +79,9 @@ unsigned char *get_app_path(pool *p, const char *path_in) {
 #else
     return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
 #endif
+  
+  return path;
+
 }
 
 /*                                                                            */
