@@ -1,36 +1,98 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "verify.h"
 
 /* verifiers we might have access to */
-extern plaintext_verifier kerberos4_verifier;
-extern plaintext_verifier kerberos5_verifier;
-extern plaintext_verifier ldap_verifier;
-extern plaintext_verifier alwaystrue_verifier;
-
-struct verify_s {
-    const char *name;
-    plaintext_verifier *verify;
-};
+extern verifier kerberos4_verifier;
+extern verifier kerberos5_verifier;
+extern verifier ldap_verifier;
+extern verifier alwaystrue_verifier;
 
 /* verifiers that we actually compiled */
-static struct verify_s verifiers[] = {
-    { "kerberos_v4", &kerberos4_verifier },
-    { "kerberos_v5", &kerberos5_verifier },
-    { "ldap", &ldap_verifier },
-    { "alwaystrue", &alwaystrue_verifier },
-    { NULL, NULL }
+static verifier *verifiers[] = {
+    &kerberos4_verifier,
+    &kerberos5_verifier,
+    &ldap_verifier,
+    &alwaystrue_verifier,
+    NULL
 };
 
 /* given a string, find the corresponding verifier */
-plaintext_verifier *get_verifier(const char *name)
+verifier *get_verifier(const char *name)
 {
-    struct verify_s *v = verifiers;
-    while (v->name) {
-	if (!strcasecmp(v->name, name)) break;
+    verifier **v = verifiers;
+    while (*v) {
+	if (!strcasecmp((*v)->name, name)) break;
 	v++;
     }
 
-    return v->verify;
+    return (*v);
 }
+
+#ifdef TEST_VERIFY
+
+#include <ctype.h>
+
+int main(int argc, char *argv[])
+{
+    verifier *v = NULL;
+    const char *errstr;
+    int r;
+    struct credentials *creds;
+
+    if (argc < 3) {
+	fprintf(stderr, "%s <verifier> <user> <pass> [realm] [service]\n", 
+		argv[0]);
+	exit(1);
+    }
+
+    v = get_verifier(argv[1]);
+    if (!v) {
+	printf("no such verifier: %s\n", argv[1]);
+	exit(1);
+    }
+    
+    if (r = v->v(argv[2], argv[3], 
+		 argc > 4 ? argv[5] : NULL, 
+		 argc > 3 ? argv[4] : NULL,
+		 &creds, &errstr)) {
+	printf("verifier failed: %d %s\n", r, errstr);
+	return r;
+    }
+	
+    printf("success!\n");
+    if (creds) {
+	int s;
+	struct credentials *newcreds;
+
+	printf("got creds, size %d:\n", creds->sz);
+	for (s = 0; s < creds->sz; s++) {
+	    if (isprint(creds->str[s])) putchar(creds->str[s]);
+	    else putchar('.');
+	}
+	putchar('\n');
+
+
+	printf("\n"
+	       "attempting to get imap/cyrus.andrew.cmu.edu credential...\n");
+
+	if (!v->cred_derive(creds, "vtest", "imap/cyrus.andrew.cmu.edu",
+			    &newcreds) &&
+	    newcreds) {
+	    printf("got newcreds, size %d:\n", newcreds->sz);
+	    for (s = 0; s < newcreds->sz; s++) {
+		if (isprint(newcreds->str[s])) putchar(newcreds->str[s]);
+		else putchar('.');
+	    }
+	    putchar('\n');
+	} else {
+	    printf("failed.\n");
+	}
+    }
+    
+    return 0;
+}
+
+#endif

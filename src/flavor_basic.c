@@ -15,7 +15,7 @@
 
 #include "pbc_config.h"
 
-plaintext_verifier *v = NULL;
+verifier *v = NULL;
 extern int debug;
 
 static int init_basic(void)
@@ -32,7 +32,7 @@ static int init_basic(void)
 
     v = get_verifier(vname);
 
-    if (!v) {
+    if (!v || !v->v) {
 	fprintf(stderr, "flavor_basic: verifier not found: %s\n", vname);
 	return -1;
     }
@@ -52,7 +52,9 @@ void print_login_page(login_rec *l, login_rec *c, const char **errstr)
     int need_clear_greq = 1;
     char message_out[1024];
 
-fprintf(stderr, "print_login_page: hello\n");
+    if (debug) {
+	fprintf(stderr, "print_login_page: hello\n");
+    }
     assert(errstr);
 
     /* set the cookies */
@@ -174,7 +176,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
     */
 
     if (l->reply == FORM_REPLY) {
-        if (v(l->user, l->pass, NULL, l->realm, errstr) == 0) {
+        if (v->v(l->user, l->pass, NULL, l->realm, NULL, errstr) == 0) {
             if (debug) {
                fprintf(stderr, "authentication successful for %s\n", l->user);
             }

@@ -13,17 +13,19 @@
 
 #include "verify.h"
 
-int shadow_verifier(const char *userid,
-			const char *passwd,
-			const char *service,
-			const char *user_realm,
-			const char **errstr)
+static int shadow_v(const char *userid,
+		    const char *passwd,
+		    const char *service,
+		    const char *user_realm,
+		    struct credentials **creds,
+		    const char **errstr)
 {
 
     struct spwd * shadow;
     char * crypted;
 
     if (errstr) *errstr = NULL;
+    if (creds) *creds = NULL;
 
     if (!userid) {
        *errstr = "no userid to verify";
@@ -58,3 +60,5 @@ int shadow_verifier(const char *userid,
     *errstr=("username/password pair is incorrect");
     return -1;
 }
+
+verifier shadow_verifier = { "shadow", &shadow_v, NULL, NULL };

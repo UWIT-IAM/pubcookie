@@ -1,10 +1,10 @@
-# -*- make -*-
+# -*- makefile -*-
 # 
 # Makefile.login, Makefile for the login server
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.4 2002-06-05 16:52:29 greenfld Exp $
+# $Id: Makefile.login,v 1.5 2002-06-11 20:18:01 greenfld Exp $
 
 include Makefile.settings
 
@@ -28,7 +28,7 @@ EXTRA_LIBS += -ldl
 
 ## HAVE_KRB5 - you want the kerberos 5 verifier
 DEFINES += -DHAVE_KRB5
-EXTRA_LIBS += -lkrb5
+EXTRA_LIBS += -ldes -lkrb5 -ldes
 
 ## HAVE_LDAP - you want the ldap verifier
 # DEFINES += -DHAVE_LDAP
@@ -57,30 +57,27 @@ UTIL_OBJ=pbc_key_local.o pbc_key_generic.o keyserver.o keyclient.o
 
 UTIL_FILES=keyserver keyclient
 
-VERIFIERS=verify.o \
-	 	  verify_alwaystrue.o \
-		  verify_kerberos4.o \
-		  verify_kerberos5.o \
-		  verify_shadow.o \
-		  verify_ldap.o
+VERIFIERS=verify_alwaystrue.o \
+	verify_kerberos4.o \
+	verify_kerberos5.o \
+	verify_shadow.o \
+	verify_ldap.o
 
-VERIFY_SRC=verify.c \
-		   verify_alwaystrue.c \
-		   verify_kerberos4.c \
-		   verify_kerberos5.c \
-		   verify_shadow.c \
-		   verify_ldap.c
+VERIFY_SRC=verify_alwaystrue.c \
+	verify_kerberos4.c \
+	verify_kerberos5.c \
+	verify_shadow.c \
+	verify_ldap.c
 
 FLAVOR_SRC=flavor_basic.c
 
-INDEX_OBJ=index.cgi.o \
+INDEX_OBJ=index.cgi.o verify.o \
 		  flavor_$(FLAVOR).o \
 		  $(VERIFIERS)
 
 INDEX_FILES=index.cgi
 
-INDEX_SRC=index.cgi.c \
-		  flavor_*.c \
+INDEX_SRC=index.cgi.c verify.c \
 		  $(VERIFY_SRC) \
 		  $(FLAVOR_SRC)
 
@@ -128,6 +125,9 @@ candv:	candv.o $(LIB_OBJ)
 
 dtest:	dtest.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ dtest.o $(LIB_OBJ) $(LDFLAGS)
+
+vtest: $(VERIFIERS)
+	$(CC) ${CFLAGS} -DTEST_VERIFY -o $@ verify.c $(VERIFIERS) $(LIB_OBJ) $(LDFLAGS)
 
 check_crypted_blob:	check_crypted_blob.o $(LIB_OBJ)
 	$(CC) ${CFLAGS} -o $@ check_crypted_blob.o $(LIB_OBJ) $(LDFLAGS)

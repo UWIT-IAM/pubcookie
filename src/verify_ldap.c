@@ -3,8 +3,11 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.4 2002-06-09 22:54:18 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.5 2002-06-11 20:19:29 greenfld Exp $
  */
+#include <stdlib.h>
+
+#include "verify.h"
 
 #ifdef HAVE_LDAP
 
@@ -25,16 +28,13 @@
 /** The debug level */
 extern int debug;
 
-/* Caution! Results must be free()d! */
-
 /**
  * Generates the name for the config file key
  * @param prefix char *
  * @param suffix char *
  * @retval malloc()d string (must be free()d!)
  */
-
-char * gen_key( const char * prefix, char * suffix )
+static char * gen_key( const char * prefix, char * suffix )
 {
     char * result;
     size_t len;
@@ -68,10 +68,8 @@ char * gen_key( const char * prefix, char * suffix )
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
-
-int do_bind( LDAP *ld, char * user, const char * password, const char ** errstr )
+static int do_bind( LDAP *ld, char * user, const char * password, const char ** errstr )
 {
-
     int rc;
 
     if (debug)
@@ -105,15 +103,13 @@ int do_bind( LDAP *ld, char * user, const char * password, const char ** errstr 
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
-
-int ldap_connect( LDAP ** ld, 
-                  char * ldap_server, 
-                  int ldap_port, 
-                  char * dn, 
-                  char * pwd,
-                  const char ** errstr )
+static int ldap_connect( LDAP ** ld, 
+			 char * ldap_server, 
+			 int ldap_port, 
+			 char * dn, 
+			 char * pwd,
+			 const char ** errstr ) 
 {
-
     int rc;
 
     if (debug) {
@@ -159,13 +155,12 @@ int ldap_connect( LDAP ** ld,
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
-
-int get_dn( LDAP * ld, 
-            char * searchbase, 
-            char * attr, 
-            const char * val, 
-            char ** dn,
-            const char ** errstr )
+static int get_dn( LDAP * ld, 
+		   char * searchbase, 
+		   char * attr, 
+		   const char * val, 
+		   char ** dn,
+		   const char ** errstr )
 {
     char * ldap_filter;
 
@@ -271,11 +266,12 @@ int get_dn( LDAP * ld,
  * @retval 0 on success, nonzero on failure
  */
 
-int ldap_verifier( const char *userid,
-                   const char *passwd,
-                   const char *service,
-                   const char *user_realm,
-                   const char **errstr )
+static int ldap_verifier( const char *userid,
+			  const char *passwd,
+			  const char *service,
+			  const char *user_realm,
+			  struct credentials **creds,
+			  const char **errstr) 
 {
     int   got_error = -2;
     int   i = 0;
@@ -289,6 +285,8 @@ int ldap_verifier( const char *userid,
     if ( debug ) {
         fprintf( stderr, "ldap_verifier: hello\n" );
     }
+
+    if (creds) *creds = NULL;
 
     /* What should we do when the realm is null? I'm defaulting to "ldap" */
 
@@ -406,13 +404,18 @@ int ldap_verifier( const char *userid,
 
 #else /* HAVE_LDAP */
 
-int ldap_verifier( const char *userid,
-                   const char *passwd,
-                   const char *service,
-                   const char *user_realm,
-                   const char **errstr )
+static int ldap_v(const char *userid,
+		  const char *passwd,
+		  const char *service,
+		  const char *user_realm,
+		  struct credentials **creds,
+		  const char **errstr)
 {
+    if (creds) *creds = NULL;
+
     *errstr = "ldap not implemented";
     return -1;
 }
 #endif
+
+verifier ldap_verifier = { "ldap", &ldap_v, NULL, NULL };
