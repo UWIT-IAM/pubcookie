@@ -35,7 +35,7 @@
                     <li><a href="#A">Appendix A: How to Enable SSL</a></li>
                     <li><a href="#B">Appendix B: Configuration For Abbreviated Domain Names</a></li>
                   </ul>
-                  <h4><a name="obj">Objectives</a></h4>
+                  <h4><a name="overview">Overview</a></h4>
                   <p>This guide helps Apache HTTP server administrators install and use the Pubcookie Apache
                      module, herein referred to as simply <i>the module</i>, but also commonly known
                      as mod_pubcookie.</p>
@@ -352,16 +352,14 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                     </li> 
                     <li> 
                       <p>Run keyclient to request a new key:</p>
-                      <p> 
                       <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
-                        <tr> 
-                          <td> <pre>$ ./keyclient</pre></td>
-                        </tr>
-                      </table>
-                      </p>
-                      <p>If successful, it will <i>silently</i> save the new key in the keys directory.
-                        If not successful, note any error messages and refer 
-                        to the <a href="#debug">Troubleshooting</a> section below.</p>
+                      <tr> 
+                        <td>
+                      <pre>$ ./keyclient
+Set crypt key for appserver.example.edu</pre>
+                        </td>
+                      </tr> 
+                      </table> 
                     <p>Notes:</p>
                       <ul>
                         <li><p>The keyclient cannot read encrypted RSA private keys. [fixme: that's a lie and 
@@ -375,6 +373,8 @@ this whole note needs fixing.]
                            config file variable.</p></li>
                         <li><p>The key's filename is derived from your certificate's Common Name field.</p></li>
                       </ul>
+                      <p>If keyclient fails, note any error messages and refer 
+                        to the <a href="#debug">Troubleshooting</a> section below.</p>
                     <li>
                     <p>List the contents of your keys directory to 
                       find the new key:</p>
@@ -411,7 +411,8 @@ appserver.example.edu</pre></td>
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
                           <TD> <pre>$ cd /usr/local/pubcookie
-$ ./keyclient -G keys/pubcookie_granting.crt</pre></TD>
+$ ./keyclient -G keys/pubcookie_granting.cert
+Granting cert saved to keys/pubcookie_granting.cert</pre></TD>
                         </TR>
                       </TABLE></p>
                       <p>If keyclient cannot download your "granting" certificate, your keyserver
@@ -493,7 +494,7 @@ AddModule mod_pubcookie.c
 # Pubcookie configuration section
 #
 
-PubcookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.crt
+PubcookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.cert
 PubcookieSessionKeyFile /etc/httpd/conf/ssl.key/appserver.key
 PubcookieSessionCertFile /etc/httpd/conf/ssl.crt/appserver.crt
 PubcookieLogin https://weblogin.example.edu/
@@ -808,12 +809,19 @@ defaults, as described in the <a href="#config">Configuration</a> section
 above. Then override directives as needed for each virtual host.</p>
 
 <p>For example, you should use a separate session keypair for each 
-virtual host, so you will most likely define new 
-<a 
-href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKeyFile</a>
+virtual host, so you will need to define new 
+<a href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKeyFile</a>
 and <a href="mod_pubcookie-directives.html#PubcookieSessionCertFile">PubcookieSessionCertFile</a>
-directives for each virtual host. It may be acceptable to use defaults
+directives for each. It may be acceptable to use defaults
 for all other module settings.</p>
+
+<p>To request a symmetric encryption key for each virtual server, 
+you can use your current config file and simply point keyclient
+to the virtual host's SSL private key and certificate files. For 
+example:</p>
+
+<pre>$ ./keyclient -k vhost.key -c vhost.crt
+Set crypt key for vhost.example.edu</pre>
 
 <h4><a name="clusters">Clustered Host Configuration</a></h4>
 
