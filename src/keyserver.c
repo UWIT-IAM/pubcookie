@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.54 2004-09-14 16:41:44 fox Exp $
+ * $Id: keyserver.c,v 2.55 2004-12-10 00:22:00 willey Exp $
  */
 
 
@@ -977,43 +977,46 @@ int main(int argc, char *argv[])
 
     pbc_log_activity(p, PBC_LOG_ERROR, "REQ=%s", buf);
     for (ptr = buf; *ptr != '\0'; ptr++) {
-	/* look for 'genkey' */
-	if (*ptr == '?' && !strncmp(ptr+1, "genkey=yes", 10)) {
-	    op = GENKEY;
-	}
+        if ( *ptr == '?' || *ptr == '&' ) {  /* next arg */
+	    /* look for 'genkey' */
+	    if ( !strncmp(ptr+1, "genkey=yes", 10) ) {
+	        op = GENKEY;
+	    }
 
-	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=no", 9)) {
-	    op = FETCHKEY;
-	}
+	    else if ( !strncmp(ptr+1, "genkey=no", 9) ) {
+	        op = FETCHKEY;
+	    }
 
-	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=put", 10)) {
-	    op = SETKEY;
-	}
+	    else if ( !strncmp(ptr+1, "genkey=put", 10) ) {
+	        op = SETKEY;
+	    }
 
-	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=permit", 13)) {
-	    op = PERMIT;
-	}
+	    else if ( !strncmp(ptr+1, "genkey=permit", 13) ) {
+	        op = PERMIT;
+	    }
 
-	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=getgc", 12)) {
-	    op = FETCHGC;
-	}
+	    else if ( !strncmp(ptr+1, "genkey=getgc", 12) ) {
+	        op = FETCHGC;
+	    }
 
-	else if (*ptr == '?' && !strncmp(ptr+1, "genkey=setpkey", 12)) {
-	    op = SETPKEY;
-	}
+	    else if ( !strncmp(ptr+1, "genkey=setpkey", 12) ) {
+	        op = SETPKEY;
+	    }
 
-	/* look for 'setkey' */
-	else if (*ptr == '?' && !strncmp(ptr+1, "setkey=", 7)) {
-	    char *q;
+	    /* look for 'setkey' */
+	    else if ( !strncmp(ptr+1, "setkey=", 7) ) {
+	        char *q;
+    
+	        ptr++; /* ? or &*/
+	        ptr += 7; /* setkey= */
 
-	    ptr++; /* ? */
-	    ptr += 7; /* setkey= */
-
-	    setkey = strdup(ptr);
-	    /* terminated by ? */
-	    q = strchr(setkey, '?');
-	    if (q) *q = '\0';
-	}
+	        setkey = strdup(ptr);
+	        /* terminated by ? - this is a bit dubious, but i think it's 
+		   compensated for later - ssw */
+	        q = strchr(setkey, '?');
+	        if (q) *q = '\0';
+	    }
+        }
     }
 
     if (op == NOOP) {
