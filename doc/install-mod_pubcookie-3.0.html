@@ -19,9 +19,9 @@
                     <li><a href="#install">Install Pubcookie</a></li>
                     <li><a href="#granting">Install Granting Certificate</a></li>
                     <li><a href="#config">Configure Pubcookie Config File (config)</a></li>
-                    <li><a href="#keyclient">Request an Encryption Key (using 
-                      keyclient)</a></li>
+                    <li><a href="#keyclient">Request an Encryption Key (using keyclient)</a></li>
                     <li><a href="#httpd">Configure Apache (httpd.conf)</a></li>
+                    <li><a href="#logout">Logout Configuration and Use</a></li>
                     <li><a href="#test">Test Pubcookie (with sample .htaccess)</a></li>
                     <li><a href="#debug">Debugging</a></li>
                   </ul>
@@ -201,7 +201,7 @@
                         directive for pubcookie to the Configuration file and 
                         run the Configure script.</p>
                     <li> 
-                      <p>After running the configure scripts, do your 'make' to create 
+                      <p>After running the configure scripts, do your 'make' to build 
                         a new Apache daemon with mod_pubcookie now statically 
                         linked in.</p>
                     <li> Install your new Apache daemon. But complete these installation
@@ -477,15 +477,95 @@ RewriteCond %{HTTP_HOST} !\.example\.edu
 RewriteRule ^/(.*)$ https://%{SERVER_NAME}/$1 [L,R]</pre></TD>
                     </TR>
                   </TABLE>
-                  <p></p>
+                  </p>
                   <p>This rule is for a https requests only; you would need something 
                     similar for http requests. You may also need to add additional 
                     rules for subdomains (e.g. <i>subdomain.example.edu</i>). 
                     Additionally, abbreviated domain names must be in your ServerAlias 
                     list.</p>
 					
+                  <h4><a name="logout">Logout Configuration and Use</a></h4>
+                  <p>The <a href="mod_pubcookie-directives.html#PubcookieEndSession">PubcookieEndSession</a> 
+                  directive causes mod_pubcookie
+                  to clear the current session cookie. Therefore, it is used to implement
+                  application logout. This directive can be configured on a per-application
+                  basis using .htaccess or configured centrally to create a virtual logout
+                  URI that any application on the server can link to in order to implement 
+                  its own logout function without the need for .htaccess.</p>
+
+                  <p><b>To configure logout using .htaccess:</b></p>
+                  <p>The simplest way to configure logout for an application or static website
+                  is to place a .htaccess file in a subdirectory (e.g. <tt>logout</tt>) and put a 
+                  PubcookieEndSession in the .htaccess file. It might be laid out something like
+                  this:</p>
+                  <p> 
+                  <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                    <TR> 
+                      <TD><pre>$ ls -a
+.htaccess    images/    index.php    other.php    logout/
+$ more .htaccess
+PubcookieAppID testapp
+Authtype EGNetID
+require valid-user
+$ more logout/.htaccess
+PubcookieEndSession redirect</pre></TD>
+                    </TR>
+                  </TABLE></p>
+                  <p>Then a link from any page to the subdirectory will steer users to logout, 
+                  allowing PubcookieEndSession to do its work.</p>
+                  <p> 
+                  <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                    <TR> 
+                      <TD><pre>&lt;a href="logout/"&gt;Logout&lt;/a&gt;</pre></TD>
+                    </TR>
+                  </TABLE></p>
+
+                  <p><b>To configure and use a matching logout URI:</b></p>
+                  <p>This is a nice alternative for sysadmins and application deployers who 
+                  prefer not to use subdirectories and .htaccess files to configure
+                  logout. Essentially, by using Apache's <a href="http://httpd.apache.org/docs/mod/core.html#locationmatch">LocationMatch</a> 
+                  directive you can create a server-wide matching string that causes mod_pubcookie to
+                  invoke <a href="mod_pubcookie-directives.html#PubcookieEndSession">PubcookieEndSession</a> 
+                  without the use of .htaccess;
+                  simply by creating a link with the same string in it, an application 
+                  can implement logout. Here's example httpd.conf configuration which defines
+                  two such strings, <tt>LOGOUT-REDIRECT</tt> and <tt>LOGOUT-CLEARLOGIN</tt>,
+                  corresponding with two styles of application logout provided by Pubcookie.</p>
+                  <p> 
+                  <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                    <TR> 
+                          <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
+# Pubcookie Configuration
+PubcookieAuthTypeNames EGNetID
+PubcookieInactiveExpire -1
+PubcookieLogin https://weblogin.example.edu/
+
+# Pubcookie Logout Configuration
+&lt;LocationMatch .*/LOGOUT-REDIRECT.*&gt;
+AuthType EGNetID
+require valid-user
+PubcookieEndSession redirect
+&lt;/LocationMatch>
+&lt;LocationMatch .*/LOGOUT-CLEARLOGIN.*&gt;
+AuthType EGNetID
+require valid-user
+PubcookieEndSession clearLogin
+&lt;/LocationMatch&gt;
+&lt;/IfDefine&gt;</pre></TD>
+                    </TR>
+                  </TABLE>
+                  </p>
+                  <p>With this in place, and the server restarted, any Pubcookie-protected application
+                  or static website on the server can now implement logout simply by linking to one of 
+                  these virtual URIs. For example:</p>
+                  <p> 
+                  <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                    <TR> 
+                      <TD><pre>&lt;a href="LOGOUT-REDIRECT"&gt;Logout&lt;/a&gt;</pre></TD>
+                    </TR>
+                  </TABLE></p>
+
                   <h4><a name="test">Test Pubcookie (with sample .htaccess)</a></h4>
-                  <p><b>To test the Pubcookie Apache module:</b></p>
                   <ol>
                     <li> 
                       <p>Create a new directory within your DocumentRoot. For 
