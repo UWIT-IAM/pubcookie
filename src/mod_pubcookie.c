@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.94 2002-08-06 17:02:36 willey Exp $
+    $Id: mod_pubcookie.c,v 1.95 2002-08-12 14:22:59 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2081,5 +2081,12 @@ module pubcookie_module = {
     pubcookie_fixups,            /* fixups */
     NULL,                        /* logger */
     pubcookie_hparse             /* header parser */
+#ifdef EAPI
+    ,
+    NULL,                        /* EAPI: add_module */
+    NULL,                        /* EAPI: remove_module */
+    NULL,                        /* EAPI: rewrite_command */
+    NULL                         /* EAPI: new_connection */
+#endif
 };
 
