@@ -18,25 +18,32 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.1 1999-10-16 00:50:44 willey Exp $
+    $Id: index.cgi.c,v 1.2 1999-10-21 01:29:13 willey Exp $
  */
 
 
-//#include <netdb.h>
+/* LibC */
+#include <netdb.h>
+#include <sys/utsname.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <time.h>
 #include <string.h>
-//#include <pem.h>
-//#include <unistd.h>
-//#include <sys/socket.h>
-//#include <netinet/in.h>
-//##include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+/* openssl */
+#include <pem.h>
+/* pubcookie things */
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
 #include "index.cgi.h"
+/* cgic */
+#include <cgic.h>
 
  /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
  /*                                                                         */
@@ -69,333 +76,299 @@
 
 
 
-//
-//# some setting for the cookies and redirect
-//my $login_dir = "/";
-//my $refresh = "0";
-//my $expire_login = 60 * 60 * 8;
-//
-//my $notok_needssl = "I'm sorry this page is only accessible via a SSL protected connection. <BR>\n";
-//
-//# some messages about people who hit POSTS and don't have js on
-//my $pbc_post_no_js_text = "Thank you for logging on\n";
-//my $pbc_post_no_js_button = "Click here to continue\n";
-//
-//my $print_login_please = "Please log in.";
-//my $trouble_creating_cookie = "Trouble creating cookie, please re-enter.";
-//my $problems_persist = "If problems persist contact help\@cac.washington.edu.";
-//my $auth_failed_message1 = "Login failed. Please re-enter.";
-//my $auth_failed_message2 = "Please make sure:<BR><UL><LI>Your Caps Lock key is OFF.<LI>Your Number Lock key is ON.</UL>";
-//
-//my $prompt_uwnetid = "<B>Password:</B><BR>\n";
-//my $prompt_securid = "<B>SecurID:</B><BR>\n";
-//
-//# how we accentuate WARNING messages
-//my $pbc_em1_start = "<B><font color=\"#FF0000\" size=\"+1\">"; 
-//my $pbc_em1_end = "</font></B><BR>";
-//# how we accentuate less important WARNING messages
-//my $pbc_em2_start = "<B><font size=\"+1\">"; 
-//my $pbc_em2_end = "</font></B><BR>";
-//
-//# keys and certs
-//my $key_dir = "/usr/local/pubcookie/";
-//my $crypt_key = $key_dir . "c_key." . $host;
-//my $cert_file = $key_dir . "pubcookie.cert";
-//my $cert_key_file = $key_dir . "pubcookie.key";
-//
-//# programs for creating and verifying cookies
-//my $create_pgm = "/usr/local/pubcookie/pbc_create";
-//my $verify_pgm = "/usr/local/pubcookie/pbc_verify";
-//
-//# some misc settings
-//my $serial_file = "/tmp/s";
-//my $first_serial = 23;
-//
-//# file to get the list of ok browsers from
-//my $ok_browsers_file = "/usr/local/pubcookie/ok_browsers";
-//
-//# utility to send messages to pilot
-//my $send_pilot_cmd = "/usr/local/adm/send_pilot_stat.pl";
-//
-//##################### really the beginning of business
-//
-//#   here for the record are the notok codes
-//#   since they will change when we make the login cgi C
-//#   it's not worth doing any maintainable :)
-//# 1 - no cookies or non-fqdn 
-//#     (http://staff.washington.edu/dors/projects/login/problem1.html)
-//# 2 - backing in or non-fqd
-//#     (http://staff.washington.edu/dors/projects/login/problem2.html)
-//# 3 - no cookies!
-//#     (http://staff.washington.edu/dors/projects/login/problem3.html)
-//# 4 - multipart/form-data
-//#     (http://staff.washington.edu/dors/projects/login/problem4.html)
-//# 5 - not ssl, impossible but we still look for it.
-//#
-//#
-//# bail if not ssl
-//notok('5') unless( $ENV{'HTTPS'} eq "on" );
-//
-//# check to see what cookies we have
-//# if there is an error print the error page and bail out
-//&cookie_test;
-//
-//# get the environment from the request
-//my $q = new CGI;
-//$q->import_names('Q');
-//
-//# use nice names
-//if ( $Q::one ) {              # then it's a POST'ed submit of the login page
-//    $args = $Q::eight;		
-//    $uri = $Q::seven;
-//    $host = $Q::six;
-//    $method = $Q::five;
-//    $version = $Q::four;
-//    $creds = $Q::three;
-//    $appid = $Q::two;
-//    $appsrvid = $Q::one;
-//    $fr = $Q::fr;
-//    # the following will only be found in replys from the login page
-//    $user = $Q::user;
-//    $user =~ s/^\s*(\S+)\s*$/\1/;     # clean-up the username
-//    # since people expect a uwnetid in the cookie not a krberos principal
-//    $user = (split('@', $user))[0];
-//    $pass = $Q::pass;
-//    $pass2 = $Q::pass2;
-//    # the following will only be found in POSTs or PUTs
-//    $post_stuff = $Q::post_stuff;
-//} 
-//else {                         # then it's an original request to the login cgi
-//    &decode_g_req_cookie;
-//} 
-//
-//# check the user agent and maybe bail
-//&check_user_agent;
-//
-//# allow for older versions that don't have froce_reauth
-//if ( $fr eq "" ) {
-//    $fr = "NFR";
-//}
-//
-//# the main logic (see first comment block)
-//if ( $Q::one ) {          # a reply from the login page
-//    if ( ($res = &check_login) ne "success" ) {
-//        log_message("Authentication failed: $user type: $creds $res");
-//        my $message = $res;
-//        if ( $res =~ /Authentication Failed/ ) {
-//            $message = $pbc_em1_start . $auth_failed_message1 . $pbc_em1_end; 
-//#            $message .= "<P>" . $pbc_em2_start . $auth_failed_message2 . $pbc_em2_end; 
-//            $message .= "<P>" . $auth_failed_message2;
-//        }
-//        else {
-//            log_error("Login problem: $res");
-//        }
-//        print_login_page("$message", "bad auth", $creds, 0);
-//        exit;
-//    }
-//    log_message("Authentication success: $user type: $creds");
-//}
-//elsif ( $fr ne "NFR" ) {                           # force reauth
-//    log_message ("user was forced to reauth by $host at $appid");
-//    print_login_page("$print_login_please", "force reauth", $creds, 1);
-//    exit;
-//}
-//elsif ( $ENV{'HTTP_COOKIE'} !~ /pubcookie_l=/ 
-//     || $ENV{'HTTP_COOKIE'} =~ /pubcookie_l=;/ ) { # no l cookie 
-//    print_login_page("$print_login_please", "no L cookie yet", $creds, 0);
-//    exit;
-//}
-//elsif ( ($reason=&check_l_cookie) ne "success" ) { # problem with the l cookie
-//    log_message("Login cookie bad: $reason");
-//    print_login_page("$print_login_please", $reason, $creds, 1);
-//    exit;
-//}
-//
-//# the reward for a hard days work
-//# user either authenticated correctly or had a valid l cookie
-//log_message("Issuing cookies for $user at $ENV{REMOTE_ADDR} on $host at $appid");
-//
-//# setup to make the granting and login cookies
-//my $serial = &get_next_serial;
-//my $create_l_line =  url_encode($user) . " "
-//                   . url_encode($appsrvid) . " " 
-//                   . url_encode($appid) . " "     
-//                   . "3 "     
-//                   . url_encode($creds) . " "
-//                   . $serial . " "
-//                   . $crypt_key . " "
-//                   . $cert_key_file;
-//
-//my $create_g_line =  url_encode($user) . " "
-//                   . url_encode($appsrvid) . " " 
-//                   . url_encode($appid) . " "     
-//                   . "1 "     
-//                   . url_encode($creds) . " "
-//                   . $serial . " "
-//                   . $crypt_key . " "
-//                   . $cert_key_file;
-//
-//# mmmm, cook up them cookies
-//my ($l_cookie, $g_cookie);
-//if ( ($l_cookie = get_cookie_created($create_l_line)) eq "" ||
-//     ($g_cookie = get_cookie_created($create_g_line)) eq "" ) {
-//    my $message = $pbc_em1_start . $trouble_creating_cookie . $pbc_em1_end;
-//    $message .= $pbc_em2_start . $problems_persist . $pbc_em2_end;
-//    print_login_page($message, $reason, $creds, 0);
-//    log_error("Not able to create cookie for user $user at $appsrvid-$appid");
-//    exit;
-//}
-//
-//my $g_set_cookie = "Set-Cookie: pubcookie_g=$g_cookie; domain=.washington.edu; path=/; secure";
-//my $s_set_cookie = "Set-Cookie: pubcookie_l=$l_cookie; domain=$hostname; path=$login_dir; secure";
-//my $clear_g_req_cookie = "Set-Cookie: " . &PBC_G_REQ_COOKIENAME . "=done; domain=.washington.edu; path=/; expires=Fri, 11-Jan-1990 00:00:01 GMT";
-//
-//
-//# whip up the url to send the browser back to
-//my $redirect_uri;
-//if ( $fr eq "NFR" || $fr eq "" ) {
-//    $redirect_uri = $uri;
-//}
-//else {
-//    if ( $fr =~ /^\// ) {
-//        $redirect_uri = $fr;
-//    } 
-//    else {
-//        $redirect_uri = "/" . $fr;
-//    } 
-//}
-//
-//my $redirect_dest = "https://". $host . $redirect_uri;
-//if ( $args ) {
-//    $redirect_dest .= "?" . decode_base64($args);
-//}
-//
-//# extra debugging
-//log_message ("main: about to do redirect of $user for host $host, redirect is: $redirect_dest");
-//
-//# now blat out the redirect page
-//print $g_set_cookie, "\n";
-//print $s_set_cookie, "\n";
-//print $clear_g_req_cookie, "\n";
-//
-//if ( $post_stuff ) {
-//#    print_out("Pragma: No-Cache\n");
-//    print_out("Content-Type: text/html\n\n\n");
-//    print_out("<HTML>");
-//    # when the page loads click on the last element (which will always be the 
-//    # submit) in the array of elements in the first, and only, form.
-//    print_out("<BODY BGCOLOR=\"white\" onLoad=\"document.forms[0].elements[document.forms[0].elements.length-1].click()\">\n");
-//    print_out("<CENTER>");
-//    &print_table_start;
-//    print_out("<TR><TD ALIGN=\"LEFT\">\n");
-//    print_out("<FORM METHOD=\"POST\" ACTION=\"$redirect_dest\" ENCTYPE=\"application/x-www-form-urlencoded\" NAME=\"query\">\n");
-//
-//    my $post_args = new CGI($post_stuff);
-//    $post_args->autoEscape(undef);
-//    my $limitations_mentioned;
-//    foreach my $name ( $post_args->param ) {
-//        my $value = $post_args->param($name);
-//        $name =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;
-//        if ( $value =~ /"/ ) {
-//            if ( ! $limitations_mentioned ) {
-//                print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
-//                $limitations_mentioned++;
-//            }
-//            print_out("<TEXTAREA COLS=0 ROWS=0 NAME=\"$name\">\n$value</TEXTAREA>");
-//            print_out("<P>\n");
-//        }
-//        else {
-//            # we don't want to cover other people's submits
-//            if ( $name eq "submit" )  {
-//                $submit_value = $value;
-//            }
-//            else {
-//                print_out("<INPUT TYPE=\"hidden\" NAME=\"$name\" VALUE='$value'>\n");
-//            }
-//        }
-//    }
-//
-//    print_out("</TD></TR>\n");
-//#    print_out("<NOSCRIPT>\n");
-//    &print_uwnetid_logo;
-//    print_out("<P>");
-//    print_out("$pbc_post_no_js_text\n");
-//#    print_out("</NOSCRIPT>\n");
-//    print_out("</TD></TR></TABLE>\n");
-//
-//    # put submit at the bottom so it looks better and 
-//    if ( $submit_value ) {
-//        print "<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\'$submit_value\'>\n";
-//    }
-//    else {
-//        print "<INPUT TYPE=\"SUBMIT\" VALUE=\"$pbc_post_no_js_button\">\n";
-//    }
-//    print "</FORM>\n";
-//#    print_out("<NOSCRIPT>\n");
-//    &print_copyright;
-//#    print_out("</NOSCRIPT>\n");
-//    print "</CENTER>";
-//    print "</BODY></HTML>\n";
-//}
-//else {
-//# move refresh to body 
-//#    print "Refresh: $refresh;URL=$redirect_dest\n";
-//    print "Content-Type: text/html\n\n\n";
-//    print "<HTML><HEAD>\n";
-//    print "<META HTTP-EQUIV=\"Refresh\" CONTENT=\"$refresh;URL=$redirect_dest\">\n";
-//    print "<BODY BGCOLOR=\"white\">";
-//    print "<!--redirecting to $redirect_dest-->";
-//    print "</BODY></HTML>\n";
-//}
-//
-//exit;
-//
-//
-//######################### function land
-//
-//sub print_login_page {
-//    my ($message, $reason, $creds, $need_clear_login) = @_;
-//    my ($field_label, $word);
-//
-//    my $field_label2 = "";
-//
-//    if ( $creds eq "1" ) {
-//        $field_label = $prompt_uwnetid;
-//        $word = "password";
-//    } 
-//    elsif ( $creds eq "2" ) {
-//        $field_label = "Invalid request\n";
-//        $word = "INVALID REQUEST";
-//    }
-//    elsif ( $creds eq "3" ) {
-//        $field_label2 = $prompt_securid;
-//        $field_label = $prompt_uwnetid;
-//        $word = "passwd and SecurID";
-//    }
-//    # this probably indicates a problem but ignore it for now
-//    elsif ( $creds eq "0" ) {
-//        $field_label = "<B>Password:</B><BR>\n";
-//        $word = "password";
-//    }
-//
-//    print "Content-Type: text/html\n";
-//    if ( $need_clear_login ) {
-//        print "Set-Cookie: " . &PBC_L_COOKIENAME . "=clear; domain=$hostname; path=$login_dir; expires=Fri, 11-Jan-1990 00:00:01 GMT; secure\n";
-//    }
-//    print "\n\n";
-//
-//    print_login_page_part1(1);
-//
-//    print "<P>$message</P>\n";
-//    print "<!-- -- $reason -- -->\n";
+
+  /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+ /*	general utility thingies                                            */
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+
+char *get_string_arg(char *name, cgiFormResultType (*f)())
+{
+    int		length;
+    char	*s;
+
+    cgiFormStringSpaceNeeded(name, &length);
+    s = calloc(length, sizeof(char));
+
+    switch( (int)f(s, length) ) {
+    case cgiFormSuccess:
+        return(s);
+        break;
+    case cgiFormNotFound:
+        log_message("empty string when looking for argument %s in query string", name);
+        return(NULL);
+        break;
+    case cgiFormTruncated:
+        log_error("truncated string when looking for argument %s in query string", name);
+        return(s);
+        break;
+    default:
+        return(s);
+        break;
+    }
+
+}
+
+char *url_encode(char *in)
+{
+    return(in);
+
+}
+
+void log_message(const char *format,...) 
+{
+    va_list	args;
+    char	new_format[PBC_4K];
+
+    va_start(args, format);
+    snprintf(new_format, strlen(new_format)+1, "%s: %s", ANY_LOGINSRV_MESSAGE, format);
+    libpbc_debug(new_format, args);
+    va_end(args);
+}
+
+void send_pilot_message(char *message) 
+{
+
+//    my $cmd = "$send_pilot_cmd pcookie_login:TRIG:1:pubcookie: $message: this trigger will have to manually cleared";
+//    $cmd =~ s/(['"!])/\\$1/;
+//    log_message("sending message to pilot $cmd");
+//    `$cmd`;
+
+}
+
+void log_error(const char *format,...)
+{
+    va_list	args;
+    char	new_format[PBC_4K];
+    char	message[PBC_4K];
+
+    va_start(args, format);
+    snprintf(new_format, strlen(new_format)+1, "%s: %s", SYSERR_LOGINSRV_MESSAGE, format);
+    vsnprintf(message, strlen(message)+1, new_format, args);
+    log_message(message);
+    send_pilot_message(message);
+    va_end(args);
+}
+
+void abend(char *message) 
+{
+
+    log_error(message);
+    notok(notok_generic);
+    exit(0);
+}
+
+void print_out(char *format,...)
+{
+    va_list	args;
+
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+char *get_my_hostname() 
+{
+    struct utsname	myname;
+
+    if ( uname(&myname) < 0 )
+        log_error("problem doing uname lookup");
+
+    return(strdup(myname.nodename));
+}
+
+char *get_domain_hostname() 
+{
+    char	host[PBC_1K];
+
+    strncpy(host, getenv ("HTTP_HOST"), strlen(host));
+
+    if( !host )
+        return ("weblogin.cac.washington.edu");
+
+    /* if this is a test server use the test name */
+    if ( !strncmp(host,"pcookiel3",9) || !strncmp(host,"weblogintest",12) )
+        return ("weblogintest.cac.washington.edu");
+    else
+        return ("weblogin.cac.washington.edu");
+
+}
+
+char *clean_username(char *in)
+{
+    char	*p;
+    int		word_start = 0;
+
+    p = in;
+    while(*p) {
+        /* no email addresses or full principals */
+        if(*p == '@')
+            *p = '\0';
+
+        /* no spaces at the beginning of the username */
+        if(*p == ' ' && !word_start)
+            in = p;
+        else
+            word_start = 1;
+
+        /* no spaces at the end */
+        if(*p == ' ' && word_start)
+            *p = '\0';
+
+        p++;
+    }
+ 
+    return(in);
+
+}
+
+int has_login_cookie()
+{
+    if( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), PBC_L_COOKIENAME) )
+        return(1);
+    else
+        return(0);
+
+}
+
+int get_next_serial()
+{
+    return(23);
+
+}
+
+  /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+ /*	main line                                                           */
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+
+int cgiMain() 
+{
+    login_rec	*l;
+    char	*res;
+    char	message[PBC_4K];
+
+    /* bail if not ssl */
+    if( !getenv("HTTPS") || !strcmp( getenv("HTTPS"), "on" ) ) { 
+        notok(notok_need_ssl);
+        exit(0);
+    }
+
+    /* check to see what cookies we have */
+    /* if there is an error print the error page */
+    if( !cookie_test() )
+        exit(0);
+
+    /* get the arguments to this cgi, whether they are from submitting */
+    /* the login page or from from the granting request cookie         */
+    /* you call tell the difference since the submitted one will have  */
+    /* user and pass filled in                                         */
+    /* malloc and populate login_rec                                   */
+    l = get_query(); 
+
+    /* check the user agent */
+    if ( !check_user_agent() ) {
+        log_message("bad agent: %s host: %s uri: %s", getenv("HTTP_USER_AGENT"), l->host, l->uri);
+        notok(notok_bad_agent);
+        exit(0);
+    }
+
+    /* allow for older versions that don't have froce_reauth */
+    if ( !l->fr ) {
+        l->fr = strdup("NFR");
+    }
+
+    /* the main logic (see first comment block) */
+    if ( l->user ) {          /* a reply from the login page */
+        if( !(res = check_login(l)) ) {
+            log_message("Authentication failed: %s type: %d %s", l->user, l->creds, res);
+            if( !strcmp(res, "Authentication Failed") ) {
+                snprintf(message, strlen(message)+1, "%s%s%s<P>%s",
+                    PBC_EM1_START,
+                    AUTH_FAILED_MESSAGE1,
+                    PBC_EM1_END, 
+                    AUTH_FAILED_MESSAGE2);
+            }
+            else {
+                log_error("Login problem: %s", res);
+                snprintf(message, strlen(message)+1, "%s%s%s<P>%s",
+                    PBC_EM1_START,
+                    AUTH_TROUBLE,
+                    PBC_EM1_END);
+            }
+            print_login_page(message, "bad auth", l->creds, NO_CLEAR_LOGIN);
+            exit(0);
+        }
+        log_message("Authentication success: %s type: %d", l->user, l->creds);
+    }
+    else if( !strcmp(l->fr,"NFR") ) {               /* force reauth */
+        log_message("user was forced to reauth by %s at %s", l->host, l->appid);
+        print_login_page(PRINT_LOGIN_PLEASE, "force reauth", l->creds, YES_CLEAR_LOGIN);
+        exit(0);
+    }
+    else if ( !has_login_cookie ) {                 /* no l cookie */
+        print_login_page(PRINT_LOGIN_PLEASE, "no L cookie yet", l->creds, NO_CLEAR_LOGIN);
+        exit(0);
+    }
+    else if ( (res=check_l_cookie(l)) ) {        /* problem w/ the l cookie*/
+        log_message("Login cookie bad: %s", res);
+        print_login_page(PRINT_LOGIN_PLEASE, res, l->creds, YES_CLEAR_LOGIN);
+        exit(0);
+    }
+
+    /* the reward for a hard days work                                        */
+    log_message("Issuing cookies for $user at $ENV{REMOTE_ADDR} on $host at $appid");
+
+    /* generate the cookies and print the redirect page                       */
+    print_redirect_page(l);
+
+//    exit(1);
+    return(1);
+}
+
+
+void print_login_page(char *message, char *reason, int creds, int need_clear_login)
+{
+    char	*word;
+    char	*field_label1;
+    char	*field_label2;
+    char	*hostname = strdup(get_domain_hostname());
+
+    switch (creds) {
+    case 1:
+        field_label1 = strdup(PROMPT_UWNETID);
+        word = strdup("password");
+        break;
+    case 2:
+        field_label1 = strdup("Invalid request\n");
+        word = strdup("INVALID REQUEST");
+        break;
+    case 3:
+        field_label2 = strdup(PROMPT_SECURID);
+        field_label1 = strdup(PROMPT_UWNETID);
+        word = strdup("password and SecurID");
+        break;
+    default:
+        field_label1 = strdup(PROMPT_UWNETID);
+        word = strdup("password");
+        break;
+    }
+
+    print_out("Content-Type: text/html\n");
+    if( need_clear_login ) 
+        print_out("Set-Cookie: %s=clear; domain=%s; path=%s; expires=Fri, 11-Jan-1990 00:00:01 GMT; secure\n", PBC_L_COOKIENAME, hostname, LOGIN_DIR);
+    print_out("\n\n");
+
+    print_login_page_part1(YES_FOCUS);
+
+    print_out("<P>%s</P>\n", message);
+    print_out("<!-- -- %s -- -->\n", reason);
 //
 //    # if everything is cool then give this nice text
 //    if ( $message eq $print_login_please ) {
-//        &print_login_page_part2a;
+//        print_login_page_part2a();
 //    }
-//    &print_login_page_part2b;
+//    print_login_page_part2b();
 //
-//    # seperate from above since this is where the form is
+//    /* seperate from above since this is where the form is */
 //    print_login_page_part3($word);
 //
 //    print $field_label;
@@ -422,62 +395,14 @@
 //
 //    &print_login_page_part5;
 //
-//}
+}
 //
-//## if you need to splat on the login page
-//#EOS
-//#&splat;
-//#print <<"EOS";
 //
-//sub splat {
-//    print "<TABLE BORDER=\"3\">\n";
-//        foreach my $k (sort keys %ENV ) {
-//            my $bg;
-//            if ( $k eq "HTTP_COOKIE" ) {
-//               $bg = "yellow";
-//            }
-//            else {
-//               $bg = "white";
-//            }
-//            print "<TR BGCOLOR=\"$bg\">\n";
-//                print "<TD>\n";
-//                    print "$k";
-//                print "</TD>\n";
-//                print "<TD>\n";
-//                    print "$ENV{$k}";
-//                print "</TD>\n";
-//                print "\n";
-//            print "</TR>\n";
-//        }
-//    print "</TABLE>\n";
-//}
-//
-//sub splat_stderr {
-//    print STDERR "<TABLE BORDER=\"3\">\n";
-//        foreach my $k (sort keys %ENV ) {
-//            my $bg;
-//            if ( $k eq "HTTP_COOKIE" ) {
-//               $bg = "yellow";
-//            }
-//            else {
-//               $bg = "white";
-//            }
-//            print STDERR "<TR BGCOLOR=\"$bg\">\n";
-//                print STDERR "<TD>\n";
-//                    print STDERR "$k";
-//                print STDERR "</TD>\n";
-//                print STDERR "<TD>\n";
-//                    print STDERR "$ENV{$k}";
-//                print STDERR "</TD>\n";
-//                print STDERR "\n";
-//            print STDERR "</TR>\n";
-//        }
-//    print STDERR "</TABLE>\n";
-//}
-//
-//# this is where we check the auth info
-//# authsrv calls are meta-auth
-//sub check_login {
+/* this is where we check the auth info                                       */
+/*     authsrv calls are meta-auth                                            */
+/* successful auth returns NULL                                               */
+char *check_login(login_rec *l)
+{
 //    my $ret = "invalid creds";
 //
 //    if ( $creds eq "1" ) {
@@ -492,9 +417,11 @@
 //        }
 //    }
 //
-//    return $ret;
-//
-//}
+    return((char *)NULL);
+
+}
+
+
 //
 //sub check_login_uwnetid {
 //    my ($user, $pass) = @_;
@@ -534,32 +461,11 @@
 //
 //}
 //
-//sub cookie_test {
 //
-//    my $string_to_test_for = &PBC_FORM_MP_COOKIENAME;
-//    if ( $ENV{'HTTP_COOKIE'} =~ /$string_to_test_for/ ) {
-//        notok("formmultipart");
-//        exit;
-//    }
-//
-//    my $string_to_test_for = &PBC_G_REQ_COOKIENAME;
-//    if ( $ENV{'HTTP_COOKIE'} !~ /$string_to_test_for/ ) {
-//
-//        my $string_to_test_for = &PBC_L_COOKIENAME;
-//        if ( $ENV{'HTTP_COOKIE'} !~ /$string_to_test_for/ ) {
-//            log_message("no granting req or login cookie from $ENV{'REMOTE_ADDR'}");
-//            notok("no_g_or_l");
-//        }
-//        else {
-//            log_message("no granting req, connection from $ENV{'REMOTE_ADDR'}");
-//            notok("no_g");
-//        }
-//        exit;
-//    }
-//
-//}
-//
-//sub check_l_cookie {
+/* returns NULL if o.k.                                                       */
+/*   else a description of the failure                                        */
+char *check_l_cookie(login_rec *l)
+{
 //    my ($c_user, $c_version, $c_type, $c_creds, $c_appsrv_id, $c_app_id, $c_create_ts, $c_last_ts);
 //    my $wtr = gensym;
 //    my $rdr = gensym;
@@ -650,10 +556,14 @@
 //
 //    $user = $c_user;
 //    $creds = $c_creds;
-//    return "success";
-//}
+    return((char *)NULL);
+}
+
+
+
 //
-//sub get_cookie_created {
+char *get_cookie_created(char *line)
+{
 //    my($line) = @_;
 //    my $ret;
 //    my $wtr = gensym;
@@ -673,8 +583,8 @@
 //    }
 //    $ret = <$rdr>;
 //    close $rdr; close $err;
-//    return $ret;
-//}
+    return line;
+}
 //
 //sub url_encode {
 //    my ($in) = @_;
@@ -697,22 +607,6 @@
 //    log_message ("WARNING old module version running on $host: version: $version why i know: $notes");
 //}
 //
-//sub log_message {
-//    my ($message) = @_;
-//
-//    print STDERR scalar localtime, " PUBCOOKIE_LOGINSRV_LOG ", $message, "\n";
-//}
-//
-//sub log_error {
-//    my ($message) = @_;
-//
-//    log_message("PUBCOOKIE SYSTEM ERROR: " . $message);
-//    my $cmd = "$send_pilot_cmd pcookie_login:TRIG:1:pubcookie: $message: this trigger will have to manually cleared";
-//    $cmd =~ s/(['"!])/\\$1/;
-//    log_message("sending message to pilot $cmd");
-//    `$cmd`;
-//}
-//
 //sub get_next_serial {
 //    return 1;
 //}
@@ -721,9 +615,6 @@
 //    my ( $v ) = shift;
 //    $v =~ /^(.*)$/;
 //    return $1;
-//}
-//
-//sub clean {
 //}
 //
 //sub decode_g_req_cookie {
@@ -775,274 +666,18 @@
 //    $name .= "=";
 //    my $c_string = $ENV{'HTTP_COOKIE'};
 //
-//    while ( ($i=index($c_string, $name, $i+1)) != -1 ) {
-//        my $end = index($c_string, ";", $i);
-//        $end = ( $end == -1 ) ? length($c_string) : $end;
-//	my $len = $end - $i - length($name);
-//        push( @cookies, substr($c_string, $i+length($name), $len) );
+//    while ( (i=index(c_string, name, i+1)) != -1 ) {
+//        end = index(c_string, ";", i);
+//        end = ( end == -1 ) ? length(c_string) : end;
+//	  my len = end - i - length(name);
+//        push( @cookies, substr(c_string, i+length(name), len) );
 //    }
 //
 //    return @cookies;
 //}
 //
-//sub check_user_agent {
-// 
-//  if ( ! open OK_AGENTS, $ok_browsers_file ) {
-//      log_error("can't open ok browsers file: $ok_browsers_file, continuing w/o browser checking");
-//      return(0);
-//  }
 //
-//  my @ok_browsers = <OK_AGENTS>;
-//  grep chomp($_), @ok_browsers;
 //
-//  if ( grep $ENV{'HTTP_USER_AGENT'} =~ /$_/, @ok_browsers ) {
-//      return(0);
-//  }
-//  else {
-//      log_message("bad agent: $ENV{'HTTP_USER_AGENT'} $host $uri");
-//      notok("bad_agent"); 
-//  }
-//
-//}
-//
-//
-//################################### part 1
-//sub print_login_page_part1 {
-//    my ($focus) = @_;
-//
-//    print <<"EOS";
-//<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-//<HTML>
-//<HEAD>
-//<TITLE>UW NetID Login</TITLE>
-//</HEAD>
-//
-//EOS
-//
-//if ( $focus ) {
-//    print "<BODY BGCOLOR=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n";
-//}
-//else {
-//    print "<BODY BGCOLOR=\"#FFFFFF\">\n";
-//}
-//
-//    print <<"EOS";
-//
-//<CENTER>
-//
-//EOS
-//
-//    &print_table_start;
-//    &print_uwnetid_logo;
-//
-//}
-//
-//################################### The beginning of the table
-//sub print_table_start {
-//
-//    print "<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520>\n";
-//
-//}
-//
-//
-//################################### UWNetID Logo
-//sub print_uwnetid_logo {
-//
-//    print "<TR>\n<TD WIDTH=300 VALIGN=\"MIDDLE\">\n";
-//    print "<IMG SRC=\"/images/login.gif\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\">\n";
-//
-//}
-//
-//################################### part 2a
-//sub print_login_page_part2a {
-//
-//    print <<"EOS";
-//<P>The resource you requested requires you to log in with your
-//UW NetID and password.</P>
-//
-//EOS
-//}
-//
-//################################### part 2b
-//sub print_login_page_part2b {
-//
-//    print <<"EOS";
-//<p>Need a UW NetID or forget your password? Go to the <a
-//href="http://www.washington.edu/computing/uwnetid/">UW NetID Home
-//Page</a> for help.</p>
-//
-//<p>Please send email to <a href="mailto:help\@cac.washington.edu">
-//help\@cac.washington.edu</a> to report problems.</p>
-//
-//</TD>
-//
-//EOS
-//}
-//
-//################################### part 3
-//sub print_login_page_part3 {
-//    my($word) = @_;
-//
-//    print <<"EOS";
-//
-//<TD WIDTH=9>&nbsp;</TD>
-//
-//<TD WIDTH=2 BGCOLOR="#000000"><IMG SRC="/images/1pixffcc33iystpiwfy.gif" WIDTH="1" HEIGHT="1" ALIGN="BOTTOM" ALT=""></TD>
-//
-//<TD WIDTH=9>&nbsp;</TD>
-//
-//<TD WIDTH=200 VALIGN="MIDDLE">
-//<FORM METHOD="POST" ACTION="/" ENCTYPE="application/x-www-form-urlencoded" NAME="query">
-//<p>Enter your UW NetID and $word below, then click the Login
-//button.</p>
-//<P>
-//<B>UW NetID:</B><BR>
-//<INPUT TYPE="TEXT" NAME="user" SIZE="20">
-//<BR>
-//<P>
-//
-//EOS
-//
-//# the bob@u text
-//# <font size="-1">(If your UW email address is bob\@u.washington.edu,
-//# then your UW NetID is bob.)</font>
-//
-//}
-//
-//
-//################################### part 4
-//sub print_login_page_part4 {
-//
-//    print <<"EOS";
-//
-//<P>
-//<STRONG><INPUT TYPE="SUBMIT" NAME="submit" VALUE="Login"></STRONG>
-//
-//<INPUT TYPE="hidden" NAME="one" VALUE="$appsrvid">
-//<INPUT TYPE="hidden" NAME="two" VALUE="$appid">
-//<INPUT TYPE="hidden" NAME="three" VALUE="$creds">
-//<INPUT TYPE="hidden" NAME="four" VALUE="$version">
-//<INPUT TYPE="hidden" NAME="five" VALUE="$method">
-//<INPUT TYPE="hidden" NAME="six" VALUE="$host">
-//<INPUT TYPE="hidden" NAME="seven" VALUE="$uri">
-//<INPUT TYPE="hidden" NAME="eight" VALUE="$args">
-//<INPUT TYPE="hidden" NAME="fr" VALUE="$fr">
-//<INPUT TYPE="hidden" NAME="post_stuff" VALUE="$post_stuff">
-//
-//</FORM>
-//
-//</TD>
-//
-//EOS
-//}
-//
-//################################### part expire_info
-//sub print_login_page_part_expire_info {
-//
-//    print <<"EOS";
-//
-//</TR>
-//<TR>
-//
-//<TD COLSPAN=5 ALIGN=CENTER>
-//
-//<p><br>UW NetID login lasts 8 hours or until you exit your browser. To
-//protect your privacy, <STRONG>exit your Web browser</STRONG> when you are
-//done with this session.</p>
-//
-//</td>
-//EOS
-//}
-//
-//################################### part 5
-//sub print_login_page_part5 {
-//
-//    print <<"EOS";
-//
-//</TR>
-//<TR>
-//
-//<TD COLSPAN=5 ALIGN=CENTER>
-//
-//EOS
-//    &print_copyright;
-//    print <<"EOS";
-//
-//</td>
-//</tr>
-//
-//</TABLE>
-//
-//</CENTER>
-//</BODY></HTML>
-//EOS
-//}
-//
-//################################### print_problem 1
-//sub print_problem1 {
-//
-//    print <<"EOS";
-//
-//<P><B><font size="+1" color="#FF0000">A problem has been detected!</font></B></P>
-//
-//<p><b><font size="+1">Either your browser is not configured to accept cookies, 
-//or the URL address you opened contains a shortened domain name.</font></b></p>
-//
-//<p>Review <A HREF="http://www.washington.edu/computing/web/login-problems.html">Common
-//Problems With the UW NetID Login Page</A> for further advice.</p>
-//
-//<p>&nbsp;</p>
-//
-//EOS
-//}
-//
-//################################### print_problem 2 JS
-//sub print_problem2_js {
-//
-//    print <<"EOS";
-//
-//    document.write("<P><B><font size=\\"+1\\" color=\\"#FF0000\\">A problem has been detected!</font></B></P>");
-//    document.write("<p><b><font size=\\"+1\\">Either you tried to use the BACK button to return to pages you");
-//    document.write(" visited before the UW NetID login page, or the URL address you opened contains a shortened");
-//    document.write(" domain name. </font></b></p>");
-//    document.write("<p>Review <A HREF=\\"http://www.washington.edu/computing/web/login-problems.html\\">Common");
-//    document.write(" Problems With the UW NetID Login Page</A> for further advice.</p>");
-//    document.write("<p>&nbsp;</p>");
-//
-//EOS
-//}
-//
-//################################### print_problem 3 JS
-//sub print_problem3_js {
-//
-//    print <<"EOS";
-//
-//    document.write("<P><B><font size=\\"+1\\" color=\\"#FF0000\\">This browser doesn't accept cookies!</font></B></P>");
-//
-//    document.write("<p><b><font size=\\"+1\\">Your browser must <a href=\\"http://www.washington.edu/computing/web/cookies.html\\">accept cookies</a> in");
-//    document.write(" order to use the UW NetID login page.</font></b></p>");
-//
-//    document.write("<p>&nbsp;</p>");
-//
-//EOS
-//}
-//
-//################################### print_problem 2
-//sub print_problem2 {
-//
-//    print <<"EOS";
-//
-//<P><B><font size="+1" color="#FF0000">A problem has been detected!</font></B></P>
-//
-//<p><b><font size="+1">Either you tried to use the BACK button to return to pages you
-//visited before the UW NetID login page, or the URL address you opened contains a shortened domain name. </font></b></p>
-//
-//<p>Review <A HREF="http://www.washington.edu/computing/web/login-problems.html">Common Problems With the UW NetID Login Page</A> for further advice.</p>
-//
-//<p>&nbsp;</p>
-//
-//EOS
-//}
 //
 //################################### print_problem 3
 //sub print_problem3 {
@@ -1059,195 +694,464 @@
 //EOS
 //}
 //
-//################################### print_problem 4
-//sub print_problem4 {
-//
-//    print <<"EOS";
-//
-//<P><B><font size="+1" color="#FF0000">A problem has been detected!</font></B></P>
-//
-//<p><b><font size="+1">The resource you requested requires "multipart/form-data"
-//capabilities not supported by the UW NetID login page. Please email <a
-//href="mailto:help\@cac.washington.edu">help\@cac.washington.edu</a> for further
-//assistance.</font></b></p>
-//
-//<p>&nbsp;</p>
-//
-//EOS
-//}
-//
-//################################### print_problem bad_agent
-//sub print_problem_bad_agent {
-//
-//    print <<"EOS";
-//
-//<P><B><font size="+1" color="#FF0000">This browser is either incompatible or has serious security flaws.</font></B></P>
-//
-//<p><b><font size="+1">Please upgrade to the most recent version of either 
-//<A HREF="http://home.netscape.com/computing/download/index.html">Netscape Navigator</A>,
-//<A HREF="http://www.microsoft.com/windows/ie/default.htm">Internet Explorer</A>,
-//or <A HREF="http://www.opera.com/">Opera</A>.  
-//The browser you are using identifies itself as:<P><TT>$ENV{'HTTP_USER_AGENT'}</TT><P>  
-//Please email <a href="mailto:help\@cac.washington.edu">help\@cac.washington.edu</a> for further assistance.</font></b></p> 
-//
-//<p>&nbsp;</p>
-//
-//EOS
-//
-//}
-//
-//################################### print copyright
-//sub print_copyright {
-//
-//    print <<"EOS";
-//<address>&#169; 1999 University of Washington</address>
-//EOS
-//
-//}
-//
-//################################### print j_test
-//sub print_j_test {
-//
-//    print <<"EOS";
-//
-//<SCRIPT LANGUAGE="JavaScript"><!--
-//
-//name = "cookie_test";
-//s = (new Date().getSeconds());
-//document.cookie = name + "=" + s;
-//
-//dc = document.cookie;
-//prefix = name + "=";
-//begin = dc.indexOf("; " + prefix);
-//if (begin == -1) {
-//    begin = dc.indexOf(prefix);
-//    if (begin != 0) returned = "";
-//} else
-//    begin += 2;
-//end = document.cookie.indexOf(";", begin);
-//if (end == -1)
-//    end = dc.length;
-//returned = unescape(dc.substring(begin + prefix.length, end));
-//
-//if ( returned == s ) {
-//EOS
-//#------end
-//
-//    &print_problem2_js;
-//
-//    #----------start
-//    print <<"EOS";
-//    document.cookie = name + "=; expires=Thu, 01-Jan-70 00:00:01 GMT";
-//}
-//else {
-//EOS
-//#------end
-//
-//    &print_problem3_js;
-//
-//    #----------start
-//    print <<"EOS";
-//}
-//
-//// -->
-//</SCRIPT>
-//
-//EOS
-//
-//
-//}
-//
-//################################### print print_big_scary_err_page
-//sub print_big_scary_err_page {
-//
-//    &print_j_test;
-//
-//    print_out("<NOSCRIPT>\n");
-//
-//    &print_problem1;
-//
-//    print_out("</NOSCRIPT>\n");
-//
-//}
-//
-//
-//sub notok {
-//    my ($notok_code) = @_;
-//
-//#   here for the record are the notok codes
-//#   since they will change when we make the login cgi C
-//#   it's not worth doing any maintainable :)
+
+
+  /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+ /*	functions                                                           */
+/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+
+void print_j_test() 
+{
+
+    print_out("%s", J_TEST_TEXT1);
+    print_out("%s", J_TEST_TEXT2);
+    print_out("%s", J_TEST_TEXT3);
+    print_out("%s", J_TEST_TEXT4);
+    print_out("%s", J_TEST_TEXT5);
+
+}
+
+void notok_no_g_or_l() 
+{
+    print_j_test();
+
+    print_out("<NOSCRIPT>\n");
+
+    print_out("%s", NOTOK_NO_G_OR_L_TEXT1);
+
+    print_out("</NOSCRIPT>\n");
+
+}
+
+void notok_no_g() 
+{
+    print_out("%s", NOTOK_NO_G_TEXT1);
+
+}
+
+void notok_formmultipart() 
+{
+    print_out("%s", NOTOK_FORMMULTIPART_TEXT1);
+
+}
+
+void notok_need_ssl() 
+{
+}
+
+void notok_bad_agent() 
+{
+    print_out("%s", NOTOK_BAD_AGENT_TEXT1);
+
+}
+
+void notok_generic() 
+{
+    print_out("%s", NOTOK_GENERIC_TEXT1);
+
+}
+
+/* prints the error pages                                                     */
 //# 1 - no cookies or non-fqdn 
 //#     (http://staff.washington.edu/dors/projects/login/problem1.html)
-//# no_g - 2 - backing in or non-fqd
+//# 2 - backing in or non-fqd
 //#     (http://staff.washington.edu/dors/projects/login/problem2.html)
 //# 3 - no cookies!
 //#     (http://staff.washington.edu/dors/projects/login/problem3.html)
-//# formmultipart - 4 - multipart/form-data
+//# 4 - multipart/form-data
 //#     (http://staff.washington.edu/dors/projects/login/problem4.html)
 //# 5 - not ssl, impossible but we still look for it.
-//# bad_agent - reject this browser agent
 //#
-//
-//    print_out("Content-Type: text/html\n");
-//
-//    my $string_to_test_for = &PBC_FORM_MP_COOKIENAME;
-//    if ( $ENV{'HTTP_COOKIE'} =~ /$string_to_test_for/ ) {
-//        print_out ("Set-Cookie: " . &PBC_FORM_MP_COOKIENAME . "=done; domain=.washington.edu; path=/; expires=Fri, 11-Jan-1990 00:00:01 GMT");
-//    }
-//
-//    print_out("\n\n");
-//
-//    print_login_page_part1(0);
-//
-//    if ( $notok_code eq "no_g_or_l" ) {
-//        &print_big_scary_err_page;
-//    }
-//    elsif( $notok_code eq "no_g" ) {
-//        &print_problem2;
-//    }
-//    elsif( $notok_code eq "formmultipart" ) {
-//        &print_problem4;
-//    }
-//    elsif( $notok_code eq '5' ) {
-//        &print_problem5;
-//    }
-//    elsif( $notok_code eq "bad_agent" ) {
-//        &print_problem_bad_agent;
-//    }
-//
-//    &print_login_page_part5;
-//
-//    exit;
-//}
-//
+void notok ( void (*notok_f)() )
+{
+    print_out("Content-Type: text/html\n","");
 
-  /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
- /*	general utility thingies                                            */
-/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+    /* if we got a form multipart cookie, reset it */
+    if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), PBC_FORM_MP_COOKIENAME) ) {
+        print_out("Set-Cookie: %s=done; domain=.washington.edu; path=/; expires=Fri, 11-Jan-1990 00:00:01 GMT", PBC_FORM_MP_COOKIENAME);
+    }
 
-void print_out(cahr *out) {
-    printf ("%s\n", out);
-}
+    print_out("\n\n","");
 
-char *get_my_hostname() {
-    struct utsname	myname;
+    print_login_page_part1(NO_FOCUS);
 
-    if ( uname(&myname) < 0 )
-        log_error("problem doing uname lookup");
+    notok_f();
+
+    print_login_page_part5();
 
 }
 
 
+int cookie_test() 
+{
+    char        *cookies;
+
+    if ( !(cookies = calloc( strlen(getenv("HTTP_COOKIE"))+1, sizeof(char) )) ){
+        notok(notok_no_g_or_l);
+        return(0);
+    }
+    
+    if ( strstr(cookies, PBC_FORM_MP_COOKIENAME) ) {
+        notok(notok_formmultipart);
+        return(0);
+    }
+
+    if ( !strstr(cookies, PBC_G_REQ_COOKIENAME) ) {
+
+        if ( !strstr(cookies, PBC_L_COOKIENAME) ) {
+            log_message("no granting req or login cookie from %s", getenv("REMOTE_ADDR"));
+            notok(notok_no_g_or_l);
+            return(0);
+        }
+        else {
+            log_message("no granting req, connection from %s", getenv("REMOTE_ADDR"));
+            notok(notok_no_g);
+            return(0);
+        }
+    }
+    
+    free(cookies);
+    return(1);
+}
+
+/*	################################### print copyright                   */
+void print_copyright()
+{
+    print_out("<address>&#169; 1999 University of Washington</address>\n","");
+
+}
 
 
+/*	################################### The beginning of the table        */
+void print_table_start()
+{
+    print_out("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520>\n","");
+
+}
+
+/*	################################### UWNetID Logo                      */
+void print_uwnetid_logo()
+{
+    print_out("<TR>\n<TD WIDTH=300 VALIGN=\"MIDDLE\">\n","");
+    print_out("<IMG SRC=\"/images/login.gif\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\">\n","");
+
+}
+
+/*       ################################### part 1                           */
+void print_login_page_part1(int focus)
+{
+    print_out("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n","");
+    print_out("<HTML>\n","");
+    print_out("<HEAD>\n","");
+    print_out("<TITLE>UW NetID Login</TITLE>\n","");
+    print_out("</HEAD>\n","");
+
+    if ( focus ) {
+        print_out("<BODY BGCOLOR=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n","");
+    }
+    else {
+        print_out("<BODY BGCOLOR=\"#FFFFFF\">\n","");
+    }
+
+    print_out("<CENTER>\n","");
+
+    print_table_start();
+    print_uwnetid_logo();
+
+}
+
+/*	################################### part 2a                           */
+void print_login_page_part2a()
+{
+    print_out("<P>The resource you requested requires you to log in with your UW NetID and password.</P>\n");
+
+}
+
+/*	################################### part 2b                           */
+void print_login_page_part2b()
+{
+
+    print_out("<p>Need a UW NetID or forget your password? Go to the <a href=\"http://www.washington.edu/computing/uwnetid/\">UW NetID Home Page</a> for help.</p>\n");
+    print_out("<p>Please send email to <a href=\"mailto:help@cac.washington.edu\"> help@cac.washington.edu</a> to report problems.</p>\n");
+    print_out("</TD>\n");
+
+}
+
+
+
+/*	################################### part 3                            */
+void print_login_page_part3(char *word) 
+{
+    print_out("<TD WIDTH=9>&nbsp;</TD>\n\n");
+    print_out("<TD WIDTH=2 BGCOLOR=\"#000000\"><IMG SRC=\"/images/1pixffcc33iystpiwfy.gif\" WIDTH=\"1\" HEIGHT=\"1\" ALIGN=\"BOTTOM\" ALT=\"\"></TD>\n\n");
+    print_out("<TD WIDTH=9>&nbsp;</TD>\n\n");
+    print_out("<TD WIDTH=200 VALIGN=\"MIDDLE\">\n");
+    print_out("<FORM METHOD=\"POST\" ACTION=\"/\" ENCTYPE=\"application/x-www-form-urlencoded\" NAME=\"query\">\n");
+    print_out("<p>Enter your UW NetID and %s below, then click the Login button.</p>\n", word);
+    print_out("<P>\n");
+    print_out("<B>UW NetID:</B><BR>\n");
+    print_out("<INPUT TYPE=\"TEXT\" NAME=\"user\" SIZE=\"20\">\n");
+    print_out("<BR>\n");
+    print_out("<P>\n");
+
+}
+
+/*	################################### part 4                            */
+void print_login_page_part4(login_rec *l)
+{
+
+    print_out("<P>\n");
+    print_out("<STRONG><INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\"Login\"></STRONG>\n");
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"one\" VALUE=\"%s\">\n", l->appsrvid);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"two\" VALUE=\"%s\">\n", l->appid);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"three\" VALUE=\"%s\">\n", l->creds);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"four\" VALUE=\"%s\">\n", l->version);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"five\" VALUE=\"%s\">\n", l->method);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"six\" VALUE=\"%s\">\n", l->host);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"seven\" VALUE=\"%s\">\n", l->uri);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"eight\" VALUE=\"%s\">\n", l->args);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"fr\" VALUE=\"%s\">\n", l->fr);
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"%s\">\n", l->post_stuff);
+    print_out("</FORM>\n");
+    print_out("</TD>\n");
+
+}
+
+/*	################################### part 5                            */
+void print_login_page_part5() 
+{
+    print_out("</TR>\n");
+    print_out("<TR>\n");
+    print_out("<TD COLSPAN=5 ALIGN=CENTER>\n");
+
+    print_copyright();
+
+    print_out("</td>\n");
+    print_out("</tr>\n");
+    print_out("</TABLE>\n");
+    print_out("</CENTER>\n");
+    print_out("</BODY></HTML>\n");
+}
+
+/*	################################### part expire_info                  */
+void print_login_page_part_expire_info()
+{
+    print_out("</TR>\n<TR>\n");
+
+    print_out("<TD COLSPAN=5 ALIGN=CENTER>\n");
+
+    print_out("<p><br>UW NetID login lasts 8 hours or until you exit your browser. To protect your privacy, <STRONG>exit your Web browser</STRONG> when you are done with this session.</p>\n");
+
+    print_out("</td>\n");
+
+}
+
+int check_user_agent()
+{
+    char        *agent;
+    char        line[PBC_4K];
+    FILE	*ifp;
+
+    if ( !(agent = calloc( strlen(getenv("HTTP_USER_AGENT"))+1, sizeof(char) )) ){
+        /* what does it mean if HTTP_USER_AGENT isn't set? */
+        log_error("a request without a user agent?");
+        return(1);
+    }
+    
+    if ( !(ifp = fopen(OK_BROWSERS_FILE, "r")) ) {
+        log_error("can't open ok browsers file: %s, continuing", OK_BROWSERS_FILE);
+        return(1);
+    }
+
+    while( fgets(line, strlen(line),ifp ) ) {
+        if( line[0] == '#' )
+            continue;
+        if( strstr( agent, line ) )
+            return(1);
+    }
+
+    return(0);
+
+}
+
+
+void print_redirect_page(login_rec *l)
+{
+    int		serial = 0;
+    char	create_l_line[PBC_1K];
+    char	create_g_line[PBC_1K];
+    char	*submit_value;
+    char	*g_cookie;
+    char	*l_cookie;
+    char	*message;
+    char	*redirect_dest;
+
+    serial = get_next_serial();
+
+    /* setup to make the granting and login cookies  */
+    snprintf(create_l_line, strlen(create_l_line)+1, "%s %s %s %s %d %d %s%s %s%s",
+    		url_encode(l->user),
+                url_encode(l->appsrvid),
+                url_encode(l->appid),
+                PBC_COOKIE_TYPE_L,
+                l->creds,
+                serial,
+                KEY_DIR,
+                CRYPT_KEY_FILE,
+                KEY_DIR,
+                CERT_KEY_FILE);
+
+    snprintf(create_g_line, strlen(create_g_line)+1, "%s %s %s %s %d %d %s%s %s%s",
+    		url_encode(l->user),
+                url_encode(l->appsrvid),
+                url_encode(l->appid),
+                PBC_COOKIE_TYPE_G,
+                l->creds,
+                serial,
+                KEY_DIR,
+                CRYPT_KEY_FILE,
+                KEY_DIR,
+                CERT_KEY_FILE);
+
+    /* cook up them cookies */
+    if ( !(l_cookie = get_cookie_created(create_l_line)) ||
+         !(g_cookie = get_cookie_created(create_g_line)) ) {
+
+          snprintf( message, strlen(message)+1, "%s%s%s%s%s%s",
+		PBC_EM1_START,
+		TROUBLE_CREATING_COOKIE,
+		PBC_EM1_END,
+      		PBC_EM2_START,
+		PROBLEMS_PERSIST,
+         	PBC_EM2_END);
+          print_login_page(message, "cookie create failed", l->creds, 
+		NO_CLEAR_LOGIN);
+          log_error("Not able to create cookie for user %s at %s-%s", l->user, 
+		l->appsrvid, l->appid);
+          return;
+    }
+
+//my $g_set_cookie = "Set-Cookie: pubcookie_g=$g_cookie; domain=.washington.edu; path=/; secure";
+//my $s_set_cookie = "Set-Cookie: pubcookie_l=$l_cookie; domain=$hostname; path=$login_dir; secure";
+//my $clear_g_req_cookie = "Set-Cookie: " . &PBC_G_REQ_COOKIENAME . "=done; domain=.washington.edu; path=/; expires=Fri, 11-Jan-1990 00:00:01 GMT";
 //
-//my $hostname = $ENV{'HTTP_HOST'};
-//# if this is a test server use the test name
-//if ( $hostname =~ /^pcookiel3/ ||
-//     $hostname =~ /^weblogintest/ ) {
-//    $hostname = "weblogintest.cac.washington.edu";
+//
+//# whip up the url to send the browser back to
+//my $redirect_uri;
+//if ( $fr eq "NFR" || $fr eq "" ) {
+//    $redirect_uri = $uri;
 //}
 //else {
-//    $hostname = "weblogin.washington.edu";
+//    if ( $fr =~ /^\// ) {
+//        $redirect_uri = $fr;
+//    } 
+//    else {
+//        $redirect_uri = "/" . $fr;
+//    } 
 //}
+//
+//my $redirect_dest = "https://". $host . $redirect_uri;
+//if ( $args ) {
+//    $redirect_dest .= "?" . decode_base64($args);
+//}
+//
+//# extra debugging
+//log_message ("main: about to do redirect of $user for host $host, redirect is: $redirect_dest");
+//
+//# now blat out the redirect page
+//print $g_set_cookie, "\n";
+//print $s_set_cookie, "\n";
+//print $clear_g_req_cookie, "\n";
+//
+    if ( l->post_stuff ) {
+//#    print_out("Pragma: No-Cache\n");
+//    print_out("Content-Type: text/html\n\n\n");
+//    print_out("<HTML>");
+//    # when the page loads click on the last element (which will always be the 
+//    # submit) in the array of elements in the first, and only, form.
+//    print_out("<BODY BGCOLOR=\"white\" onLoad=\"document.forms[0].elements[document.forms[0].elements.length-1].click()\">\n");
+//    print_out("<CENTER>");
+//    &print_table_start;
+//    print_out("<TR><TD ALIGN=\"LEFT\">\n");
+//    print_out("<FORM METHOD=\"POST\" ACTION=\"$redirect_dest\" ENCTYPE=\"application/x-www-form-urlencoded\" NAME=\"query\">\n");
+//
+//    my $post_args = new CGI($post_stuff);
+//    $post_args->autoEscape(undef);
+//    my $limitations_mentioned;
+//    foreach my $name ( $post_args->param ) {
+//        my $value = $post_args->param($name);
+//        $name =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;
+//        if ( $value =~ /"/ ) {
+//            if ( ! $limitations_mentioned ) {
+//                print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
+//                $limitations_mentioned++;
+//            }
+//            print_out("<TEXTAREA COLS=0 ROWS=0 NAME=\"$name\">\n$value</TEXTAREA>");
+//            print_out("<P>\n");
+//        }
+//        else {
+//            # we don't want to cover other people's submits
+//            if ( $name eq "submit" )  {
+//                $submit_value = $value;
+//            }
+//            else {
+//                print_out("<INPUT TYPE=\"hidden\" NAME=\"$name\" VALUE='$value'>\n");
+//            }
+//        }
+//    }
+//
+        print_out("</TD></TR>\n");
+        print_uwnetid_logo();
+        print_out("<P>");
+        print_out("%s\n", PBC_POST_NO_JS_TEXT);
+        print_out("</TD></TR></TABLE>\n");
+
+        /* put submit at the bottom so it looks better and */
+        if( submit_value )
+            print_out("<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\'%s\'>\n", submit_value);
+        else
+            print_out("<INPUT TYPE=\"SUBMIT\" VALUE=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
+
+        print_out("</FORM>\n");
+        print_copyright();
+        print_out("</CENTER>");
+        print_out("</BODY></HTML>\n");
+    }
+    else {
+        print_out("Content-Type: text/html\n\n\n");
+        print_out("<HTML><HEAD>\n");
+        print_out("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%s;URL=%s\">\n", REFRESH, redirect_dest);
+        print_out("<BODY BGCOLOR=\"white\">");
+        print_out("<!--redirecting to %s-->", redirect_dest);
+        print_out("</BODY></HTML>\n");
+    }
+
+}
+
+
+login_rec *get_query() 
+{
+    login_rec		*l = malloc(sizeof(login_rec));
+
+    l->args 		= get_string_arg("eight", YES_NEWLINES);
+    l->uri 		= get_string_arg("seven", NO_NEWLINES);
+    l->method 		= get_string_arg("five", NO_NEWLINES);
+    l->version 		= get_string_arg("four", NO_NEWLINES);
+//    l->creds 		= get_string_arg("three", NO_NEWLINES);
+    l->appid 		= get_string_arg("two", NO_NEWLINES);
+    l->appsrvid 	= get_string_arg("one", NO_NEWLINES);
+    l->fr 		= get_string_arg("fr", NO_NEWLINES);
+
+    l->user 		= get_string_arg("user", NO_NEWLINES);
+    l->user 		= clean_username(l->user);
+    l->pass 		= get_string_arg("pass", NO_NEWLINES);
+    l->pass2 		= get_string_arg("pass2", NO_NEWLINES);
+    l->post_stuff	= get_string_arg("post_stuff", YES_NEWLINES);
+
+//    &decode_g_req_cookie;
+
+    return(l);
+}
+
+
+
