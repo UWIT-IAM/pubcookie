@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.25 2004-03-09 20:06:02 jteaton Exp $
+ * $Id: flavor_getcred.c,v 1.26 2004-03-31 23:39:53 fox Exp $
  */
 
 
@@ -196,7 +196,7 @@ static login_result process_getcred(pool *p, const security_context *context,
 
     basic_res = login_flavor_basic.process_request(p, context, l, c, errstr);
 
-    if (basic_res != LOGIN_OK) {
+    if ((basic_res!=LOGIN_OK) || (!*l->user)) {
 	/* we aren't authenticated; we need to do that */
 	return basic_res;
     }
