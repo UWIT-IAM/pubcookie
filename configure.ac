@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.46 $)
+AC_REVISION($Revision: 1.47 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -429,6 +429,10 @@ if test "x$ssl_include_path" = "x" -a -d "/usr/local/ssl/include"; then
     ssl_include_path="-I/usr/local/ssl/include"
 fi
 
+if test "x$ssl_include_path" = "x" -a -d "/usr/include/openssl"; then
+    ssl_include_path="-I/usr/include/openssl"
+fi
+
 if test "x$ssl_lib_path" = "x" -a -d "/usr/local/ssl/include"; then
     ssl_lib_path="-L/usr/local/ssl/lib"
 fi
@@ -448,12 +452,15 @@ AC_CHECK_LIB(ssl,SSL_library_init,,
 AC_CHECK_HEADERS([openssl/ssl.h])
 
 if test "$ac_cv_header_openssl_ssl_h" = "yes"; then
-    AC_CHECK_HEADERS([openssl/crypto.h openssl/x509.h openssl/pem.h openssl/err.h openssl/rand.h openssl/des.h])
-    AC_DEFINE(OPENSSL_IN_DIR, 1, [Define to 1 if openssl is in include/openssl])
+     AC_CHECK_HEADERS([openssl/crypto.h openssl/x509.h openssl/pem.h openssl/err.h openssl/rand.h openssl/des.h], 
+	[AC_DEFINE(OPENSSL_IN_DIR, 1, 
+		 [Define to 1 if openssl is in include/openssl])],
+		[AC_MSG_ERROR([can't find required SSL header files (may need --with-ssl-inc-dir)])])
 else
-    AC_CHECK_HEADERS([crypto.h x509.h pem.h ssl.h err.h rand.h des.h])
-    AC_DEFINE(OPENSSL_NOT_IN_DIR, 1,
-              [Define to 1 if openssl is directly in the include path.])
+     AC_CHECK_HEADERS([crypto.h x509.h pem.h err.h rand.h des.h], 
+	[AC_DEFINE(OPENSSL_NOT_IN_DIR, 1, 
+		 [Define to 1 if openssl is directly in include path.])],
+		[AC_MSG_ERROR([can't find required SSL header files (may need --with-ssl-inc-dir)])])
 fi
 
 # Login Server specific stuff.
