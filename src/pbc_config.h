@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.48 2002-05-09 23:17:20 willey Exp $
+    $Id: pbc_config.h,v 1.49 2002-05-18 00:58:51 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -239,7 +239,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_PASS "pass"
 #define PBC_GETVAR_PASS2 "pass2"
 #define PBC_GETVAR_GREQ_CREDS "creds_from_greq"
-
+/* added May 2002 */
+#define PBC_GETVAR_PINIT "pinit"
 
 /* 
  things that are used both places (module and the library)
