@@ -42,7 +42,7 @@
  */
 
 /*
- * $Revision: 1.4 $
+ * $Revision: 1.5 $
  */
 
 /* xxx this should almost certainly use the registry on windows */
@@ -97,6 +97,9 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 const char *libpbc_config_getstring(const char *key, const char *def)
 {
     int opt;
+
+    if ( key == NULL )
+        return def;
     
     for (opt = 0; opt < nconfiglist; opt++) {
         if (*key == configlist[opt].key[0] &&

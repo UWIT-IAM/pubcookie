@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.48 $
+ * $Revision: 1.49 $
  */
 
 
@@ -1410,7 +1410,7 @@ int cgiMain()
     /* log the arrival */
     log_message("%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
                 l->first_kiss, 
-                l->user, 
+                l->user == NULL ? "(null)" : l->user, 
                 cgiRemoteAddr, 
                 l->host, 
                 l->appid,
@@ -1422,7 +1422,7 @@ int cgiMain()
         log_message("%s bad agent: %s user: %s client_addr: %s",
                     l->first_kiss, 
                     user_agent(), 
-                    l->user, 
+                    l->user == NULL ? "(null)" : l->user, 
                     cgiRemoteAddr);
         notok(notok_bad_agent);
 	goto done;
@@ -1453,7 +1453,7 @@ int cgiMain()
 	/* the reward for a hard days work */
 	log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
 		l->first_kiss, 
-		l->user, 
+                    l->user == NULL ? "(null)" : l->user, 
 		cgiRemoteAddr, 
 		l->host, 
 		l->appid);
@@ -2269,7 +2269,9 @@ login_rec *get_query()
     }
 
     if (debug) { 
-	fprintf(stderr, "get_query: from login user: %s\n", l->user);
+	fprintf(stderr, "get_query: from login user: %s\n", 
+            l->user == NULL ? "(null)" : l->user
+            );
 	fprintf(stderr, "get_query: from login version: %s\n", l->version);
 	fprintf(stderr, "get_query: from login creds: %c\n", l->creds);
 	fprintf(stderr, "get_query: from login appid: %s\n", l->appid);
