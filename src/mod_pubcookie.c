@@ -1,8 +1,24 @@
+/*
 
-/* Copyright 1999, University of Washington.  All rights reserved. */
+    Copyright 1999, University of Washington.  All rights reserved.
+
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+
+    All comments and suggestions to pubcookie@cac.washington.edu
+    More info: https:/www.washington.edu/pubcookie/
+    Written by the Pubcookie Team
+
+    this is the pubcookie apache module
+
+ */
 
 /*
-    $Id: mod_pubcookie.c,v 1.34 1999-08-11 23:00:47 willey Exp $
+    $Id: mod_pubcookie.c,v 1.35 1999-08-23 19:13:41 willey Exp $
  */
 
 /* apache includes */
@@ -268,7 +284,8 @@ int blank_cookie(request_rec *r, char *name) {
   return (int)ptr;
 }
 
-/*                                                                            */
+/* Herein we deal with the redirect of the request to the login server        */
+/*    if it was only that simple ...                                          */
 static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
     char 		 *refresh = palloc(r->pool, PBC_1K);
@@ -276,6 +293,7 @@ static int auth_failed(request_rec *r) {
     char 		 *g_req_contents = palloc(r->pool, PBC_1K);
     char 		 *e_g_req_contents = palloc(r->pool, PBC_1K);
     const char *tenc = table_get(r->headers_in, "Transfer-Encoding");
+    const char *ctype = table_get(r->headers_in, "Content-type");
     const char *lenp = table_get(r->headers_in, "Content-Length");
 #else
     char 		 *refresh = ap_palloc(r->pool, PBC_1K);
@@ -283,6 +301,7 @@ static int auth_failed(request_rec *r) {
     char 		 *g_req_contents = ap_palloc(r->pool, PBC_1K);
     char 		 *e_g_req_contents = ap_palloc(r->pool, PBC_1K);
     const char *tenc = ap_table_get(r->headers_in, "Transfer-Encoding");
+    const char *ctype = ap_table_get(r->headers_in, "Content-type");
     const char *lenp = ap_table_get(r->headers_in, "Content-Length");
 #endif
     char		 *host = NULL;
@@ -324,6 +343,21 @@ static int auth_failed(request_rec *r) {
         args = ap_pstrdup(r->pool, "");
 #endif
 
+    /* deal with GET args */
+#ifdef APACHE1_2
+    if ( r->args ) {
+	args = palloc (r->pool, (strlen (r->args) + 2) / 3 * 4);
+	base64_encode(r->args, args, strlen(r->args));
+    }
+    else
+        args = pstrdup(r->pool, "");
+#else
+    if ( r->args )
+        args = ap_uuencode(r->pool, r->args);
+    else
+        args = ap_pstrdup(r->pool, "");
+#endif
+
     r->content_type = "text/html";
 
     /* if there is a non-standard port number just tack it onto the hostname  */
@@ -346,6 +380,9 @@ static int auth_failed(request_rec *r) {
 #endif
 
     /* make the granting request */
+    /* the granting request is a cookie that we set  */
+    /* that gets sent up to the login server cgi, it */
+    /* is our main way of communicating with it      */
     ap_snprintf(g_req_contents, PBC_1K-1, 
 	  "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s", 
 	  PBC_GETVAR_APPSRVID,
@@ -366,6 +403,11 @@ static int auth_failed(request_rec *r) {
 	  args,
 	  PBC_GETVAR_FR, 
 	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
+
+    /* setup the client pull */
+    ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
+          (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
+
 
     /* the redirect for requests with POST args are  */
     /* different then reqs with only GET args        */
@@ -404,11 +446,22 @@ static int auth_failed(request_rec *r) {
     table_set(r->headers_out, "Cache-Control", "no-cache");
     table_set(r->headers_out, "Pragma", "no-cache");
 
-    refresh_e = os_escape_path(r->pool, refresh, 0);
+    /* we handle multipart/form-data by setting a cookie that tells       */
+    /* the login server to put up an error page.  now that we can detect  */
+    /* multipart/form-data reliably it will be easier to deal with it     */
+    if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
 
+        ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
+	  PBC_FORM_MP_COOKIENAME, 
+	  "1",
+	  PBC_ENTRPRS_DOMAIN);
+        table_add(r->headers_out, "Set-Cookie", new_cookie);
+    }
+
+    refresh_e = os_escape_path(r->pool, refresh, 0);
 #ifdef REDIRECT_IN_HEADER
     if ( !(tenc || lenp) || r->method_number != M_POST )
-        table_add(r->headers_out, "Refresh", refresh);
+        table_add(r->headers_out, "Refresh", refresh_e);
 #endif
     send_http_header(r);
 #else              
@@ -419,19 +472,29 @@ static int auth_failed(request_rec *r) {
     ap_table_set(r->headers_out, "Cache-Control", "no-cache");
     ap_table_set(r->headers_out, "Pragma", "no-cache");
 
+    /* we handle multipart/form-data by setting a cookie that tells       */
+    /* the login server to put up an error page.  now that we can detect  */
+    /* multipart/form-data reliably it will be easier to deal with it     */
+    if ( ctype && !strncmp(ctype,"multipart/form-data",strlen("multipart/form-data")) ) {
+
+        ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
+	  PBC_FORM_MP_COOKIENAME, 
+	  "1",
+	  PBC_ENTRPRS_DOMAIN);
+        ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
+    }
+
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
 #ifdef REDIRECT_IN_HEADER
     if ( !(tenc || lenp) )
-        ap_table_add(r->headers_out, "Refresh", refresh);
+        ap_table_add(r->headers_out, "Refresh", refresh_e);
 #endif
     ap_send_http_header(r);
 #endif
 
-    /* now send a body */
-    if ( tenc && !strcmp(tenc,"multipart/form-data") ) {
-        put_out_post(r);
-    }
-    else if ( tenc || lenp || r->method_number == M_POST ) {
+    /* now deal with the body */
+    if ( (ctype && strncmp(ctype,"multipart/fo",strlen("multipart/fo"))) &&
+        (tenc || lenp || r->method_number == M_POST) ) {
 #ifdef APACHE1_2
         rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
         rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
@@ -461,10 +524,6 @@ static int auth_failed(request_rec *r) {
 #endif
     }
     else {
-        /* setup the client pull */
-        ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
-	      (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
-
 #ifdef APACHE1_2
 #ifdef REDIRECT_IN_HEADER
         rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
@@ -952,7 +1011,7 @@ static int pubcookie_typer(request_rec *r) {
 
   if( cfg->has_granting ) {
     /* clear granting cookie */
-    ap_snprintf(new_cookie, PBC_1K-1, "%s=clear; domain=%s path=/; expires=%s; secure", 
+    ap_snprintf(new_cookie, PBC_1K-1, "%s=done; domain=%s path=/; expires=%s; secure", 
        PBC_G_COOKIENAME, 
        PBC_ENTRPRS_DOMAIN, 
        "Fri, 01-Jan-1999 00:00:01 GMT");
