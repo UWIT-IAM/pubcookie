@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.42 2001-11-27 03:18:08 willey Exp $
+    $Id: pbc_config.h,v 1.43 2001-12-13 19:47:07 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -51,7 +51,6 @@
 /* keys */
 #if defined (WIN32)
 #define PBC_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\c_key"
-#define PBC_MASTER_CRYPT_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\m_key"
 /* lives only on login servers */
 #define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
 /* lives only on login server */
@@ -65,9 +64,18 @@
 /* lives only on login server */
 #define PBC_G_KEYFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_granting.key"
 #else
+
+/* the login server builds it's key Filenames from the hostname     */
+/* unless NO_HOST_BASED_KEY_FILENAMES is set then the above static  */
+/*   filenames will be used                                         */
+#define PBC_KEY_DIR "/usr/local/pubcookie/"
+#define PBC_CRYPT_KEY_PREFIX "c_key"
+#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
+#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
+#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
+
 /* the module has directives for the key files, these are the defaults */
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
-#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
 /* lives only on login servers */
 #define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
 /* lives only on login server */
@@ -81,15 +89,7 @@
 /* lives only on login server */
 #define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
 
-/* the login server builds it's key Filenames from the hostname     */
-/* unless NO_HOST_BASED_KEY_FILENAMES is set then the above static  */
-/*   filenames will be used                                         */
-#define PBC_KEY_DIR "/usr/local/pubcookie/"
-#define PBC_CRYPT_KEY_PREFIX "c_key"
-#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
-#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
-#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
-#endif
+#endif /* if WIN32 */
 
 #define PBC_CRED1_AUTHTYPE "uwnetid"
 #define PBC_CRED2_AUTHTYPE "-"
