@@ -107,6 +107,10 @@ static char *extract_cn(char *s)
         if (q) {
             *q = '\0';
         }
+        q =strchr(p, '/');
+        if (p) {
+            *p = '\0';
+        }
     }
 
     return p;
