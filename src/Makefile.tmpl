@@ -1,10 +1,10 @@
 # -*- make -*-
 #
-#  $Id: Makefile.tmpl,v 1.7 2002-05-23 19:32:59 jteaton Exp $
+#  $Id: Makefile.tmpl,v 1.8 2002-08-08 21:28:33 willey Exp $
 
-OBJS=mod_pubcookie.o libpubcookie.o base64.o myconfig.o
+OBJS=mod_pubcookie.o libpubcookie.o base64.o pbc_myconfig.o
 
-mod_pubcookie.a:	$(OBJS)
+libpubcookie.a:	$(OBJS)
 
 .c.o:
 	$(CC) -c $(INCLUDES) $(CFLAGS) -DAPACHE1_3 $(SSL_CFLAGS) -I$(SSL_INCDIR)/openssl -I$(SSL_INCDIR) $<
