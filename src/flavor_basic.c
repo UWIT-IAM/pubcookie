@@ -15,7 +15,7 @@
 
 #include "pbc_config.h"
 
-verifier *v = NULL;
+static verifier *v = NULL;
 extern int debug;
 
 static int init_basic(void)
@@ -289,6 +289,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
 
 struct login_flavor login_flavor_basic =
 {
+    "basic", /* name */
     PBC_BASIC_CRED_ID, /* id; see libpbc_get_credential_id() */
     &init_basic, /* init_flavor() */
     &process_basic /* process_request() */

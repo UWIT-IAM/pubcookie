@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.62 $
+ * $Revision: 1.63 $
  */
 
 
@@ -1047,6 +1047,11 @@ int vector_request(login_rec *l, login_rec *c)
         break;
 
     case LOGIN_ERR:
+	/* show the user some sort of error */
+	tmpl_print_html(TMPL_FNAME "error", 
+			fl->name,
+			errstr ? errstr : 
+			"unknown error in flavor process_request");
         return PBC_FAIL;
         break;
 

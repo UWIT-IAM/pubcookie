@@ -15,6 +15,9 @@ typedef enum {
 } login_result;
 
 struct login_flavor {
+    /* a user readable flavor name */
+    const char *name;
+
     /* the unique byte representing this flavor.
        all values < 0x80 are reserved for the pubcookie distribution;
        all values >= 0x80 are available for local use. */
