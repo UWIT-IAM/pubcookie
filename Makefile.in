@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.49 2004-02-16 17:05:31 jteaton Exp $
+# $Id: Makefile.in,v 1.50 2004-02-19 23:07:02 fox Exp $
 
 @SET_MAKE@
 
@@ -391,7 +391,7 @@ install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMP
 		true
 
 install-apache: apache_module
-	$(APXS) -i -a -n pubcookie mod_pubcookie.so
+	$(APXS) -i -A -n pubcookie mod_pubcookie.@APACHE_MOD_EXT@
 
 $(PUBCOOKIE_DIR):
 	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
@@ -444,6 +444,7 @@ pbc_myconfig: $(srcdir)/src/pbc_myconfig.c
 
 clean::
 	-$(FORCE_RM) $(builddir)/*.so $(builddir)/src/*.so $(builddir)/so_locations
+	-$(FORCE_RM) $(builddir)/*.la
 	-$(FORCE_RM) $(INDEX_FILES) $(builddir)/*.o $(builddir)/src/*.o
 	-$(FORCE_RM) $(TEST_FILES) $(KEYMGT_FILES)
 	-$(FORCE_RM) pbc_myconfig myconf base64
@@ -456,9 +457,9 @@ distclean:: clean
 
 # APXS Stuff.
 
-APACHE_DEFINES= -DAPACHE1_3
+APACHE_DEFINES= -DAPACHE -DAPACHE@APACHE_VERSION@
 
-apache_module: a_ver mod_pubcookie.so aix_warning 
+apache_module: a_ver mod_pubcookie.@APACHE_MOD_EXT@ aix_warning 
 
 aix_warning:
 @IF_AIX@@IF_MODULE_UPGRADE@	@echo "NOTE:"
@@ -472,8 +473,8 @@ aix_warning:
 a_ver:
 	@echo Making $(DISTNAME) apache module;
 
-mod_pubcookie.so: $(MOD_SRC) $(MOD_HEAD) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
-	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) \
+mod_pubcookie.@APACHE_MOD_EXT@: $(MOD_SRC) $(MOD_HEAD) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
+	$(APXS) -c -o mod_pubcookie.@APACHE_MOD_EXT@ $(CPPFLAGS) $(APACHE_DEFINES) \
 			@APXS_LDFLAGS@ \
 			$(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 

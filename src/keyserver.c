@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.44 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: keyserver.c,v 2.45 2004-02-19 23:07:03 fox Exp $
  */
 
 
@@ -308,61 +308,6 @@ int doit(const char *peer, security_context *context, enum optype op, const char
 
     /* no HTML headers for me */
     myprintf("\r\n");
-
-    switch (op) {
-        case PERMIT:
-            {
-                /* 'peer' has asked us to authorize a new CN (newkey) */
-                if(check_access_list(peer) == PBC_FAIL ) {
-                   myprintf("NO you (%s) are not authorized to authorize\r\n",
-                        peer);
-                   pbc_log_activity(p, PBC_LOG_ERROR,
-                        "operation not allowed: %s", peer);
-                   return(1);
-                }
-
-                /* find <cn>;<test> */
-                thepeer = strdup(newkey);
-                thekey64 = strchr(thepeer, ';');
-                if (!thekey64) {
-                    myprintf("NO bad form for authorize\r\n");
-                    /* xxx log */
-                    return(1);
-                }
-                *thekey64++ = '\0';
-
-                if (libpbc_test_crypt_key(p, thepeer) == PBC_OK) {
-                    myprintf("OK already authorized\r\n");
-                    pbc_log_activity(p, PBC_LOG_ERROR, 
-                                     "already authorized");
-                    return(1);
-                }
-
-                /* if just a test, return now */
-                if (!strncmp(thekey64, "test", 4)) {
-                    myprintf("NO server is not authorized\r\n");
-                    pbc_log_activity(p, PBC_LOG_ERROR, 
-                                     "test - not yet");
-                    return(1);
-                }
-   
-
-                pbc_log_activity(p, PBC_LOG_AUDIT,
-                        "authorizing %s", thepeer);
-
-                if (libpbc_generate_crypt_key(p, thepeer) != PBC_OK) {
-                    myprintf("NO generate_new_key() failed\r\n");
-                    pbc_log_activity(p, PBC_LOG_ERROR, 
-                                     "generate_new_key() failed");
-                    return(1);
-                }
-
-                /* push the new key to the other login servers */
-                pushkey(thepeer);
-
-                dokeyret = 0; /* don't return the key to this client */
-                break;
-            }
 
     switch (op) {
         case PERMIT:

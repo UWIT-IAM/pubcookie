@@ -312,7 +312,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS apache_module install_apache MAKE_APACHE login_server install_login MAKE_LOGIN CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP build build_cpu build_vendor build_os host host_cpu host_vendor host_os IF_AIX APXS_LDFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE AWK AR RM CP SED TAR GZIP MKDIR MV CHMOD TEST MAKE GMAKE IF_AIX_MAKE APXS IF_MODULE_UPGRADE CGIC_LIB CERT_DB_PATH LOGINLIBS LIBOBJS SNPRINTF_0 SNPRINTF_C MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS apache_module install_apache MAKE_APACHE login_server install_login MAKE_LOGIN CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP build build_cpu build_vendor build_os host host_cpu host_vendor host_os IF_AIX APXS_LDFLAGS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA SET_MAKE AWK AR RM CP SED TAR GZIP MKDIR MV CHMOD TEST MAKE GMAKE IF_AIX_MAKE APXS APACHE_VERSION APACHE_MOD_EXT IF_MODULE_UPGRADE CGIC_LIB CERT_DB_PATH LOGINLIBS LIBOBJS SNPRINTF_0 SNPRINTF_C MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3643,6 +3643,7 @@ echo "${ECHO_T}yes" >&6
 
   echo "$as_me:$LINENO: checking Apache version" >&5
 echo $ECHO_N "checking Apache version... $ECHO_C" >&6
+  APACHE_VERSION=
   OCFLAGS=$CFLAGS
   APXS_INC=`$APXS -q INCLUDEDIR`
   CFLAGS="$CFLAGS -I$APXS_INC"
@@ -3661,23 +3662,11 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+    /* Look for 1.x version */
     #include <stdlib.h>
     #include <httpd.h>
 
-    #ifndef APACHE_RELEASE
-    # define APACHE_RELEASE 0
-    #endif
-
-    #ifndef SERVER_REVISION
-    # ifdef AP_SERVER_BASEREVISION
-    #  define SERVER_REVISION AP_SERVER_BASEREVISION
-    # else
-    #  define SERVER_REVISION "0"
-    # endif
-    #endif
-
     int main() {
-        printf( "%s\n", SERVER_REVISION );
         exit( ( APACHE_RELEASE > 10300000 &&
                 APACHE_RELEASE < 10400000 ) != 1 );
     }
@@ -3694,7 +3683,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  true
+  APACHE_VERSION="1_3"
+       APACHE_MOD_EXT="so"
 else
   echo "$as_me: program exited with status $ac_status" >&5
 echo "$as_me: failed program was:" >&5
@@ -3702,14 +3692,72 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 ( exit $ac_status )
 
-      { { echo "$as_me:$LINENO: error: Apache version 1.3.x is required!" >&5
-echo "$as_me: error: Apache version 1.3.x is required!" >&2;}
+
+
+fi
+rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+  if test "x$APACHE_VERSION" = "x"; then
+    if test "$cross_compiling" = yes; then
+  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+      /* Look for 2.x version */
+      #include <stdlib.h>
+      #include <httpd.h>
+
+      int main() {
+          exit( *AP_SERVER_MAJORVERSION!='2');
+      }
+
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  APACHE_VERSION="2"
+         APACHE_MOD_EXT="la"
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+
+        { { echo "$as_me:$LINENO: error: Apache version 1.3.x or 2.x is required!" >&5
+echo "$as_me: error: Apache version 1.3.x or 2.x is required!" >&2;}
    { (exit 1); exit 1; }; }
 
 
 fi
 rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
+  fi
+  echo "$as_me:$LINENO: result: $APACHE_VERSION" >&5
+echo "${ECHO_T}$APACHE_VERSION" >&6
+  APACHE_VERSION=$APACHE_VERSION
+
+  APACHE_MOD_EXT=$APACHE_MOD_EXT
+
+
   CFLAGS=$OCFLAGS
 
   echo "$as_me:$LINENO: checking if we are upgrading mod_pubcookie " >&5
@@ -9806,6 +9854,8 @@ s,@MAKE@,$MAKE,;t t
 s,@GMAKE@,$GMAKE,;t t
 s,@IF_AIX_MAKE@,$IF_AIX_MAKE,;t t
 s,@APXS@,$APXS,;t t
+s,@APACHE_VERSION@,$APACHE_VERSION,;t t
+s,@APACHE_MOD_EXT@,$APACHE_MOD_EXT,;t t
 s,@IF_MODULE_UPGRADE@,$IF_MODULE_UPGRADE,;t t
 s,@CGIC_LIB@,$CGIC_LIB,;t t
 s,@CERT_DB_PATH@,$CERT_DB_PATH,;t t

@@ -6,7 +6,7 @@
 /** @file pbc_apacheconfig.c
  * Apacheconfig
  *
- * $Id: pbc_apacheconfig.c,v 2.9 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: pbc_apacheconfig.c,v 2.10 2004-02-19 23:07:03 fox Exp $
  */
 
 
@@ -15,7 +15,17 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
+#ifdef APACHE2
+#undef HAVE_CONFIG_H
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#endif
+
+
+#if defined (APACHE1_3) || defined (APACHE2)
 # include "httpd.h"
 # include "http_config.h"
 # include "http_core.h"
@@ -26,6 +36,30 @@
 #else
 typedef void pool;
 #endif
+
+#ifdef APACHE2
+
+#include "apr_strings.h"
+typedef apr_pool_t pool;
+typedef apr_table_t table;
+#define ap_table_get apr_table_get
+
+#define PC_LOG_DEBUG APLOG_MARK,APLOG_DEBUG,0
+#define PC_LOG_INFO  APLOG_MARK,APLOG_INFO,0
+#define PC_LOG_ERR   APLOG_MARK,APLOG_ERR,0
+#define PC_LOG_EMERG APLOG_MARK,APLOG_EMERG,0
+#define PC_LOG_CRIT APLOG_MARK,APLOG_CRIT,0
+
+#else 
+
+#define PC_LOG_DEBUG APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO
+#define PC_LOG_INFO  APLOG_MARK,APLOG_INFO|APLOG_NOERRNO
+#define PC_LOG_ERR   APLOG_MARK,APLOG_ERR
+#define PC_LOG_EMERG APLOG_MARK,APLOG_EMERG|APLOG_NOERRNO
+#define PC_LOG_CRIT  APLOG_MARK,APLOG_CRIT|APLOG_NOERRNO
+
+#endif
+
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -126,15 +160,15 @@ const char *libpbc_apacheconfig_getstring(pool *p, const char *key, const char *
     if ( key == NULL )
         return def;
 
-    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, NULL, "looking for %s", key);
+    ap_log_error(PC_LOG_DEBUG,  NULL, "looking for %s", key);
 
     ret = ap_table_get(configlist, key);
   
     if (ret) { 
-        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, NULL, "found %s with value %s", ret);
+        ap_log_error(PC_LOG_DEBUG,  NULL, "found %s with value %s", ret);
         return ret;
     } 
-    ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, NULL, "failed to find %s, returning default %s", key, def);
+    ap_log_error(PC_LOG_DEBUG,  NULL, "failed to find %s, returning default %s", key, def);
     return def;
 }
 
@@ -155,14 +189,14 @@ int libpbc_apacheconfig_getint(pool *p, const char *key, int def)
  *
  */
 char **libpbc_apacheconfig_getlist(pool *p, const char *key) {
-   ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_CRIT, NULL,
+   ap_log_error(PC_LOG_CRIT, NULL,
        "libpbc_apacheconfig_getlist not implmented, was looking for %s",
        key);
    return NULL;
 } 
 
 int libpbc_apacheconfig_getswitch(pool *p, const char *key, int def) {
-   ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_CRIT, NULL,
+   ap_log_error(PC_LOG_CRIT, NULL,
        "libpbc_apacheconfig_getswitch not implmented, was looking for %s",
        key);
    return def;

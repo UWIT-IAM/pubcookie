@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.91 2004-02-17 23:06:38 ryanc Exp $
+     $Id: pbc_config.h,v 1.92 2004-02-19 23:07:03 fox Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -12,10 +12,6 @@
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
-#endif
-
-#if defined (APACHE1_3)
-#define APACHE
 #endif
 
 #ifdef WIN32
@@ -54,10 +50,10 @@
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
 	#define PBC_FILTER_KEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
-	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", PBC_FILTER_KEY))
+        #define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", PBC_FILTER_KEY))
 	#define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
 	#define PBC_INSTANCE_KEY "_PBC_Web_Instances"
-	#define PBC_DEFAULT_KEY "default"
+        #define PBC_DEFAULT_KEY "default"
 #endif
 
 #define PBC_REFRESH_TIME 0
@@ -231,13 +227,23 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 /* macros to support older version of apache */
 
-#ifdef APACHE1_3
+#ifdef APACHE
+#ifndef pbc_malloc
 #define pbc_malloc(p, x) ap_palloc(p, x)
+#endif
 #define pbc_free(p, x) libpbc_void(p, x)
+#ifndef pbc_strdup
 #define pbc_strdup(p, x) ap_pstrdup(p, x)
+#endif
 #define pbc_strndup(p, s, n) ap_pstrdup(p, s, n)
+#ifdef APACHE2
+/* in the module use apr_file_open etc. */
+#define pbc_fopen(p, x, y) fopen(x, y)
+#define pbc_fclose(p, x) fclose(x)
+#else
 #define pbc_fopen(p, x, y) ap_pfopen(p, x, y)
 #define pbc_fclose(p, x) ap_pfclose(p, x)
+#endif
 #endif
 
 #ifndef pbc_malloc

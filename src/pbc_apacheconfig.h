@@ -4,7 +4,7 @@
  */
 
 /*
- *  $Id: pbc_apacheconfig.h,v 2.8 2004-02-16 17:05:31 jteaton Exp $
+ *  $Id: pbc_apacheconfig.h,v 2.9 2004-02-19 23:07:03 fox Exp $
  */
 
 
@@ -13,7 +13,7 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
+#if defined (APACHE)
 # include "httpd.h"
 # include "http_config.h"
 # include "http_core.h"
@@ -68,7 +68,7 @@ typedef void pool;
 #include "mod_pubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
-# if (!defined(APACHE) && !defined(APACHE1_3))
+# if !defined(APACHE)
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.68 2004-02-17 23:06:38 ryanc Exp $
+ * $Id: libpubcookie.c,v 2.69 2004-02-19 23:07:03 fox Exp $
  */
 
 
@@ -14,6 +14,21 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#ifdef APACHE2
+#undef HAVE_CONFIG_H
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#endif
+
+#if defined (APACHE2)
+#define pbc_malloc(p, x) apr_palloc(p, x)
+#define pbc_strdup(p, x) apr_pstrdup(p, x)
+#endif
+
 
 # ifdef HAVE_STDIO_H
 #  include <stdio.h>
@@ -59,7 +74,10 @@
 #  include <netdb.h>
 # endif /* HAVE_NETDB_H */
 
-#if defined (APACHE1_3)
+#if defined (APACHE2)
+#define pbc_malloc(p, x) apr_palloc(p, x)
+#endif
+#if defined (APACHE)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -69,6 +87,12 @@
 #  include "util_script.h"
 # else
   typedef void pool;
+#endif
+
+#ifdef APACHE2
+#include "apr_strings.h"
+typedef apr_pool_t pool;
+typedef apr_table_t table;
 #endif
 
 #ifdef OPENSSL_IN_DIR
@@ -99,6 +123,9 @@
 # include "pbc_config.h"
 #endif
 
+#ifdef APACHE2
+#endif
+
 #include "pbc_version.h"
 #include "pbc_logging.h"
 #include "libpubcookie.h"
@@ -107,7 +134,7 @@
 #include "security.h"
 
 #ifdef HAVE_DMALLOC_H
-# if (!defined(APACHE) && !defined(APACHE1_3))
+# if !defined(APACHE) 
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */

@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.42 2004-02-17 23:06:38 ryanc Exp $
+ * $Id: pbc_myconfig.c,v 1.43 2004-02-19 23:07:03 fox Exp $
  */
 
 
@@ -15,7 +15,21 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
+#ifdef APACHE2
+#undef HAVE_CONFIG_H
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#endif
+
+#if defined (APACHE2)
+#define pbc_malloc(p, x) apr_palloc(p, x)
+#define pbc_strdup(p, x) apr_pstrdup(p, x)
+#endif
+
+#if defined (APACHE)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -25,7 +39,13 @@
 #  include "util_script.h"
 # else
    typedef void pool;
-#endif /* APACHE1_3 */
+#endif /* APACHE */
+
+#ifdef APACHE2
+typedef apr_pool_t pool;
+typedef apr_table_t table;
+#endif
+
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -74,6 +94,10 @@
 #include "libpubcookie.h"
 #include "pbc_configure.h"
 #include "pbc_logging.h"
+
+#ifdef APACHE2
+#include "apr_strings.h"
+#endif
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))

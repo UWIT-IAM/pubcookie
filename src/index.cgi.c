@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.117 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: index.cgi.c,v 1.118 2004-02-19 23:07:02 fox Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -2892,7 +2892,7 @@ int create_cookie(pool *p, const security_context *context,
 
     cookie_local = (char *) 
         libpbc_get_cookie_with_expire(p, context, user, type, creds, pre_sess_tok,
-                                      create, expire, appsrvid, appid, peer);
+                    create, expire, appsrvid, appid, peer, peer ? 1 : 0);
 
     if (peer != NULL)
         free(peer);

@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.49 2004-02-16 17:05:31 jteaton Exp $
+ * $Id: flavor_basic.c,v 1.50 2004-02-19 23:07:02 fox Exp $
  */
 
 
@@ -321,59 +321,7 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
     }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
-                func, field_html);
-    return(user_field_html);
-
-}
-
-/* figure out what html to use for user field */
-char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
-{
-    char func[] = "flb_get_user_field";
-    const char *loser = (l != NULL && l->user != NULL ? l->user
-                        : (c != NULL ? c->user : NULL));
-    const char *static_config = libpbc_config_getstring(p, "static_user_field",
-                                STATIC_USER_FIELD_KIND);
-    char *user_field_html;
-
-    if ( strcmp(static_config, STATIC_USER_FIELD_KIND) == 0 ) {
-        if ( c != NULL && c->user != NULL & reason == FLB_REAUTH ||
-             c != NULL && c->user != NULL & reason == FLB_CACHE_CREDS_WRONG ||
-             l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_static",
-                                        "login_user_static" ), loser);
-            l->hide_user = PBC_TRUE;
-        }
-        else {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
-                                        "login_user_form_field" ), loser);
-            l->hide_user = PBC_FALSE;
-        }
-    }
-    else if ( strcmp(static_config, STATIC_USER_FIELD_FASCIST) == 0 ) {
-        if ( c != NULL && c->user != NULL ||
-             l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_static",
-                                        "login_user_static" ), loser);
-            l->hide_user = PBC_TRUE;
-        }
-        else {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
-                                        "login_user_form_field" ), loser);
-            l->hide_user = PBC_FALSE;
-        }
-    }
-    else { /* STATIC_USER_FIELD_NEVER */
-        user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
-                                        "login_user_form_field" ), loser);
-        l->hide_user = PBC_FALSE;
-    }
-
+                func, user_field_html);
     return(user_field_html);
 
 }
@@ -749,7 +697,7 @@ static login_result process_basic(pool *p, const security_context *context,
                 int outlen;
                 char *out64;
 
-                if (!libpbc_mk_priv(p, context, NULL, creds->str, creds->sz,
+                if (!libpbc_mk_priv(p, context, NULL, 0, creds->str, creds->sz,
                                     &outbuf, &outlen)) {
                     /* save for later */
                     out64 = malloc(outlen * 4 / 3 + 20);

@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.50 $)
-AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu) 
+AC_REVISION($Revision: 1.51 $)
+AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
 AC_LANG(C)
@@ -251,36 +251,46 @@ AC_ARG_WITH(apxs,
   AC_MSG_RESULT([yes])
 
   AC_MSG_CHECKING([Apache version])
+  APACHE_VERSION=
   OCFLAGS=$CFLAGS
   APXS_INC=`$APXS -q INCLUDEDIR`
   CFLAGS="$CFLAGS -I$APXS_INC"
   AC_TRY_RUN( [ 
+    /* Look for 1.x version */
     #include <stdlib.h>
     #include <httpd.h>
 
-    #ifndef APACHE_RELEASE
-    # define APACHE_RELEASE 0
-    #endif
-
-    #ifndef SERVER_REVISION
-    # ifdef AP_SERVER_BASEREVISION
-    #  define SERVER_REVISION AP_SERVER_BASEREVISION
-    # else
-    #  define SERVER_REVISION "0"
-    # endif
-    #endif
-
     int main() {
-        printf( "%s\n", SERVER_REVISION );
         exit( ( APACHE_RELEASE > 10300000 &&
                 APACHE_RELEASE < 10400000 ) != 1 );
     }
     ],
-    [true],
+      [APACHE_VERSION="1_3"
+       APACHE_MOD_EXT="so"],
     [ 
-      AC_MSG_ERROR([Apache version 1.3.x is required!])
     ]
   )
+  if test "x$APACHE_VERSION" = "x"; then
+    AC_TRY_RUN( [ 
+      /* Look for 2.x version */
+      #include <stdlib.h>
+      #include <httpd.h>
+
+      int main() {
+          exit( *AP_SERVER_MAJORVERSION!='2');
+      }
+      ],
+        [APACHE_VERSION="2"
+         APACHE_MOD_EXT="la"],
+      [ 
+        AC_MSG_ERROR([Apache version 1.3.x or 2.x is required!])
+      ]
+    )
+  fi
+  AC_MSG_RESULT([$APACHE_VERSION])
+  AC_SUBST(APACHE_VERSION, $APACHE_VERSION)
+  AC_SUBST(APACHE_MOD_EXT, $APACHE_MOD_EXT)
+
   CFLAGS=$OCFLAGS
 
   AC_MSG_CHECKING( [if we are upgrading mod_pubcookie] )

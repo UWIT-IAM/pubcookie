@@ -6,7 +6,7 @@
 /** @file base64.c
  * Base64 functions
  *
- * $Id: base64.c,v 1.20 2004-02-17 23:06:38 ryanc Exp $
+ * $Id: base64.c,v 1.21 2004-02-19 23:07:02 fox Exp $
  */
                                                                                 
 
@@ -15,7 +15,16 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
+#ifdef APACHE2
+#undef HAVE_CONFIG_H
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#endif
+
+#if defined (APACHE)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -23,6 +32,11 @@
 #  include "http_main.h"
 #  include "http_protocol.h"
 #  include "util_script.h"
+#  ifdef APACHE2
+   typedef apr_pool_t pool;
+   typedef apr_table_t table;
+#  endif
+
 # else
   typedef void pool;
 #endif

@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.37 2004-02-17 23:06:38 ryanc Exp $
+ * $Id: security_legacy.c,v 1.38 2004-02-19 23:07:03 fox Exp $
  */
 
 
@@ -15,7 +15,21 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
+#ifdef APACHE2
+#undef HAVE_CONFIG_H
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#endif
+
+#if defined (APACHE2)
+#define pbc_malloc(p, x) apr_palloc(p, x)
+#define pbc_strdup(p, x) apr_pstrdup(p, x)
+#endif
+
+#if defined (APACHE)
 #  include "httpd.h"
 #  include "http_config.h"
 #  include "http_core.h"
@@ -25,6 +39,11 @@
 #  include "util_script.h"
 # else
   typedef void pool;
+#endif
+
+#ifdef APACHE2
+typedef apr_pool_t pool;
+typedef apr_table_t table;
 #endif
 
 #ifdef HAVE_STDIO_H
@@ -92,6 +111,10 @@
 # include "pbc_configure.h"
 # include "security.h"
 # include "pubcookie.h"
+#endif
+
+#ifdef APACHE2
+#include "apr_strings.h"
 #endif
 
 #ifdef HAVE_DMALLOC_H
