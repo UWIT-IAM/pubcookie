@@ -414,11 +414,11 @@ Add a line like the following to the login server's
 <tt>/etc/inetd.conf</tt>:</p>
 
 <pre>
-2222    stream  tcp     nowait  root    /usr/local/pubcookie/bin/keyserver keyserver
+2222    stream  tcp     nowait  root    /usr/local/pubcookie/keyserver keyserver
 </pre>
 
 <p>
-where <tt>/usr/local/pubcookie/bin/keyserver</tt> is where the keyserver binary
+where <tt>/usr/local/pubcookie/keyserver</tt> is where the keyserver binary
 is installed.  Make sure that your <tt>pubcookie/config</tt> file is
 correctly configured.</p>
 
@@ -591,7 +591,7 @@ Copyright 1999-2002, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.4 2002-11-14 21:12:12 jjminer Exp $
+$Id: install-login.html,v 1.5 2002-11-23 07:13:17 dors Exp $
 </pre>
 </body>
 
