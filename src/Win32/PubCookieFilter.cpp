@@ -413,19 +413,16 @@ void Add_No_Cache(HTTP_FILTER_CONTEXT* pFC)
 	pFC->AddResponseHeaders(pFC,szHeaders,0);
 
 }
-void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_contents)
+void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, unsigned char* cookie_contents, char* cookie_domain)
 {
 	char			szHeaders[PBC_1K];
-	pubcookie_dir_rec* dcfg;
-
-	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	DebugMsg((DEST,"  Adding cookie %s=%s\n",cookie_name,cookie_contents));
 
-	sprintf(szHeaders, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\n",
+	snprintf(szHeaders, PBC_1K, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\n",
 		cookie_name, 
 		cookie_contents,
-		dcfg->Enterprise_Domain);
+		cookie_domain);
 
 	pFC->AddResponseHeaders(pFC,szHeaders,0);
 
@@ -435,9 +432,9 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 {
 	char 			args[PBC_4K];
 	char 			g_req_contents[PBC_4K];
-	char 			e_g_req_contents[PBC_4K];
+	unsigned char	e_g_req_contents[PBC_4K];
 	char			szTemp[PBC_1K];
-    char            *pre_s;
+    unsigned char   *pre_s;
 	int				pre_sess_tok;
 
 	pubcookie_dir_rec* dcfg;
@@ -504,10 +501,10 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents));
 
-	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents);
+	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, dcfg->Enterprise_Domain);
 
 	/* make the pre-session cookie */
-    pre_s = (char *) libpbc_get_cookie( 
+    pre_s = libpbc_get_cookie( 
 		p,
 		(unsigned char *) "presesuser",
 		PBC_COOKIE_TYPE_PRE_S, 
@@ -517,7 +514,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		(unsigned char *)dcfg->appid,
 		NULL);
 	
-    Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s);
+    Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s,dcfg->appsrvid);
 	
 	Add_No_Cache(pFC);
 
@@ -1168,14 +1165,14 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 		dcfg->has_granting = 1;
 
-
 		/* the granting cookie gets blanked too early and another login */
 		/* server loop is required, this just speeds up that loop */
-		if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
+		/*if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
 			dcfg->failed = PBC_BAD_AUTH;
 			pbc_free(p, cookie);
 			return OK;
-		}
+		}*/ 		/* PBC_X_STRING doesn't seem to be used any longer */
+
 
 		if( !(cookie_data = libpbc_unbundle_cookie(p, cookie, get_my_hostname())) ) {
 			sprintf(szBuff,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
@@ -1319,9 +1316,9 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 {
 	unsigned char	*cookie;
 	int first_time_in_session = 0;
-	char new_cookie[START_COOKIE_SIZE];
 	pubcookie_dir_rec* dcfg;
 	dcfg = (pubcookie_dir_rec *)pFC->pFilterContext;
+	char session_cookie_name[MAX_PATH];
 
 	DebugMsg((DEST," Pubcookie_Typer\n"));
 
@@ -1336,7 +1333,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 		/* clear granting and presession cookies */
 		Clear_Cookie(pFC,PBC_G_COOKIENAME,dcfg->Enterprise_Domain,"/",TRUE);
-		Clear_Cookie(pFC,PBC_PRE_S_COOKIENAME,dcfg->Enterprise_Domain,"/",TRUE);
+		Clear_Cookie(pFC,PBC_PRE_S_COOKIENAME,dcfg->appsrvid,"/",TRUE);
 
 		first_time_in_session = 1;
 		dcfg->has_granting = 0;
@@ -1379,24 +1376,19 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 				cookie, 
 				dcfg->appsrvid,
 				dcfg->appid);
-#else
-			
-			sprintf(new_cookie, "Set-Cookie: %s_%s=%s; domain=%s; path=/; secure\r\n", 
-				PBC_S_COOKIENAME, dcfg->appid,
-				cookie, 
-				dcfg->appsrvid);
-			//	dcfg->appid);	// Gave up on putting a path on the cookie since
-			// browsers will not return it if case on URL does not
-			// match. Too bad, wanted to limit amount of cookie data
-			// being sent to each app, limited to 4096 bytes.
 
+			pFC->AddResponseHeaders(pFC,new_cookie,0);
+
+#else
+			snprintf(session_cookie_name,MAX_PATH,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
+			Add_Cookie(pFC,session_cookie_name,cookie,dcfg->appsrvid);
 			
+	
 #endif
 			pbc_free(p, cookie);
 			pbc_free(p, dcfg->cookie_data);
 			
-			pFC->AddResponseHeaders(pFC,new_cookie,0);
-			
+		
 		}
 		// Have a good session cookie at this point
 		// Now set effective UserId ,UWNetID and Creds values for ASP pages
