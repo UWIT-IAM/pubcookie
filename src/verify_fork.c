@@ -5,9 +5,22 @@
  */
 
 /** @file verify_fork.c
- * Logging
+ *  Verifier that forks something and uses it to authenticate
  *
- * $Id: verify_fork.c,v 1.1 2003-09-24 00:48:48 willey Exp $
+ * A verifier which launches another application with 2 
+ * arguements, userid and password. The called program will then 
+ * set a non-zero exit code if authentication fails. The called program will 
+ * exit with 0 status if all is OK.
+ *
+ * To use verify_fork:
+ * a) In your config:  'basic_verifier: verify_fork'
+ * b) The application to run is specified by a parameter called "fork_exe", 
+ * for example:
+ * fork_exe: /usr/local/pubcookie/runme.pl
+ *
+ * From Tim Funk <funkman@joedog.org> 18-Sept-2003
+ *
+ * $Id: verify_fork.c,v 1.2 2003-09-24 01:10:45 willey Exp $
  */
 
 
