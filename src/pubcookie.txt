@@ -157,8 +157,8 @@ openssl version 0.9.1c.
 If you need rsaref the only version that has been tested is version 2.0.
 
 
-Where to Find Software
-----------------------
+Where to Find Software and Documents
+------------------------------------
 
 Apache		http://www.apache.org
 ssleay		http://www.ssleay.org
@@ -254,6 +254,17 @@ Descriptions of Some Logged Error Messages
 	the cookie was no good (couldn't be decrypted, too short, signature
 	verifyication failed, etc.)
 
+Sample Applications
+-------------------
+
+There are some sample applications at:
+
+https://wwwdev.cac.washington.edu/pubcookie/index/
+
+These applications cab be used to demonstrate pubcookie and to test bouncing 
+between your server and another pubcookie enabled server without having 
+to re-authenticate.
+
 Platform/Architecture Specific Notes
 ------------------------------------
 
@@ -285,6 +296,6 @@ src/global.h, line 26 needs to change from 'unsigned long int' to
 
 
 
-$Id: pubcookie.txt,v 1.5 1999-01-11 23:00:55 willey Exp $
+$Id: pubcookie.txt,v 1.6 1999-01-12 00:15:05 willey Exp $
 
 
