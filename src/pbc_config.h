@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.100 2004-10-06 21:26:39 willey Exp $
+     $Id: pbc_config.h,v 1.101 2004-10-07 19:13:46 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -73,7 +73,8 @@
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
-#define PBC_BAD_G_STATE 4   /* G cookie is unusable, don't return to WLS */
+#define PBC_BAD_G_STATE  4   /* G cookie is unusable, don't return to WLS */
+#define PBC_NO_PS_MATCH  5   /* pression token mismatch, redirect */
 
 #define PBC_TRANSCRED_MAX_COOKIES 10 
 #define PBC_TRANSCRED_MAX_COOKIE_LENGTH 3900

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.48 2004-08-20 22:56:33 willey Exp $
+    $Id: libpubcookie.h,v 1.49 2004-10-07 19:13:46 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -144,11 +144,12 @@ enum {
     PBC_RR_WRONGCREDS_CODE =     11,
     PBC_RR_BADPRES_CODE =        12,
     PBC_RR_NEW_REAUTH =          13,
-    PBC_RR_PINIT =               14
+    PBC_RR_PINIT =               14,
+    PBC_RR_NOPSMATCH_CODE = 	 15
 };
 
 /* string translations of the above reasons */
-extern const char *redirect_reason[15];
+extern const char *redirect_reason[16];
 
 int capture_cmd_output(pool *p, char **cmd, char *out, int len);
 
