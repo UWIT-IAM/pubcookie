@@ -8,6 +8,8 @@ if (!defined &PUBCOOKIE_CONFIG) {
     eval 'sub PBC_G_REQ_COOKIENAME () {"pubcookie_g_req";}' unless defined(&PBC_G_REQ_COOKIENAME);
     eval 'sub PBC_S_COOKIENAME () {"pubcookie_s";}' unless defined(&PBC_S_COOKIENAME);
     eval 'sub PBC_PRE_S_COOKIENAME () {"pubcookie_p_res";}' unless defined(&PBC_PRE_S_COOKIENAME);
+    eval 'sub PBC_TEST_COOKIENAME () {"pubcookie_test_cookie";}' unless defined(&PBC_TEST_COOKIENAME);
+    eval 'sub PBC_TEST_COOKIECONTENTS () {"yes";}' unless defined(&PBC_TEST_COOKIECONTENTS);
     eval 'sub PBC_AUTH_FAILED_HANDLER () {"pubcookie-failed-handler";}' unless defined(&PBC_AUTH_FAILED_HANDLER);
     eval 'sub PBC_BAD_USER_HANDLER () {"pubcookie-bad-user";}' unless defined(&PBC_BAD_USER_HANDLER);
     eval 'sub PBC_LOGIN_PAGE () {"https://weblogin.washington.edu/";}' unless defined(&PBC_LOGIN_PAGE);
