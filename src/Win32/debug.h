@@ -1,8 +1,4 @@
-//  DebugMsg() is used for debugging 
 #define DEST buff
-extern VOID OutputDebugMsg (char *buff);
-extern int Debug_Trace;
-extern FILE *debugFile;
 
 #define DebugMsg(x)						\
 	if (Debug_Trace) {					\
@@ -10,9 +6,16 @@ extern FILE *debugFile;
 		sprintf x;						\
 		OutputDebugMsg(buff);			\
 	}
-extern void syslog(int whichlog, const char *message, ...);
-extern void pbc_log_activity(int logging_level, const char *message,...);
-extern void pbc_vlog_activity( int logging_level, const char * format, va_list args );
+
+void syslog(int whichlog, const char *message, ...);
+void pbc_log_activity(int logging_level, const char *message,...);
+void pbc_vlog_activity( int logging_level, const char * format, va_list args );
 VOID Close_Debug_Trace ();
 BOOL Open_Debug_Trace ();
+VOID OutputDebugMsg (char *buff);
 
+extern char Instance[64];
+extern char Debug_Dir[MAX_PATH];
+extern char *SystemRoot;
+extern FILE *debugFile;
+extern int Debug_Trace;

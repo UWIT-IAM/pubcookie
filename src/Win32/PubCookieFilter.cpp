@@ -27,6 +27,12 @@ extern "C"
 #include "debug.h"
 }
 
+char *SystemRoot;
+
+int  Ignore_Poll;     // Set to "1" to ignore Network Dispatcher "/" polls
+//char Web_Login[MAX_PATH];  // default is https://weblogin.washington.edu/
+//char Enterprise_Domain[MAX_PATH];  // default is ".washington.edu"
+char Error_Page[MAX_PATH]; // Redirect user to this page on fatal errors
 
 
 VOID ReportPFEvent(PTSTR string1,PTSTR string2,PTSTR string3,PTSTR string4,
@@ -175,7 +181,6 @@ BOOL Reset_Defaults ()
 		GetEnvironmentVariable ("windir",szBuff,MAX_PATH);
 		sprintf(SystemRoot,"%s\\system32",szBuff);
 	}
-
 	
 	Debug_Trace = PBC_DEBUG_TRACE;
 	strcpy(Debug_Dir,SystemRoot);
@@ -1522,7 +1527,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	if ( stricmp(achUrl,"/PubcookieFilter_Reset") == 0 ) {
 		DebugMsg((DEST,"  Requested URL  : %s\n\n",achUrl));
 
-		if (!Reset_Defaults()) { //TODO, make reread keys too
+		if (!Reset_Defaults()) { 
 			return SF_STATUS_REQ_ERROR;
 		}
 
@@ -2041,24 +2046,26 @@ DllMain(
 		switch ( HIWORD(hinstDll) )
 			{
 			case 4096:							// (x10000000)
-				strcpy(Instance,"1"); break;
+				strcpy(Instance,"Filter1"); break;
 			case  300:							// (x012C0000)
-				strcpy(Instance,"2"); break;
+				strcpy(Instance,"Filter2"); break;
 			case  306:							// (x01320000)
-				strcpy(Instance,"3"); break;
+				strcpy(Instance,"Filter3"); break;
 			case  312:							// (x01380000)
-				strcpy(Instance,"4"); break;
+				strcpy(Instance,"Filter4"); break;
 			case  318:							// (x013E0000)
-				strcpy(Instance,"5"); break;
+				strcpy(Instance,"Filter5"); break;
 			case  324:							// (x01440000)
-				strcpy(Instance,"6"); break;
+				strcpy(Instance,"Filter6"); break;
 			case  330:							// (x014A0000)
-				strcpy(Instance,"7"); break;
+				strcpy(Instance,"Filter7"); break;
 			case  336:							// (x01500000)
-				strcpy(Instance,"8"); break;
+				strcpy(Instance,"Filter8"); break;
 			case  342:							// (x01460000)
-				strcpy(Instance,"9"); break;
+				strcpy(Instance,"Filter9"); break;
 			default:
+				strcpy(Instance,"Filter"); break;
+
 				break;
 			}	
 

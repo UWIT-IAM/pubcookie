@@ -1,16 +1,6 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0-pre-beta3"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0-alpha1"
 
-
-char Instance[3];
-char *SystemRoot;
-char Trace_Date[64];
-char Debug_Dir[MAX_PATH];
-
-int  Ignore_Poll;     // Set to "1" to ignore Network Dispatcher "/" polls
-//char Web_Login[MAX_PATH];  // default is https://weblogin.washington.edu/
-//char Enterprise_Domain[MAX_PATH];  // default is ".washington.edu"
-char Error_Page[MAX_PATH]; // Redirect user to this page on fatal errors
 
 typedef struct {
 	char				*g_certfile;

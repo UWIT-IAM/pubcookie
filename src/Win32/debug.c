@@ -6,21 +6,15 @@
 #include <stdio.h>
 #include <time.h>
 #include <direct.h>
+#include "debug.h"
 
-
-#define DEST buff
-#define DebugMsg(x)						\
-	if (Debug_Trace) {					\
-		char buff[4096];				\
-		sprintf x;						\
-		OutputDebugMsg(buff);			\
-	}
 
 char Trace_Date[64];
+char Instance[64];
 char Debug_Dir[MAX_PATH];
 FILE *debugFile=NULL;
 int Debug_Trace = 0;
-BOOL Open_Debug_Trace ();
+
 
 void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 {
@@ -117,9 +111,10 @@ BOOL Open_Debug_Trace ()
 
 	time(&ltime);
 	today = localtime(&ltime);
+
 	strftime(Trace_Date,64,"%Y%m%d\0",today);
-	sprintf(szBuff,"%s",Debug_Dir);
-	sprintf(szName,"%s%s\\keyclient-%s.log",Debug_Dir,Trace_Date);
+	sprintf(szBuff,"%s%s",Debug_Dir,Instance);
+	sprintf(szName,"%s%s\\%s.log",Debug_Dir,Instance,Trace_Date);
 
 	// Directory must exist else open will fail
 
@@ -132,8 +127,11 @@ BOOL Open_Debug_Trace ()
 	debugFile = fopen(szName, "a");
 
 	if ( !debugFile ) {
-		fprintf(stderr,"[Open_Debug_Trace] Failed to open trace file %s",szName);
+		syslog(1,"[Open_Debug_Trace] Failed to open trace file %s",szName);
 			}
+	else
+			syslog(1,"[Open_Debug_Trace] opened trace file %s",szName);
+
 		
 	DebugMsg((DEST, "\n**********************************************************************\n %s\n\n Opening Debug File %s\n\n",
 		ctime(&ltime),szName));

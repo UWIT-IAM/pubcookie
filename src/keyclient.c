@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.21 2002-09-18 21:58:07 ryanc Exp $
+    $Id: keyclient.c,v 2.22 2002-10-09 21:24:07 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -161,15 +161,16 @@ int main(int argc, char *argv[])
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
 	GetEnvironmentVariable ("windir",SystemRoot,MAX_PATH);
 	strcat(SystemRoot,"\\System32");
+	strcpy(Instance,"KeyClient");
 	{   
-
-	WSADATA wsaData;
-
-	if( WSAStartup((WORD)0x0101, &wsaData ) ) 
-	{  
-	    fprintf(stderr,"Unable to initialize WINSOCK: %d", WSAGetLastError() );
-	    return -1;
-	}
+		
+		WSADATA wsaData;
+		
+		if( WSAStartup((WORD)0x0101, &wsaData ) ) 
+		{  
+			fprintf(stderr,"Unable to initialize WINSOCK: %d", WSAGetLastError() );
+			return -1;
+		}
 	}   
 #endif
 
