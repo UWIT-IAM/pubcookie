@@ -1,10 +1,12 @@
-#!/usr/local/bin/perl5
+#!/usr/local/bin/perl5 
 
 use CGI;
 # why both?
 use IPC::Open2;
 use IPC::Open3;
 use MIME::Base64;
+use Symbol;
+use strict;
 # meta-auth stuff comes from /www/lib/auth
 # some pubcookie defines fomr from /usr/local/pubcookie/
 use lib '/www/lib/auth', '/usr/local/pubcookie/';
@@ -36,36 +38,45 @@ $ENV{'PATH'} = '/bin:/usr/bin';
 #
 #
 
+my ($args, $uri, $host, $method, $version, $creds, $appid, $appsrvid, $fr, $user, $pass, $pass2);
+my ($create_pgm, $verify_pgm, $reason, $res);
+
 # why both?
-$host = `hostname`;
+my $host = `hostname`;
 chomp($host);
-$hostname = $ENV{'HTTP_HOST'};
+my $hostname = $ENV{'HTTP_HOST'};
 
 # some setting for the cookies and redirect
-$login_dir = "/";
-$refresh = "0";
-$expire_login = 60 * 60 * 8;
+my $login_dir = "/";
+my $refresh = "0";
+my $expire_login = 60 * 60 * 8;
 
 # messages that get sent to the user
-$notok_needssl = "I'm sorry this page is only accessible via a SSL protected connection. <BR>\n";
-$cookie_test_fail_message = "This browser doesn't accept cookies! <BR><A HREF=\"http://www.washington.edu/computing/web/cookies.html\">Learn how to turn them on.</A>";
-$no_g_req_fail_message = "You probably used your browser's BACK button to get here.  Sorry, backing through here won't work.";
+my $notok_needssl = "I'm sorry this page is only accessible via a SSL protected connection. <BR>\n";
+my $cookie_test_fail_message = "This browser doesn't accept cookies! <BR><A HREF=\"http://www.washington.edu/computing/web/cookies.html\">Learn how to turn them on.</A>";
+my $no_g_req_fail_message = "You probably used your browser's BACK button to get here.  Sorry, backing through here won't work.";
 
-$print_login_please = "Please log in.";
-$auth_failed_message = "Login failed. Please re-enter.";
+my $print_login_please = "Please log in.";
+my $auth_failed_message = "Login failed. Please re-enter.";
 
-$prompt_uwnetid = "<B>Password:</B><BR>\n";
-$prompt_securid = "<B>SecurID:</B><BR>\n";
+my $prompt_uwnetid = "<B>Password:</B><BR>\n";
+my $prompt_securid = "<B>SecurID:</B><BR>\n";
 
 # how we accentuate WARNING messages
-$pbc_em_start = "<B><font color=\"#FF0000\" size=\"+1\">"; 
-$pbc_em_end = "</font></B><BR>";
+my $pbc_em_start = "<B><font color=\"#FF0000\" size=\"+1\">"; 
+my $pbc_em_end = "</font></B><BR>";
+
+# keys and certs
+my $key_dir = "/usr/local/pubcookie/";
+my $crypt_key = $key_dir . "c_key." . $host;
+my $cert_file = $key_dir . "pubcookie.cert";
+my $cert_key_file = $key_dir . "pubcookie.key";
 
 # some misc settings
-$serial_file = "/tmp/s";
-$first_serial = 23;
-$accept_cookies = 1;
-$granting_request = 1;
+my $serial_file = "/tmp/s";
+my $first_serial = 23;
+my $accept_cookies = 1;
+my $granting_request = 1;
 
 
 ##################### really the beginning of business
@@ -78,7 +89,7 @@ notok($notok_needssl) unless( $ENV{'HTTPS'} eq "on" );
 
 # these two will print an 'error' page and exit
 notok($cookie_test_fail_message) unless ( $accept_cookies );
-notok($no_g_req_fail_message) unless ( $granting_request );
+&notok_backedin unless ( $granting_request );
 
 # get the environment from the request
 my $q = new CGI;
@@ -111,7 +122,6 @@ if ( $fr eq "" ) {
 
 # first do some things to conpensate for old versions
 if ( $version eq "a1" ) {
-    warn_old_module_version($host, $version, "old create");
     $create_pgm = "/usr/local/pubcookie/pbc_create.a1";
     $verify_pgm = "/usr/local/pubcookie/pbc_verify.a1";
 } 
@@ -160,14 +170,18 @@ my $create_l_cmd =  $create_pgm . " "
                    . url_encode($appid) . " "     
                    . "3 "     
                    . url_encode($creds) . " "
-                   . $serial;
+                   . $serial . " "
+                   . $crypt_key . " "
+                   . $cert_key_file;
 
 my $create_g_cmd =  $create_pgm . " ". url_encode($user) . " "
                    . url_encode($appsrvid) . " " 
                    . url_encode($appid) . " "     
                    . "1 "     
                    . url_encode($creds) . " "
-                   . $serial;
+                   . $serial . " "
+                   . $crypt_key . " "
+                   . $cert_key_file;
 
 my $l_cookie = get_cookie_created($create_l_cmd);
 my $g_cookie = get_cookie_created($create_g_cmd);
@@ -178,6 +192,7 @@ my $clear_g_req_cookie = "Set-Cookie: " . &PBC_G_REQ_COOKIENAME . "=done; domain
 
 
 # cook up the url to send the browser back to
+my $redirect_uri;
 if ( $fr eq "NFR" || $fr eq "" ) {
     $redirect_uri = $uri;
 }
@@ -190,11 +205,12 @@ else {
     } 
 }
 
-$redirect_dest = "https://". $host . $redirect_uri;
+my $redirect_dest = "https://". $host . $redirect_uri;
 if ( $args ) {
     $redirect_dest .= "?" . decode_base64($args);
 }
 
+log_message ("main: about to do redirect of $user for host $host, redirect is: $redirect_dest\n");
 
 # now blat out the redirect page
 print <<"EOS";
@@ -215,6 +231,7 @@ exit;
 
 sub print_login_page {
     my ($message, $reason, $creds, $need_clear_login) = @_;
+    my ($field_label, $word);
 
     my $field_label2 = "";
 
@@ -227,8 +244,8 @@ sub print_login_page {
         $word = "INVALID REQUEST";
     }
     elsif ( $creds eq "3" ) {
-        $field_label = $prompt_securid;
-        $field_label2 = $prompt_uwnetid;
+        $field_label2 = $prompt_securid;
+        $field_label = $prompt_uwnetid;
         $word = "passwd and SecurID";
     }
     # this probably indicates a problem but ignore it for now
@@ -243,7 +260,7 @@ sub print_login_page {
     }
     print "\n\n";
 
-    &print_login_page_part1;
+    print_login_page_part1(1);
 
     print "<P>$message</P>\n";
     print "<!-- -- $reason -- -->\n";
@@ -253,14 +270,14 @@ sub print_login_page {
     &print_login_page_part2;
 
     # seperate from above since this is where the form is
-    &print_login_page_part3;
+    print_login_page_part3($word);
 
     print $field_label;
     print "<INPUT TYPE=\"";
     if ( $field_label eq $prompt_uwnetid ) {
         print "PASSWORD";
     }
-    print "\" NAME=\"pass\" SIZE=\"20\">\n";
+    print "\" NAME=\"pass\" SIZE=\"20\">\n<P>\n";
         
     if ( $field_label2 eq $prompt_uwnetid ) {
         print $field_label2;
@@ -339,8 +356,8 @@ sub check_login {
         $ret = check_login_uwnetid($user, $pass);
     }
     elsif ( $creds eq "3" ) {
-        if ( ($ret = check_login_securid($user, $pass)) eq "success" ) {
-            $ret = check_login_uwnetid($user, $pass2);
+        if ( ($ret = check_login_securid($user, $pass2)) eq "success" ) {
+            $ret = check_login_uwnetid($user, $pass);
         }
         else {
             return $ret;
@@ -353,6 +370,7 @@ sub check_login {
 
 sub check_login_uwnetid {
     my ($user, $pass) = @_;
+    my $result;
 
     if ( authsrv::authenticate(\$result, 10, $$, 'auth-only', 0, 0,
                                         [ 'uapasswd' ],
@@ -373,7 +391,6 @@ sub check_login_securid {
     my ($user, $pass) = @_;
     my $result;
 
-print STDERR "about to check $result, $user $pass\n";
     if ( authsrv::authenticate(\$result, 10, $$, 'auth-only', 0, 0,
                                         [ 'securid' ],
                                         {
@@ -384,7 +401,6 @@ print STDERR "about to check $result, $user $pass\n";
         return "success";
     }
     else {
-print STDERR "crap $result, $user $pass\n";
         return $result . " securid";    
     }
 
@@ -401,12 +417,12 @@ sub check_cookie_test {
         my $string_to_test_for = &PBC_G_REQ_COOKIENAME;
         if ( $ENV{'HTTP_COOKIE'} !~ /$string_to_test_for/ ) {
             log_message("client came in w/o granting req for $ENV{'REQUEST_URI'}");
-            $main::granting_request = 0;
+            $granting_request = 0;
 
             my $string_to_test_for = &PBC_L_COOKIENAME;
             if ( $ENV{'HTTP_COOKIE'} !~ /$string_to_test_for/ ) {
-                log_message("client came in w/o granting req or login cookie $ENV{'REQUEST_URI'}");
-                $main::accept_cookies = 0;
+                log_message("client came in w/o granting req or login cookie request: $ENV{'REQUEST_URI'}");
+                $accept_cookies = 0;
             }
         }
     }
@@ -415,6 +431,9 @@ sub check_cookie_test {
 
 sub check_l_cookie {
     my ($c_user, $c_version, $c_type, $c_creds, $c_appsrv_id, $c_app_id, $c_create_ts, $c_last_ts);
+    my $wtr = gensym;
+    my $rdr = gensym;
+    my $err = gensym;
 
     # get the login request cookie(s)
     my @cookies = get_cookie_fromenv(&PBC_L_COOKIENAME);
@@ -431,16 +450,19 @@ sub check_l_cookie {
 
     my $login_cookie = $cookies[-1];
 
-    my $cmd = "$verify_pgm 3";
-    if( ! open3(WTR, RDR, ERR, $cmd) ) {
-        log_message ("check_l_cookie: open2 of cmd $cmd failed $!");
+    my $cmd = untaint("$verify_pgm 3 $crypt_key $cert_file");
+    log_message ("check_l_cookie: about to do verify: $cmd\n");
+
+    if( ! open3($wtr, $rdr, $err, $cmd) ) {
+        log_message ("check_l_cookie: open3 of cmd $cmd failed $!");
         return "system_problem";
     }
-    print WTR $login_cookie;
-    close WTR;
-    while(<ERR>) {
+    print $wtr $login_cookie;
+    close $wtr;
+    while(<$err>) {
+        log_message("check_l_cookie: error doing verify: $_");
     }
-    while(<RDR>) {
+    while(<$rdr>) {
         chomp;
         $c_user = $1 if ( /user: (.*)(\s|$)/ );
         $c_version = $1 if ( /version: (.*)(\s|$)/ );
@@ -455,6 +477,7 @@ sub check_l_cookie {
         log_message("no user from login cookie?: $user");
         return "malformed";
     }
+    my $t;
     if ( ($c_create_ts + $expire_login) < ($t=time) ) {
         log_message("expired login cookie: created: $c_create_ts timeout: $expire_login seconds now: $t");
         return "expired";
@@ -486,20 +509,28 @@ sub check_l_cookie {
     }
 
     $user = $c_user;
+    $creds = $c_creds;
     return "success";
 }
 
 sub get_cookie_created {
     my($line) = @_;
     my $ret;
+    my $wtr = gensym;
+    my $rdr = gensym;
+    my $err = gensym;
 
-    if( ! open2(RDR, WTR, $line) ) {
-        log_message("get_cookie_created: open2 of cmd $create_pgm failed $!");
+    log_message ("get_cookie_created: about to do create: $line");
+    if( ! open3($wtr, $rdr, $err, $line) ) {
+        log_message("get_cookie_created: open3 of cmd $create_pgm failed $!");
         return 0;
     }
-    print WTR $line;
-    close WTR;
-    $ret = <RDR>;
+    print $wtr $line;
+    close $wtr;
+    while(<$err>) {
+        log_message("get_cookie_created: error doing create: $_");
+    }
+    $ret = <$rdr>;
     return $ret;
 }
 
@@ -531,6 +562,15 @@ sub log_message {
 
 sub get_next_serial {
     return 1;
+}
+
+sub untaint {
+    my ( $v ) = shift;
+    $v =~ /^(.*)$/;
+    return $1;
+}
+
+sub clean {
 }
 
 sub decode_g_req_cookie {
@@ -573,7 +613,7 @@ sub get_cookie_fromenv {
     my @cookies;
 
     $name .= "=";
-    $c_string = $ENV{'HTTP_COOKIE'};
+    my $c_string = $ENV{'HTTP_COOKIE'};
 
     while ( ($i=index($c_string, $name, $i+1)) != -1 ) {
         my $end = index($c_string, ";", $i);
@@ -594,6 +634,7 @@ sub check_user_agent {
 
 ################################### part 1
 sub print_login_page_part1 {
+    my ($focus) = @_;
 
     print <<"EOS";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
@@ -602,7 +643,16 @@ sub print_login_page_part1 {
 <TITLE>UW NetID Login</TITLE>
 </HEAD>
 
-<BODY BGCOLOR="#FFFFFF" onLoad="document.query.user.focus()">
+EOS
+
+if ( $focus ) {
+    print "<BODY BGCOLOR=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n";
+}
+else {
+    print "<BODY BGCOLOR=\"#FFFFFF\">\n";
+}
+
+    print <<"EOS";
 
 <CENTER>
 
@@ -612,6 +662,7 @@ sub print_login_page_part1 {
 <IMG SRC="/images/login.gif" ALT="UW NetID Login" HEIGHT="64" WIDTH="208">
 
 EOS
+
 }
 
 ################################### part 2
@@ -635,6 +686,7 @@ EOS
 
 ################################### part 3
 sub print_login_page_part3 {
+    my($word) = @_;
 
     print <<"EOS";
 
@@ -645,15 +697,21 @@ sub print_login_page_part3 {
 <TD WIDTH=9>&nbsp;</TD>
 
 <TD WIDTH=200 VALIGN="MIDDLE">
-<FORM METHOD="POST" ACTION="index.cgi" ENCTYPE="application/x-www-form-urlencoded" NAME="query">
+<FORM METHOD="POST" ACTION="/" ENCTYPE="application/x-www-form-urlencoded" NAME="query">
 <p>Enter your UW NetID and $word below, then click the Login
 button.</p>
 <P>
-<B>UW NetID:</B><br>
+<B>UW NetID:</B><BR>
 <INPUT TYPE="TEXT" NAME="user" SIZE="20">
+<BR>
 <P>
 
 EOS
+
+# the bob@u text
+# <font size="-1">(If your UW email address is bob\@u.washington.edu,
+# then your UW NetID is bob.)</font>
+
 }
 
 
@@ -714,7 +772,7 @@ sub notok {
     print "Content-Type: text/html\n";
     print "\n\n";
 
-    &print_login_page_part1;
+    print_login_page_part1(0);
 
     print "<P>\n" . $pbc_em_start . $message . $pbc_em_end;
 
@@ -725,3 +783,34 @@ sub notok {
     exit;
 }
 
+sub notok_backedin {
+    print "Content-Type: text/html\n";
+    print "\n\n";
+
+    &print_login_page_part1(0);
+
+    print "<p> \n";
+    print "<b><font color=\"#FF0000\" size=\"+1\">\n";
+    print "You cannot use the BACK button to\n";
+    print "return to pages you visited before the UW NetID login page.\n";
+    print "</font></b></p>\n";
+
+    print "<p>To go back to Web pages you visited before:</p>\n";
+
+    print "<ul>\n";
+    print "<li><p>In Netscape Navigator, click the <b>Go</b> \n";
+    print "menu to reveal your current\n";
+    print "browsing history. Then click the appropriate Web page.</p></li>\n";
+    print "<li><p>In Microsoft Internet Explorer, click the \n";
+    print "<b>History</b> button to reveal\n";
+    print "your current browsing history. Then click the appropriate \n";
+    print "Web page.</p></li>\n";
+    print "</ul>\n";
+    print "<hr noshade>\n";
+    print "</TD>\n";
+
+    &print_login_page_part5;
+
+    exit;
+
+}
