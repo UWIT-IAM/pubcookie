@@ -12,6 +12,13 @@
 # include <strings.h>
 #endif /* HAVE_STRINGS_H */
 
+#ifdef HAVE_SYSLOG_H
+# ifndef NEED_SYSLOG_NAMES
+#  define SYSLOG_NAMES 1
+# endif /* NEED_SYSLOG_NAMES */
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
 #include "libpubcookie.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"
@@ -81,7 +88,7 @@ void pbc_log_activity(int logging_level, const char *message,...)
 }
 
 char * mystrdup( const char * s ) {
-    if (s != NULL) return strdup(s);
+    if (s != NULL) return (char *) strdup(s);
     else return NULL;
 }
 
