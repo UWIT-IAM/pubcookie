@@ -17,7 +17,7 @@
  */
 
 /*
-    $Id: make_crypted_blob.c,v 1.1 2001-12-09 09:13:43 willey Exp $
+    $Id: make_crypted_blob.c,v 1.2 2002-01-10 23:16:32 willey Exp $
  */
 
 
@@ -31,9 +31,9 @@
 #include "pbc_config.h"
 
 void usage(const char *progname) {
-    printf("%s [-o out_file] [-k key_file] [-h]\n\n", progname);
+    printf("%s [-o out_file] [-k c_key_file] [-h]\n\n", progname);
     printf("\t out_file:\twhere the output goes\n");
-    printf("\t key_file:\tdefault is %s\n\n", PBC_CRYPT_KEYFILE);
+    printf("\t c_key_file:\tdefault is %s\n\n", PBC_CRYPT_KEYFILE);
     exit (1);
 }
 
