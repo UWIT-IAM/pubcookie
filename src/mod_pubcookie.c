@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.26 1999-06-02 00:18:30 willey Exp $
+    $Id: mod_pubcookie.c,v 1.27 1999-06-02 21:43:03 willey Exp $
  */
 
 /* apache includes */
@@ -72,7 +72,6 @@ int put_out_post(request_rec *r) {
    if (should_client_block(r)) {
         int len_read;
 
-        /* do we need one of these here ? */
         hard_timeout("copy script args", r);
 
         while ((len_read =
@@ -95,7 +94,6 @@ int put_out_post(request_rec *r) {
    if (ap_should_client_block(r)) {
         int len_read;
 
-        /* do we need one of these here ? */
         ap_hard_timeout("copy script args", r);
 
         while ((len_read =
@@ -270,16 +268,15 @@ static int auth_failed(request_rec *r) {
 #ifdef APACHE1_2
     char 		 *refresh = palloc(r->pool, PBC_1K);
     char 		 *new_cookie = palloc(r->pool, PBC_1K);
-    char 		 *args = palloc(r->pool, PBC_1K);
     char 		 *g_req_contents = palloc(r->pool, PBC_1K);
     char 		 *e_g_req_contents = palloc(r->pool, PBC_1K);
 #else
     char 		 *refresh = ap_palloc(r->pool, PBC_1K);
     char 		 *new_cookie = ap_palloc(r->pool, PBC_1K);
-    char 		 *args = ap_palloc(r->pool, PBC_1K);
     char 		 *g_req_contents = ap_palloc(r->pool, PBC_1K);
     char 		 *e_g_req_contents = ap_palloc(r->pool, PBC_1K);
 #endif
+    char		 *args;
     char		 *refresh_e;
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec 	 *cfg;
@@ -302,9 +299,17 @@ static int auth_failed(request_rec *r) {
 
     /* deal with GET args */
     if ( r->args )
-        base64_encode(r->args, args, strlen(r->args));
+#ifdef APACHE1_2
+        args = uuencode(r->pool, r->args);
+#else
+        args = ap_uuencode(r->pool, r->args);
+#endif
     else
-        strcpy(args, "");
+#ifdef APACHE1_2
+        args = pstrdup(r->pool, "");
+#else
+        args = ap_pstrdup(r->pool, "");
+#endif
 
     r->content_type = "text/html";
 
@@ -335,14 +340,18 @@ static int auth_failed(request_rec *r) {
     /*   granting request is sent in a cookie and    */
     /*   a simple redirect is used to get the user   */
     /*   to the login server                         */
-    /* for POSTs:                                    */
+    /* for POSTs and PUTs:                           */
     /*   granting request is still sent in a cookie  */
     /*   redirect is done with javascript in the     */
     /*   body or a button if the user has javascript */
     /*   turned off.  the POST info is in a FORM in  */
     /*   the body of the redirect                    */
 
-    base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
+#ifdef APACHE1_2
+    e_g_req_contents = uuencode(r->pool, g_req_contents);
+#else
+    e_g_req_contents = ap_uuencode(r->pool, g_req_contents);
+#endif
 
     ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
 	  PBC_G_REQ_COOKIENAME, 
@@ -386,78 +395,52 @@ static int auth_failed(request_rec *r) {
 
     /* now send a body */
     if ( r->method_number == M_POST ) {
-
-    /* a bad mix of stuff here and stuff in pbc_config.h */
 #ifdef APACHE1_2
-        rprintf(r, "<HTML><HEAD>\n");
-        rprintf(r, "</HEAD>\n");
-        rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
-        rprintf(r, "<CENTER>\n");
-
         rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
+        rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
+        put_out_post(r);
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
         rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
         rprintf(r, "%s", PBC_UWNETID_LOGO);
-        rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
-
-        rprintf(r, "<FORM METHOD=\"POST\" ACTION=\"%s\" NAME=\"query\">\n", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
-
-        rprintf(r, "<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"");
-        put_out_post(r);
-        rprintf(r, "\">\n");
-        rprintf(r, "<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
-        rprintf(r, "</FORM>\n");
-
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML4);
+        rprintf(r, "%s", PBC_POST_NO_JS_BUTTON);
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML5);
         rprintf(r, "%s", PBC_HTML_COPYRIGHT);
-
-        rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
-        rprintf(r, "</CENTER>\n");
-        rprintf(r, "</BODY></HTML>\n");
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML6);
 #else
-        ap_rprintf(r, "<HTML><HEAD>\n");
-        ap_rprintf(r, "</HEAD>\n");
-        ap_rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
-        ap_rprintf(r, "<CENTER>\n");
-
         ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
+        ap_rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
+        put_out_post(r);
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
         ap_rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
         ap_rprintf(r, "%s", PBC_UWNETID_LOGO);
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
-
-        ap_rprintf(r, "<FORM METHOD=\"POST\" ACTION=\"%s\" NAME=\"query\">\n", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
-        ap_rprintf(r, "<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"");
-        put_out_post(r);
-        ap_rprintf(r, "\">\n");
-        ap_rprintf(r, "<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
-        ap_rprintf(r, "</FORM>\n");
-
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML4);
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_BUTTON);
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML5);
         ap_rprintf(r, "%s", PBC_HTML_COPYRIGHT);
-
-        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
-        ap_rprintf(r, "</CENTER>\n");
-        ap_rprintf(r, "</BODY></HTML>\n");
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML6);
 #endif
-
     }
     else {
-
-    /* setup the client pull */
-    ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
-	  (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
+        /* setup the client pull */
+        ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
+	      (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
 
 #ifdef APACHE1_2
 #ifdef REDIRECT_IN_HEADER
-    rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
+        rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 #else  
-    rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
+        rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
 #endif
 #else
 #ifdef REDIRECT_IN_HEADER
-    ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
+        ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 #else
-    ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
+        ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
 #endif
 #endif
-
     }
 
     return OK;
