@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.12 $)
+AC_REVISION($Revision: 1.13 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta3], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -251,6 +251,50 @@ AC_ARG_ENABLE(krb5,
   esac ])
 
 if test "$enable_krb5" = "yes"; then
+
+# Find the KRB5 Libraries!
+
+# RetHat seems to put KRB5 in /usr/kerberos
+
+if test -d "/usr/kerberos/include"; then
+    CPPFLAGS="$CPPFLAGS -I/usr/kerberos/include"
+fi
+
+if test -d "/usr/kerberos/lib"; then
+    LDFLAGS="$LDFLAGS -L/usr/kerberos/lib"
+fi
+
+AC_ARG_WITH(krb5-dir,
+    AC_HELP_STRING([--with-krb5-dir=PATH], [KRB5 lib/include root]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     CPPFLAGS="$CPPFLAGS -I$withval/include"
+     LDFLAGS="$LDFLAGS -L$withval/lib"
+     ;;
+  esac ])
+
+AC_ARG_WITH(krb5-inc-dir,
+    AC_HELP_STRING([--with-krb5-inc-dir=PATH], [KRB5 include path]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     CPPFLAGS="$CPPFLAGS -I$withval"
+     ;;
+  esac ])
+
+AC_ARG_WITH(krb5-lib-dir,
+    AC_HELP_STRING([--with-krb5-lib-dir=PATH], [KRB5 lib path]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     LDFLAGS="$LDFLAGS -L$withval"
+     ;;
+  esac ])
+
     AC_CHECK_HEADERS([com_err.h krb5.h])
     AC_CHECK_LIB(krb5, krb5_init_context)
 fi
@@ -267,6 +311,40 @@ AC_ARG_ENABLE(ldap,
 # Netscape LDAP SDK, but I'm not that cool.
   
 if test "$enable_ldap" = "yes"; then
+
+# Find the LDAP Libraries!
+
+AC_ARG_WITH(ldap-dir,
+    AC_HELP_STRING([--with-ldap-dir=PATH], [LDAP lib/include root]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     CPPFLAGS="$CPPFLAGS -I$withval/include"
+     LDFLAGS="$LDFLAGS -L$withval/lib"
+     ;;
+  esac ])
+
+AC_ARG_WITH(ldap-inc-dir,
+    AC_HELP_STRING([--with-ldap-inc-dir=PATH], [LDAP include path]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     CPPFLAGS="$CPPFLAGS -I$withval"
+     ;;
+  esac ])
+
+AC_ARG_WITH(ldap-lib-dir,
+    AC_HELP_STRING([--with-ldap-lib-dir=PATH], [LDAP lib path]),
+[ case "$withval" in
+   no)
+     ;;
+   *)
+     LDFLAGS="$LDFLAGS -L$withval"
+     ;;
+  esac ])
+
     AC_CHECK_HEADERS([lber.h])
     AC_CHECK_HEADERS([ldap.h])
     AC_CHECK_LIB(lber, ber_init)
