@@ -1,7 +1,8 @@
 /*
-    $Id: mod_pubcookie.c,v 1.22 1999-03-05 19:42:56 willey Exp $
+    $Id: mod_pubcookie.c,v 1.23 1999-04-29 19:12:14 willey Exp $
  */
 
+/* apache includes */
 #include "httpd.h"
 #include "http_config.h"
 #include "http_core.h"
@@ -10,16 +11,18 @@
 #include "http_protocol.h"
 #include "util_script.h"
 
-#include <pem.h>
+/* pubcookie stuff */
+#include "pubcookie.h"
+#include "libpubcookie.h"
+#include "pbc_config.h"
+#include "pbc_version.h"
+
+/* system stuff */
 #include <time.h>
 #include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "pubcookie.h"
-#include "libpubcookie.h"
-#include "pbc_config.h"
-#include "pbc_version.h"
 
 module pubcookie_module;
 
@@ -43,6 +46,7 @@ typedef struct {
   int 		hard_exp;
   int 		failed;
   int 		has_granting;
+  int 		non_ssl_ok;
   char 		*login;
   unsigned char	*app_id;
   char 		creds;
@@ -256,6 +260,12 @@ static int auth_failed(request_rec *r) {
 /*    - remove the next line        */
 /*	- add the commented html line */
   table_add(r->headers_out, "Refresh", refresh);
+
+  /* we want to make sure agents don't cache the redirect */
+  table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
+  table_set(r->headers_out, "Cache-Control", "no-cache");
+  table_set(r->headers_out, "Pragma", "no-cache");
+
   send_http_header(r);
   rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 /* in our lynx friendly future      */
@@ -496,6 +506,7 @@ static int pubcookie_user(request_rec *r) {
   pubcookie_dir_rec *cfg;
   pubcookie_server_rec *scfg;
   char *cookie;
+  char *at;
   unsigned char *current_app_id;
   pbc_cookie_data     *cookie_data;
   pool *p;
@@ -506,6 +517,8 @@ static int pubcookie_user(request_rec *r) {
   if(!auth_type(r))
     return DECLINED;
 
+  at = pstrdup(p, auth_type(r));
+
   cfg = (pubcookie_dir_rec *) get_module_config(r->per_dir_config, 
 					    &pubcookie_module);
   scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
@@ -514,6 +527,8 @@ static int pubcookie_user(request_rec *r) {
   if(!ap_auth_type(r))
     return DECLINED;
 
+  at = ap_pstrdup(p, ap_auth_type(r));
+
   cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
 					    &pubcookie_module);
   scfg = (pubcookie_server_rec *) ap_get_module_config(r->server->module_config,
@@ -521,19 +536,13 @@ static int pubcookie_user(request_rec *r) {
 #endif
 
   /* add creds to pubcookie record */
-#ifdef APACHE1_2
-  if( strcasecmp(auth_type(r), PBC_NUWNETID_AUTHTYPE) == 0 )
-#else
-  if( strcasecmp(ap_auth_type(r), PBC_NUWNETID_AUTHTYPE) == 0 )
-#endif
-    cfg->creds = PBC_CREDS_UWNETID;
+  if( strcasecmp(at, PBC_NUWNETID_AUTHTYPE) == 0 ) {
+    cfg->creds = '1';
+  }
 #ifdef USE_SECURID
-#ifdef APACHE1_2
-  else if( strcasecmp(auth_type(r), PBC_SECURID_AUTHTYPE) == 0 ) {
-#else
-  else if( strcasecmp(ap_auth_type(r), PBC_SECURID_AUTHTYPE) == 0 ) {
-#endif
-    cfg->creds = PBC_CREDS_SECURID;
+  /* securid only is not acceptable, securid must be used with uwnetid passwd */
+  else if( strcasecmp(at, PBC_SECURID_AUTHTYPE) == 0 ) {
+    cfg->creds = '3';
   }
 #endif
   else {
@@ -644,22 +653,12 @@ static int pubcookie_user(request_rec *r) {
     return OK;
   }
 
-  if( cfg->creds == PBC_CREDS_UWNETID ) {
-    if( (*cookie_data).broken.creds != PBC_CREDS_UWNETID ) {
-      libpbc_debug("pubcookie_user: wrong creds directory; %d cookie: %d\n", PBC_CREDS_UWNETID, (*cookie_data).broken.creds);
-      cfg->failed = PBC_BAD_AUTH;
-      return OK;
-    }
+  /* cfg->creds are the creds bits that we're requiring */
+  if( !(cfg->creds & (*cookie_data).broken.creds) ) {
+    libpbc_debug("pubcookie_user: wrong creds; required: %c cookie had: %c\n", cfg->creds, (*cookie_data).broken.creds);
+    cfg->failed = PBC_BAD_AUTH;
+    return OK;
   }
-#ifdef USE_SECURID
-  if( cfg->creds == PBC_CREDS_SECURID ) {
-    if( (*cookie_data).broken.creds != PBC_CREDS_SECURID ) {
-      libpbc_debug("pubcookie_user: wrong creds directory; %d cookie: %d\n", PBC_CREDS_SECURID, (*cookie_data).broken.creds);
-      cfg->failed = PBC_BAD_AUTH;
-      return OK;
-    }
-  }
-#endif
 
   return OK;
 
@@ -946,6 +945,15 @@ const char *pubcookie_force_reauth(cmd_parms *cmd, void *mconfig, char *v) {
 }
 
 /*                                                                            */
+const char *pubcookie_set_no_ssl_ok(cmd_parms *cmd, void *mconfig, char *v) {
+  pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+
+  cfg->non_ssl_ok = 1;
+
+  return NULL;
+}
+
+/*                                                                            */
 command_rec pubcookie_commands[] = {
   {"PubCookieInactiveExpire", pubcookie_set_inact_exp, NULL, OR_OPTIONS, TAKE1,
    "Set the inactivity expire time for PubCookies."},
@@ -963,8 +971,12 @@ command_rec pubcookie_commands[] = {
    "Set the name of the encryption keyfile for PubCookies."},
   {"PubCookieAppID", pubcookie_set_app_id, NULL, OR_OPTIONS, TAKE1,
    "Set the name of the application."},
+/* we turn off ForceReauth because it sucks anyway
   {"ForceReauth", pubcookie_force_reauth, NULL, OR_OPTIONS, TAKE1,
    "Force the reauthentication loop through the login server"},
+ */
+  {"PubCookieNoSSLOK", pubcookie_set_no_ssl_ok, NULL, OR_OPTIONS, TAKE1,
+   "Allow session to go non-ssl."},
   {NULL}
 };
 
