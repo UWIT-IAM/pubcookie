@@ -5,15 +5,14 @@
 
 <h1>Pubcookie Apache Module - Configuration Directives</h1>
 
-<p><b>mod_pubcookie</b> uses the following run-time configuration
+<p>The Pubcookie Apache module uses the following run-time configuration
 directives:</p>
 
 <p>
 <b>Important Note:</b> If you put the <tt>LoadModule</tt> and <tt>AddModule</tt>
-within <tt>&lt;IfDefine HAVE_SSL&gt;</tt>, you will need to put any
-<tt>httpd.conf</tt> configuration directives within
-<tt>&lt;IfDefine HAVE_SSL&gt;</tt>, or <tt>apachectl restart</tt> and
-<tt>apachectl configtest</tt> will fail.  </p>
+directives for mod_pubcookie within <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block 
+directives, you must do the same for other Pubcookie directives. Otherwise,
+<tt>apachectl restart</tt> and <tt>apachectl configtest</tt> will fail.</p>
 
 <ul>
 <li><a href="#AuthType">AuthType</a></li>
@@ -31,6 +30,8 @@ within <tt>&lt;IfDefine HAVE_SSL&gt;</tt>, you will need to put any
 <li><a href="#PubcookieEndSession">PubcookieEndSession</a></li>
 <li><a href="#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a></li>
 <li><a href="#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a></li>
+<li><a href="#PubcookieNoPrompt">PubcookieNoPrompt</a></li>
+<li><a href="#PubcookieOnDemand">PubcookieOnDemand</a></li>
 <li><a href="#PubcookieAddlRequest">PubcookieAddlRequest</a></li>
 <li><a href="#PubcookieEgdDevice">PubcookieEgdDevice</a></li>
 <li><a href="#PubcookieSuperDebug">PubcookieSuperDebug</a></li>
@@ -346,6 +347,89 @@ unused position in the ordered list of PubcookieAuthTypeNames.</p>
 higher. All users upgrading to mod_pubcookie 1.77 or higher must add this
 directive to their server configuration.</p>
 
+<h3><a name="PubcookieNoPrompt">PubcookieNoPrompt directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieNoPrompt on | off<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel=
+"Help"><strong>Override:</strong></a> AuthConfig<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> mod_pubcookie 3.1 and later;
+it also requires a 3.1 or later login server</p>
+
+<p>This directive prevents the login server from displaying the login
+page, while still allowing single sign-on to the resource if the user has
+already logged in.</p>
+
+<p>If the user already has a valid login cookie they will be logged in
+normally: i.e., returned to the application and given a standard session
+cookie. If, on the other hand, they do not have a valid login cookie they
+will be silently returned to the application (i.e., they won't be prompted
+to log in) and given a session cookie with a blank id.</p>
+
+<p>The AUTH_TYPE and REMOTE_USER environment variables will be set only if
+the user has a valid login cookie, thus taking advantage of the no-prompt
+option and single sign-on. These environment variables will not be set
+(just like any other unauthenticated request) if the user has no valid
+login cookie.</p>
+
+<p>Notes: Users may find sites behave inconsistently when the no-prompt
+option is in use, not realzing that the behavior depends on whether
+they've already logged in. Also, because a session cookie with the blank
+id is established when the user hasn't already logged in, the session will
+remain anonymous for the duration of the session, even if the user 
+subsequently logs in elsewhere.</p>
+
+<h3><a name="PubcookieOnDemand">PubcookieOnDemand directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieOnDemand <i>key</i> 
+<i>directive1 directive2...</i><br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Override" rel=
+"Help"><strong>Override:</strong></a> AuthConfig<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> mod_pubcookie 3.1 and later;
+it also requires a 3.1 or later login server</p>
+
+<p>This directive controls the module's on-demand functionality.</p>
+
+<p>Directives used on demand are normally quiescent and have no effect. 
+Only the presence of the activation cookie, <tt>OnDemandKey</tt>, with a
+value matching the <i>key</i>, activates the associated on-demand
+directives (<i>directive1, directive2...</i>) and sets the environment
+variable ON_DEMAND_KEY to the active on-demand key. The activation cookie
+must accompany each request for resource to be protected on demand.</p>
+
+<p>The following directives can be used on demand (i.e. can be tied 
+to, and activated by, an on-demand key):</p>
+
+<ul>
+<li>AuthType</li>
+<li>Require</li>
+<li>PubcookieInactiveExpire</li>
+<li>PubcookieHardExpire</li>
+<li>PubcookieAppID</li>
+<li>PubcookieEndSession</li>
+<li>PubcookieSessionCauseReAuth</li>
+<li>PubcookieAddlRequest</li>
+<li>PubcookieNoPrompt</li>
+</ul>
+
+<p>Activated PubcookieOnDemand directives will overrule any equivalent
+directives specified elsewhere.</p>
+
+<p>Notes: The activation cookie, <tt>OnDemandKey</tt>, and its key value
+are plain text.  Applications must query the ON_DEMAND_KEY environment
+variable to make sure the remote user is authenticated and authorized
+according to the desired on-demand key. Therefore, applications must also
+allow for, and adjust to, missing or null REMOTE_USER and ON_DEMAND_KEY
+environment variables.</p>
+
+
 <h3><a name="PubcookieAddlRequest">PubcookieAddlRequest directive</a></h3>
 
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
@@ -382,7 +466,7 @@ rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
 <h3><a name="PubcookieSuperDebug">PubcookieSuperDebug directive</a></h3>
 
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieSuperDebug on|off<br>
+"Help"><strong>Syntax:</strong></a> PubcookieSuperDebug on | off<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
 "Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"

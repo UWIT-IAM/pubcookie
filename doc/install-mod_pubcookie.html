@@ -9,9 +9,9 @@
 
 <h1>Pubcookie Apache Module - Install Guide</h1>
 
-                <p>Note: Documentation can contain bugs too. The
+                <p>Note: Documentation can contain bugs too. Use the
                    <a href="http://www.pubcookie.org/docs/install-mod_pubcookie-3.0.html">online 
-                   version of this document</a> is always the most up-to-date version.
+                   version</a> of this document for the most up-to-date information.
                 </p>
 
                 <p><i>Included on this page:</i></p>
@@ -31,18 +31,18 @@
                     <li><a href="#debug">Troubleshooting</a></li>
                   </ul>
                   <h4><a name="obj">Objectives</a></h4>
-                  <p>This guide helps you install mod_pubcookie on Apache 1.3.x.
-                     Objectives include:</p>
+                  <p>This guide helps Apache HTTP server administrators install and use the Pubcookie Apache
+                     module, mod_pubcookie, henceforth referred to
+                     often as <i>the module</i>. Within this guide you will learn how to:</p>
                   <ul>
-                    <li>how to build and install mod_pubcookie on 
-                      Apache 1.3.x</li>
-                    <li>how to use the Pubcookie keyclient to obtain an encryption 
-                      key</li>
-                    <li>how to configure Apache as a Pubcookie application server 
-                    </li>
-                    <li>how to test mod_pubcookie to confirm that authentication 
-                      works</li>
+                    <li><p>Build and install the module for use with either Apache 1.3 or 2.0;</p></li>
+                    <li><p>Use the Pubcookie keyclient to obtain an encryption key and retrieve
+                      your site's granting certificate;</p></li>
+                    <li><p>Configure the module by adding directives to Apache's httpd.conf;</p></li>
+                    <li><p>Test the module to confirm that authentication is working.</p></li>
                   </ul>
+                  <p>Site administrators should refer to the <a href="install-login.html">login server guide</a> 
+                  for instructions on deploying a Pubcookie login server.</p>
 
                   <h4><a name="new"></a>What's New</h4>
                   <p>Significant changes since mod_pubcookie-3.0.0:</p>
@@ -59,55 +59,57 @@
                     </li>
                   </ul>
                   <h4><a name="pre">Prerequisites</a></h4>
-                  <p>Use of mod_pubcookie relies on additional infrastructure at your site, 
-                    including a Pubcookie version 3 compatible login server and keyserver. 
-                    Here are the things you will need or need to look into:</p>
+                  <p>Use of this module relies on additional infrastructure at your site.
+                  These prerequisites are enumerated and described below.</p>
                   <ul>
                     <li> 
-                      <p>To verify the signature of "granting" cookies sent by your login
-                        server, obtain a copy of your Pubcookie login server's "granting" certificate 
-                        (e.g., <tt>pubcookie_granting.cert</tt>). If you didn't deploy your login 
-                        server (e.g. <i>weblogin.example.edu</i>), contact the people at 
-                        your site who did. They will have information about obtaining the 
-                        granting certificate and may have further advice for setting up 
-                        your application server. The instructions below tell you what to do
-                        with this file once you have it.</p>
-                    </li> 
+                      <p>To use the module to authenticate users, determine the location of
+                        your site's Pubcookie login server. You may also want to find out its version,
+                        so that you know what features it supports.</p>
+                    </li>
                     <li>
-                      <p>To request a DES encryption key for your server, your site's keyserver
-                        administrator may have to "permit" your server. This depends on the 
-                        keyserver version as well as site policy. Check with your keyserver
-                        administrator before requesting a key.</p>
+                      <p>To request a DES encryption key for your server, determine the location
+                        of your site's Pubcookie keyserver. Ask the administrator to "permit" your 
+                        server if necessary; this depends on the keyserver version as well as site policy.</p>
                     </li> 
                     <li>
                       <p>To negotiate the SSL/TLS connection to your keyserver, the SSL certificate 
                         you use with the keyclient utility (often the same server certificate used for
                         SSL) must be issued by a Certificate Authority trusted by your site's keyserver.
-                        Again, check with your keyserver administrator to find out the local policy.</p>
+                        Similarly, the SSL certificate presented by the keyserver must be issued by a
+                        CA that your keyclient trusts. Ask the administrator for guidelines; it'll save
+                        you time and effort.</p>
+                    </li> 
+                    <li> 
+                      <p>To verify the "granting" cookies signed and sent by your login
+                        server, determine how your site distributes its "granting" certificate. Again,
+                        ask the administrator. You may be able to download it via the keyserver, or
+                        you may have to obtain it manually.</p>
                     </li> 
                   </ul>
+                  <p>These topics will be described in more detail as they come up below.</p>
+
                   <h4><a name="req">System Requirements</a></h4>
-                  <p>System requirements for your Apache server include:</p>
+
+                  <p>The module has the following system requirements:</p>
                   <ul>
-                    <li>Unix platform 
-                    <li>Accurate system time 
-                    <li>A domain name (e.g. <em>appserver.example.edu</em>) registered 
+                    <li><p>Unix platform.</p></li>
+                    <li><p>Accurate system time.</p></li>
+                    <li><p><a href="http://httpd.apache.org/">Apache</a> web server. Either 1.3 or 2.0 will do.</p></li>
+                    <li><p>SSL enabled web server. The <a href="http://www.modssl.org">mod_ssl</a> 
+                      package is recommended. See our <a href="http://www.pubcookie.org/faq.html">FAQ</a>
+                      for information about using Apache-SSL.</p></li>
+                    <li><p><a href="http://www.openssl.org">OpenSSL</a> library.</p></li>
+                    <li><p>SSL keypair. An SSL certificate and private key. [Fixme: PEM encoded? not encrypted?]</p></li>
+                    <li><p>Domain name (e.g. <em>appserver.example.edu</em>) registered 
                       in DNS within the same subdomain as your Pubcookie login 
-                      server (e.g. <i>weblogin.example.edu</i>). 
-                    <li>A working <a href="http://www.apache.org/httpd.html">Apache</a> 
-                      server (version 1.3.x) with: 
-                      <ul>
-                        <li><a href="http://www.modssl.org">mod_ssl</a> or <a href="http://www.apache-ssl.org">Apache-SSL</a> 
-                          patches 
-                        <li>SSL server certificate 
-                      </ul>
-                    <li><a href="http://www.openssl.org">OpenSSL</a></li>
+                      server (e.g. <i>weblogin.example.edu</i>). [Fixme: keep? 3.1 can relay.]</p></li>
                   </ul>
                   <h4><a name="build">Build Pubcookie</a></h4>
-                  <p>mod_pubcookie can be built as a Dynamic Shared Object (DSO) 
-                    or it can be built into Apache itself (statically linked). 
-                    Before you build mod_pubcookie, install and test Apache with 
-                    SSL support, which is required.</p>
+                  <p>The module can be built as a Dynamic Shared Object (DSO) 
+                    or it can be statically linked into Apache itself. 
+                    But before you build the module, test your SSL configuration. 
+                    The module won't work without SSL support.</p>
                   <p><b>General guidelines for adding SSL support to Apache:</b></p>
                   <p>If your Apache server does not already support SSL, here 
                     are some guidelines for adding it. Note: this is just an overview; 
@@ -117,25 +119,24 @@
                     <li> 
                       <p>Build and install OpenSSL.</p>
                     <li> 
-                      <p>Build and install Apache from source with SSL support 
-                        by following the directions accompanying the mod_ssl or 
-                        Apache-SSL source. This is when you will decide to build 
+                      <p>Build and install Apache from source and add SSL support 
+                        by following the directions accompanying the mod_ssl 
+                        package. You will have to decide whether to build 
                         modules dynamically or statically. If you use apxs (the 
                         Apache DSO module builder), be sure to link it with OpenSSL. 
                       </p>
                     <li> 
-                      <p>Generate a private key and CSR (certificate signing request) 
+                      <p>Generate a private key and certificate signing request (CSR)
                         to obtain a signed SSL server certificate and install 
                         the private key and server certificate as directed by 
-                        the mod_ssl or Apache-SSL documentation. (Note: You will
+                        the mod_ssl documentation. (Note: You will
                         probably reuse this keypair with Pubcookie's keyclient
                         utility, in which case your cert should be issued by
                         a Certificate Authority trusted by your Pubcookie keyserver.
-                        Contact your Pubcookie login server administrator for
-                        recommended certificate issuers.)</p>
+                        Ask the administrator for guidelines.)</p>
                     <li> 
-                      <p>Verify that Apache with SSL support works before you 
-                        proceed to build and install mod_pubcookie.</p>
+                      <p>Verify that Apache responds to HTTPS connections. SSL should
+                        be working before you proceed to build and install mod_pubcookie.</p>
                   </ol>
                   <p><b>To build mod_pubcookie as a DSO using apxs:</b></p>
                   <ol>
@@ -175,8 +176,7 @@
                     module:</b></p>
                   <ol>
                     <li> 
-                      <p><a href="../downloads.html">Download</a> the mod_pubcookie 
-                        distribution.</p>
+                      <p><a href="../downloads.html">Download</a> the source distribution.</p>
                     <li> 
                       <p>Untar a copy of the Pubcookie source code, placing it 
                         where you would put other modules, e.g.:</p>
@@ -209,8 +209,7 @@
                         run the Configure script.</p>
                     <li> 
                       <p>After running the configure scripts, do your 'make' to build 
-                        a new Apache daemon with mod_pubcookie now statically 
-                        linked in.</p>
+                        a new Apache daemon with the module now statically linked in.</p>
                     <li> Install your new Apache daemon. But complete these installation
                         and configuration instructions before starting it.</p>
                     <li>
@@ -242,8 +241,8 @@
                         directory, i.e. where Pubcookie stores its supporting files (config file, keys,
                         certs, etc.) The default location is <tt>/usr/local/pubcookie</tt>, 
                         as defined in the configure script. It will also activate 
-                        mod_pubcookie by copying the DSO module to the appropirate 
-                        location and by modifying your httpd.conf file. You may 
+                        the module by copying the mod_pubcookie.so to the appropirate 
+                        location and by modifying your httpd.conf file. [fixme: that's not true in P3.1] You may 
                         want to check that the LoadModule and AddModule directives 
                         landed in the right section of your httpd.conf.</p>
                       <li> 
@@ -306,12 +305,12 @@ AddModule mod_pubcookie.c
 		  <h4><a name="keyclient">Configure &amp; Run Keyclient</a></h4>
 
                   <p>Pubookie uses a keyserver to distribute encryption keys 
-                    and a site's "granting" certificate to participating application servers. 
+                    and, oppitionally, a site's "granting" certificate to participating application servers. 
                     This section describes how to configure and run the keyclient utility 
                     to negotiate a key from your local keyserver.</p>
 
                   <p>Note: keyclient configuration depends on local practices, so contact 
-                    your login server administrator for tips and recommendations.</p>
+                    your administrator for tips and recommendations.</p>
 
                   <p><b>To create a configuration file for the keyclient:</b></p>
 
@@ -348,8 +347,8 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                       must be signed by a Certificate Authority trusted by your site's keyserver. 
                       Likewise, the certificate presented by the keyserver to the keyclient
                       must be signed by a CA trusted by your keyclient (i.e., via <tt>ssl_ca_file</tt>  
-                      or <tt>ssl_ca_path</tt>). Contact your login server administrator to find out
-                      the recommend CA configuration for requesting keys.</p>
+                      or <tt>ssl_ca_path</tt>). Ask your administrator for guidelines; they may
+                      recommend or require specific CAs.</p>
                     <p>Warning: the keyclient utility cannot read RSA private keys encrypted with a
                       passphrase. To run keyclient, your <tt>ssl_key_file</tt> cannot require a password.</p>
                     <li> 
@@ -360,13 +359,12 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                   <p><b>To request a new encryption key for your server:</b></p>
                   <ol>
                     <li>
-                      <p>Your login server administrator may have to "permit" your server to request a key.
-                        This depends on the local policy on server registration as well as the version of 
-                        keyserver being used. Check with your login server administrator for details.</p>
+                      <p>Ask the keyserver administrator to "permit" your server if necessary to
+                        request a key; this depends on the local policy for server registration 
+                        as well as the version of keyserver being used.</p>
                     </li> 
                     <li> 
-                      <p>Once your server has been permitted to request a key (if that was
-                        needed) run the keyclient utility to request a new DES key:</p>
+                      <p>Run the keyclient utility to request a new DES key:</p>
                       <p> 
                       <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
                         <tr> 
@@ -444,8 +442,7 @@ appserver.example.edu</pre></td>
                       </TABLE>
                       <p></p>
                     <li> 
-                      <p>Define a new section for <a href="mod_pubcookie-directives.html">mod_pubcookie
-                        run-time configuration directives</a>.</p>
+                      <p>Add a new section in httpd.conf for configuring the module:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
@@ -464,10 +461,7 @@ PubcookieDomain .example.edu
 PubcookieKeyDir /usr/local/pubcookie/keys/
 PubcookieAuthTypeNames EGNetID
 
-#
-# Disable inactivity timeout by default in DocumentRoot
-#
-
+# Disable inactivity timeout by default
 &lt;Directory "/var/www/html"&gt;
 PubcookieInactiveExpire -1
 &lt;/Directory&gt;
@@ -477,24 +471,40 @@ PubcookieInactiveExpire -1
 &lt;/IfDefine&gt;</pre></TD>
                         </TR>
                       </TABLE>
-                      <p>It is recommended that you define each of these directives even
-                        though they are not all required in order to start Apache. [fixme: can we be more specific?]</p>
-                      <p>Note: The <a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
-                        directive defines the strings that mod_pubcookie enables as additional arguments to 
-                        the <a href="mod_pubcookie-directives.html#AuthType">AuthType</a> directive.</p>
-                      <p>Note: Turning off the inactivity expiration via the <a 
+
+                      <p>Refer to the <a href="mod_pubcookie-directives.html">mod_pubcookie run-time configuration
+                      directives</a> for general descriptions of each. Here are some significant notes:</p>
+
+                      <ul>
+                      <li>
+                        <p>Each directive above is recommended, although they're not all required to 
+                        start Apache. [fixme: can we be more specific?]</p>
+                      </li>
+                      <li>
+                        <p><a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
+                        defines the strings that the module enables as additional arguments to 
+                        the <a href="mod_pubcookie-directives.html#AuthType">AuthType</a> directive. (<tt>EGNetID</tt>
+                        just happens to be what they use at Example State University.)</p>
+                      </li>
+                      <li>
+                        <p>Turning off the inactivity expiration via the <a 
                         href="mod_pubcookie-directives.html#PubcookieInactiveExpire">PubcookieInactiveExpire</a>
                         directive provides a modest performance boost, since session cookies don't
                         have to be signed so often. Applications that require an inactivity timeout can 
                         always override this default setting.</p>
-                      <p><b>Warning</b>: if your LoadModule and AddModule directives are 
-                        placed within an &lt;IfDefine HAVE_SSL&gt; block directive, 
-                        all Pubcookie run-time directives must also be placed 
-                        with an &lt;IfDefine HAVE_SSL&gt; block directive. This, 
-                        of course, is how it is done throughout this installation 
-                        guide. </p>
-                      <p>[fixme: permissions on cert/keyfile - what's required? also, can 
-                         PubcookieSessionKeyfile be encrypted with a pass phrase?]
+                      </li>
+                      <li>
+                        <p><b>Warning</b>: if your LoadModule and AddModule directives are 
+                        placed within an &lt;IfDefine HAVE_SSL&gt; block directive, then
+                        all Pubcookie configuration directives must also be placed 
+                        within an &lt;IfDefine HAVE_SSL&gt; block directive. This is the
+                        convention used throughout this guide.</p>
+                      </li>
+                      <li>
+                        <p>[fixme: permissions on cert/keyfile - what's required? also, can 
+                        PubcookieSessionKeyfile be encrypted with a pass phrase?]
+                      </li>
+                    </ul>
                     <li> 
                       <p>Take this opportunity also to add any other system-wide 
                         configuration you want for your Pubcookie application 
@@ -504,7 +514,7 @@ PubcookieInactiveExpire -1
                         possibilities.</p>
                     <li> 
 
-                      <p>Now enable the use of mod_pubcookie's application-specific
+                      <p>Now enable the use of the module's per-application
                         configuration directives inside .htaccess files and
                         &lt;Directory&gt; and &lt;Location&gt; block directives. To
                         do so, set your server's <a 
@@ -550,7 +560,7 @@ RewriteRule ^/(.*)$ https://%{SERVER_NAME}/$1 [L,R]</pre></TD>
 					
                   <h4><a name="logout">Logout Configuration and Use</a></h4>
                   <p>The <a href="mod_pubcookie-directives.html#PubcookieEndSession">PubcookieEndSession</a> 
-                  directive causes mod_pubcookie
+                  directive causes the module 
                   to clear the current session cookie. Therefore, it is used to implement
                   application logout. This directive can be configured on a per-application
                   basis using .htaccess or configured centrally to create a virtual logout
@@ -588,7 +598,7 @@ PubcookieEndSession redirect</pre></TD>
                   <p>This is a nice alternative for sysadmins and application deployers who 
                   prefer not to use subdirectories and .htaccess files to configure
                   logout. Essentially, by using Apache's <a href="http://httpd.apache.org/docs/mod/core.html#locationmatch">LocationMatch</a> 
-                  directive you can create a server-wide matching string that causes mod_pubcookie to
+                  directive you can create a server-wide matching string that causes the module to
                   invoke <a href="mod_pubcookie-directives.html#PubcookieEndSession">PubcookieEndSession</a> 
                   without the use of .htaccess;
                   simply by creating a link with the same string in it, an application 
@@ -710,11 +720,10 @@ require valid-user</pre></TD>
 		  <h4><a name="debug"></a>Troubleshooting</h4>
 		  <p>To troubleshoot problems with keyclient, review the error messages
                     it produces [fixme: does it send anything to syslog???] and if need be
-                    contact the administrator of your local Pubcookie login server to find 
-                    out what messages keyserver sent to syslog when you made your keyclient 
-                    request.
+                    ask your keyserver administrator to review syslog for error messages
+                    corresponding with your keyclient connections.
                   </p>
-		  <p>To troubleshoot problems with mod_pubcookie, look in your Apache 
+		  <p>To troubleshoot problems with the module, look in your Apache 
                     server's error_log. If need be, edit your Apache httpd.conf 
                     file and turn on the debug mode (requires server restart) 
                     to get additional information:</p>

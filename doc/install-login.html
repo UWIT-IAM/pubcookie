@@ -457,11 +457,13 @@ going to use the Common Name to create a host key in the keystore.</p>
 <h4><a name="keyserver">Keyserver Setup</a></h4>
 
 <p>To set up your keyserver, make sure you've configured
-<tt>ssl_key_file</tt>, <tt>ssl_cert_file</tt>,
-<tt>keyserver_client_list</tt>, and either <tt>ssl_ca_file</tt> or
-<tt>ssl_ca_path</tt> depending on how you handle trusted root CA
+<tt>ssl_key_file</tt>, <tt>ssl_cert_file</tt>, and either <tt>ssl_ca_file</tt> 
+or <tt>ssl_ca_path</tt> depending on how you handle trusted root CA
 certificates. Keyserver also uses <tt>granting_cert_file</tt> for 
-distributing your "granting" certificate.</p>
+distributing your "granting" certificate. And if you want some
+control over which host can request keys, use <tt>keyserver_client_list</tt>
+to define the hosts that administrators will use to "permit" new hosts
+to retrieve keys.</p>
 
 <p>You can run your keyserver from inetd or xinetd, but not as a cgi
 program along side the login cgi due to subtle constraits in key usage.</p>
@@ -507,10 +509,11 @@ a key by using the keyclient's "permit" option. For example:</p>
 $ /usr/local/pubcookie/keyclient -1 login.example.edu
 </pre>
 
-<p>Note: the host where you initiate the keyclient "permit" must be
-privileged to do so by configuration of the <tt>keyserver_client_list</tt>
-variable. This is true even though the request is coming from your login
-server.</p>
+<p>Note: if your keyserver uses <tt>keyserver_client_list</tt> to 
+control which hosts can permit other hosts, then the host where you 
+run this "permit" command must be privileged to do so; that is, by 
+being included in the <tt>keyserver_client_list</tt>. This is true 
+even though the command is coming from your login server.</p>
 
 <p>Once the keystore has been primed using the "permit" option, run
 the keyclient to generate a new DES key for the login server:</p>
@@ -958,7 +961,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.19 2004-03-11 19:13:22 dors Exp $
+$Id: install-login.html,v 1.20 2004-03-30 23:48:52 dors Exp $
 </pre>
 </body>
 
