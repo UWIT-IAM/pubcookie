@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_securid.c,v 1.3 2000-09-25 17:58:31 willey Exp $
+    $Id: index.cgi_securid.c,v 1.4 2001-04-03 22:04:44 willey Exp $
  */
 
 
@@ -59,16 +59,20 @@ char *auth_securid(char *user, char *sid, int next, login_rec *l)
     if( setreuid(65534, 0) != 0 )
         log_message("%s auth_securid: unable to setuid root", l->first_kiss);
 
-//#ifdef DEBUG
+#ifdef DEBUG
     log_message("%s auth_securid: about to securid check user: %s card_id: %s prn: %s ", l->first_kiss, user, card_id, prn);
-//#endif
+#endif
 
     /* securid and next prn */
+#ifdef DEBUG
     intret = securid(reason, user, card_id, prn, 1, SECURID_TYPE_NORM, SECURID_DO_SID);
+#else
+    intret = securid(reason, user, card_id, prn, 0, SECURID_TYPE_NORM, SECURID_DO_SID);
+#endif
 
-//#ifdef DEBUG
+#ifdef DEBUG
     log_message("auth_securid: message from securid %s", reason);
-//#endif
+#endif
 
     /* give it up permanently */
     if( setreuid(65534, 65534) != 0 )
