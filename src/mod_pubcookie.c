@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.162 2004-12-09 21:35:58 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.163 2004-12-16 23:34:15 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -162,7 +162,7 @@ void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
 		noblank: %d\n\
 		login: %s\n\
 		appsrvid: %s\n\
-		authtype_names: %s\n
+		authtype_names: %s\n\
 		use_post: %d\n", 
 		scfg->dirdepth, 
 		scfg->noblank, 
