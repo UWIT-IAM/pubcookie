@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.13 2002-07-05 23:35:48 jjminer Exp $
+    $Id: keyclient.c,v 2.14 2002-07-18 20:06:08 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -110,9 +110,8 @@ int main(int argc, char *argv[])
     char buf[2 * PBC_DES_KEY_BUF]; /* plenty of room for base64 encoding */
     unsigned char thekey[PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
-    char *hostname;
+    const char *hostname;
     int newkeyp;
-    SSL_METHOD *meth;
     X509 *server_cert;
     const char *keyfile;
     const char *certfile;
@@ -127,6 +126,7 @@ int main(int argc, char *argv[])
     int r;
 
     libpbc_config_init(NULL, "keyclient");
+    libpbc_pubcookie_init();
     keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring("ssl_ca_file", NULL);
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'h':
-                free(hostname);
+                free((char *) hostname);
                 hostname = strdup(optarg);
                 break;
 
