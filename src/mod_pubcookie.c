@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.139 2004-04-08 21:09:06 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.140 2004-04-14 20:49:41 jteaton Exp $
  */
 
 
@@ -143,7 +143,7 @@ static APR_OPTIONAL_FN_TYPE(ssl_var_lookup) *lookup_ssl_var = NULL;
 #define AP_TAKE1 func
 #define AP_FLAG func
 
-#endif /* which aoache */
+#endif /* which apache */
 
 
 void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
@@ -590,7 +590,7 @@ static void set_session_cookie(request_rec *r, int firsttime)
         /* create a brand new cookie, initialized with the present time */
         cookie = libpbc_get_cookie(p, 
                                      scfg->sectext,
-				     (unsigned char *)r->USER, 
+				     (unsigned char *)cfg->user,
                                      PBC_COOKIE_TYPE_S, 
 				     cfg->creds, 
 				     (cfg->session_reauth<0)?23:24, 
@@ -804,7 +804,7 @@ static int do_end_session_redirect_handler(request_rec *r) {
 
 /**
  * give an error message and stop the transaction, i.e. don't loop
- * @param r reuquest_rec
+ * @param r request_rec
  * @return OK
  * this is kinda bogus since it looks like a successful request but isn't
  * but it's far less bogus than looping between the WLS and AS forever ...
@@ -813,7 +813,6 @@ static int stop_the_show_handler(request_rec *r)
 {
     pubcookie_dir_rec    *cfg;
     pubcookie_server_rec *scfg;
-    char                 *refresh;
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config(r->per_dir_config, 
                                          &pubcookie_module);
@@ -929,7 +928,6 @@ int blank_cookie(request_rec *r, char *name) {
 /*    if it was only that simple ...                                          */
 static int auth_failed_handler(request_rec *r) {
     pool                 *p = r->pool;
-    char                 *tmp = ap_palloc(p, PBC_1K);
     char                 *refresh = ap_palloc(p, PBC_1K);
     char                 *pre_s = ap_palloc(p, PBC_1K);
     char                 *pre_s_cookie = ap_palloc(p, PBC_1K);
@@ -1297,7 +1295,6 @@ static void pubcookie_init(server_rec *main_s, pool *pconf)
 {
     server_rec                  *s;
     pubcookie_server_rec 	*scfg;
-    char 		 	*fname;
     pool      *p = pconf;
 
     ap_log_error(PC_LOG_DEBUG, main_s,
@@ -1678,17 +1675,15 @@ static int pubcookie_user(request_rec *r) {
         cfg->user = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
 
         /* check for acceptable realms and strip realm */
-        if ((*r->USER)||(cfg->noprompt<=0)) {
+        if ((cfg->strip_realm == 1) || (cfg->accept_realms !=NULL)) {
             char *tmprealm, *tmpuser;
             tmpuser = ap_pstrdup(p, (char *) (*cookie_data).broken.user);
             tmprealm = index(tmpuser, '@');
             if (tmprealm) {
                 tmprealm[0] = 0;
                 tmprealm++;
-                r->USER = tmpuser;
                 ap_table_set(r->subprocess_env, "REMOTE_REALM", tmprealm);
             }
-            ap_table_set(r->subprocess_env, "REMOTE_REALM", tmprealm);
 
             if (cfg->strip_realm == 1) {
                r->USER = tmpuser;
@@ -1700,6 +1695,15 @@ static int pubcookie_user(request_rec *r) {
                 int realmmatched = 0;
                 char *thisrealm;
                 char *okrealms = ap_pstrdup(p, cfg->accept_realms);
+
+                if (tmprealm == NULL) {
+                   /* no realm to check !?!? */
+                   ap_log_rerror(PC_LOG_ERR, r,
+                      "no realm in userid: %s returning UNAUTHORIZED", 
+                      (char *) (*cookie_data).broken.user);
+                   return  HTTP_UNAUTHORIZED;
+<                 }
+
                 while (*okrealms && !realmmatched &&
                        (thisrealm=ap_getword_white_nc(p,&okrealms))){
                     if (strcmp(thisrealm,tmprealm) == 0) {
@@ -2047,10 +2051,8 @@ int pubcookie_authz(request_rec *r) {
 static int pubcookie_typer(request_rec *r) {
   pubcookie_dir_rec *cfg;
   pubcookie_server_rec *scfg;
-  unsigned char *cookie;
   pool *p = r->pool;
   int first_time_in_session = 0;
-  char *new_cookie = ap_palloc( p, PBC_1K);
 
   if(!ap_auth_type(r))
     return DECLINED;
@@ -2136,7 +2138,7 @@ static int pubcookie_fixups(request_rec *r)
                                                      &pubcookie_module);
     
     if (cfg->cred_transfer) {
-        char *krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d_%s", getpid(),
+        char *krb5ccname = ap_psprintf(p, "/tmp/k5cc_%d_%s", (int)getpid(),
                                        cfg->user);
     
         ap_table_setn(e, "KRB5CCNAME", krb5ccname);
