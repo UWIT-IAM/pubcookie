@@ -23,14 +23,14 @@
     <table border="0" cellpadding="0" cellspacing="2" width="271" height="70">
      <tr>
 
-<!-- The reason we were sent here. -->
-%message%
-<!-- The end of reasons. -->       
+     <!-- The reason we were sent here. -->
+     %message%
+     <!-- The end of reasons. -->       
 
      </tr>
      <tr>
       <td>User ID</td>
-      %user_field%
+      <td>%user_field%</td>
      </tr>
      <tr>
       <td>Password</td>
