@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.76 $
+ * $Revision: 1.77 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -936,6 +936,18 @@ int vector_request(login_rec *l, login_rec *c)
 
     /* find flavor of authn requested */
     fl = get_flavor(l->creds_from_greq);
+
+    if (!fl) {
+        /* the application server's httpd.conf is misconfigured and asking
+           for a flavor we don't support? */
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "vector_request: "
+                         "no flavor found matching creds_from_greq=%c", 
+                         l->creds_from_greq);
+        pbc_log_activity(PBC_LOG_ERROR, 
+                         "check application server configuration");
+        return PBC_FAIL;
+    }
 
     /* decode login cookie */
     l->check_error = check_l_cookie(l, c);
