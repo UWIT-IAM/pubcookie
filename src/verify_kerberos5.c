@@ -8,12 +8,10 @@
  */
 
 /*
-    $Id: verify_kerberos5.c,v 1.4 2002-06-11 20:19:29 greenfld Exp $
+    $Id: verify_kerberos5.c,v 1.5 2002-06-11 20:21:59 greenfld Exp $
  */
 
 #ifdef HAVE_KRB5
-
-#define KRB5_HEIMDAL /* xxx */
 
 /* LibC */
 #include <stdio.h>
@@ -35,7 +33,7 @@
 #include "pbc_myconfig.h"
 
 #define KRB5_DEFAULT_OPTIONS 0
-#define KRB5_DEFAULT_LIFE 60*15 /* 15 minutes */
+#define KRB5_DEFAULT_LIFE 60*15 /* xxx 15 minutes */
 
 static char thishost[BUFSIZ];
 
@@ -132,6 +130,7 @@ static int creds_derive(struct credentials *creds,
     char *s, *t;
     krb5_context context;
     krb5_ccache ccache;
+    krb5_ccache ccache_target;
     krb5_auth_context auth_context;
     krb5_creds request, *newcreds;
     krb5_data packet;
@@ -215,21 +214,21 @@ static int creds_derive(struct credentials *creds,
     }
 
     /* save the new credentials in a new ccache */
-    if (krb5_cc_resolve(context, tfname_target, &ccache)) {
+    if (krb5_cc_resolve(context, tfname_target, &ccache_target)) {
 	syslog(LOG_ERR, 
 	       "verify_kerberos5: creds_derive %s: krb5_cc_resolve failed",
 	       target);
 	goto cleanup;
     }
 
-    if (krb5_cc_initialize (context, ccache, request.client)) {
+    if (krb5_cc_initialize (context, ccache_target, request.client)) {
 	syslog(LOG_ERR, 
 	       "verify_kerberos5: creds_derive %s: krb5_cc_initialize failed",
 	       target);
 	goto cleanup;
     }
 
-    if (krb5_cc_store_cred(context, ccache, newcreds)) {
+    if (krb5_cc_store_cred(context, ccache_target, newcreds)) {
 	syslog(LOG_ERR, 
 	       "verify_kerberos5: creds_derive %s: krb5_cc_store_cred failed",
 	       target);
@@ -246,12 +245,13 @@ static int creds_derive(struct credentials *creds,
     r = 0;
 
  cleanup:
-    unlink(tfname);
-    unlink(tfname_target);
     if (s) free(s);
     if (request.client) krb5_free_principal(context, request.client);
     if (request.server) krb5_free_principal(context, request.server);
     krb5_cc_destroy(context, ccache);
+    krb5_cc_destroy(context, ccache_target);
+    unlink(tfname);
+    unlink(tfname_target);
     krb5_free_context(context);
 
     return r;
