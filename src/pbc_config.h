@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.8 1998-12-18 16:03:49 willey Exp $
+    $Id: pbc_config.h,v 1.9 1998-12-23 07:30:12 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -18,8 +18,7 @@
 #define PBC_AUTH_FAILED_HANDLER "pubcookie-failed-handler"
 #define PBC_BAD_USER_HANDLER "pubcookie-bad-user"
 #define PBC_LOGIN_PAGE "https://pcookiel1.cac.washington.edu/login/get_pubcookie/index.cgi"
-//#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
-#define PBC_CRYPT_KEYFILE "/tmp/c_key"
+#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 #define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
 #define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
 #define PBC_MAX_HARD_EXPIRE 12 * 60 * 60
@@ -60,12 +59,10 @@
 #define PBC_S_KEYFILE "/usr/local/pubcookie/pubcookie_session.key"
 
 /* lives on application servers */
-//#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
-#define PBC_G_CERTFILE "/tmp/pubcookie_granting.cert"
+#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
 
 /* lives only on login server */
-//#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
-#define PBC_G_KEYFILE "/tmp/pubcookie_granting.key"
+#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
 
 #ifdef APACHE1_2
 #define pbc_malloc(x) palloc(p, x)
