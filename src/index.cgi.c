@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.146 2005-01-03 23:15:06 willey Exp $
+ * $Id: index.cgi.c,v 1.147 2005-01-07 17:58:15 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2675,9 +2675,9 @@ void print_redirect_page (pool * p, const security_context * context,
                         cookie_list[i].name, cookie_list[i].value);
         }
         clear_app_cookies (p);
-  /**
+        print_html(p, "<noscript><p align=center>You do not have Javascript turned on.");
         print_html(p, "<p align=center><input type=submit name=go value=\"Continue\">");
-   **/
+        print_html(p, "</noscript>\n");
         print_html (p, "</form></html>\n");
 
 
