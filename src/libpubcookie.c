@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.70 2004-03-19 17:18:26 fox Exp $
+ * $Id: libpubcookie.c,v 2.71 2004-04-09 06:20:11 willey Exp $
  */
 
 
@@ -401,6 +401,8 @@ unsigned char *libpbc_gethostip(pool *p)
  */
 static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
+    char      *ptr;
+
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);
@@ -408,6 +410,10 @@ static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
     if (buf[strlen(buf)-1] != '/') {
         strlcat(buf, "/", 1024);
     }
+
+    /* need this because some webservers will pass uppercase hostnames */
+    for(ptr = (char *)peername; *ptr; ptr++)
+        *ptr = tolower(*ptr);
     strlcat(buf, peername, 1024);
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: goodbye\n");

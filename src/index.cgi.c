@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.125 2004-04-07 17:09:27 fox Exp $
+ * $Id: index.cgi.c,v 1.126 2004-04-09 06:20:11 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2280,17 +2280,6 @@ void print_uwnetid_logo(pool *p)
 
 }
 
-
-char *to_lower(pool *p, char *in)
-{
-    char	*ptr;
-
-    for(ptr = in; *ptr; ptr++)
-        *ptr = tolower(*ptr);
-
-    return(in);
-
-}
 
 /**
  *  check_user_agent: checks the user_agent string from the browser
