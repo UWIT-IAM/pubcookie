@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.41 2001-11-14 23:22:46 willey Exp $
+    $Id: pbc_config.h,v 1.42 2001-11-27 03:18:08 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -97,14 +97,18 @@
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
 #define PBC_DEFAULT_INACT_EXPIRE     ( 30 * 60 )
+#define PBC_UNSET_INACT_EXPIRE                 0
 #define PBC_MIN_HARD_EXPIRE 	 ( 1 * 60 * 60 )
 #define PBC_MAX_HARD_EXPIRE 	( 12 * 60 * 60 )
 #define PBC_DEFAULT_HARD_EXPIRE  ( 8 * 60 * 60 )
+#define PBC_UNSET_HARD_EXPIRE                  0
 #define PBC_DEFAULT_EXPIRE_LOGIN ( 8 * 60 * 60 )
 #define PBC_GRANTING_EXPIRE               ( 60 )
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
+
+#define PBC_DEFAULT_DIRDEPTH 0
 
 #define PBC_OK   1
 #define PBC_FAIL 0
