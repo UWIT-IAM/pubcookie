@@ -1,6 +1,11 @@
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
 
-
-/* Copyright 1999-2001, University of Washington.  All rights reserved. */
+/*
+  $Id: what_is_my_ip.c,v 1.8 2003-05-06 23:51:19 willey Exp $
+ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

@@ -1,27 +1,10 @@
 /*
-
-    Copyright 1999-2002, University of Washington.  All rights reserved.
-    see doc/LICENSE.txt for copyright information
-
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More information: http://www.pubcookie.org/
-    Written by the Pubcookie Team
-
-    a simple program for maintaining keys on the login server 
-    
-    by default, it should be invoked from inetd and acts vaguely like
-    an HTTP server
-
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: keyserver.c,v 2.32 2003-04-14 13:30:51 jteaton Exp $
+    $Id: keyserver.c,v 2.33 2003-05-06 23:51:19 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

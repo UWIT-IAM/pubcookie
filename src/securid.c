@@ -1,5 +1,10 @@
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.11 2003-03-24 21:28:14 jjminer Exp $
+/* $Id: securid.c,v 1.12 2003-05-06 23:51:19 willey Exp $
 
    function: securid  
    args:     reason - points to a reason string

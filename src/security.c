@@ -1,3 +1,12 @@
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
+/*
+  $Id: security.c,v 1.5 2003-05-06 23:51:19 willey Exp $
+ */
+
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
 #endif /* HAVE_STDIO_H */

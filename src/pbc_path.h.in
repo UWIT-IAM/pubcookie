@@ -1,4 +1,13 @@
 /* 
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
+/*
+  $Id: pbc_path.h.in,v 2.6 2003-05-06 23:51:19 willey Exp $
+ */
+
+/*
  * pbc_path.h, The pubcookie path.
  *
  * So that we can just #include this file instead of having to 

@@ -1,4 +1,9 @@
 /*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
+/*
 
     Modified further at Carnegie Mellon University
     Modified Kerberos code, modified at University of Washington
@@ -8,7 +13,7 @@
  */
 
 /*
- * $Revision: 1.21 $
+  $Id: verify_kerberos5.c,v 1.22 2003-05-06 23:51:19 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

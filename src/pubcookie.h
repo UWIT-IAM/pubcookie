@@ -1,33 +1,10 @@
 /*
-
-    Copyright 1999, University of Washington.  All rights reserved.
-
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More info: http://www.washington.edu/computing/pubcookie/
-    Written by the Pubcookie Team
-
-    this is the header file for static boring pubcookie stuff, for 
-       configuration kind of stuff see pbc_config.h.  this file is
-       used by the library, apache module, and login cgi.
-
-    logic for how the pubcookie include files are devided up:
-       libpubcookie.h: only stuff used in library
-       pubcookie.h: stuff used in the module and library
-       pbc_config.h: stuff used in the module and library that 
-            people might want to change, as far a local configuration
-       pbc_version.h: only version stuff
-
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: pubcookie.h,v 1.16 2002-08-03 00:48:05 willey Exp $
+    $Id: pubcookie.h,v 1.17 2003-05-06 23:51:19 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN

@@ -1,24 +1,10 @@
-/* 
-
-    Copyright 1999, University of Washington.  All rights reserved.
-
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More info: http://www.washington.edu/computing/pubcookie/
-    Written by the Pubcookie Team
-
-    this is the header file for index.cgi the pubcookie login cgi
-
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
- * $Revision: 1.39 $
+  $Id: index.cgi.h,v 1.40 2003-05-06 23:51:19 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI

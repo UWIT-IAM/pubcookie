@@ -1,9 +1,14 @@
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
 /** @file verify_ldap.c
  * LDAP Verifier
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.19 2003-04-16 16:07:25 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.20 2003-05-06 23:51:19 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

@@ -1,24 +1,10 @@
 /*
-
-    Copyright 1999-2002, University of Washington.  All rights reserved.
-    see doc/LICENSE.txt for copyright information
-
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More information: http://www.pubcookie.org/
-    Written by the Pubcookie Team
-
-    this is the flavor interface
-
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: flavor.h,v 1.7 2003-03-05 22:38:47 willey Exp $
+    $Id: flavor.h,v 1.8 2003-05-06 23:51:19 willey Exp $
  */
 
 /* a flavor specifies:

@@ -1,25 +1,12 @@
 /*
-
-    Copyright 1999, University of Washington.  All rights reserved.
-
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More info: http://www.washington.edu/computing/pubcookie/
-    Written by the Pubcookie Team
-
-    this is the pubcookie apache module header
-
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.1 2003-04-14 13:30:51 jteaton Exp $
+    $Id: mod_pubcookie.h,v 2.2 2003-05-06 23:51:19 willey Exp $
  */
+
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
 #define INCLUDED_MOD_PUBCOOKIE_H
 

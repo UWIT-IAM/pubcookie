@@ -1,11 +1,11 @@
 /*
-    $Id: candv.c,v 1.20 2002-08-15 22:50:06 jjminer Exp $
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
-/*                                                                            */
-/* Copyright 2000-2002 University of Washington.  All rights reserved.       */
-/*                                                                            */
-
+/*
+    $Id: candv.c,v 1.21 2003-05-06 23:51:19 willey Exp $
+ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

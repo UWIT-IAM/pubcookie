@@ -1,25 +1,10 @@
 /*
-
-    Copyright 1999, University of Washington.  All rights reserved.
-
-     ____        _                     _    _
-    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
-    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
-    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
-    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
-
-    All comments and suggestions to pubcookie@cac.washington.edu
-    More info: http://www.washington.edu/computing/pubcookie/
-    Written by the Pubcookie Team
-
-    this is simply a header file with the version in it.  do you like that 
-       there are more lines of comment then code?
-
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: pbc_version.h,v 1.53 2003-04-20 17:19:39 jjminer Exp $
+    $Id: pbc_version.h,v 1.54 2003-05-06 23:51:19 willey Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION

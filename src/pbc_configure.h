@@ -1,3 +1,12 @@
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
+/*
+  $Id: pbc_configure.h,v 2.3 2003-05-06 23:51:19 willey Exp $
+ */
+
 #ifndef INCLUDED_PBC_CONFIGURE_H
 #define INCLUDED_PBC_CONFIGURE_H
 

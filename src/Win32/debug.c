@@ -1,3 +1,12 @@
+//
+//  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+//  For terms of use see doc/LICENSE.txt in this distribution.
+//
+
+//
+//  $Id: debug.c,v 1.7 2003-05-06 23:51:19 willey Exp $
+//
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,6 +1,11 @@
-/* -------------------------------------------------------------------- */
-/* $Id: securid.h,v 1.4 2002-07-05 23:35:48 jjminer Exp $         */
-/* -------------------------------------------------------------------- */
+/*
+  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  For terms of use see doc/LICENSE.txt in this distribution.
+ */
+
+/*
+  $Id: securid.h,v 1.5 2003-05-06 23:51:19 willey Exp $
+ */
 
 #ifdef HAVE_MGOAPI_H
 # include <mgoapi.h>
