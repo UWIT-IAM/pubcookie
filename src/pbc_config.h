@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.84 2003-12-11 21:48:44 willey Exp $
+    $Id: pbc_config.h,v 1.85 2004-01-23 05:00:26 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -19,9 +19,7 @@
 #endif
 
 #ifdef WIN32
-#  define PBC_KEY_DIR (AddSystemRoot(p, SystemRootBuff,"\\inetsrv\\pubcookie\\keys"))
-#  define libpbc_config_getstring(p, k, d) libpbc_config_sb_getstring(p, strbuff, k, d)
-#  define gstring(p, k, d) gstring(p, strbuff, k, d)
+#  define PBC_KEY_DIR (AddSystemRoot(p, "\\inetsrv\\pubcookie\\keys"))
 #else
 #  include "pbc_path.h"
 #endif
@@ -53,9 +51,16 @@
 	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
 	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
-	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
+	#define PBC_FILTER_KEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
+	#define PBC_PUB_KEY "Software\\"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
 	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", "System\\CurrentControlSet\\Services\\PubcookieFilter"))
+	#define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "RelayTemplatePath", "D:\\Inetpub\\wwwroot\\relay\\")
+	#define PBC_RELAY_URI libpbc_config_getstring(p, "relay_uri", "https://relay.example.url/relay/index.cgi")
+	#define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
+	#define PBC_INSTANCE_KEY "_PBC_Web_Instances"
+	#define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
+                             and malloc to find/set the buffer size */
 #endif
 
 #define PBC_REFRESH_TIME 0

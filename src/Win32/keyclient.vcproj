@@ -156,7 +156,13 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
+				RelativePath="PubCookieFilter.h">
+			</File>
+			<File
 				RelativePath="WebClient.h">
+			</File>
+			<File
+				RelativePath="debug.h">
 			</File>
 			<File
 				RelativePath="getopt.h">
@@ -165,7 +171,10 @@
 				RelativePath="..\pbc_config.h">
 			</File>
 			<File
-				RelativePath=".\winkeyclient.h">
+				RelativePath="..\pbc_configure.h">
+			</File>
+			<File
+				RelativePath="..\pbc_myconfig.h">
 			</File>
 		</Filter>
 		<Filter

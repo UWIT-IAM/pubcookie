@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.33 2003-12-17 22:10:56 ryanc Exp $
+ * $Id: security_legacy.c,v 1.34 2004-01-23 05:00:26 ryanc Exp $
  */
 
 
@@ -15,16 +15,18 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
-#else
-typedef void pool;
+#ifndef WIN32
+# if defined (APACHE1_3)
+#  include "httpd.h"
+#  include "http_config.h"
+#  include "http_core.h"
+#  include "http_log.h"
+#  include "http_main.h"
+#  include "http_protocol.h"
+#  include "util_script.h"
+# else
+  typedef void pool;
+# endif
 #endif
 
 #ifdef HAVE_STDIO_H
@@ -65,22 +67,35 @@ typedef void pool;
 #endif /* HAVE_ASSERT_H */
 
 #ifdef WIN32
-# include <io.h>
-# include <assert.h>
 # define DIR_SEP "\\"
 #else
 # define DIR_SEP "/"
 #endif
 
-#include "pbc_config.h"
-#include "pbc_logging.h"
-#include "libpubcookie.h"
-#include "strlcpy.h"
-#include "snprintf.h"
-#include "pbc_configure.h"
-
-#include "security.h"
-#include "pubcookie.h"
+#ifdef WIN32
+# include <io.h>
+# include <assert.h>
+# include <httpfilt.h>
+# include "pbc_config.h"
+# include "pubcookie.h"
+# include "Win32/PubCookieFilter.h"
+  typedef pubcookie_dir_rec pool;
+# include "pbc_logging.h"
+# include "libpubcookie.h"
+# include "strlcpy.h"
+# include "snprintf.h"
+# include "pbc_configure.h"
+# include "security.h"
+#else
+# include "pbc_config.h"
+# include "pbc_logging.h"
+# include "libpubcookie.h"
+# include "strlcpy.h"
+# include "snprintf.h"
+# include "pbc_configure.h"
+# include "security.h"
+# include "pubcookie.h"
+#endif
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
@@ -168,10 +183,6 @@ int security_init(pool *p)
     /* the granting key & certificate */
     char *g_keyfile;
     char *g_certfile;
-#ifdef WIN32
-	char SystemRootBuff[MAX_PATH+1];
-	char strbuff[MAX_REG_BUFF];
-#endif 
     FILE *fp;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "security_init: hello\n");
@@ -464,9 +475,6 @@ const char *libpbc_get_cryptname(pool *p)
  */
 static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
-#ifdef WIN32
-	char SystemRootBuff[MAX_PATH+1];
-#endif 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);

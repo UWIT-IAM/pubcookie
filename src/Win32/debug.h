@@ -4,14 +4,14 @@
 //
 
 //
-//  $Id: debug.h,v 1.8 2003-09-26 22:27:02 ryanc Exp $
+//  $Id: debug.h,v 1.9 2004-01-23 05:00:26 ryanc Exp $
 //
 
 #include <windows.h>
 
 void syslog(int whichlog, const char *message, ...);
 char * AddToLog(char*LogBuff, const char *format, ...);
-void filter_log_activity ( const char * source, int logging_level, const char * format, va_list args );
+void filter_log_activity ( pool *p, const char * source, int logging_level, const char * format, va_list args );
 
 extern char Instance[64];
 extern char *SystemRoot;

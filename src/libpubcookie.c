@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.64 2003-12-17 22:10:56 ryanc Exp $
+ * $Id: libpubcookie.c,v 2.65 2004-01-23 05:00:26 ryanc Exp $
  */
 
 
@@ -14,16 +14,6 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
-
-#if defined (WIN32)
-
-# include <windows.h>
-typedef  int pid_t;  /* win32 process ID */
-# include <process.h>  /* getpid */
-#include  <io.h>
-#include  <stdio.h>
-
-#else /* WIN32 */
 
 # ifdef HAVE_STDIO_H
 #  include <stdio.h>
@@ -69,18 +59,18 @@ typedef  int pid_t;  /* win32 process ID */
 #  include <netdb.h>
 # endif /* HAVE_NETDB_H */
 
-#endif /* WIN32 */
-
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
-#else
-typedef void pool;
+#ifndef WIN32
+# if defined (APACHE1_3)
+#  include "httpd.h"
+#  include "http_config.h"
+#  include "http_core.h"
+#  include "http_log.h"
+#  include "http_main.h"
+#  include "http_protocol.h"
+#  include "util_script.h"
+# else
+  typedef void pool;
+# endif
 #endif
 
 #ifdef OPENSSL_IN_DIR
@@ -95,15 +85,29 @@ typedef void pool;
 # include <err.h>
 #endif /* OPENSSL_IN_DIR */
 
-/* pubcookie lib stuff */
-#include "pubcookie.h"
-#include "libpubcookie.h"
-#include "pbc_config.h"
+#ifdef WIN32
+# include <windows.h>
+# include <process.h>  /* getpid */
+# include <stdio.h>
+# include <io.h>
+# include <assert.h>
+# include <httpfilt.h>
+# include "pbc_config.h"
+# include "pubcookie.h"
+# include "Win32/PubCookieFilter.h"
+  typedef pubcookie_dir_rec pool;
+  typedef  int pid_t;  /* win32 process ID */
+#else
+# include "pubcookie.h"
+# include "pbc_config.h"
+#endif
+
 #include "pbc_version.h"
-#include "strlcpy.h"
-#include "security.h"
 #include "pbc_logging.h"
+#include "libpubcookie.h"
+#include "strlcpy.h"
 #include "pbc_configure.h"
+#include "security.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
@@ -372,9 +376,6 @@ unsigned char *libpbc_gethostip(pool *p)
  */
 static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
-#ifdef WIN32
-	char SystemRootBuff[MAX_PATH+1];
-#endif 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);

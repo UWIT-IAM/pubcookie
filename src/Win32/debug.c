@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.11 2003-11-12 04:46:29 ryanc Exp $
+//  $Id: debug.c,v 1.12 2004-01-23 05:00:26 ryanc Exp $
 //
 
 #include <windows.h>
@@ -16,23 +16,21 @@
 #include <time.h>
 #include <direct.h>
 
-typedef void pool;
-
-
 #include <pem.h>
+#include <httpfilt.h>
 #include "../pubcookie.h"
-#include "../libpubcookie.h"
 #include "../pbc_config.h"
+#include "PubCookieFilter.h"
+typedef pubcookie_dir_rec pool;
+#include "../libpubcookie.h"
 #include "../pbc_version.h"
 #include "../pbc_myconfig.h"
 #include "../pbc_configure.h"
 #include "debug.h"
 
-extern pool *p=NULL;
-
 #define BUFFSIZE 4096
 
-extern void filter_log_activity ( const char * source, int logging_level, const char * format, va_list args )
+extern void filter_log_activity (pool *p, const char * source, int logging_level, const char * format, va_list args )
 {
 
     char      log[BUFFSIZE];
@@ -73,20 +71,26 @@ extern void filter_log_activity ( const char * source, int logging_level, const 
 
 }
 
-void pbc_vlog_activity( int logging_level, const char * format, va_list args )
+void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list args )
 {
-	filter_log_activity ("Pubcookie", logging_level, format, args);
+	filter_log_activity (p, "Pubcookie", logging_level, format, args);
 }
 
 extern void syslog(int whichlog, const char *message, ...) {
 
-    va_list   args;
+	pool *p;
+	va_list   args;
+
+	p = malloc(sizeof(pool)); 
+	bzero(p,sizeof(pool));
 
     va_start(args, message);
 
-    pbc_vlog_activity( whichlog, message, args );
+    pbc_vlog_activity(p, whichlog, message, args );
 
     va_end(args);
+
+	free(p);
 
 }
 extern void pbc_log_activity(pool *p, int logging_level, const char *message,...)
@@ -95,7 +99,7 @@ extern void pbc_log_activity(pool *p, int logging_level, const char *message,...
 
     va_start(args, message);
 
-    pbc_vlog_activity( logging_level, message, args );
+    pbc_vlog_activity(p, logging_level, message, args );
 
     va_end(args);
 }

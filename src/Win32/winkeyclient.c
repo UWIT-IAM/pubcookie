@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.6 2003-12-17 22:10:56 ryanc Exp $
+  $Id: winkeyclient.c,v 1.7 2004-01-23 05:00:26 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,9 +22,6 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
-
-typedef void pool;
-
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
@@ -54,12 +51,20 @@ typedef void pool;
 # include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
-#include "getopt.h"
+#include <httpfilt.h>
+//todo #include <strsafe.h>
+
+#include "../pubcookie.h"
 #include "../pbc_config.h"
-#include "../pbc_configure.h"
+#include "PubCookieFilter.h"
+typedef pubcookie_dir_rec pool;
+
+#include "getopt.h"
 #include "../libpubcookie.h"
 #include "../strlcpy.h"
 #include "../snprintf.h"
+#include "../pbc_myconfig.h"
+#include "../pbc_configure.h"
 
 #ifdef HAVE_DMALLOC_H
 # if (!defined(APACHE) && !defined(APACHE1_3))
@@ -78,12 +83,13 @@ extern char * optarg;
 #  define pid_t int
 #  define snprintf _snprintf
 
+#define MAX_REG_BUFF 2048
+
 /* globals */
 int noop = 0;
-extern pool *p; //initialized in debug
 int newkeyp = 1;
+pool *p = NULL;
 char *hostname = NULL;
-
 
 int Messagef(const char * format, ...){
     char msg[2048];
@@ -131,11 +137,9 @@ static char *extract_cn(char *s)
  */
 static void make_crypt_keyfile(const char *peername, char *buf)
 {
-	char SystemRootBuff[MAX_PATH+1];
-
     strlcpy(buf, PBC_KEY_DIR, 1024);
 
-    if (buf[strlen(buf)-1] != '/') {
+	if (buf[strlen(buf)-1] != '/') {
         strlcat(buf, "/", 1024);
     }
     strlcat(buf, peername, 1024);
@@ -235,7 +239,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     char *keyhost = NULL;
 	char *keymgtpath = NULL;
     int keyport = 443;
-    pool *p = NULL;
 	WSADATA wsaData;
     SOCKET  Socket;
     CtxtHandle hContext;
@@ -246,8 +249,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	CredHandle hClientCreds;
 	char *Reply = NULL;
 	char sztmp[1024];
-	char SystemRootBuff[MAX_PATH+1];
-	char strbuff[MAX_REG_BUFF];
+
+	p = malloc(sizeof(pool));
+	bzero(p,sizeof(pool));
 
 	if( WSAStartup((WORD)0x0101, &wsaData ) ) 
 	{  
@@ -260,7 +264,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         return ERROR_INSTALL_FAILURE;
     }
 
-    libpbc_config_init(p, NULL, "keyclient");
+	libpbc_config_init(p,"","keyclient");
 
 	ParseCmdLine(lpCmdLine);
 
@@ -367,7 +371,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             exit(ERROR_INSTALL_FAILURE);
         }
 
-        libpbc_base64_encode(cp, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
 
         /* we're uploading! */
         snprintf(buf, sizeof(buf),
@@ -427,7 +431,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                         /* chomp new line */
                         *strchr(cp, '\r') = '\0';
                     }
-                    ret = libpbc_base64_decode(cp, (unsigned char *) cp, thekey, &osize);
+                    ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         Messagef("keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
                         exit(ERROR_INSTALL_FAILURE);
@@ -478,6 +482,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		exit(ERROR_INSTALL_FAILURE);
     }
 
+	// free memory pool
+	free(p);
 
     return ERROR_SUCCESS;
 }

@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.37 2004-01-15 23:57:16 fox Exp $
+ * $Id: pbc_myconfig.c,v 1.38 2004-01-23 05:00:26 ryanc Exp $
  */
 
 
@@ -15,17 +15,19 @@
 # include "pbc_path.h"
 #endif
 
-#if defined (APACHE1_3)
-# include "httpd.h"
-# include "http_config.h"
-# include "http_core.h"
-# include "http_log.h"
-# include "http_main.h"
-# include "http_protocol.h"
-# include "util_script.h"
-#else
-typedef void pool;
-#endif
+#ifndef WIN32
+# if defined (APACHE1_3)
+#  include "httpd.h"
+#  include "http_config.h"
+#  include "http_core.h"
+#  include "http_log.h"
+#  include "http_main.h"
+#  include "http_protocol.h"
+#  include "util_script.h"
+# else
+   typedef void pool;
+# endif /* APACHE1_3 */
+#endif /* WIN32 */
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -56,6 +58,8 @@ typedef void pool;
 #else
 # define EX_OSERR 71
 #endif /* HAVE_SYSEXITS_H */
+
+#ifndef WIN32  /* See below for WIN32 code */
 
 #include "pbc_logging.h"
 #ifdef HAVE_UNISTD_H
@@ -92,13 +96,8 @@ static struct configlist *configlist;
 static int nconfiglist;
 
 static void myconfig_read(pool *p, const char *alt_config, int required);
+
 static void fatal(pool *p, const char *s, int ex);
-
-#ifdef WIN32
-# include "Win32/debug.h"
-#endif
-
-#ifndef WIN32
 
 int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
 {
@@ -402,75 +401,98 @@ int main(int argc, char *argv[])
 #else  /*WIN32*/
 
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdio.h>
 #include <time.h>
-#include <pem.h>
 #include <httpfilt.h>
+#include <strsafe.h>
+
+#include "pubcookie.h"
+#include "pbc_config.h"
+#include "Win32/PubCookieFilter.h" 
+
+typedef pubcookie_dir_rec pool;
+
 #include "Win32/debug.h"
+#include "pbc_configure.h"
+#include "snprintf.h"
+#include "libpubcookie.h"
+#include "pbc_logging.h"
 
 
-#define CONFIGLISTGROWSIZE 50
-
-static void fatal(pool *p, const char *s, int ex)
+static void fatal(pool *p, const LPTSTR s, int ex)
 {
 	syslog(LOG_ERR, "fatal error: %s\n", s);
     exit(ex);
 }
 
 
-char *libpbc_myconfig_copystring(char **outputstring, const char *inputstring, int size)
+LPTSTR libpbc_myconfig_copystring(LPTSTR outputstring, LPCTSTR inputstring, int size)
 {
 	if (inputstring != NULL) {
-		strncpy(*outputstring,inputstring,MAX_REG_BUFF);  
+		StringCchCopy(outputstring, size, inputstring);  
 	}
 	else {
-		free(*outputstring);
-		*outputstring = NULL;
+		free(outputstring);
+		outputstring = NULL;
 	}
-	return *outputstring;
+	return outputstring;
 }
 
-char *libpbc_myconfig_getstring(pool *p, char *strbuff, const char *key, const char *def)
+/* Note that strbuff must have been allocated by the calling process */
+LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def)
 {
-	char keyBuff[1024];
+	char keyBuff[PBC_1K];
 	HKEY hKey;
 	int dsize;
 
-	dsize = MAX_REG_BUFF;
-	strcpy (keyBuff,PBC_PUBKEY);  /* config. settings in main pubcookie service key */
+	if (!p) fatal(p, "libpbc_myconfig_getstring called without an allocated pool",3);
 	
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
-		libpbc_myconfig_copystring(&strbuff,def,MAX_REG_BUFF);  
-	}
-	else {
-		if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)strbuff,
-			&dsize) != ERROR_SUCCESS) {
-			libpbc_myconfig_copystring(&strbuff,def,MAX_REG_BUFF);
+	dsize = MAX_REG_BUFF;
+	/* first look in web key */
+	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);
+	StringCchCat (keyBuff, PBC_1K, "\\");
+	StringCchCat (keyBuff, PBC_1K, PBC_INSTANCE_KEY);
+//	StringCchCat (keyBuff, PBC_1K, "\\");
+//	StringCchCat (keyBuff, PBC_1K, web_instance);
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyBuff,0,KEY_READ,&hKey) == ERROR_SUCCESS) {
+		if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)p->strbuff, &dsize) == ERROR_SUCCESS) {
+			/* if we find the value here, we're done */
+			RegCloseKey(hKey);
+			return p->strbuff;  
 		}
 		RegCloseKey(hKey);
 	}
 
-	return strbuff;  /* Note that this must have been allocated by the calling process */
+	/* then look for config. settings in main pubcookie service key */
+	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);  
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyBuff,0,KEY_READ,&hKey) == ERROR_SUCCESS) {
+		if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)p->strbuff, &dsize) != ERROR_SUCCESS) {
+			libpbc_myconfig_copystring(p->strbuff,def,MAX_REG_BUFF);
+		} /* else if ERROR_SUCCESS we keep the value returned in strbuff */
+		RegCloseKey(hKey);
+	} else {
+		libpbc_myconfig_copystring(p->strbuff,def,MAX_REG_BUFF);
+	}
+
+	return p->strbuff;  
 }
 
 
-int libpbc_myconfig_getint(pool *p, const char *key, int def)
+int libpbc_myconfig_getint(pool *p, LPCTSTR key, int def)
 {
-	char keyBuff[1024];
+	char keyBuff[PBC_1K];
 	HKEY hKey;
 	UCHAR *dataBuff;
     int dsize, value;
+
+	if (!p) fatal(p, "libpbc_myconfig_getint called without an allocated pool",3);
 
 	if (!(dataBuff = (UCHAR *)malloc(sizeof (DWORD)))) {
 		fatal(p,"malloc failed in libpbc_myconfig_getint.",2);
 	}
 	dsize = sizeof(DWORD);
-	strcpy (keyBuff,PBC_PUBKEY);  /* config. settings in main pubcookie service key */
+	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);  /* config. settings in main pubcookie service key */
 	
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
@@ -489,33 +511,32 @@ int libpbc_myconfig_getint(pool *p, const char *key, int def)
 	return value;
 }
 
-int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
+int libpbc_myconfig_getswitch(pool *p, LPCTSTR key, int def)
 {
 	/* Unimplemented */
 	return def;
 }
 
-char **libpbc_myconfig_getlist(pool *p, const char *key)
+LPTSTR *libpbc_myconfig_getlist(pool *p, LPCTSTR key)
 {
 	/* Unimplemented */
 	return NULL;
 }
 
-int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
+int libpbc_myconfig_init(pool *p, LPCTSTR alt_config, LPCTSTR ident)
 {
 		return TRUE;
 }
 
-char *AddSystemRoot(pool *p, char *buff,const char *subdir) 
+LPTSTR AddSystemRoot(pool *p, LPCTSTR subdir) 
 {
-	char strbuff[MAX_REG_BUFF];
+	if (!p) fatal(p, "AddSystemRoot called without an allocated pool",3);
 
-	strncpy(buff, libpbc_config_sb_getstring(p, strbuff, "System_Root",""),MAX_PATH+1);
-	if (strcmp(buff,"") == 0) {
-		GetSystemDirectory(buff,MAX_PATH+1);
+	if (strncmp(libpbc_config_getstring(p, "System_Root",""),"",MAX_PATH) == 0) {
+		GetSystemDirectory(p->strbuff,MAX_PATH+1);
 	}
-	strncat(buff,subdir,MAX_PATH+1);
-	return (buff);  //Note, must be allocated by calling process
+	strncat(p->strbuff,subdir,MAX_PATH+1);
+	return (p->strbuff); 
 }
 
 

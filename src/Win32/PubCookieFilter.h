@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.24 2003-11-21 06:50:49 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.25 2004-01-23 05:00:26 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
@@ -45,6 +45,7 @@ typedef struct {
 	int				serial_s_sent;
 	char			server_hostname[MAX_PATH];
 	char			instance_id[8];
+	char			strbuff[MAX_REG_BUFF];  //temporary buffer for libpbc_config_getstring calls
 
 } pubcookie_dir_rec;
 
@@ -110,16 +111,16 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 #define LOGOUT_REDIRECT_CLEAR_LOGIN 3
 
 // Only need two marked below for functionality, rest for debug
-const DWORD 	
+static const DWORD 	
 Notify_Flags =  ( SF_NOTIFY_SECURE_PORT         |
 					  SF_NOTIFY_NONSECURE_PORT      |
-//					  SF_NOTIFY_READ_RAW_DATA       | // Only for Global Filters
+					  SF_NOTIFY_READ_RAW_DATA       | // Only for Global Filters  //debug
 					  SF_NOTIFY_PREPROC_HEADERS     | // ** Needed
 					  SF_NOTIFY_URL_MAP             |
 					  SF_NOTIFY_AUTHENTICATION      | // ** Needed
 					  SF_NOTIFY_ACCESS_DENIED       |
 					  SF_NOTIFY_SEND_RESPONSE       |
-//					  SF_NOTIFY_SEND_RAW_DATA       |  // Too many debug calls
+					  SF_NOTIFY_SEND_RAW_DATA       |  // Too many debug calls  //debug
 					  SF_NOTIFY_END_OF_REQUEST      |
 					  SF_NOTIFY_LOG                 |
 					  SF_NOTIFY_END_OF_NET_SESSION  |

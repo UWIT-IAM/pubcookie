@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.h
  * header file for Runtime configuration
  *
- * $Id: pbc_myconfig.h,v 1.15 2003-12-11 21:48:44 willey Exp $
+ * $Id: pbc_myconfig.h,v 1.16 2004-01-23 05:00:26 ryanc Exp $
  */
 
 
@@ -17,6 +17,7 @@
 # include "config.h"
 #endif
 
+#ifndef WIN32
 /**
  * initialize the config subsystem
  * @param pool Apache memory pool
@@ -35,12 +36,8 @@ extern int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ide
  * @return the value of the option or def if it isn't found.  the
  * string belongs to the config library---it should not be changed or
  * free().  */
+extern LPCTSTR libpbc_myconfig_getstring(pool *p, LPTSTR strbuff, LPCTSTR key, LPCTSTR def);
 
-#ifndef WIN32
-extern const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def);
-#else
-extern char *libpbc_myconfig_getstring(pool *p, char *strbuff, const char *key, const char *def);
-#endif
 /**
  * return an int variable identified by key
  * @param pool Apache memory pool
@@ -68,8 +65,22 @@ extern int libpbc_myconfig_getswitch(pool *p, const char *key, int def);
  * the array must be free() when the caller is done */
 extern char **libpbc_myconfig_getlist(pool *p, const char *key);
 
-# ifdef WIN32
-  extern char * AddSystemRoot(pool *p, char *buff, const char *subdir);
+#else  //Win32 declarations.  Descriptions same as above.
+
+extern int libpbc_myconfig_init(pool *p, LPCTSTR alt_config, LPCTSTR ident);
+extern int libpbc_myconfig_getint(pool *p, LPCTSTR key, int def);
+extern LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def);
+extern int libpbc_myconfig_getswitch(pool *p, LPCTSTR key, int def);
+extern LPTSTR *libpbc_myconfig_getlist(pool *p, LPCTSTR key);
+
+/**
+ * Add a given subdirectory to the Windows System path. 
+ * In: pool     Apache memory pool (not used)
+ * In: subdir   Subdirectory to add
+ * In: buff     pointer to preallocated memory to hold result
+ * Returns:     pointer to preallocated memory (buff) */
+extern LPTSTR  AddSystemRoot(pool *p, LPCTSTR subdir);
+
 # endif
 #endif /* INCLUDED_PBC_MYCONF_H */
 
