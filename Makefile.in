@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.60 2004-07-29 06:24:19 willey Exp $
+# $Id: Makefile.in,v 1.61 2004-08-23 21:59:42 willey Exp $
 
 @SET_MAKE@
 
@@ -222,8 +222,11 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/copyright \
 		$(srcdir)/src/login_templates.generic/logout_time_remaining \
 		$(srcdir)/src/login_templates.generic/logout_weblogin \
 		$(srcdir)/src/login_templates.generic/nonpost_redirect \
-		$(srcdir)/src/login_templates.generic/notok_part1 \
-		$(srcdir)/src/login_templates.generic/notok_part2 \
+		$(srcdir)/src/login_templates.generic/notok \
+		$(srcdir)/src/login_templates.generic/notok_badagent \
+		$(srcdir)/src/login_templates.generic/notok_form_multipart \
+		$(srcdir)/src/login_templates.generic/notok_generic \
+		$(srcdir)/src/login_templates.generic/notok_need_ssl \
 		$(srcdir)/src/login_templates.generic/pinit_response1 \
 		$(srcdir)/src/login_templates.generic/pinit_response2 \
 		$(srcdir)/src/login_templates.generic/status \
