@@ -4,6 +4,17 @@ This is where changes to the pubcookie login software is recorded
 (changes prior to 1.20 are straight out of the rcs logs, including crappy
 cryptic messages)
 
+a5 1.35 13Nov2001
+- Abandoned Location and Refresh headers since Mozilla on Linux uses them 
+  as "moved permanently"
+- Fixed case where username and password were not checked if grace period 
+  was in effect
+- Now default for login form fields to be in template, 
+  UWash must compile with FORM_NOT_IN_TMPL flag
+- Re-arrange filed type (ill)logic
+- Support for pre-fillex alterable login username field
+- Seperate function for initializing login rec field
+
 a5 1.33 8Nov2001
 - fixed form focus to now work with the new wacky prefilled fields
 - turned off ride-free zone for uwnetid
