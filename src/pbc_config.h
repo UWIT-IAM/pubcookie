@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.28 2000-06-14 00:33:34 willey Exp $
+    $Id: pbc_config.h,v 1.29 2000-06-15 01:12:45 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -135,10 +135,11 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_CREDS_SECURID '2'
 #define PBC_CREDS_UWNETID_SECURID '3'
 
-#define PBC_COOKIE_TYPE_NONE '0'
-#define PBC_COOKIE_TYPE_G    '1'
-#define PBC_COOKIE_TYPE_S    '2'
-#define PBC_COOKIE_TYPE_L    '3'
+#define PBC_COOKIE_TYPE_NONE  '0'
+#define PBC_COOKIE_TYPE_G     '1'
+#define PBC_COOKIE_TYPE_S     '2'
+#define PBC_COOKIE_TYPE_L     '3'
+#define PBC_COOKIE_TYPE_PRE_S '4'
 
 #if defined (WIN32)
 #define PBC_L_CERTFILE "C:\\WINNT\\System32\\inetsrv\\pubcookie\\pubcookie_login.cert"
