@@ -1,6 +1,7 @@
 #!/usr/local/bin/perl5
 
 use CGI;
+# why both?
 use IPC::Open2;
 use IPC::Open3;
 use MIME::Base64;
@@ -35,24 +36,23 @@ $ENV{'PATH'} = '/bin:/usr/bin';
 #
 #
 
+# why both?
 $host = `hostname`;
 chomp($host);
-#$hostname = "$host.cac.washington.edu";
 $hostname = $ENV{'HTTP_HOST'};
 
+# some setting for the cookies and redirect
 $login_dir = "/";
 $refresh = "0";
 $expire_login = 60 * 60 * 8;
 
 # messages that get sent to the user
 $notok_needssl = "I'm sorry this page is only accessible via a SSL protected connection. <BR>\n";
-$notok_nouser = "No login name\n";
-$notok_backedin = "Hello, you used that BACK button to get here didn't you.  Sorry it doesn't work.\n";
+$cookie_test_fail_message = "This browser doesn't accept cookies! <BR><A HREF=\"http://www.washington.edu/computing/web/cookies.html\">Learn how to turn them on.</A>";
+$no_g_req_fail_message = "You probably used your browser's BACK button to get here.  Sorry, backing through here won't work.";
 
 $print_login_please = "Please log in.";
 $auth_failed_message = "Login failed. Please re-enter.";
-$cookie_test_fail_message = "This browser doesn't accept cookies! <BR><A HREF=\"http://www.washington.edu/computing/web/cookies.html\">Learn how to turn them on.</A>";
-$no_g_req_fail_message = "Where did you come from? <BR><A HREF=\"http://www.washington.edu/computing/web/cookies.html\">Learn more.</A>";
 
 $prompt_uwnetid = "<B>Password:</B><BR>\n";
 $prompt_securid = "<B>SecurID:</B><BR>\n";
@@ -68,6 +68,8 @@ $accept_cookies = 1;
 $granting_request = 1;
 
 
+##################### really the beginning of business
+
 # bail if not ssl
 notok($notok_needssl) unless( $ENV{'HTTPS'} eq "on" );
 
@@ -75,8 +77,8 @@ notok($notok_needssl) unless( $ENV{'HTTPS'} eq "on" );
 &check_cookie_test;
 
 # these two will print an 'error' page and exit
-&notok_no_cookies unless ( $accept_cookies );
-&notok_no_g_req unless ( $granting_request );
+notok($cookie_test_fail_message) unless ( $accept_cookies );
+notok($no_g_req_fail_message) unless ( $granting_request );
 
 # get the environment from the request
 my $q = new CGI;
@@ -209,38 +211,7 @@ EOS
 exit;
 
 
-
-sub notok {
-    my ($reason) = @_;
-    print <<"EOS";
-Content-Type: text/html
-
-<HTML>
-<HEAD> 
-<TITLE>UW NetID Login</TITLE> 
-</HEAD>
-
-<BODY>
-<P>$reason</P>
-
-
-<P>
-You'll want: <A HREF="https://$hostname/">https://$hostname/</A>.  <BR>
-
-<P>
-EOS
-
-&splat;
-
-print <<"EOS";
-Questions can be sent to:
-<A HREF="mailto:pubcookie\@cac.washington.edu">pubcookie\@cac.washington.edu</A>.
-</BODY>
-</HTML>
-EOS
-
-exit 1;
-}
+######################### function land
 
 sub print_login_page {
     my ($message, $reason, $creds, $need_clear_login) = @_;
@@ -737,14 +708,15 @@ done with this session.</p>
 EOS
 }
 
-sub notok_no_cookies {
+sub notok {
+    my ($message) = @_;
 
     print "Content-Type: text/html\n";
     print "\n\n";
 
     &print_login_page_part1;
 
-    print("<P>\n" . $pbc_em_start . $cookie_test_fail_message . $pbc_em_end);
+    print "<P>\n" . $pbc_em_start . $message . $pbc_em_end;
 
     &print_login_page_part2;
 
@@ -753,18 +725,3 @@ sub notok_no_cookies {
     exit;
 }
 
-sub notok_no_g_req {
-
-    print "Content-Type: text/html\n";
-    print "\n\n";
-
-    &print_login_page_part1;
-
-    print("<P>\n" . $pbc_em_start . $no_g_req_fail_message . $pbc_em_end);
-
-    &print_login_page_part2;
-
-    &print_login_page_part5;
-
-    exit;
-}
