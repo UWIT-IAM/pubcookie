@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.52 2001-03-30 00:27:16 fmf Exp $
+    $Id: mod_pubcookie.c,v 1.53 2001-04-23 22:49:34 willey Exp $
  */
 
 /* apache includes */
@@ -1272,9 +1272,8 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check creds */
-  /*if( check_creds( atoi(&cfg->creds), atoi(&(*cookie_data).broken.creds) ) 
-		== PBC_FAIL ) {*/
-  if( cfg->creds != cookie_data->broken.creds ) {
+  if( check_creds( atoi(&cfg->creds), atoi(&(*cookie_data).broken.creds) ) 
+		== PBC_FAIL ) {
     libpbc_debug("pubcookie_user: wrong creds; required: %c cookie: %c uri: %s\n", cfg->creds, (*cookie_data).broken.creds, r->uri);
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_WRONGCREDS_CODE;
