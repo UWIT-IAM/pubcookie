@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.3 2000-01-27 22:15:12 willey Exp $
+    $Id: index.cgi.h,v 1.4 2000-08-22 19:30:45 willey Exp $
  */
 
 typedef struct {
@@ -44,12 +44,17 @@ typedef struct {
     time_t	create_ts;
     time_t	last_ts;
     int		serial;
+    int		next_securid;
+    /* we add this so we hav it handy */
+    char	*remote_host;
+    time_t	first_kiss;
 } login_rec;
 
 /* prototypes */
 int cgiMain();
-int auth_kdc(char *, char *);
-int auth_securid(char *, char *, login_rec *);
+char *auth_kdc(const char *, const char *);
+char *auth_ndcpasswd(const char *, const char *);
+char *auth_securid(char *, char *, int, login_rec *);
 void abend(char *);
 int cookie_test();
 void notok( void (*)() );
@@ -64,19 +69,22 @@ void print_login_page_part1(int);
 void print_login_page_part5();
 int check_user_agent();
 void log_message(const char *, ...);
-void log_error(const char *, ...);
-void print_login_page_part2a();
-void print_login_page_part2b();
-void print_login_page_part3();
-void print_login_page_part4();
-void print_login_page_part_expire_info();
-void print_login_page_part5();
+void log_error(int, const char *, int, const char *, ...);
+void clear_error(const char *, const char *);
+void print_login_page(login_rec *, char *, char *, int, int);
+void print_login_page_lhs1(char *, char *, char *);
+void print_login_page_lhs2(login_rec *);
+void print_login_page_centre();
+void print_login_page_rhs();
+void print_login_page_bottom();
+void print_uwnetid_logo();
+void print_login_page_hidden_stuff(login_rec *);
+void print_login_page_expire_info();
 login_rec *verify_login_cookie (char *, login_rec *);
 int create_cookie(char *, char *, char *, char, char, int, char *, int);
 login_rec *get_query();
 char *check_login(login_rec *);
 char *check_l_cookie(login_rec *);
-void print_login_page(char *, char *, char, int);
 void print_redirect_page(login_rec *);
 int get_next_serial();
 char *url_encode();
@@ -97,8 +105,8 @@ char *decode_granting_request(char *);
 #define PRINT_LOGIN_PLEASE "Please log in."
 #define TROUBLE_CREATING_COOKIE "Trouble creating cookie.  Please re-enter."
 #define PROBLEMS_PERSIST "If problems persist contact help@cac.washington.edu."
-#define AUTH_FAILED_MESSAGE1 "Login failed.  Please re-enter."
-#define AUTH_FAILED_MESSAGE2 "Please make sure:<BR><UL><LI>Your caps lock key is off.<LI>Your number lock key is on.</UL>"
+#define AUTH_FAILED_MESSAGE1 "Login failed.  Please re-enter.\n"
+#define AUTH_FAILED_MESSAGE2 "<p>Please make sure your <b>Caps Lock key is OFF</b> and your <b> Number Lock key is ON</b>.</p>"
 #define AUTH_TROUBLE "There are currently problems with authentication services, please try again later"
 
 #define CHECK_LOGIN_RET_BAD_CREDS "invalid creds"
@@ -106,15 +114,24 @@ char *decode_granting_request(char *);
 #define CHECK_LOGIN_RET_FAIL "fail"
 
 #define EARLIEST_EVER "Fri, 11-Jan-1990 00:00:01 GMT"
-#define PROMPT_UWNETID "<B>Password:</B><BR>\n"
-#define PROMPT_SECURID "<B>Securid:</B><BR>\n"
+#define PROMPT_UWNETID "<B>UW NetID:</B><BR>"
+#define PROMPT_PASSWD "<B>Password:</B><BR>"
+#define PROMPT_SECURID "<B>Securid:</B><BR>"
+#define PROMPT_INVALID "<B>BOGUS:</B><BR>"
+
+/* replacement string for g req cookies once they hav gone thru the cgi */
+#define G_REQ_RECIEVED "g req received"
+
+/* these are creds strings for meta-auth */
+#define NDCUSERNAME "username"
+#define NDCPASSWORD "ndcpasswd"
 
 /* how we accentuate warning messages */
-#define PBC_EM1_START "<B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">" 
-#define PBC_EM1_END "</FONT></B><BR>"
+#define PBC_EM1_START "<P><B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">" 
+#define PBC_EM1_END "</FONT></B><BR></P>"
 /* how we accentuate less important warning messages */
-#define PBC_EM2_START "<B><FONT SIZE=\"+1\">" 
-#define PBC_EM2_END "</FONT></B><BR>"
+#define PBC_EM2_START "<P><B><FONT SIZE=\"+1\">" 
+#define PBC_EM2_END "</FONT></B><BR></P>"
 
 /* identify log messages */
 #define ANY_LOGINSRV_MESSAGE "PUBCOOKIE_LOGINSRV_LOG"
@@ -127,6 +144,8 @@ char *decode_granting_request(char *);
 /* flags to send to print_login_page */
 #define YES_CLEAR_LOGIN 1
 #define NO_CLEAR_LOGIN 0
+#define YES_CLEAR_GREQ 1
+#define NO_CLEAR_GREQ 0
 
 /* a date before pubcookie that is guaranteed to be expired */
 #define EXPIRED_EXPIRES "Fri, 11-Jan-1990 00:00:01 GMT"
