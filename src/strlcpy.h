@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: strlcpy.h,v 1.6 2004-12-22 22:14:54 willey Exp $
+  $Id: strlcpy.h,v 1.7 2005-01-03 23:15:06 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

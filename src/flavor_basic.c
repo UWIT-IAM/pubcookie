@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.67 2004-12-22 22:14:54 willey Exp $
+ * $Id: flavor_basic.c,v 1.68 2005-01-03 23:15:05 willey Exp $
  */
 
 

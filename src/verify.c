@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file verify.c
  * Verifier base stuff
  *
- * $Id: verify.c,v 1.24 2004-12-22 22:14:54 willey Exp $
+ * $Id: verify.c,v 1.25 2005-01-03 23:15:06 willey Exp $
  */
 
 
@@ -80,6 +80,13 @@ verifier *get_verifier (const char *name)
 #ifdef HAVE_CTYPE_H
 # include <ctype.h>
 #endif /* HAVE_CTYPE_H */
+
+/* cgic */
+#ifdef HAVE_CGIC_H
+# include <cgic.h>
+#else
+# error "cgic is required for building the login server"
+#endif /* HAVE_CGIC_H */
 
 #include "pbc_myconfig.h"
 

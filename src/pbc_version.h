@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: pbc_version.h,v 1.66 2004-12-23 15:56:22 dors Exp $
+    $Id: pbc_version.h,v 1.67 2005-01-03 23:15:06 willey Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION

@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.54 2004-12-22 22:14:54 willey Exp $
+ * $Id: keyclient.c,v 2.55 2005-01-03 23:15:06 willey Exp $
  */
 
 

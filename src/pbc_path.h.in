@@ -1,5 +1,5 @@
 /* 
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -9,7 +9,7 @@
  * So that we can just #include this file instead of having to 
  * worry about shell escapes and whatnot.
  * 
- * $Id: pbc_path.h.in,v 2.11 2004-11-22 19:04:42 willey Exp $
+ * $Id: pbc_path.h.in,v 2.12 2005-01-03 23:15:06 willey Exp $
  */
 
 

@@ -1,10 +1,10 @@
 //
-//  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+//  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
 //  For terms of use see doc/LICENSE.txt in this distribution.
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.43 2004-12-23 15:56:22 dors Exp $
+//  $Id: PubCookieFilter.h,v 1.44 2005-01-03 23:15:07 willey Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.2.0 pre-beta3"

@@ -1,10 +1,10 @@
 //
-//  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+//  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
 //  For terms of use see doc/LICENSE.txt in this distribution.
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.37 2004-12-04 03:36:51 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.38 2005-01-03 23:15:06 willey Exp $
 //
 
 //#define COOKIE_PATH

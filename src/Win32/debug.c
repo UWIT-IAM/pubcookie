@@ -1,10 +1,10 @@
 //
-//  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+//  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
 //  For terms of use see doc/LICENSE.txt in this distribution.
 //
 
 //
-//  $Id: debug.c,v 1.15 2004-02-17 23:06:38 ryanc Exp $
+//  $Id: debug.c,v 1.16 2005-01-03 23:15:07 willey Exp $
 //
 
 #include <windows.h>

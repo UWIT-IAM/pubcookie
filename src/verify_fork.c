@@ -1,6 +1,6 @@
 /*
   Copyright (c) 2003 Tim Funk.  All rights reserved.
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -20,7 +20,7 @@
  *
  * From Tim Funk <funkman@joedog.org> 18-Sept-2003
  *
- * $Id: verify_fork.c,v 1.5 2004-12-22 22:36:38 willey Exp $
+ * $Id: verify_fork.c,v 1.6 2005-01-03 23:15:06 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

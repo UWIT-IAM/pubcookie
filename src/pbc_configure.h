@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2005 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: pbc_configure.h,v 2.9 2004-12-22 22:14:54 willey Exp $
+  $Id: pbc_configure.h,v 2.10 2005-01-03 23:15:06 willey Exp $
  */
 
 #ifndef INCLUDED_PBC_CONFIGURE_H
