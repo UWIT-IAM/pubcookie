@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.7 2001-12-12 03:53:42 willey Exp $
+    $Id: INSTALL.login.txt,v 1.8 2001-12-13 03:40:32 willey Exp $
  */
 
 
@@ -136,7 +136,20 @@ Pubcookie. Proceed according to your own policy.
 7. More setup: Key pairs for signing and verifying cookies
 
 pbc_config.h defines the location of two key pairs used to sign and verify
-login cookies and granting cookies.
+login cookies and granting cookies.  The filenames may be either statically 
+defined file names or built from a directory, prefix, and the hostname.  
+The default is filenames that are built from the host name.  
+
+for hostname based filenames you will need to verify the following 
+defines:
+
+#define PBC_KEY_DIR "/usr/local/pubcookie/"
+#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
+#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
+#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
+
+If you'd prefer statically defined filenames you need to compile with
+NO_HOST_BASED_KEY_FILENAMES set and set the following defines:
 
 #define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
 #define PBC_L_KEYFILE "/usr/local/pubcookie/pubcookie_login.key"
@@ -160,16 +173,38 @@ of PBC_G_CERTFILE must be installed with Pubcookie on target application
 servers, which also need to generate their own keys to sign and verify
 their own session cookies.
 
-8. More setup: Encryption key / Key management (as it is)
+8. More setup: DES Encryption key / Key management (as it is)
 
-pbc_config.h also defines the location of a master encryption key and a 
-localized copy:
+The DES encryption key is a shared key that is hashed on a per host 
+basis.  Each host that plays the pubcookie game will hav a key file 
+that can only be used on that host.  This key is referred to as the 
+encryption key or the c_key.
 
-#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
+Like the public key files the DES encryption key filename may be either 
+statically defined or built from a directory, prefix, and the hostname.
+The default is a filename built from the host name.
+
+For a hostname based encryption key filename define:
+
+#define PBC_KEY_DIR "/usr/local/pubcookie/"
+#define PBC_CRYPT_KEY_PREFIX "c_key"
+
+If you'd prefer a statically defined filename you need to compile with
+NO_HOST_BASED_KEY_FILENAMES set and set the following defines
+
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 
-Use the pbc_key_generic utility to generate a master key (m_key). For 
-example:
+***********
+***********
+*********** There is also 
+***********
+***********#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
+
+
+For a new pubcookie installation you will need a source of DES keys to base 
+others on.  Use the pbc_key_generic utility to generate this master key 
+(m_key).  This program simply spits the correct amount of random bits to 
+standard out. 
 
 % pbc_key_generic > m_key
 
