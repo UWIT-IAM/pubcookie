@@ -1,30 +1,16 @@
 
-LIB=mod_pubcookie.a
+OBJS=mod_pubcookie.o libpubcookie.o base64.o
 
-OBJS=\
-     mod_pubcookie.o libpubcookie.o base64.o
-OBJS_PIC=\
-     mod_pubcookie.lo
+libpubcookie.a:	$(OBJS)
 
-all: lib
-
-lib: $(LIB)
-
-mod_pubcookie.a: $(OBJS)
-        rm -f $@
-        ar cr $@ $(OBJS)
-        $(RANLIB) $@
-
-mod_pubcookie.so: $(OBJS_PIC)
-        rm -f $@
-        $(LD_SHLIB) $(LDFLAGS_SHLIB) -o $@ $(OBJS_PIC)
-
-.SUFFIXES: .o .lo
+.c.o:
+	$(CC) -c $(INCLUDES) $(CFLAGS) -DAPACHE1_3 $(SSL_CFLAGS) $<
 
 #Dependencies
 
-$(OBJS) $(OBJS_PIC): Makefile
+$(OBJS):	Makefile
 
 # DO NOT REMOVE
 # DO NOT DELETE THIS LINE -- make depend depends on it.
-libpubcookie.o: libpubcookie.c libpubcookie.h pubcookie.h pbc_config.h
+libpubcookie.o:	libpubcookie.c libpubcookie.h pubcookie.h pbc_config.h
+
