@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.125 2003-12-17 22:10:56 ryanc Exp $
+ * $Id: mod_pubcookie.c,v 1.126 2004-02-10 00:42:15 willey Exp $
  */
 
 

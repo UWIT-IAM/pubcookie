@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -12,7 +12,7 @@
  *             crypt_file cert_key_file
  *    anything too big is just truncated, no support for defaults or anything
  *
- * $Id: pbc_create.c,v 1.18 2003-07-02 22:04:04 willey Exp $
+ * $Id: pbc_create.c,v 1.19 2004-02-10 00:42:15 willey Exp $
  */
 
 

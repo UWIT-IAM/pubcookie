@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: dtest.c,v 1.16 2003-05-06 23:51:19 willey Exp $
+  $Id: dtest.c,v 1.17 2004-02-10 00:42:14 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

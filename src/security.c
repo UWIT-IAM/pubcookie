@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file security.c
  * Support for security structure
  *
- * $Id: security.c,v 1.7 2003-12-17 22:10:56 ryanc Exp $
+ * $Id: security.c,v 1.8 2004-02-10 00:42:15 willey Exp $
  */
 
 

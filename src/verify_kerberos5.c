@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -17,7 +17,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.29 2003-08-05 19:56:11 willey Exp $
+ * $Id: verify_kerberos5.c,v 1.30 2004-02-10 00:42:15 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

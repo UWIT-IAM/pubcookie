@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -12,7 +12,7 @@
  *  
  *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  *  
- * $Id: verify_shadow.c,v 1.14 2003-07-03 04:25:21 willey Exp $
+ * $Id: verify_shadow.c,v 1.15 2004-02-10 00:42:15 willey Exp $
  */
  
 

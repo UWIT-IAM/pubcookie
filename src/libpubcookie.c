@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.65 2004-01-23 05:00:26 ryanc Exp $
+ * $Id: libpubcookie.c,v 2.66 2004-02-10 00:42:15 willey Exp $
  */
 
 

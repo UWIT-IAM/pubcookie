@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.42 2004-02-03 23:55:52 fox Exp $
+ * $Id: keyserver.c,v 2.43 2004-02-10 00:42:15 willey Exp $
  */
 
 

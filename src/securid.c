@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -27,7 +27,7 @@
  *            syslog and stderr in some conditions.  if log is set to non-zero
  *            then there will be more messages in syslog and stderr
  *
- * $Id: securid.c,v 1.13 2003-07-02 22:04:04 willey Exp $
+ * $Id: securid.c,v 1.14 2004-02-10 00:42:15 willey Exp $
  */
                                                                                 
 

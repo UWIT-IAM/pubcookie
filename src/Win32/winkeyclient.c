@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: winkeyclient.c,v 1.7 2004-01-23 05:00:26 ryanc Exp $
+  $Id: winkeyclient.c,v 1.8 2004-02-10 00:42:16 willey Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>

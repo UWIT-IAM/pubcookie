@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -10,7 +10,7 @@
  * - the policy of when freerides are allowed
  * - what the layout of the login page is, how login messages are printed. 
  *
- * $Id: flavor.h,v 1.9 2003-07-02 22:04:04 willey Exp $
+ * $Id: flavor.h,v 1.10 2004-02-10 00:42:14 willey Exp $
  */
 
 #ifndef INCLUDED_FLAVOR_H

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -31,7 +31,7 @@
  *   @return 0 on success, -1 if sid lookup fails, -3 next PRN,
  *          -2 on system error
  *
- * $Id: verify_uwsecurid.c,v 2.1 2003-12-11 21:48:44 willey Exp $
+ * $Id: verify_uwsecurid.c,v 2.2 2004-02-10 00:42:15 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

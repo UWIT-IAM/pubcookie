@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.113 2004-01-15 23:57:16 fox Exp $
+ * $Id: index.cgi.c,v 1.114 2004-02-10 00:42:14 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -8,7 +8,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.23 2003-07-03 04:25:21 willey Exp $
+ * $Id: verify_ldap.c,v 1.24 2004-02-10 00:42:15 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

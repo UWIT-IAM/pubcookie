@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: security.h,v 1.9 2003-12-17 22:10:56 ryanc Exp $
+  $Id: security.h,v 1.10 2004-02-10 00:42:15 willey Exp $
  */
 
 #ifndef INCLUDED_SECURITY_H

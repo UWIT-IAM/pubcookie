@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.2 2004-01-15 23:57:16 fox Exp $
+    $Id: flavor_uwsecurid.c,v 2.3 2004-02-10 00:42:14 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

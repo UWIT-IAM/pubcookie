@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.4 2003-07-03 04:25:21 willey Exp $
+    $Id: mod_pubcookie.h,v 2.5 2004-02-10 00:42:15 willey Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H

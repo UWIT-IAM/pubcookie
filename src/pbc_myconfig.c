@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.39 2004-01-24 07:34:45 ryanc Exp $
+ * $Id: pbc_myconfig.c,v 1.40 2004-02-10 00:42:15 willey Exp $
  */
 
 

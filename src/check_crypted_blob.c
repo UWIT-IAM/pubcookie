@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file check_crypted_blob.c
  * takes an encrytped blob and checks it
  *
- * $Id: check_crypted_blob.c,v 1.10 2003-07-02 22:04:04 willey Exp $
+ * $Id: check_crypted_blob.c,v 1.11 2004-02-10 00:42:14 willey Exp $
  */
 
 

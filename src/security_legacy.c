@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.34 2004-01-23 05:00:26 ryanc Exp $
+ * $Id: security_legacy.c,v 1.35 2004-02-10 00:42:15 willey Exp $
  */
 
 

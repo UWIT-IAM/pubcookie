@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file flavor.c
  * Flavor generic code
  *
- * $Id: flavor.c,v 1.12 2003-12-11 21:48:44 willey Exp $
+ * $Id: flavor.c,v 1.13 2004-02-10 00:42:14 willey Exp $
  */
 
 

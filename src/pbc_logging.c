@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.25 2003-07-03 04:25:21 willey Exp $
+ * $Id: pbc_logging.c,v 1.26 2004-02-10 00:42:15 willey Exp $
  */
 
 

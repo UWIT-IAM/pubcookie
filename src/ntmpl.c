@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.10 2003-12-11 21:48:44 willey Exp $
+ * $Id: ntmpl.c,v 1.11 2004-02-10 00:42:15 willey Exp $
  */
 
 

@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file securid_stub.c
  * Test app for old UW SecurID interface
  *
- * $Id: securid_stub.c,v 1.13 2003-07-02 22:04:04 willey Exp $
+ * $Id: securid_stub.c,v 1.14 2004-02-10 00:42:15 willey Exp $
  */
 
 

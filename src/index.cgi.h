@@ -1,10 +1,10 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /*
-  $Id: index.cgi.h,v 1.43 2003-12-11 21:48:44 willey Exp $
+  $Id: index.cgi.h,v 1.44 2004-02-10 00:42:15 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
@@ -12,7 +12,7 @@
  *
  * cookie comes in on stdin, contenets are printed to stdout
  *
- * $Id: pbc_verify.c,v 1.17 2003-07-02 22:04:04 willey Exp $
+ * $Id: pbc_verify.c,v 1.18 2004-02-10 00:42:15 willey Exp $
  */
 
 

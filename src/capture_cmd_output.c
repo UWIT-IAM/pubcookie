@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file capture_cmd_output.c
  * um, Captures command output
  *
- * $Id: capture_cmd_output.c,v 2.7 2003-07-02 22:04:04 willey Exp $
+ * $Id: capture_cmd_output.c,v 2.8 2004-02-10 00:42:14 willey Exp $
  */
                                                                                 
 

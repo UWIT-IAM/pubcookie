@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file verify_alwaystrue.c
  * Alwaystrue verifier
  *
- * $Id: verify_alwaystrue.c,v 1.12 2003-07-03 04:25:21 willey Exp $
+ * $Id: verify_alwaystrue.c,v 1.13 2004-02-10 00:42:15 willey Exp $
  */
 
 

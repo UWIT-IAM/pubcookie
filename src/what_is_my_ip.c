@@ -1,12 +1,12 @@
 /*
-  Copyright (c) 1999-2003 University of Washington.  All rights reserved.
+  Copyright (c) 1999-2004 University of Washington.  All rights reserved.
   For terms of use see doc/LICENSE.txt in this distribution.
  */
 
 /** @file what_is_my_ip.c
  * Identifies IP being used by pubcookie
  *
- * $Id: what_is_my_ip.c,v 1.9 2003-07-02 22:04:04 willey Exp $
+ * $Id: what_is_my_ip.c,v 1.10 2004-02-10 00:42:15 willey Exp $
  */
 
 
