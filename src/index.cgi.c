@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.11 2000-08-22 19:30:45 willey Exp $
+    $Id: index.cgi.c,v 1.12 2000-08-25 22:07:56 willey Exp $
  */
 
 
@@ -35,6 +35,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 /* openssl */
@@ -176,29 +177,30 @@ login_rec *load_login_rec(login_rec *l)
     fprintf(stderr, "load_login_rec: hello\n");
 #endif
 
+    /* only created by the login cgi */
+    l->next_securid     = get_int_arg("next_securid");
+    l->first_kiss 	= get_string_arg("first_kiss", NO_NEWLINES_FUNC);
     /* make sure the username is a uwnetid */
     if( (l->user=get_string_arg("user", NO_NEWLINES_FUNC)) )
         l->user = clean_username(l->user);
-
     l->pass 		= get_string_arg("pass", NO_NEWLINES_FUNC);
     l->pass2 		= get_string_arg("pass2", NO_NEWLINES_FUNC);
 
-    l->args 		= get_string_arg("eight", YES_NEWLINES_FUNC);
-    l->uri 		= get_string_arg("seven", NO_NEWLINES_FUNC);
-    l->host 		= get_string_arg("six", NO_NEWLINES_FUNC);
-    l->method 		= get_string_arg("five", NO_NEWLINES_FUNC);
-    l->version 		= get_string_arg("four", NO_NEWLINES_FUNC);
-    l->creds      	= get_int_arg("three") + 48;
-    l->appid 		= get_string_arg("two", NO_NEWLINES_FUNC);
-    l->appsrvid 	= get_string_arg("one", NO_NEWLINES_FUNC);
-    l->fr 		= get_string_arg("fr", NO_NEWLINES_FUNC);
+    l->args 		= get_string_arg(PBC_GETVAR_ARGS, YES_NEWLINES_FUNC);
+    l->uri 		= get_string_arg(PBC_GETVAR_URI, NO_NEWLINES_FUNC);
+    l->host 		= get_string_arg(PBC_GETVAR_HOST, NO_NEWLINES_FUNC);
+    l->method 		= get_string_arg(PBC_GETVAR_METHOD, NO_NEWLINES_FUNC);
+    l->version 		= get_string_arg(PBC_GETVAR_VERSION, NO_NEWLINES_FUNC);
+    l->creds      	= get_int_arg(PBC_GETVAR_CREDS) + 48;
+    l->appid 		= get_string_arg(PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
+    l->appsrvid 	= get_string_arg(PBC_GETVAR_APPSRVID, NO_NEWLINES_FUNC);
+    l->fr 		= get_string_arg(PBC_GETVAR_FR, NO_NEWLINES_FUNC);
 
-    l->real_hostname 	= get_string_arg("real_hostname", NO_NEWLINES_FUNC);
-    l->appsrv_err 	= get_string_arg("appsrv_err", NO_NEWLINES_FUNC);
-    l->file 		= get_string_arg("file", NO_NEWLINES_FUNC);
-    l->flag 		= get_string_arg("flag", NO_NEWLINES_FUNC);
-    l->referer 		= get_string_arg("referer", NO_NEWLINES_FUNC);
-    l->next_securid     = get_int_arg("next_securid");
+    l->real_hostname 	= get_string_arg(PBC_GETVAR_REAL_HOST, NO_NEWLINES_FUNC);
+    l->appsrv_err 	= get_string_arg(PBC_GETVAR_APPSRV_ERR, NO_NEWLINES_FUNC);
+    l->file 		= get_string_arg(PBC_GETVAR_FILE_UPLD, NO_NEWLINES_FUNC);
+    l->flag 		= get_string_arg(PBC_GETVAR_FLAG, NO_NEWLINES_FUNC);
+    l->referer 		= get_string_arg(PBC_GETVAR_REFERER, NO_NEWLINES_FUNC);
 
 #ifdef DEBUG
     fprintf(stderr, "load_login_rec: bye\n");
@@ -486,20 +488,27 @@ int cgiMain()
     /* malloc and populate login_rec                                   */
     l = get_query(); 
 
-    /* log the arrival */
-    log_message("%d Visit from user: %s client addr: %s app host: %s uri: %s", l->first_kiss, l->user, l->remote_host, l->host, l->uri);
-
 #ifdef DEBUG
     fprintf(stderr, "cgiMain: after get_query\n");
 #endif
 
+    /* log the arrival */
+    log_message("%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
+		l->first_kiss, 
+		l->user, 
+		cgiRemoteAddr, 
+		l->host, 
+		l->appid,
+		l->uri,
+		l->appsrv_err_string);
+
     /* check the user agent */
     if ( !check_user_agent() ) {
-        log_message("%d bad agent: %s user: %s client_addr: %s",
+        log_message("%s bad agent: %s user: %s client_addr: %s",
         	l->first_kiss, 
         	cgiUserAgent, 
 		l->user, 
-		l->remote_host);
+		cgiRemoteAddr);
         notok(notok_bad_agent);
         exit(0);
     }
@@ -545,7 +554,7 @@ int cgiMain()
 #endif
         res = check_login(l);
         if( strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
-            log_message("Authentication failed: %s type: %c %s", l->user, l->creds, res);
+            log_message("%s Authentication failed: %s type: %c %s", l->first_kiss, l->user, l->creds, res);
             if( !strcmp(res, CHECK_LOGIN_RET_FAIL) ) {
                 snprintf(message, sizeof(message)-1, "%s%s%s<P>%s",
                     PBC_EM1_START,
@@ -562,10 +571,9 @@ int cgiMain()
             print_login_page(l, message, "bad auth", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
             exit(0);
         }
-        log_message("Authentication success: %s type: %c", l->user, l->creds);
+        log_message("%s Authentication success: %s type: %c", l->first_kiss, l->user, l->creds);
     }
     else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {             /* securid */
-        log_message("securid implies reauth by %s at %s", l->host, l->appid);
         print_login_page(l, PRINT_LOGIN_PLEASE, "securid requires reauth", YES_CLEAR_LOGIN, YES_CLEAR_GREQ);
         exit(0);
     }
@@ -574,14 +582,18 @@ int cgiMain()
         exit(0);
     }
     else if ( (res=check_l_cookie(l)) ) {      /* problem w/ the l cookie*/
-        log_message("%d Login cookie bad: %s", l->first_kiss, res);
+        log_message("%s Login cookie bad: %s", l->first_kiss, res);
         print_login_page(l, PRINT_LOGIN_PLEASE, res, YES_CLEAR_LOGIN, YES_CLEAR_GREQ);
         exit(0);
     }
 
     /* the reward for a hard days work                                        */
-    log_message("Issuing cookies for %s at %s on %s at %s", 
- 			l->user, cgiRemoteAddr, l->host, l->appid);
+    log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
+ 			l->first_kiss, 
+                        l->user, 
+                        cgiRemoteAddr, 
+                        l->host, 
+                        l->appid);
 
     /* generate the cookies and print the redirect page                       */
     print_redirect_page(l);
@@ -618,6 +630,8 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
     char	*field3 = NULL;
     char	*hostname = strdup(get_domain_hostname());
 
+    log_message("%s Printing login page, reason: %s", l->first_kiss, reason);
+
     switch (l->creds) {
     case '1':
         field1 = strdup(PROMPT_UWNETID);
@@ -638,7 +652,6 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
         break;
     }
 
-    print_out("Content-Type: text/html\n");
     if( need_clear_login ) 
         print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
             PBC_L_COOKIENAME, 
@@ -650,7 +663,8 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
             PBC_G_REQ_COOKIENAME, 
             G_REQ_RECIEVED,
             PBC_ENTRPRS_DOMAIN);
-    print_out("\n");
+
+    print_http_header();
 
     print_login_page_part1(YES_FOCUS);
 
@@ -782,7 +796,6 @@ char *check_l_cookie(login_rec *l)
     lc = verify_login_cookie(cookie, l);
 
     if( !lc ) {
-        log_message("couldn't deal with cookie %s", cookie);
         return("couldn't decode login cookie");
     }
 
@@ -797,7 +810,7 @@ char *check_l_cookie(login_rec *l)
     }
 
     if( (lc->create_ts + EXPIRE_LOGIN) < (t=time(NULL)) ) {
-        log_message("%d expired login cookie; created: %d timeout: %dsecs now: %d",
+        log_message("%s expired login cookie; created: %d timeout: %dsecs now: %d",
 			l->first_kiss,
 			lc->create_ts, 
                         EXPIRE_LOGIN, 
@@ -812,12 +825,16 @@ char *check_l_cookie(login_rec *l)
     if( lc->creds != l->creds ) {
         if( l->creds == PBC_CREDS_UWNETID ) {
             if( lc->creds != PBC_CREDS_UWNETID_SECURID ) {
-                log_message("wrong_creds: from login cookie: %s from request: %s", lc->creds, l->creds);
+                log_message("%s wrong_creds: from login cookie: %s from request: %s", l->first_kiss, lc->creds, l->creds);
                 return("wrong_creds");
+            }
+            else {
+                /* take the creds from the login cookie if they are higher */
+                l->creds = lc->creds;
             }
         }
         else {
-            log_message("wrong_creds: from login cookie: %s from request: %s", lc->creds, l->creds);
+            log_message("%s wrong_creds: from login cookie: %s from request: %s", l->first_kiss, lc->creds, l->creds);
             return("wrong_creds");
         }
     }
@@ -828,7 +845,7 @@ char *check_l_cookie(login_rec *l)
         return("wrong major version");
     }
     if( *(l_version+1) != *(g_version+1) ) {
-        log_message("warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l_version, g_version, l->host);
+        log_message("%s warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l->first_kiss, l_version, g_version, l->host);
     }
 
     l->user = lc->user;
@@ -900,8 +917,6 @@ void notok_generic()
 
 void notok ( void (*notok_f)() )
 {
-    print_out("Content-Type: text/html\n");
-
     /* if we got a form multipart cookie, reset it */
     if ( getenv("HTTP_COOKIE") && strstr(getenv("HTTP_COOKIE"), PBC_FORM_MP_COOKIENAME) ) {
         print_out("Set-Cookie: %s=done; domain=%s; path=/; expires=%s\n", 
@@ -910,8 +925,7 @@ void notok ( void (*notok_f)() )
             EARLIEST_EVER);
     }
 
-    /* newline that ends the header info */
-    print_out("\n");
+    print_http_header();
 
     print_login_page_part1(NO_FOCUS);
     print_out("<td valign=\"middle\">\n");
@@ -945,12 +959,12 @@ int cookie_test()
     if ( !strstr(cookies, PBC_G_REQ_COOKIENAME) ) {
 
         if ( !strstr(cookies, PBC_L_COOKIENAME) ) {
-            log_message("no granting req or login cookie from %s", getenv("REMOTE_ADDR"));
+            log_message("no granting req or login cookie from %s", cgiRemoteAddr);
             notok(notok_no_g_or_l);
             return(0);
         }
         else {
-            log_message("no granting req, connection from %s", getenv("REMOTE_ADDR"));
+            log_message("no granting req, connection from %s", cgiRemoteAddr);
             notok(notok_no_g);
             return(0);
         }
@@ -978,6 +992,17 @@ void print_copyright()
 void print_uwnetid_logo()
 {
     print_out("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\">\n");
+
+}
+
+
+/*	################################### header stuff                      */
+void print_http_header()
+{
+        print_out("Pragma: No-Cache\n");
+        print_out("Cache-Control: no-store, no-cache, must-revalidate\n");
+        print_out("Expires: Sat, 1 Jan 2000 01:01:01 GMT\n");
+        print_out("Content-Type: text/html\n\n");
 
 }
 
@@ -1082,39 +1107,43 @@ void print_login_page_hidden_stuff(login_rec *l)
 {
 
     print_out("\n");
-    print_out("<input type=\"hidden\" name=\"one\" value=\"%s\">\n", 
-		(l->appsrvid ? l->appsrvid : "") );
-    print_out("<input type=\"hidden\" name=\"two\" value=\"%s\">\n",
-		(l->appid ? l->appid : "") );
-    print_out("<input type=\"hidden\" name=\"three\" value=\"%c\">\n", l->creds);
-    print_out("<input type=\"hidden\" name=\"four\" value=\"%s\">\n",
-		(l->version ? l->version : "") );
-    print_out("<input type=\"hidden\" name=\"five\" value=\"%s\">\n",
-		(l->method ? l->method : "") );
-    print_out("<input type=\"hidden\" name=\"six\" value=\"%s\">\n",
-		(l->host ? l->host : "") );
-    print_out("<input type=\"hidden\" name=\"seven\" value=\"%s\">\n",
-		(l->uri ? l->uri : "") );
-    print_out("<input type=\"hidden\" name=\"eight\" value=\"%s\">\n",
-		(l->args ? l->args : "") );
-    print_out("<input type=\"hidden\" name=\"fr\" value=\"%s\">\n",
-		(l->fr ? l->fr : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", 
+		PBC_GETVAR_APPSRVID, (l->appsrvid ? l->appsrvid : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_APPID, (l->appid ? l->appid : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n", 
+                PBC_GETVAR_CREDS, l->creds);
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_VERSION, (l->version ? l->version : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_METHOD, (l->method ? l->method : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_HOST, (l->host ? l->host : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_URI, (l->uri ? l->uri : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_ARGS, (l->args ? l->args : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_FR, (l->fr ? l->fr : "") );
 
-    print_out("<input type=\"hidden\" name=\"real_hostname\" value=\"%s\">\n",
-		(l->real_hostname ? l->real_hostname : "") );
-    print_out("<input type=\"hidden\" name=\"appsrv_err\" value=\"%s\">\n",
-		(l->appsrv_err ? l->appsrv_err : "") );
-    print_out("<input type=\"hidden\" name=\"file\" value=\"%s\">\n",
-		(l->file ? l->file : "") );
-    print_out("<input type=\"hidden\" name=\"flag\" value=\"%s\">\n",
-		(l->flag ? l->flag : "") );
-    print_out("<input type=\"hidden\" name=\"next_securid\" value=\"%d\">\n",
-		(l->next_securid ? l->next_securid : 0) );
-    print_out("<input type=\"hidden\" name=\"referer\" value=\"%s\">\n",
-		(l->referer ? l->referer : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_REAL_HOST, (l->real_hostname?l->real_hostname:"") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_APPSRV_ERR, (l->appsrv_err ? l->appsrv_err : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_FILE_UPLD, (l->file ? l->file : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_FLAG, (l->flag ? l->flag : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_REFERER, (l->referer ? l->referer : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		PBC_GETVAR_POST_STUFF, (l->post_stuff ? l->post_stuff : "") );
 
-    print_out("<input type=\"hidden\" name=\"post_stuff\" value=\"%s\">\n",
-		(l->post_stuff ? l->post_stuff : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
+		"first_kiss", (l->first_kiss ? l->first_kiss : "") );
+    print_out("<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
+		"next_securid", (l->next_securid ? l->next_securid : 0) );
+
 
 }
 
@@ -1209,7 +1238,7 @@ void print_redirect_page(login_rec *l)
     char		*redirect_uri;
     char		*message;
     char		*args_enc = NULL; 
-    char		*redirect_dest_tmp = NULL;
+    char		*redirect_final = NULL;
     char		*redirect_dest = NULL;
     char		g_set_cookie[PBC_1K];
     char		l_set_cookie[PBC_1K];
@@ -1221,11 +1250,12 @@ void print_redirect_page(login_rec *l)
     char		*submit_value = NULL;
     cgiFormEntry	*c;
     cgiFormEntry	*n;
+    time_t		now;
 
-    if( !(redirect_dest_tmp = malloc(PBC_4K)) ) {
+    if( !(redirect_dest = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
-    if( !(redirect_dest = malloc(PBC_4K)) ) {
+    if( !(redirect_final = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
     if( !(message = malloc(PBC_4K)) ) {
@@ -1294,19 +1324,28 @@ void print_redirect_page(login_rec *l)
         redirect_uri = l->uri;
     else
         redirect_uri = l->fr;
+
     snprintf(redirect_dest, PBC_4K-1, "https://%s%s%s", 
 		l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
 
     if( l->args ) {
         args_enc = strdup(l->args);    
 	base64_decode(l->args, args_enc);
-        snprintf( redirect_dest, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
+        snprintf( redirect_final, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
     } 
+    else {
+        strcpy( redirect_final, redirect_dest );
+    }
 
     /* we don't use the fab log_message funct here because the url encoding */
     /* will look like format chars in future *printf's */
-    fprintf(stderr, "about to do redirect of %s for host %s, redirect is: %s\n",
-				l->user, l->host, redirect_dest);
+    now = time(NULL);
+    fprintf(stderr, "%s: PUBCOOKIE_DEBUG: %s: %s Redirect user: %s redirect: %s\n",
+				libpbc_time_string(now),
+				ANY_LOGINSRV_MESSAGE,
+				l->first_kiss,
+				l->user, 
+				redirect_final);
 
     /* now blat out the redirect page */
     print_out("%s\n", g_set_cookie);
@@ -1324,8 +1363,8 @@ void print_redirect_page(login_rec *l)
             exit(0);
         }
 
-        print_out("Pragma: No-Cache\n");
-        print_out("Content-Type: text/html\n\n\n");
+        print_http_header();
+
 	print_out("<HTML>");
 	/* when the page loads click on the last element */
         /* (which will always be the submit) in the array */
@@ -1348,7 +1387,7 @@ void print_redirect_page(login_rec *l)
         print_table_start();
 	print_out("<tr><td align=\"LEFT\">\n");
 
-	print_out("<form method=\"POST\" action=\"%s\" ", redirect_dest);
+	print_out("<form method=\"POST\" action=\"%s\" ", redirect_final);
         print_out("enctype=\"application/x-www-form-urlencoded\" ");
         print_out("name=\"query\">\n");
 
@@ -1407,18 +1446,19 @@ void print_redirect_page(login_rec *l)
         /*                                                               */
         /* non-post redirect area                 non-post redirect area */
         /*                                                               */
-        print_out("Content-Type: text/html\n\n\n");
+        print_http_header();
+
         print_out("<html><head>\n");
-        print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_dest);
+        print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_final);
         print_out("<BODY BGCOLOR=\"white\">");
-        print_out("<!--redirecting to %s-->", redirect_dest);
+        print_out("<!--redirecting to %s-->", redirect_final);
         print_out("</BODY></HTML>\n");
     } /* end if post_stuff */
 
     free(g_cookie);
     free(l_cookie);
     free(message);
-    free(redirect_dest);
+    free(redirect_final);
 
 }
 
@@ -1427,9 +1467,15 @@ login_rec *get_query()
     login_rec		*l = malloc(sizeof(login_rec));
     char		*g_req;
     char		*g_req_clear;
+    struct timeval	t;
+
+    /* init something in login rec */
+    l->first_kiss = NULL;
+    l->appsrv_err = NULL;
+    l->appsrv_err_string = NULL;
 
     /* even if we hav a granting request post stuff will be in the request */
-    l->post_stuff	= get_string_arg("post_stuff", YES_NEWLINES_FUNC);
+    l->post_stuff	= get_string_arg(PBC_GETVAR_POST_STUFF, YES_NEWLINES_FUNC);
 
     /* take everything out of the environment */
     l = load_login_rec(l);
@@ -1445,7 +1491,9 @@ login_rec *get_query()
             return(NULL);
         }
         g_req_clear = decode_granting_request(g_req);
-
+#ifdef DEBUG
+        fprintf(stderr, "get_query: decoded granting request: %s\n", g_req_clear);
+#endif
         if( cgiParseFormInput(g_req_clear, strlen(g_req_clear)) 
                    != cgiParseSuccess ) {
             log_error(5, "misc", 0, "couldn't parse the decoded granting request cookie");
@@ -1463,8 +1511,22 @@ login_rec *get_query()
     }
 
     /* because it's convenient we add some info that will follow the req */
-    l->first_kiss = time(NULL);
-    l->remote_host = strdup( getenv("REMOTE_ADDR") );
+    if( l->first_kiss == NULL ) {
+        l->first_kiss = malloc(30);
+        gettimeofday(&t, 0);
+        sprintf(l->first_kiss, "%ld-%ld", t.tv_sec, t.tv_usec);
+    }
+
+    /* reason why user was sent back to the login srver */
+    /* appsrv_err is a string message or code */
+    if( l->appsrv_err != NULL ) {
+        if( strlen(l->appsrv_err) > 3 ) {  /* the whole message */
+            l->appsrv_err_string = strdup(l->appsrv_err);
+        }
+        else {                             /* the newer was, just a code */
+            l->appsrv_err_string = strdup(redirect_reason[atoi(l->appsrv_err)]);
+        }
+    }
 
 #ifdef DEBUG 
     fprintf(stderr, "from login user: %s\n", l->user);
@@ -1474,12 +1536,13 @@ login_rec *get_query()
     fprintf(stderr, "from login host: %s\n", l->host);
     fprintf(stderr, "from login appsrvid: %s\n", l->appsrvid);
     fprintf(stderr, "from login next_securid: %d\n", l->next_securid);
+    fprintf(stderr, "from login first_kiss: %d\n", (int)l->first_kiss);
     fprintf(stderr, "from login post_stuff: %s\n", l->post_stuff);
 #endif
 
     return(l);
 
-}
+} /* get-query */
 
 login_rec *verify_login_cookie (char *cookie, login_rec *l)
 {
