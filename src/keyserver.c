@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.14 2002-06-27 20:41:27 jteaton Exp $
+    $Id: keyserver.c,v 2.15 2002-06-27 22:07:24 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -271,6 +271,7 @@ int doit(const char *peer, enum optype op, const char *newkey)
 
                 free(thekey);
 
+                syslog(LOG_INFO, "%s set key for %s!\n", peer, thepeer);
                 myprintf("OK key set\r\n");
                 break;
             }
@@ -402,6 +403,20 @@ int main(int argc, char *argv[])
     }
 
     /* xxx log connection information */
+
+    /* initalize the PRNG as best we can if we have to */
+    if (RAND_status() == 0) {
+        time_t t = time(NULL);
+        pid_t pid = getpid();
+        char buf[1024];
+        char *cmd[3] = {"/bin/ps", "-ef", NULL};
+
+        RAND_seed((unsigned char *)&t, sizeof(t));
+        RAND_seed((unsigned char *)&pid, sizeof(pid));
+
+        capture_cmd_output(cmd, buf, sizeof(buf));
+        RAND_seed((unsigned char *)buf, sizeof(buf));
+    }
 
     /* Load SSL Error Strings */
     SSL_load_error_strings();

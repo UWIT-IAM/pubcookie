@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.8 2002-06-25 19:58:33 greenfld Exp $
+    $Id: keyclient.c,v 2.9 2002-06-27 22:07:24 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -34,6 +34,7 @@
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/rand.h>
 
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
@@ -102,6 +103,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+libpbc_augment_rand_state(buf, 50);
+
     newkeyp = 1;
     while ((c = getopt(argc, argv, "apc:k:C:D:nudh:L:")) != -1) {
         switch (c) {
@@ -162,6 +165,20 @@ int main(int argc, char *argv[])
                 usage();
                 break;
         }
+    }
+
+    /* initalize the PRNG as best we can if we have to */
+    if (RAND_status() == 0) {
+        time_t t = time(NULL);
+        pid_t pid = getpid();
+        char buf[1024];
+        char *cmd[3] = {"/bin/ps", "-ef", NULL};
+
+        RAND_seed((unsigned char *)&t, sizeof(t));
+        RAND_seed((unsigned char *)&pid, sizeof(pid));
+
+        capture_cmd_output(cmd, buf, sizeof(buf));
+        RAND_seed((unsigned char *)buf, sizeof(buf));
     }
 
     /* Load SSL Error Strings */
