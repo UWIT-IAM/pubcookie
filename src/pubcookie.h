@@ -27,7 +27,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.10 2001-05-29 20:51:58 willey Exp $
+    $Id: pubcookie.h,v 1.11 2001-08-10 19:07:11 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -77,6 +77,7 @@ typedef struct {
     EVP_MD_CTX	*ctx;
     EVP_PKEY 	*private_key;
     EVP_PKEY 	*public_key;
+    char 	key_file[600];         /*for debugging routines to print*/
 } md_context_plus;
 
 typedef struct {
