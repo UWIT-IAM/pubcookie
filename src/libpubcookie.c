@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.22 2002-03-01 16:32:41 jteaton Exp $
+    $Id: libpubcookie.c,v 2.23 2002-05-15 21:01:10 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -860,9 +860,12 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
 	                  unsigned char type, 
 			  unsigned char creds,
 			  int serial,
+                          time_t expire,
 			  unsigned char *appsrvid,
 			  unsigned char *appid) 
 {
+
+    /* libpbc_debug("libpbc_populate_cookie_data\n"); */
 
     strncpy((char *)(*cookie_data).broken.user, (const char *)user, PBC_USER_LEN-1);
     strncpy((char *)(*cookie_data).broken.version, PBC_VERSION, PBC_VER_LEN-1);
@@ -870,7 +873,7 @@ void libpbc_populate_cookie_data(pbc_cookie_data *cookie_data,
     (*cookie_data).broken.creds = creds;
     (*cookie_data).broken.serial = serial;
     (*cookie_data).broken.create_ts = time(NULL);
-    (*cookie_data).broken.last_ts = time(NULL);
+    (*cookie_data).broken.last_ts = expire;
     strncpy((char *)(*cookie_data).broken.appsrvid, (const char *)appsrvid, PBC_APPSRV_ID_LEN-1);
     strncpy((char *)(*cookie_data).broken.appid, (const char *)appid, PBC_APP_ID_LEN-1);
 
@@ -954,8 +957,6 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 {
     md_context_plus *ctx_plus;
 
-/*  libpbc_debug("libpbc_sign_init: keyfile= %s\n",keyfile); */
-
     ctx_plus = libpbc_init_md_context_plus();
 
     if ( libpbc_get_private_key(ctx_plus, keyfile) == PBC_OK ) {
@@ -969,6 +970,8 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 /*                                                                            */
 /* builds, signs and returns cookie                                           */
 /*                                                                            */
+/* for now we use the last_ts field in login cookie as expire_ts */
+/* this is the call used for creating G and S cookies            */
 #ifdef APACHE
 unsigned char *libpbc_get_cookie_p(pool *p, unsigned char *user, 
 	                  unsigned char type, 
@@ -990,16 +993,56 @@ unsigned char *libpbc_get_cookie_np(unsigned char *user,
 #endif
 {
 
+    return(libpbc_get_cookie_with_expire(user,
+					 type,
+					 creds,
+				    	 serial,
+					 time(NULL),
+					 appsrvid,
+					 appid,
+					 ctx_plus,
+					 c_stuff));
+
+}
+
+/*                                                                            */
+/* builds, signs and returns cookie                                           */
+/*                                                                            */
+/* for now we use the last_ts field in login cookie as expire_ts */
+/* the overleading of last_ts with expire_ts is ugly but we're   */
+/* going to reframe the library interfaces anyway and this will  */
+/* be treated better then.                                       */
+#ifdef APACHE
+unsigned char *libpbc_get_cookie_with_expire_p(pool *p, unsigned char *user, 
+	                  unsigned char type, 
+			  unsigned char creds,
+			  int serial,
+			  time_t expire,
+			  unsigned char *appsrvid,
+			  unsigned char *appid,
+			  md_context_plus *ctx_plus,
+			  crypt_stuff *c_stuff) 
+#else
+unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *user, 
+	                  unsigned char type, 
+			  unsigned char creds,
+			  int serial,
+			  time_t expire,
+			  unsigned char *appsrvid,
+			  unsigned char *appid,
+			  md_context_plus *ctx_plus,
+			  crypt_stuff *c_stuff) 
+#endif
+{
+
     pbc_cookie_data 		*cookie_data;
     unsigned char			*cookie_string;
     unsigned char			*cookie;
 
-/*  libpbc_debug("libpbc_get_cookie\n"); */
-
     libpbc_augment_rand_state(user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data();
-    libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, appsrvid, appid);
+    libpbc_populate_cookie_data(cookie_data, user, type, creds, serial, expire, appsrvid, appid);
     cookie_string = libpbc_stringify_cookie_data(cookie_data);
     pbc_free(cookie_data);
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);

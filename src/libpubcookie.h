@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.15 2002-03-01 16:32:41 jteaton Exp $
+    $Id: libpubcookie.h,v 1.16 2002-05-15 21:01:10 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -40,10 +40,9 @@
 #define OPENSSL_0_9_2B
 #endif
 
-#ifdef APACHE1_2
+#ifdef APACHE1_3
 
-
-unsigned char *libpbc_get_cookie_p(pool *, unsigned char *, 
+unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
 	                         unsigned char, 
 				 unsigned char, 
 				 int,
@@ -51,28 +50,12 @@ unsigned char *libpbc_get_cookie_p(pool *, unsigned char *,
 				 unsigned char *, 
 				 md_context_plus *, 
 				 crypt_stuff *);
-pbc_cookie_data *libpbc_unbundle_cookie_p(pool *, char *, 
-	                                md_context_plus *, 
-					crypt_stuff *);
-unsigned char *libpbc_update_lastts_p(pool *, pbc_cookie_data *,
-                                    md_context_plus *, 
-                                    crypt_stuff *);
-md_context_plus *libpbc_sign_init_p(pool *, char *);
-md_context_plus *libpbc_verify_init_p(pool *, char *);
-void libpbc_pubcookie_init_p(pool *);
-unsigned char *libpbc_alloc_init_p(pool *, int);
-unsigned char *libpbc_gethostip_p(pool *);
-crypt_stuff *libpbc_init_crypt_p(pool *, char *);
-void libpbc_free_md_context_plus_p(pool *, md_context_plus *);
-void libpbc_free_crypt_p(pool *, crypt_stuff *);
-
-#else
-#ifdef APACHE1_3
-
-unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
+/* for now we use the last_ts field in login cookie as expire_ts */
+unsigned char *libpbc_get_cookie_with_expire_p(ap_pool *, unsigned char *, 
 	                         unsigned char, 
 				 unsigned char, 
 				 int,
+				 time_t,
 				 unsigned char *, 
 				 unsigned char *, 
 				 md_context_plus *, 
@@ -102,6 +85,16 @@ unsigned char *libpbc_get_cookie_np(unsigned char *,
 				 unsigned char *, 
 				 md_context_plus *, 
 				 crypt_stuff *);
+/* for now we use the last_ts field in login cookie as expire_ts */
+unsigned char *libpbc_get_cookie_with_expire_np(unsigned char *, 
+	                         unsigned char, 
+				 unsigned char, 
+				 int,
+				 time_t,
+				 unsigned char *, 
+				 unsigned char *, 
+				 md_context_plus *, 
+				 crypt_stuff *);
 pbc_cookie_data *libpbc_unbundle_cookie_np(char *, 
 	                                md_context_plus *, 
 					crypt_stuff *);
@@ -117,7 +110,6 @@ crypt_stuff *libpbc_init_crypt_np(char *);
 void libpbc_free_md_context_plus_np(md_context_plus *);
 void libpbc_free_crypt_np(crypt_stuff *);
 
-#endif 
 #endif
 
 char *libpbc_time_string(time_t);
