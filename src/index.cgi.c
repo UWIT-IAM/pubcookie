@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.83 $
+ * $Revision: 1.84 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1632,29 +1632,31 @@ void notok ( void (*notok_f)() )
 
 int set_pinit_cookie() 
 {
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/%s\n", 
 #ifdef PORT80_TEST
-    print_header("Set-Cookie: %s=%s; domain=%s; path=/\n", 
+                 "",
 #else
-    print_header("Set-Cookie: %s=%s; domain=%s; path=/; secure\n", 
+                 "; secure\n", 
 #endif
-		PBC_PINIT_COOKIENAME,
-                PBC_SET,
-                login_host());
+                 PBC_PINIT_COOKIENAME,
+                 PBC_SET,
+                 login_host());
 
     return(PBC_OK);
 }
 
 int clear_pinit_cookie() {
 
+    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
 #ifdef PORT80_TEST
-    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n",
+                 "",
 #else
-    print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\n",
+                 "; secure\n",
 #endif
-            PBC_PINIT_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            login_host(),
-            EARLIEST_EVER);
+                 PBC_PINIT_COOKIENAME, 
+                 PBC_CLEAR_COOKIE,
+                 login_host(),
+                 EARLIEST_EVER);
 
     return(PBC_OK);
 
@@ -2247,9 +2249,9 @@ login_rec *verify_unload_login_cookie (login_rec *l)
         new->alterable_username = PBC_TRUE;
 
     pbc_log_activity(PBC_LOG_AUDIT,
-			 "verify_unload_login_cookie: bye!  user is %s\n", 
-			 new->user  == NULL ? "(null)" : new->user 
-			 );
+                     "verify_unload_login_cookie: bye!  user is %s\n", 
+                     new->user  == NULL ? "(null)" : new->user 
+                    );
 
     return(new);
 
@@ -2261,10 +2263,10 @@ int create_cookie(char *user_buf,
                   char type,
                   char creds,
                   int pre_sess_tok,
-		  time_t expire,
+                  time_t expire,
                   char *cookie,
                   const char *peer,
- 	          int max)
+                  int max)
 {
     /* measured quantities */
     unsigned char 	user[PBC_USER_LEN];

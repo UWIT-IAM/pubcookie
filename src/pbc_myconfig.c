@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.11 2002-08-23 04:14:44 ryanc Exp $
+    $Id: pbc_myconfig.c,v 1.12 2002-09-04 19:53:55 jjminer Exp $
  */
 
 

@@ -150,21 +150,26 @@ keytab file</td> </tr>
 </tr>
 
 <tr>
-<td>ldap_uri</td><td>        list</td><td>    The LDAP URI in this format:
-            
-    ldaps://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
-    ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
+    <td>ldap_uri</td><td>        list</td>
+    <td>    The LDAP URI in this format:
+        <pre>            
+            ldaps://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
+            ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
+        </pre>
+        <ul>
+            <li>(uid=%s) is the search filter for finding an account by netid.  The
+            %s will be replaced with the netid.  The host string can optionally
+            contain a port number.  The filter can only contain one %s at this time.
+            </li>
 
-                        (uid=%s) is the search filter for finding an account
-                        by netid.  The %s will be replaced with the netid.
-                        The host string can optionally contain a port number.
-                        The filter can only contain one %s at this time.
-
-                        x-BindDN and x-Password are the Bind DN and Password,
-                        URL encoded (the only thing I've noticed causing
-                        problems so far are spaces, %20.)  The x-BindDN and
-                        x-Password may be omitted entirely if the connection is
-                        anonymous.</td>
+            <li>x-BindDN and x-Password are the Bind DN and Password, URL
+            encoded.
+            <b>(Commas must be encoded as %2c and spaces as %20.)</b>
+            The x-BindDN and x-Password may be omitted entirely if the
+            connection is anonymous.
+            </li>
+        </ul>
+    </td>
 </tr>
 
 <tr>
