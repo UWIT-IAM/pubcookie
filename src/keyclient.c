@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.52 2004-09-14 16:41:44 fox Exp $
+ * $Id: keyclient.c,v 2.53 2004-11-23 19:25:31 fox Exp $
  */
 
 
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
 
         if (permit) {     /* permit or deny a host */
            snprintf(buf, sizeof(buf),
-                  "GET %s?genkey=%s?setkey=%s;\r\n\r\n",
+                  "GET %s?genkey=%s&setkey=%s;\r\n\r\n",
                    keymgturi, (permit<0?"deny":"permit"), hostname);
                
         } else if (gcert) { /* get the granting cert */
@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
            char crt[10240];
            if (fp && fread(crt, 1, 10240, fp)) {
              snprintf(buf, sizeof(buf),
-                  "GET %s?genkey=setpkey?setkey=%s;\r\n\r\n",
+                  "GET %s?genkey=setpkey&setkey=%s;\r\n\r\n",
                    keymgturi, crt);
              fclose(fp);
            } else {
@@ -499,12 +499,12 @@ int main(int argc, char *argv[])
 
           /* we're uploading! */
           snprintf(buf, sizeof(buf),
-                 "GET %s?genkey=put?setkey=%s;%s\r\n\r\n",
+                 "GET %s?genkey=put&setkey=%s;%s\r\n\r\n",
                  keymgturi, hostname, enckey);
         }
     } else {  /* get the key */
         snprintf(buf, sizeof(buf), 
-                 "GET %s?genkey=%s?setkey=%s HTTP/1.0\r\n\r\n", keymgturi,
+                 "GET %s?genkey=%s&setkey=%s HTTP/1.0\r\n\r\n", keymgturi,
                  newkeyp ? "yes" : "no", hostname);
     }
 
