@@ -17,7 +17,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.30 2004-02-10 00:42:15 willey Exp $
+ * $Id: verify_kerberos5.c,v 1.31 2004-03-09 20:06:02 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -157,14 +157,14 @@ static int unsave_tf(pool *p, const char *tfname, struct credentials *creds)
 	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: can't write %s: %m", tfname);
 	fclose(f);
-	unlink(tfname);
+        unlink(tfname);
 	return -1;
     }
 
     if (fclose(f) != 0) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "verify_kerberos5: can't close %s: %m", tfname);
-	unlink(tfname);
+        unlink(tfname);
 	return -1;
     }
 
@@ -177,18 +177,16 @@ static void creds_free(pool *p, struct credentials *creds)
     if (creds) free(creds);
 }
 
-static int creds_derive(pool *p, struct credentials *creds,
+static int cred_derive(pool *p, struct credentials *creds,
 			const char *app,
 			const char *target,
-			struct credentials **outcredsp)
+			int initialize_cache,
+                        krb5_context context,
+                        krb5_ccache ccache,
+                        krb5_ccache ccache_target)
 {
-    char tfname[40];
-    char tfname_target[40];
     char *realm = NULL;
     char *s, *t;
-    krb5_context context;
-    krb5_ccache ccache;
-    krb5_ccache ccache_target;
     krb5_creds request, *newcreds;
     int r = -1;
 
@@ -197,29 +195,8 @@ static int creds_derive(pool *p, struct credentials *creds,
 
     memset(&request, 0, sizeof(request));
 
-    snprintf(tfname, sizeof(tfname), "/tmp/k5cc_%d", getpid());
-    snprintf(tfname_target, sizeof(tfname_target), "/tmp/k5cc_%d_", getpid());
-
     s = strdup(target);
     if (!s) {
-	return -1;
-    }
-
-    /* unpack 'creds' into a ticket file */
-    if (unsave_tf(p, tfname, creds) < 0) {
-	return -1;
-    }
-
-    /* examine the ticket file */
-    if (krb5_init_context(&context)) {
-	return -1;
-    }
-
-    if (krb5_cc_resolve(context, tfname, &ccache)) {
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: krb5_cc_resolve failed",
-                         target);
-	krb5_free_context(context);
 	return -1;
     }
 
@@ -235,7 +212,7 @@ static int creds_derive(pool *p, struct credentials *creds,
 
     if (!realm) {
 	pbc_log_activity(p, PBC_LOG_ERROR,
-                         "verify_kerberos5: creds_derive %s: couldn't determine realm", 
+                         "verify_kerberos5: cred_derive %s: couldn't determine realm", 
                          target);
 	goto cleanup;
     }
@@ -247,7 +224,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     /* who am i? */
     if (krb5_cc_get_principal(context, ccache, &(request.client))) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: who am i?", 
+                         "verify_kerberos5: cred_derive %s: who am i?", 
                          target);
 	goto cleanup;
     }
@@ -256,7 +233,7 @@ static int creds_derive(pool *p, struct credentials *creds,
     if (krb5_build_principal(context, &request.server, 
 			     strlen(realm), realm, s, t, NULL)) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: couldn't build principal", 
+                         "verify_kerberos5: cred_derive %s: couldn't build principal", 
                          target);
 	goto cleanup;
     }
@@ -264,39 +241,24 @@ static int creds_derive(pool *p, struct credentials *creds,
     /* fetch the request ticket */
     if (krb5_get_credentials(context, 0, ccache, &request, &newcreds)) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: krb5_get_credentials failed",
+                         "verify_kerberos5: cred_derive %s: krb5_get_credentials failed",
                          target);
 	goto cleanup;
     }
 
-    /* save the new credentials in a new ccache */
-    if (krb5_cc_resolve(context, tfname_target, &ccache_target)) {
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: krb5_cc_resolve failed",
-                         target);
-	goto cleanup;
-    }
-
-    if (krb5_cc_initialize (context, ccache_target, request.client)) {
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: krb5_cc_initialize failed",
-                         target);
-	goto cleanup;
+    if (initialize_cache == 0) {
+        if (krb5_cc_initialize (context, ccache_target, request.client)) {
+            pbc_log_activity(p, PBC_LOG_ERROR,
+                             "verify_kerberos5: cred_derive %s: krb5_cc_initialize failed",
+                             target);
+            goto cleanup;
+        }
     }
 
     if (krb5_cc_store_cred(context, ccache_target, newcreds)) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: creds_derive %s: krb5_cc_store_cred failed",
+                         "verify_kerberos5: cred_derive %s: krb5_cc_store_cred failed",
                          target);
-	krb5_cc_destroy(context, ccache_target);
-	goto cleanup;
-    }
-
-    /* bundle up the new ticket */
-    if (save_tf(p, tfname_target, outcredsp) < 0) {
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "verify_kerberos5: save_tf failed");
-	krb5_cc_destroy(context, ccache_target);
 	goto cleanup;
     }
 
@@ -307,13 +269,79 @@ static int creds_derive(pool *p, struct credentials *creds,
     if (s) free(s);
     if (request.client) krb5_free_principal(context, request.client);
     if (request.server) krb5_free_principal(context, request.server);
+
+    return r;
+}
+
+static int creds_derive(pool *p, struct credentials *creds,
+                        const char *app,
+                        const char **target_array,
+                        struct credentials **outcredsp)
+{
+    krb5_context context;
+    char tfname[40];
+    char tfname_target[40];
+    krb5_ccache ccache;
+    krb5_ccache ccache_target;
+    int i = 0;
+    int r = -1;
+
+    assert(creds != NULL);
+    assert(app != NULL && target_array != NULL);
+
+    snprintf(tfname, sizeof(tfname), "/tmp/k5cc_%d", getpid());
+    snprintf(tfname_target, sizeof(tfname_target), "/tmp/k5cc_%d_%d", getpid(), i);
+
+    /* unpack 'creds' into a ticket file */
+    if (unsave_tf(p, tfname, creds) < 0) {
+        return -1;
+    }
+
+    /* examine the ticket file */
+    if (krb5_init_context(&context)) {
+        pbc_log_activity(p, PBC_LOG_ERROR,
+                         "verify_kerberos5: creds_derive: krb5_init_context failed");
+        goto cleanup;
+    }
+
+    if (krb5_cc_resolve(context, tfname, &ccache)) {
+        pbc_log_activity(p, PBC_LOG_ERROR,
+                         "verify_kerberos5: creds_derive: krb5_cc_resolve failed");
+        goto cleanup;
+    }
+
+
+    if (krb5_cc_resolve(context, tfname_target, &ccache_target)) {
+        pbc_log_activity(p, PBC_LOG_ERROR,
+                         "verify_kerberos5: creds_derive: krb5_cc_resolve failed");
+	goto cleanup;
+    }
+
+
+    for(i = 0; target_array[i] != NULL; i++) {
+        if (cred_derive(p, creds, app, target_array[i], i, context, ccache, ccache_target) != 0) {
+           goto cleanup;
+        }
+    }
+
+    /* bundle up the new ticket */
+    if (save_tf(p, tfname_target, outcredsp) < 0) {
+        pbc_log_activity(p, PBC_LOG_ERROR,
+                         "verify_kerberos5: save_tf failed");
+        goto cleanup;
+    }
+
+    /* woo, success */
+    r = 0;
+
+ cleanup:
     krb5_cc_destroy(context, ccache);
-    unlink(tfname);
-    unlink(tfname_target);
+    krb5_cc_destroy(context, ccache_target);
     krb5_free_context(context);
 
     return r;
 }
+
 
 /*
  * returns 0 success; non-0 on failure

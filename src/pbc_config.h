@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.92 2004-02-19 23:07:03 fox Exp $
+     $Id: pbc_config.h,v 1.93 2004-03-09 20:06:02 jteaton Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -69,6 +69,13 @@
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_FORCE_REAUTH 3
+
+#define PBC_TRANSCRED_MAX_COOKIES 10 
+#define PBC_TRANSCRED_MAX_COOKIE_LENGTH 3900
+/* cookies can theoretically be up to 4KB, but some browsers
+ * really limit it to 4000 bytes, and include the name of the
+ * cookie in the limit, so we limit to 3900 bytes for now.
+ */
 
 #define PBC_DEFAULT_DIRDEPTH 0
 

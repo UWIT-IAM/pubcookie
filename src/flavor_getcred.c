@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.24 2004-03-02 16:14:44 dors Exp $
+ * $Id: flavor_getcred.c,v 1.25 2004-03-09 20:06:02 jteaton Exp $
  */
 
 
@@ -188,6 +188,9 @@ static login_result process_getcred(pool *p, const security_context *context,
     char *outbuf;
     int outlen;
     char *out64;
+    int i,j;
+    char ** target_array;
+    int num_creds;
 
     assert(v != NULL);
 
@@ -208,19 +211,40 @@ static login_result process_getcred(pool *p, const security_context *context,
 	return LOGIN_ERR;
     }
 
-    /* check that l->host is authorized to have credentials for 'target'
-       on behalf of l->user.
-       
-       we use 'l->host' as the name of the requesting server since
-       it's the only thing that we can rely on since 'newcreds' will
-       be encrypted so only l->host can read them.
+    /* split target into component parts to make an array of targets  */
+    for (i=0, j=1; target[i] != NULL; i++) {
+        if (target[i] == ';') {
+           j++;
+        }
+    }
+    num_creds = j + 1;
+
+    target_array = malloc(num_creds * sizeof(char *));
+    target_array[0] = target;
+    for (i=0, j=1; target[i] != NULL; i++) {
+       if (target[i] == ';') {
+          target[i] = 0;
+          target_array[j++] = &target[i+1];
+       }
+    }
+    target_array[j++] = NULL;
+
+    /*
+     * check that l->host is authorized to have credentials for each
+     * 'target' on behalf of l->user.
+     * 
+     * we use 'l->host' as the name of the requesting server since
+     * it's the only thing that we can rely on since 'newcreds' will
+     * be encrypted so only l->host can read them.
     */
-    if (check_authz(p, l->host, target)) { 
-	pbc_log_activity(p, PBC_LOG_ERROR, 
-                         "flavor_getcred: %s requested %s; request denied",
-                         l->host, target);
-	*errstr = "application not allowed to request these credentials";
-	return LOGIN_ERR;
+    for (i=0; target_array[i] != NULL; i++) {
+       if (check_authz(p, l->host, target_array[i])) { 
+          pbc_log_activity(p, PBC_LOG_ERROR, 
+                           "flavor_getcred: %s requested %s; request denied",
+                           l->host, target);
+   	  *errstr = "application not allowed to request these credentials";
+          return LOGIN_ERR;
+       }
     }
 
     /* retrieve the cached credentials */
@@ -281,7 +305,7 @@ static login_result process_getcred(pool *p, const security_context *context,
     /* derive those credentials and throw them in a cookie */
     /* we pass 'l->host' in to cred_derive because that's what we're going
        to use as the peer when we encrypt newcreds */
-    if (v->cred_derive(p, master, l->host, target, &newcreds)) {
+    if (v->cred_derive(p, master, l->host, target_array, &newcreds)) {
 	pbc_log_activity(p, PBC_LOG_ERROR, "flavor_getcred: cred_derive failed");
 	*errstr = "cred_derive failed";
 	free(master->str);
@@ -307,11 +331,40 @@ static login_result process_getcred(pool *p, const security_context *context,
     libpbc_base64_encode(p, (unsigned char *) outbuf,
                           (unsigned char *) out64, outlen);
 
-    /* set cookie */
-    print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
-		 PBC_CRED_TRANSFER_COOKIENAME,
-		 out64,
+    /* check the length of out64 here, and divide up into multiple cookies
+       if necessary.  each cookie should be no more than 2k */
+
+    char cookiestr[2048];
+    for (i = 0, j = 0;
+         i < strlen(out64) && j < PBC_TRANSCRED_MAX_COOKIES;
+         i += PBC_TRANSCRED_MAX_COOKIE_LENGTH, j++) {
+       strncpy(cookiestr, out64+i, PBC_TRANSCRED_MAX_COOKIE_LENGTH);
+
+       /* set cookie(s) */
+       if (j == 0) {
+          /* compatibality mode */
+          print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
+   		 PBC_CRED_TRANSFER_COOKIENAME,
+   		 cookiestr,
 		 enterprise_domain(p));
+       } else {
+          /* set cookie(s) */
+          print_header(p, "Set-Cookie: %s%d=%s; domain=%s; path=/; secure\n",
+   		 PBC_CRED_TRANSFER_COOKIENAME,
+                 j,
+   		 cookiestr,
+		 enterprise_domain(p));
+       }
+    }
+
+    if (j == PBC_TRANSCRED_MAX_COOKIES) {
+       /* too many cookies, fail */
+       pbc_log_activity(p, PBC_LOG_ERROR,
+                        "flavor_getcred: overflowed transcred cookies");
+       *errstr = "credentials too large to fit in cookies";
+       return LOGIN_ERR;
+    }
+
 
     /* cleanup */
     free(out64);
