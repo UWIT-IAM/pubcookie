@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.26 $
+ * $Revision: 1.27 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -155,7 +155,7 @@ void print_header(const char *format, ...);
 #define PBC_POST_NO_JS_TEXT "Thank you for logging in\n"
 
 #define PRINT_LOGIN_PLEASE "Please log in."
-#define PRINT_LOGIN_PINIT "Welcome to the UW \"weblogin\" service. Please log in to identify yourself."
+#define PRINT_LOGIN_PINIT "Welcome to the UW NetID \"weblogin\" service. Please log in to identify yourself."
 #define TROUBLE_CREATING_COOKIE "Trouble creating cookie.  Please re-enter."
 #define PROBLEMS_PERSIST "If problems persist contact help@cac.washington.edu."
 #define AUTH_FAILED_MESSAGE1 "Login failed.  Please re-enter.\n"
@@ -300,7 +300,7 @@ else { \
 
 #define NOTOK_FORMMULTIPART_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \
 \
-<p><b><font size=\"+1\">The resource you requested requires \"multipart/form-data\" capabilities not supported by the UW NetID login page. Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a> for further assistance.</font></b></p>\
+<p><b><font size=\"+1\">The resource you requested requires \"multipart/form-data\" capabilities not supported by the UW NetID \"weblogin\" service. Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu</a> for further assistance.</font></b></p>\
 \
 <p>&nbsp;</p>\
 "
@@ -324,7 +324,7 @@ Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu<
 "
 
 #define NOTOK_NEEDSSL_TEXT1 "<P><B><font size=\"+1\" color=\"#FF0000\">A problem has been detected!</font></B></P> \n\
-<P>I'm sorry this page is only accessible via a ssl protected connection.<BR>\n\
+<P>This service requires a SSL protected connection.<BR>\n\
 "
 
 /* how big can a filled-in template be? */
