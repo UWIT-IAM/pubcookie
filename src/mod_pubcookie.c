@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.50 2001-01-26 17:21:56 fmf Exp $
+    $Id: mod_pubcookie.c,v 1.51 2001-02-08 21:45:33 fmf Exp $
  */
 
 /* apache includes */
@@ -607,7 +607,7 @@ static int auth_failed(request_rec *r) {
     table_add(r->headers_out, "Set-Cookie", g_req_cookie);
 
     /* we want to make sure agents don't cache the redirect */
-    table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
+    table_set(r->headers_out, "Expires", gm_timestr_822(r->pool, r->request_time));
     table_set(r->headers_out, "Cache-Control", "no-cache");
     table_set(r->headers_out, "Pragma", "no-cache");
 
@@ -637,7 +637,7 @@ static int auth_failed(request_rec *r) {
     ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
   
     /* we want to make sure agents don't cache the redirect */
-    ap_table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
+    ap_table_set(r->headers_out, "Expires", ap_gm_timestr_822(r->pool, r->request_time));
     ap_table_set(r->headers_out, "Cache-Control", "no-cache");
     ap_table_set(r->headers_out, "Pragma", "no-cache");
 
