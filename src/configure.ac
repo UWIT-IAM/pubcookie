@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.6 $)
+AC_REVISION($Revision: 2.7 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
@@ -79,7 +79,7 @@ AC_ARG_WITH(apxs,
 [ case "$withval" in
    no)
       OLDPATH=$PATH
-      PATH="/usr/local/apache/bin:/usr/www/bin:$PATH"
+      PATH="/usr/local/apache/bin:/usr/www/bin:/usr/sbin:$PATH"
       AC_PATH_PROG(APXS, apxs)
       PATH=$OLDPATH
       ;;
