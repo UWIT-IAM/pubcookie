@@ -16,10 +16,17 @@
     this is a pubcookie include file for macros that define the 
     way the pubcookie module does stuff
 
+    logic for how the pubcookie include files are devided up:
+       libpubcookie.h: only stuff used in library
+       pubcookie.h: stuff used in the module and library
+       pbc_config.h: stuff used in the module and library that 
+            people might want to change, as far a local configuration
+       pbc_version.h: only version stuff
+
  */
 
 /*
-    $Id: pbc_config.h,v 1.25 1999-08-21 00:36:45 willey Exp $
+    $Id: pbc_config.h,v 1.26 1999-08-23 19:15:58 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
