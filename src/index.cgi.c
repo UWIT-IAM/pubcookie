@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.141 2004-09-16 20:37:10 willey Exp $
+ * $Id: index.cgi.c,v 1.142 2004-10-08 20:02:52 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2480,14 +2480,14 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
             libpbc_time_string(p, now),
             ANY_LOGINSRV_MESSAGE,
             l->first_kiss,
-            l->user, 
+            (l->user == NULL ? "": l->user), 
             redirect_final,
             l->appsrv_err_string == NULL ? "(null)" : l->appsrv_err_string);
 
     /* Send local cookies */
     if( l->pinit == PBC_TRUE ) set_pinit_cookie(p);
-    if (*l->user) print_header(p, "%s\n", l_set_cookie);
-    if (!l->relay_uri) clear_greq_cookie(p);
+    if ( l->user && *l->user ) print_header(p, "%s\n", l_set_cookie);
+    if ( !l->relay_uri ) clear_greq_cookie(p);
 
     /* incase we have a relay */
     if ( l->relay_uri ) {
@@ -2847,20 +2847,30 @@ int create_cookie(pool *p, const security_context *context,
     char *peer = NULL;
     char *ptr = NULL;
     int ret = PBC_FAIL;
+    const char func[] = "create_cookie";
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "create_cookie: hello\n"); 
 
     /* right size the args */
-    strncpy( (char *) user, user_buf, sizeof(user));
-    user[sizeof(user)-1] = '\0';
-    strncpy( (char *) appsrvid, appsrvid_buf, sizeof(appsrvid));
-    appsrvid[sizeof(appsrvid)-1] = '\0';
-    strncpy( (char *) appid, appid_buf, sizeof(appid));
-    appid[sizeof(appid)-1] = '\0';
+    bzero(user, sizeof(user));
+    if ( user_buf != NULL ) {
+        strncpy( (char *) user, user_buf, sizeof(user));
+        user[sizeof(user)-1] = '\0';
+    }
+    bzero(appsrvid, sizeof(appsrvid));
+    if ( appsrvid_buf != NULL ) {
+        strncpy( (char *) appsrvid, appsrvid_buf, sizeof(appsrvid));
+        appsrvid[sizeof(appsrvid)-1] = '\0';
+    }
+    bzero(appid, sizeof(appid));
+    if ( appid_buf != NULL ) {
+        strncpy( (char *) appid, appid_buf, sizeof(appid));
+        appid[sizeof(appid)-1] = '\0';
+    }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
-                     "create_cookie: ready to go get cookie, with expire_ts: %d\n", 
-                     (int)expire);
+            "%s: ready to go get cookie, with expire_ts: %d\n", 
+            func, (int)expire);
 
     /* go get the cookie */
 
