@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.31 1999-07-22 22:47:45 willey Exp $
+    $Id: mod_pubcookie.c,v 1.32 1999-08-04 23:48:29 willey Exp $
  */
 
 /* apache includes */
@@ -106,11 +106,6 @@ int put_out_post(request_rec *r) {
                 }
                 break;
             }
-#ifdef VERON_TESTING
-            /* willey ssw NDC debug veron */
-            /* special debugging to checkout what's happening on veron.u */
-            libpbc_debug("here is the body: %s\n", argsbuffer);
-#endif
         }
 
         ap_kill_timeout(r);
@@ -204,8 +199,9 @@ int blank_cookie(request_rec *r, char *name) {
     return 0;
 
   /* if we aint got an authtype they we definately aint pubcookie */
-  if(!auth_type(r))
-    return DECLINED;
+  /* then again, we want to always blank cookies */
+  /* if(!auth_type(r))                           */
+  /*   return DECLINED;                          */
 
   /* add an equal on the end */
   name_w_eq = pstrcat(r->pool, name, "=", NULL);
@@ -215,8 +211,9 @@ int blank_cookie(request_rec *r, char *name) {
     return 0;
 
   /* if we aint got an authtype they we definately aint pubcookie */
-  if(!ap_auth_type(r))
-    return DECLINED;
+  /* then again, we want to always blank cookies */
+  /* if(!ap_auth_type(r))                        */
+  /*   return DECLINED;                          */
 
   /* add an equal on the end */
   name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
@@ -340,7 +337,7 @@ static int auth_failed(request_rec *r) {
 
     if ( ! host ) 
 #ifdef APACHE1_2
-        host = pstrdub(r->pool, r->server->server_hostname);
+        host = pstrdup(r->pool, r->server->server_hostname);
 #else
         host = ap_pstrdup(r->pool, r->server->server_hostname);
 #endif
@@ -425,16 +422,6 @@ static int auth_failed(request_rec *r) {
         ap_table_add(r->headers_out, "Refresh", refresh);
 #endif
     ap_send_http_header(r);
-#endif
-
-#ifdef VERON_TESTING
-    /* willey ssw NDC debug veron */
-    /* special debugging to checkout what's happening on veron.u */
-    libpbc_debug("is this a POST? tenc: %s lenp: %d uri: %s method: %s\n", 
-	    ( tenc ? tenc : ""), 
-	    lenp,
-	    mr->uri,
-	    r->method);
 #endif
 
     /* now send a body */
@@ -555,7 +542,7 @@ char *make_session_cookie_name(pool *p, unsigned char *app_id)
 
 #ifdef APACHE1_2
 #ifdef NO_JIMB_SESSION_NAMES
-    name = pstrdub(p, PBC_S_COOKIENAME);
+    name = pstrdup(p, PBC_S_COOKIENAME);
 #else
     name = pstrcat(p, PBC_S_COOKIENAME, "_", app_id, NULL);
 #endif
@@ -1040,20 +1027,43 @@ static int pubcookie_typer(request_rec *r) {
 }
 
 /*                                                                            */
-static int pubcookie_fixups(request_rec *r)
+static int pubcookie_hparse(request_rec *r)
 {
-    pubcookie_dir_rec *cfg;
+    char *cookies;
+    char *nextcookie;
 
 #ifdef APACHE1_2
-    cfg = (pubcookie_dir_rec *)get_module_config(r->per_dir_config,
-					   &pubcookie_module);
+    if (! (cookies = table_get (r->headers_in, "Cookie")))
+	return OK;
+    cookies = pstrdup (r->pool, cookies);
 #else
-    cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
-					   &pubcookie_module);
+    if (! (cookies = (char *)ap_table_get (r->headers_in, "Cookie")))
+	return OK;
+    cookies = ap_pstrdup (r->pool, cookies);
 #endif
+    nextcookie = cookies;
+    while (nextcookie) {
+	char *c = nextcookie;
 
-    blank_cookie(r, make_session_cookie_name(r->pool, genr_app_id(r, cfg)));
-    blank_cookie(r, PBC_G_COOKIENAME);
+	if (nextcookie = strchr (c, ';')) {
+	    *nextcookie++ = '\0';
+	    while (*nextcookie && *nextcookie == ' ')
+	        ++nextcookie;
+	}
+	/* the module might be run on the login server don't blank g req */
+	if ( strncasecmp (c, PBC_G_REQ_COOKIENAME, 
+		         sizeof (PBC_G_REQ_COOKIENAME) - 1) &&
+	       ( !strncasecmp (c, PBC_G_COOKIENAME, 
+			 sizeof (PBC_G_COOKIENAME) - 1) ||
+                 !strncasecmp (c, PBC_S_COOKIENAME, 
+		         sizeof (PBC_S_COOKIENAME) - 1) )) {
+	    char *s = strchr (c, '=');
+	    if (s) {
+		*s = '\0';
+		get_cookie (r, c);
+	    }
+	}
+    }
 
     return OK;
 }
@@ -1274,8 +1284,8 @@ module pubcookie_module = {
    pubcookie_auth,	   	/* check auth */
    NULL,                        /* check access */
    pubcookie_typer,             /* type_checker */
-   pubcookie_fixups,	        /* fixups */
+   NULL,		        /* fixups */
    NULL,		        /* logger */
-   NULL                         /* header parser */
+   pubcookie_hparse             /* header parser */
 };
 
