@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.8 1998-07-24 23:14:00 willey Exp $
+    $Id: libpubcookie.c,v 1.9 1998-07-28 23:03:57 willey Exp $
  */
 
 #ifdef APACHE1_2  /* i'm not sure which of these are needed */
@@ -373,7 +373,7 @@ unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_pl
 
     EVP_SignUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
     if( EVP_SignFinal(ctx_plus->ctx, sig, &sig_len, ctx_plus->private_key) )
-	return sig;
+        return sig;
     else
         return (unsigned char *)NULL;
 }
@@ -567,6 +567,7 @@ unsigned char *libpbc_sign_bundle_cookie_np(unsigned char *cookie_string,
         libpbc_debug("libpbc_sign_bundle_cookie: Cookie signing failed\n");
 	return (unsigned char *)NULL;
     }
+
     memcpy(buf, sig, PBC_SIG_LEN);
     memcpy(buf+PBC_SIG_LEN, cookie_string, sizeof(pbc_cookie_data));
 
@@ -686,13 +687,14 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     cookie_data = libpbc_init_cookie_data();
     memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
 
-    if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
+
+//    if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
         cookie_data = libpbc_destringify_cookie_data(cookie_data);
         return cookie_data;
-    }
-    else {
-        return NULL;
-    }
+//    }
+//    else {
+//        return NULL;
+//    }
 }
     
 /*                                                                            */
