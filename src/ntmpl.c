@@ -6,7 +6,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.14 2004-08-11 00:41:00 willey Exp $
+ * $Id: ntmpl.c,v 1.15 2004-08-18 00:53:10 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -226,6 +226,7 @@ void ntmpl_print_html(pool *p, const char *fpath, const char *fname, ...)
 
 /* in the absense of a better template library create html from sub-templates
    this is code that that defected from flavour_basic.c                       */
+/* returns NULL if it can't return the correct string */
 char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
 {
     char *field_html = NULL;   /* net result */
@@ -262,7 +263,10 @@ char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
     field_file = pbc_fopen(p, fieldfile, "r" );
 
     if (field_file == NULL) {
-        libpbc_abend(p, "Cannot open sub-template file %s", fieldfile );
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "%s: Cannot open sub-template file %s", 
+			 func, fieldfile);
+        return(NULL);
     }
 
     field_len = file_size(p, field_file);
@@ -271,7 +275,9 @@ char *ntmpl_sub_template(pool *p, const char *fpath, const char *fname, ...)
         return NULL;
 
     if ( field_len >= sizeof(buf) ) {
-        libpbc_abend(p,  "Need bigger buffer for reading form field file, %D not big enough", sizeof(buf) );
+        pbc_log_activity(p, PBC_LOG_ERROR, 
+                         "%s: Need bigger buffer for reading sub-template file, %D not big enough", func, sizeof(buf));
+        return(NULL);
     }
 
     field_html = malloc( (field_len + 1) * sizeof( char ) + len );

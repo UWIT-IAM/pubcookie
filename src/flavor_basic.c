@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.61 2004-08-17 23:53:26 willey Exp $
+ * $Id: flavor_basic.c,v 1.62 2004-08-18 00:53:10 willey Exp $
  */
 
 
@@ -130,6 +130,7 @@ static long file_size(pool *p, FILE *afile)
 }
 
 /* figure out what html to use for user field */
+/* if the sub template function returns NULL we just pass it on */
 char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
 {
     char func[] = "flb_get_user_field";
@@ -186,7 +187,7 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
     }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
-                func, user_field_html);
+                func, (user_field_html == NULL ? "(NULL)" : user_field_html));
 
     return(user_field_html);
 }
@@ -207,7 +208,7 @@ char *flb_get_hidden_user_field(pool *p, login_rec *l, login_rec *c, int reason)
 
 }
 
-static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
+static int print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 {
     /* currently, we never clear the login cookie
        we always clear the greq cookie */
@@ -228,8 +229,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char ldurtxt[64], *ldurtyp;
     char *tag = NULL;
     char *subst = NULL;
+    char func[] = "print_login_page";
+    int ret = PBC_FAIL;
     
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello reason: %d", reason);
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello reason: %d", 						func, reason);
 
     /* set the cookies */
     if (need_clear_login) {
@@ -300,6 +303,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     /* Get the HTML for the error reason */
     
     reason_html = ntmpl_sub_template(p, TMPL_FNAME, reasonpage, tag, subst);
+    if ( reason_html == NULL ) {
+        ret = PBC_FAIL;
+        goto done;
+    }
 
     if(tag != NULL)
        pbc_free(p, tag);
@@ -406,6 +413,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 
     /* what should the user field look like? */
     user_field = flb_get_user_field(p, l, c, reason);
+    if ( user_field == NULL ) {
+        ret = PBC_FAIL;
+        goto done;
+    }
 
     /* if the user field should be hidden */
     hidden_user = flb_get_hidden_user_field(p, l, c, reason);
@@ -437,6 +448,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
 
     print_html(p, "\n");
 
+    ret = PBC_OK;
+
+done:
+
     if (user_field != NULL)
         free( user_field );
 
@@ -452,7 +467,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     if (getcred_hidden != NULL)
         free( getcred_hidden );
 
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %d", func, ret);
+    
+    return ret;
+
 }
 
 /* process_basic():
@@ -666,7 +684,11 @@ static login_result process_basic(pool *p, const security_context *context,
        return LOGIN_OK;
     }
        
-    print_login_page(p, l, c, rcode);
+    if ( print_login_page(p, l, c, rcode) != PBC_OK ) {
+        *errstr = "Problem printing login page.";
+        return LOGIN_ERR;
+    }
+
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                      "process_basic: login in progress, goodbye\n" );
     return LOGIN_INPROGRESS;

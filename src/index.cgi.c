@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.133 2004-08-18 00:46:26 willey Exp $
+ * $Id: index.cgi.c,v 1.134 2004-08-18 00:53:10 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1727,6 +1727,12 @@ int pinit(pool *p, const security_context *context, login_rec *l, login_rec *c)
 	    pbc_log_activity(p, PBC_LOG_ERROR,
 			     "unexpected response from fl->process_request: "
 			"%d %s", res, errstr ? errstr : "(no errstring)");
+            ntmpl_print_html(p, TMPL_FNAME,
+                        libpbc_config_getstring(p, "tmpl_error", "error"),
+                        "flavor", fl->name,
+                        "error", errstr ? errstr :
+                        "unknown error in flavor process_request",
+                        NULL);
 
 	    /* xxx maybe this happens because the default flavor can
 	       verify authentication without any interactions with the user
