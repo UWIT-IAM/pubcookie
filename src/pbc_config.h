@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.5 1998-07-28 23:06:55 willey Exp $
+    $Id: pbc_config.h,v 1.6 1998-07-31 21:08:13 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -17,12 +17,13 @@
 #define PBC_CRYPT_KEYFILE "/tmp/c_key"
 #define PBC_DEFAULT_INACT_EXPIRE 30 * 60    
 #define PBC_DEFAULT_HARD_EXPIRE 8 * 60 * 60
+#define PBC_DEFAULT_EXPIRE_LOGIN 8 * 60 * 60
 #define PBC_GRANTING_EXPIRE 60
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
 #define PBC_NUWNETID_AUTHTYPE "uwnetid"
 #define PBC_SECURID_AUTHTYPE "securid"
-#define PBC_REFRESH_TIME 2
+#define PBC_REFRESH_TIME 0
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
 
 /* 
