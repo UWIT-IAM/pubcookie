@@ -28,6 +28,7 @@
      * Bradford Barrett   University of Florida
      * Maurizio Marini    Cost Srl, Milan, Italy
      * Gary Mills         University of Manitoba, Canada
+     * Robert Knight      Princeton University
 
    Sponsors:
      * The Andrew W. Mellon Foundation
