@@ -1,15 +1,10 @@
- 
-
 /*
-
     Copyright 1999-2001, University of Washington.  All rights reserved.
-
      ____        _                     _    _
     |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
     | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
     |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
     |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
-
 
     Created by the Pubcookie Team
 
@@ -19,11 +14,10 @@
     Pubcookie on the Web: http://www.washington.edu/computing/pubcookie/
 
     this is installation documentation for the login sever
-
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.12 2002-03-07 00:29:04 willey Exp $
+    $Id: INSTALL.login.txt,v 1.13 2002-06-05 16:53:17 greenfld Exp $
  */
 
 
@@ -39,12 +33,12 @@ authentication system is provided.
 
 2. Implementation
 
-The Pubcookie login server uses a CGI program to handle all HTTP requests.
-This CGI program, hereafter referred to as "the login cgi" or "index.cgi",
-is compiled from C and is the only Pubcookie active component on the login
-server. The login cgi displays the web page where users are asked to enter
-authentication credentials as well as other web pages that display error
-messages.
+The Pubcookie login server uses a CGI program to handle all HTTP
+requests.  This CGI program, hereafter referred to as "the login cgi"
+or "index.cgi", is compiled from C and is the central Pubcookie
+component.  The login cgi displays the web page where users are asked
+to enter authentication credentials as well as other web pages that
+display error messages.
 
 Due to the important nature of the Pubcookie login server, the only other
 services that should be run on the same system are those which receive an
@@ -56,43 +50,25 @@ and SSL should also work, but this supposition has not been tested.
 3. Authentication services
 
 The login cgi has a very simple interface for talking to backend
-authentication services. There is a sample authentication module provided.
-Additionally there is a module for Kerberos 5. Internal support for
-multiple and various authentication services is not very flexible and will
-be revised and developed further in the future.
+authentication services. 
 
-Note: Until the authentication module build structure and the credential
-choice mechanism is redone the University of Washington SecurID
-authentication module is included.  This interface is only designed to
-talk to a non-standard SecurID server. We realize that it's confusing, and
-perhaps misleading. But this code shouldn't cause problems; even if there
-are requests for SecurID credentials, the login cgi will fail politely.
+Most sites will want to use the "basic" login flavor, which supports
+username/paassword single-sign-on authentication.  (Currently no other
+flavors exist!)
 
-4. Localization
+The basic login flavor supports many different verifiers.  Some of the
+ones shipped with pubcookie as of this writing are:
 
-The design of the login cgi preceded consideration of external use of
-Pubcookie, so there is much work to be done to improve flexibility and
-make it less specific to the University of Washington. As it stands, the
-login cgi must be modified for each environment.
+* kerberos_v5: check username/password against a Kerberos 5 KDC.
+* ldap: check username/password against an LDAP server.
+* alwaystrue: allow any username/password combination to authenticate.
 
-First, index.cgi.c uses a mix of Kerberos and SecurID authentication,
-depending on the type of authentication requested. These types are defined
-in pbc_config.h and implemented in two authentication modules,
-index.cgi_krb.c and index.cgi_securid.c, respectively. Localization of the
-login cgi will require replacing this code or adding similar code for a
-new type of authentication. We are grateful to Russell Tokuyama for
-contributing a write-up and sample code used to modify Pubcookie to use
-LDAP for authentication at the University of Hawaii. This work can be
-found in the contrib directory, within index.cgi_ldap; read
-login-server-ldap.txt and then read pubcookie_ldap_modifications.txt to
-learn a possible shortcut.
+You can set which verifier to be used with the "basic_verifier"
+configuration parameter (see "Run-time configuration").  Some
+verifiers will allow or require further customization; see the section
+referring to that verifier.
 
-Additionally, pbc_config.h defines macros for the URL of the login server,
-the domain of the organization, and other site specific stuff.  
-index.cgi.h defines macros for the location of HTML templates, error
-messages, and an ok_browsers file. They need to be localized as well.
-
-5. Choosing the location of your login page
+4. Choosing the location of your login page
 
 Depending on your instalation environment you may choose to install the
 login server in a number of configurations.  Two general models are
@@ -112,18 +88,18 @@ https://weblogin.washington.edu/
 as the login server url, it's very simple for users to identify in the 
 browser's URL field.  
 
-The apache config directive 'DirectoryIndex' tells Apache it how to handle
-requests for directories.  See
+The apache config directive 'DirectoryIndex' tells Apache it how to
+handle requests for directories.  See
 http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex for more
-info.  When a request is made for a directory Apache will choose the first
-file it finds in the DirectoryIndex list.
+information.  When a request is made for a directory Apache will
+choose the first file it finds in the DirectoryIndex list.
 
 Our DirectoryIndex line looks something like:
 
 DirectoryIndex index.html index.cgi
 
-In the is configuration you don't want an index.html file in the same
-directory as index.cgi.
+If this is the configuration you choose, make sure there isn't an
+index.html file in the same directory as the index.cgi binary.
 
 Explicit Specification of Login CGI
 
@@ -146,18 +122,15 @@ be something like:
 where /login is mapped to the CGI program (index.cgi or whatever you
 rename it to).
 
-The default login server and login URI are specified as PBC_LOGIN_HOST and
-PBC_LOGIN_URI in pbc_config.h.  The default may be overwridden in the
-Apache configuration file with the PubCookieLogin directive.
+The default login server and login URI are specified as "login_host"
+and "login_uri" in pubcookie configuration file.  (Individual
+applications may override what login server they refer to with the
+PubCookieLogin directive in their apache configuration file.)
 
-6. Compiling
+5. Compiling
 
 Note: it is assumed you have already set up a system running Apache with 
 mod_ssl and have noted the location where OpenSSL is installed.
-
-Makefile.index.cgi is for making the login cgi and Makefile is for
-miscellaneous tools, most importantly the tools used to generate keys for
-target application servers.
 
 The login cgi uses the CGIC library for some functions.  This library is
 included with the Pubcookie distribution.  Pubcookie uses a modified CGIC
@@ -171,188 +144,143 @@ directory. Check the Makefile for installation specific stuff and type
 'make'.  libcgic.a and cgic.h can be put in the pubcookie install
 directory or other locations you please.
 
-Once cgic is compiled, build index.cgi with Makefile.index.cgi
+Once cgic is compiled, build index.cgi with "make index.cgi".  This
+will build "login.cgi", "keyclient", and "keyserver" in addition to
+some other utilities useful for debugging.  You may have to edit the
+start of "Makefile.settings" to point to where you have installed cgic
+and OpenSSL.  (You may need to edit "Makefile.login"; if you do, it's
+a bug and you should report it so we can fix it.)
 
-Then build the key management tools with Makefile. You'll need these tools
-later.
+6. Run-time configuration:
 
-7. Setup: User agent blocking via ok_browsers file
-
-index.cgi.h defines the location of a ok_browsers file.  The idea behind
-ok_browsers is to block browsers that either have a known security flaw
-(i.e. don't forget cookies when they should) or don't work with Pubcookie
-(i.e. Opera which doesn't do domain level cookie scoping correctly).  IE
-and Netscape are the only two browser families that are known to work with
-Pubcookie.
-
-So far we've been too chicken to really use the 'ok_browsers'
-functionality to block browsers that we know don't work.  For now our
-ok_browsers has a single line: "Mozilla". Since both Netscape and IE claim
-to be Mozilla that covers the only two browsers known to work with
-Pubcookie. Proceed according to your own policy.
-
-8. More setup: Key pairs for signing and verifying cookies
-
-pbc_config.h defines the location of two key pairs used to sign and verify
-login cookies and granting cookies.  The filenames may be either statically 
-defined file names or built from a directory, prefix, and the hostname.  
-The default is filenames that are built from the host name.  
-
-The program what_is_my_ip reports the hostname (in addition to the IP) that
-pubcookie will use.
-
-for hostname based filenames you will need to verify the following 
-defines:
-
-#define PBC_KEY_DIR "/usr/local/pubcookie/"
-#define PBC_L_PUBKEY_FILE_PREFIX "pubcookie_login_cert"
-#define PBC_L_PRIVKEY_FILE_PREFIX "pubcookie_login_key"
-#define PBC_G_PRIVKEY_FILE_PREFIX "pubcookie_granting_key"
-
-If you'd prefer statically defined filenames you need to compile with
-NO_HOST_BASED_KEY_FILENAMES set and set the following defines:
-
-#define PBC_L_CERTFILE "/usr/local/pubcookie/pubcookie_login.cert"
-#define PBC_L_KEYFILE "/usr/local/pubcookie/pubcookie_login.key"
-#define PBC_G_CERTFILE "/usr/local/pubcookie/pubcookie_granting.cert"
-#define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
-
-These key pairs can be generated with the openssl command line tool. For
-example:
-
-% openssl req -new -x509 -nodes -out pubcookie_login.cert -newkey rsa:1024
--keyout pubcookie_login.key
-
-And:
-
-% openssl req -new -x509 -nodes -out pubcookie_granting.cert -newkey 
-rsa:1024 -keyout pubcookie_granting.key
-
-These key pairs only need to be generated once. PBC_L_CERTFILE,
-PBC_L_KEYFILE, and PBC_G_KEYFILE all reside on the login server.  A copy
-of PBC_G_CERTFILE must be installed with Pubcookie on target application
-servers, which also need to generate their own keys to sign and verify
-their own session cookies.
-
-9. More setup: DES Encryption key / Key management (as it is)
-
-The DES encryption key is a shared key that is hashed on to each 
-participating host's primary IP address.  Each host that plays the 
-pubcookie game will hav a key file that can only be used on that host.  
-This key is referred to as the encryption key or the c_key.
-
-There is no current mechanism for revoking a key or forcing new 
-keys to be generated.
-
-Like the public key files the DES encryption key filename may be either 
-statically defined or built from a directory, prefix, and the hostname.
-The default is a filename built from the host name.
-
-The program what_is_my_ip reports the hostname (in addition to the IP) that
-pubcookie will use.
-
-For a hostname based encryption key filename define:
-
-#define PBC_KEY_DIR "/usr/local/pubcookie/"
-#define PBC_CRYPT_KEY_PREFIX "c_key"
-
-If you'd prefer a statically defined filename you need to compile with
-NO_HOST_BASED_KEY_FILENAMES set and set the following defines
-
-#define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
-
-For a new pubcookie installation you will need a master source of DES keys
-to base the keyfiles on.  Use the pbc_key_generic utility to generate this
-master keyfile (m_key).  This program simply spits the correct amount of
-random bits to standard out.
-
-% pbc_key_generic > m_key
-
-Now, use the pbc_key_local utility to create the keyfiles for all of your
-hosts. You will need the primary IP address for the hosts, what_is_my_ip
-will report the IP that pubcookie will use if there is any confusion.
-
-% pbc_key_local -i m_key -a 209.211.239.212 > c_key
-
-You may also set the master (m_key) as PBC_MASTER_CRYPT_KEYFILE in 
-pbc_config.h and eliminate the use of the -i argument. 
-
-pbc_key_local takes the master keyfile an IP (in numbers and dots format) 
-for the host.  The output, either to standard out or to a file specified with
--o, will be a keyfile localized to the IP address.  This means that 
-pbc_key_local can be run on any machine with 
-
-You will need a c_key for all pubcookie hosts, whether login server or
-appliction webserver.  If you managing the login server and infrastructure
-be prepared for requests from sysadmins for c_key files.
-
-10. Run-time configuration:
-
-The only compile-time configuration that needs to be editted in the source
+The only compile-time configuration that needs to be edited in the source
 to get the login cgi working is the location of the root pubcookie
-directory.
+directory.  This can be set in the "Makefile.settings" file before
+compiling.  It defaults to 
 
 Everything else is read from {PUBCOOKIE_PATH}/config as "attr: value"
 lines.  A sample configuration file is included as "config.sample".
 
-Attributes are:
+Some of the more notable attributes are:
 
-debug - Non-zero value enables debug logging.
+debug (integer) - Non-zero value enables debug logging.  The higher
+      the number, the more debugging output that is generated.
 login_host - the hostname of login server
+login_uri - the complete URI of the login cgi
 enterprise_domain - the domain under which all hosts will live.  must be 
-	atleast a second level domain (e.g. somewhere.edu)
+	at least a second level domain (e.g. somewhere.edu)
+basic_verifier - the verifier to use for the "basic" flavor
+keymgt_uri - the location of the "keyserver" CGI.  See "Key
+      Management" below.
 
-11. Test to verify encryption key (c_key) on application webserver is 
-correct
+7. Localization
 
-This test involves two programs named make_crypted_blob and 
-check_crypted_blob.  Run make_crypted_blob on your login server, this will 
-net an encrypted blob.  Transfer the encrypted blob to your application 
-webserver and run check_crypted_blob on it.  See below for windows specific
-instructions
+The design of the login cgi preceded consideration of external use of
+Pubcookie, so there is much work to be done to improve flexibility and
+make it less specific to the University of Washington.
 
-make_crypted_blob - encrypts a plaintext sentence with a pubcookie c_key and
-outputs the encrypted blob.  The usage is:
+However, preliminary work has been done with login templates
+(specifying the look of each page the login CGI serves up) and the
+run-time configuration file.  These pages should live in
+{PUBCOOKIE_PATH}/login_templates.  We recommend you start with the
+files in login_templates.generic/ and customize them as you see fit.
 
-make_crypted_blob [-o out_file] [-k c_key_file] [-h]
+8. More configuration: User agent blocking via ok_browsers file
 
-	-o out_file
-		Where the output goes.  default is stdout.
-	-k c_key_file
-		c_key file.  default is PBC_CRYPT_KEYFILE 
-	-h prints usage
+The {PUBCOOKIE_PATH}/ok_browsers file contains a list of acceptable
+browsers.  The idea behind ok_browsers is to block browsers that
+either have a known security flaw (i.e. don't forget cookies when they
+should) or don't work with Pubcookie (i.e. Opera which doesn't do
+domain level cookie scoping correctly).  IE and Netscape are the only
+two browser families that are known to work with Pubcookie.
 
-check_crypted_blob - decrypts a blob with a pubcookie c_key and displays the 
-plaintext and declares if the encryption and decryption worked correctly.
-The usage is:
+So far we've been too chicken to really use the 'ok_browsers'
+functionality to block browsers that we know don't work.  For now our
+ok_browsers has a single line: "Mozilla". Since both Netscape and IE
+claim to be Mozilla that covers the only two browsers known to work
+with Pubcookie. Proceed according to your own policy.
 
-check_crypted_blob -c crypted_file [-k c_key_file] [-h]
+9. Key management
 
-	-c crypted_file
-		crypted stuff to be decrypted
-	-k c_key_file
-		c_key file.  default is PBC_CRYPT_KEYFILE 
-	-h prints usage
+{PUBCOOKIE_PATH}/keys is the location of the keystore that the login
+cgi uses.  The login cgi makes use of several different keys.
 
-Windows specific instructions - Windows binaries for both make_crypted_blob 
-and check_crypted_blob hav been included in the login server distribution.  
-Additionally, two .bat files (Test_local_blob.bat and Test_login_blob.bat)
-and an OpenSSL binary hav been included to simplify testing.  First, run 
-Test_local_blob.bat and view the results in Test_local_blob.out.  Upon 
-success the output should end with something like "Yeah!  It worked".  This
-verifies that the host can encrypt and decrypt using the pubcookie library.
-Second, get an encrypted blob from the administrator of the login server
-save this as "login_blob" in the same directory with the blob binaries and 
-.bat files.  Run Test_login_blob.bat and view the results in 
-Test_login_blob.out.  Upon success the output should end with something 
-like "Yeah!  It worked".  If both tests are successful then your system 
-should be able to decrypt content encrypted on other pubcookie systems.
+9.1 Generate keypairs for the login server
+
+The pubcookie_login key is used to secure the login cookie.  These
+files are kept exclusively on the login server.
+
+% openssl req -new -x509 -nodes -out /usr/www/pubcookie/keys/pubcookie_login.cert.<hostname> -newkey rsa:1024 -keyout /usr/www/pubcookie/keys/pubcookie_login.key.<hostname>
+
+The pubcookie_granting key is used to secure the granting response
+(the authentication assertion from login server to application
+server).  The key is kept exclusively on the login server; the
+certificate must be distributed to every application server.
+
+% openssl req -new -x509 -nodes -out /usr/www/pubcookie/keys/pubcookie_granting.cert.<hostname> -newkey rsa:1024 -keyout /usr/www/pubcookie/keys/pubcookie_granting.key.<hostname>
+
+9.2 Configure keyserver on the login server
+
+"keyserver" is a program that maintains DES keys.  Unfortunately, due
+to subtleties in the key usage constraints, it is unable to run as a
+CGI underneath a login server.  Instead, we recommend that it be run
+from inetd.
+
+Add a line like the following to the login server's inetd.conf:
+
+2222    stream  tcp     nowait  root    /usr/www/pubcookie/bin/keyserver keyserver -c /usr/www/conf/ssl.key/server.key -C /usr/www/conf/cacert.pem
+
+where "/usr/www/pubcookie/bin/keyserver" is where the keyserver binary
+is installed, "/usr/www/conf/ssl.key/server.key" is the PEM encoded
+SSL server key/certificate used by your web server, and
+"/usr/www/conf/cacert.pem" is the PEM encoded certificate of the CA
+who has signed your SSL certificate.
+
+After adding this line, restart inetd.
+
+9.3 Generate a DES key for the login server with keyclient
+
+Now run keyclient to generate a DES key for the login server:
+
+% /usr/www/pubcookie/bin/keyclient -c /usr/www/conf/ssl.key/server.key
+
+This will cause the keyserver program to generate a new DES key for
+the login server to use to provide confidentiality for the login
+cookies.
+
+9.4 Generating DES keys for the application servers with keyclient
+
+Generating DES keys for the application servers is just as easy as
+above---in fact, the exact same command works.
+
+It is important that the application server's SSL certicate is signed
+by the same certificate authority specified in the "-C" parameter to
+keyserver in inetd.conf.
 
 
-These two programs use the same pubcookie encryption functions as the rest 
-of pubcookie.  If they are able to create and decrypt text then, in theory, 
-other parts of pubcookie should be able to encrypt and decrypt cookies.
+*************************************************
+   UPGRADING
+*************************************************
 
+* Maintaining DES key compatibility from hashed IP addresses
+
+
+
+
+*************************************************
+   ADVANCED CONFIGURATION
+*************************************************
+
+* How do I configure multiple login servers?
+
+
+* How do I configure multiple application hosts?
+
+
+
+*************************************************
+   OTHER STUFF
+*************************************************
 
 12. Old Tools That Might Be Handy for Debugging:
 
