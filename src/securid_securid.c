@@ -2,16 +2,20 @@
  $Id:
  */
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 #include <strings.h>
-#include <syslog.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <netinet/in.h>
+#include "index.cgi.h"
 
 #include "li-access.h"
 
@@ -39,12 +43,13 @@ typedef struct {
 #define MSG_HEADLEN	(sizeof(MSG)-MSG_TEXTLEN)
 
 char *get_clist();
-extern int test_mode;
 
-int securid(name,prn,logflag)
+int server(char *, char *, int, int);
+int getserver(char *, char*, int, int, int);
+
+int securid(name,prn)
 char *name;
 char *prn;
-int  logflag;
 {
 
   int    i, n, fd, doing_type;
@@ -55,10 +60,10 @@ int  logflag;
   **  Connect to the smart card server processor.
   */
 
-  s = test_mode ? "smart_test" : "smart";
+  s = "smart";
 
-  if ((fd = server("smart",s,1023,logflag)) < 0) {
-    fprintf(stderr,"Unable to connect to server.\n");
+  if ((fd = server("smart",s,1023,0)) < 0) {
+    log_error("Unable to connect to server.\n");
     return(1);
   }
 
@@ -68,9 +73,8 @@ int  logflag;
   **  using or an abbreviation or an abbreviation of an alias.
   */
 
-  if (!(list = get_clist(name,logflag))) {
-    if (logflag) syslog(LOG_WARNING,"eac_securid: No card list for %s.\n",name);
-//    fprintf(stderr,"No authorization.\n");
+  if (!(list = get_clist(name))) {
+    log_message("eac_securid: No card list for %s.\n", name);
     close(fd);
     return(1);
   }
@@ -89,11 +93,7 @@ int  logflag;
 
   doing_type = MSGT_VALIDATE;
 
-/*
-printf("CRN: %s\tPRN: %s\n", crn, prn);
- */
-
-  if (s = (char *)index(prn,'\n')) *s = '\0';
+  if ( (s = (char *)index(prn,'\n'))) *s = '\0';
 
 
   /*
@@ -111,7 +111,7 @@ printf("CRN: %s\tPRN: %s\n", crn, prn);
 
   n = MSG_HEADLEN + n;
   if ((i = write(fd,&msg,n)) != n) {
-    fprintf(stderr,"Tried to write %d, got %d.\n",n,i);
+    log_message("Tried to write %d, got %d.\n",n,i);
     if (i < 0) {
       perror("write");
     }
@@ -120,14 +120,14 @@ printf("CRN: %s\tPRN: %s\n", crn, prn);
   }
 
   if ((i = read(fd,&msg,sizeof(msg))) <= 0) {
-    fprintf(stderr,"Got %d: ",i);
+    log_message("Got %d: ",i);
     perror("read");
     close(fd);
     return(1);
   }
 
   if (i != MSG_HEADLEN) {
-    fprintf(stderr,"Funny size of %d instead of %d.\n",i,MSG_HEADLEN);
+    log_message("Funny size of %d instead of %d.\n",i,MSG_HEADLEN);
     close(fd);
     return(1);
   }
@@ -139,23 +139,19 @@ printf("CRN: %s\tPRN: %s\n", crn, prn);
     return(0);
 
   } else if (i == MSGR_BAD) {
-    if (logflag) 
-      syslog(LOG_INFO,"eac_securid: Bad entry: id=%s, crn=%s, prn=%s.",name,crn,prn);
+    log_message("eac_securid: Bad entry: id=%s, crn=%s, prn=%s.",name,crn,prn);
     close(fd);
     return(1);
 
   } else if (i == MSGR_NEXT) {
-    if (logflag) syslog(LOG_INFO,"eac_securid: Asking for next prn: id=%s, crn=%s, prn=%s.",
+    log_message("eac_securid: Asking for next prn: id=%s, crn=%s, prn=%s.",
 							name,crn,prn);
-//    printf("Enter next PRN: \n");
     close(fd);
-    return(1);
+    return(-1);
 
   } else {
-    if (logflag)
-      syslog(LOG_ERR, "eac_securid: Got garbage back: id=%s, crn=%s, prn=%s, reply=%d.\n",
+    log_message("eac_securid: Got garbage back: id=%s, crn=%s, prn=%s, reply=%d.\n",
 						name,crn,prn,ntohs(i));
-    fprintf(stderr,"Unrecognized result %d.\n",ntohs(i));
     close(fd);
     return(1);
   }
@@ -172,7 +168,8 @@ char *id;
   **  Get the list of allowable cards for this id.
   */
 
-  char *s;
+/* unused */
+/*  char *s; */
   static char line[1024];
   FILE *fp;
   int  fd;
@@ -197,7 +194,7 @@ char *id;
 
     while (fgets(line,sizeof(line),fp)) {
       if (!strncmp(line,"nak",3)) {
-//	fprintf(stderr,line);
+	log_message("%s", line);
       } else if (!strncmp(line,"ack seq=71",10)) {
 	char *s, *t;
         if ((s = (char *)index(line,'(')) && (t = (char *)index(s,')'))) {
@@ -209,11 +206,11 @@ char *id;
     }
 
     fclose(fp);
-//    fprintf(stderr,"No crn found in li reply.\n");
+    log_error("eac_securid: No crn found in li reply.\n");
 
   } else {
 
-    fprintf(stderr,"Unable to communicate with li server.\n");
+    log_error("eac_securid: Unable to communicate with li server.\n");
 
   }
 
