@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.131 2004-07-31 01:01:24 willey Exp $
+ * $Id: index.cgi.c,v 1.132 2004-08-11 00:41:00 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1331,26 +1331,13 @@ time_t compute_l_expire(pool *p, login_rec *l)
  */
 const char *time_remaining_text(pool *p, login_rec *c)
 {
-    char 	*remaining = NULL;
+    const char 	*remaining = NULL;
     int 	secs_left = 0;
-    int		len = PBC_1K;
-    char 	*h, *m;
-
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "time_remaining_text: hello\n");
 
-    if (!(remaining = malloc(len)) )
-        abend(p, "out of memory");
-    if (!(h = malloc(len)) )
-        abend(p, "out of memory");
-    if (!(m = malloc(len)) )
-        abend(p, "out of memory");
-
-    if( c == NULL ) {
-        free(h), free(m);
-        strcpy(remaining, REMAINING_UNKNOWN);
-        return(remaining);
-    }
+    if( c == NULL ) 
+        return(NULL);
 
     if( c->expire_ts == 0 ) {
         secs_left = c->create_ts + DEFAULT_LOGIN_EXPIRE - time(NULL); 
@@ -1359,25 +1346,10 @@ const char *time_remaining_text(pool *p, login_rec *c)
         secs_left = c->expire_ts - time(NULL); 
     }
 
-    if( secs_left <= 0 ) {
-        free(h), free(m);
-        strcpy(remaining, REMAINING_UNKNOWN);
-        return(remaining);
-    }
+    if( secs_left <= 0 )
+        return(NULL);
 
-    snprintf(m, len, "%d minute%c", 
-             secs_left % 3600 / 60,
-             (secs_left % 3600 / 60 >= 2 ? 's' : ' '));
-    snprintf(h, len, "%d hour%c", 
-             secs_left/3600,
-             (secs_left/3600 >= 2 ? 's' : ' '));
-    snprintf(remaining, len, "%s %s %s %d seconds", 
-             (secs_left/3600 >= 1 ? h : ""),
-             (secs_left % 3600 / 60 >= 1 ? m : ""),
-             (secs_left % 3600 / 60 >= 1 ? "and" : ""),
-             secs_left % 3600 % 60);
-
-    free(h), free(m);
+    remaining = libpbc_time_text(p, secs_left, PBC_TRUE, PBC_FALSE);
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "returning: %s\n", remaining);
     return(remaining);
 
@@ -1491,9 +1463,10 @@ int logout(pool *p, const security_context *context, login_rec *l, login_rec *c,
 			libpbc_config_getstring(p, 
 				"tmpl_logout_time_remaining",
 				"logout_time_remaining"), 
-                        "remaining", remaining,
+                        "remaining", (remaining == NULL ? "unknow" : remaining),
                         NULL);
-            pbc_free(p, (char *)remaining);
+            if ( remaining != NULL ) 
+                pbc_free(p, (char *)remaining);
             ntmpl_print_html(p, TMPL_FNAME,
 			libpbc_config_getstring(p, 
 				"tmpl_logout_postscript_still_weblogin",
@@ -1693,7 +1666,7 @@ void login_status_page(pool *p, login_rec *c)
                     libpbc_config_getstring(p, "tmpl_status", "status"),
                     "refresh", refresh_line != NULL ? refresh_line : "",
                     "contents", (c == NULL || c->user == NULL ? "unknown" : c->user),
-                    "remaining", remaining,
+                    "remaining", (remaining == NULL ? "unknown" : remaining),
                     "version", PBC_VERSION_STRING,
                     NULL
                    );
@@ -2187,7 +2160,7 @@ int pinit_response(pool *p, const security_context *context, login_rec *l, login
     ntmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_logout_time_remaining",
                                             "logout_time_remaining"),
-                    "remaining", remaining,
+                    "remaining", (remaining == NULL ? "unknown" : remaining),
                     NULL);
     ntmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_pinit_response2",
@@ -2195,7 +2168,8 @@ int pinit_response(pool *p, const security_context *context, login_rec *l, login
 		    "version", PBC_VERSION_STRING,
                     NULL);
 
-    pbc_free(p, (char *)remaining);
+    if (remaining != NULL)
+        pbc_free(p, (char *)remaining);
 
     return(PBC_OK);
 

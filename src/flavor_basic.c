@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.59 2004-07-31 01:01:24 willey Exp $
+ * $Id: flavor_basic.c,v 1.60 2004-08-11 00:41:00 willey Exp $
  */
 
 
@@ -129,151 +129,6 @@ static long file_size(pool *p, FILE *afile)
   return len;
 }
 
-/* get the reason for our existing.  Returns NULL for an empty file. */
-
-char * get_reason(pool *p, const char * reasonpage ) {
-    char * reasonfile;
-    const char * reasonpath = TMPL_FNAME;
-    int reasonfilelen;
-    int reason_len;
-    FILE *reason_file;
-    char * reasonhtml;
-    int readlen;
-
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_reason: hello");
-
-    reasonfilelen = strlen(reasonpath) + strlen("/") + strlen(reasonpage) + 1;
-
-    reasonfile = malloc( reasonfilelen * sizeof(char) );
-
-    if ( snprintf( reasonfile, reasonfilelen, "%s%s%s",
-                   reasonpath,
-                   reasonpath[strlen(reasonpath) - 1 ] == '/' ? "" : "/",
-                   reasonpage ) > reasonfilelen )  {
-        /* Need to do something, we would have overflowed. */
-        abend(p, "Reason filename overflow!\n");
-    }
-
-    reason_file = pbc_fopen(p, reasonfile, "r" );
-
-    if (reason_file == NULL) {
-        libpbc_abend(p, "Cannot open reasonfile %s", reasonfile );
-    }
-
-    reason_len = file_size(p, reason_file);
-
-    if (reason_len == 0)
-        return NULL;
-
-    reasonhtml = malloc( (reason_len + 1) * sizeof( char ) );
-
-    if ( reasonhtml == NULL ) {
-        /* Out of memory! */
-        libpbc_abend(p,  "Out of memory allocating to read reason file" );
-    }
-
-    readlen = fread( reasonhtml, 1, reason_len, reason_file );
-
-    if (readlen != reason_len) {
-        libpbc_abend(p,  "read %d when expecting %d on reason file read.",
-                      readlen, reason_len );
-    }
-
-    reasonhtml[reason_len] = '\0';
-    pbc_fclose(p, reason_file);
-    free(reasonfile);
-
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "get_reason: goodbye");
-
-    return reasonhtml;
-}
-
-/* get the html for user or password or whatever field, static or dynamic */
-char *flb_get_field_html(pool *p, const char *field_page, const char *contents)
-{
-    char *field_html = NULL;   /* net result */
-    char *fieldfile;
-    const char *field_path = TMPL_FNAME;
-    int filelen;
-    int field_len;
-    FILE *field_file;
-    int readlen;
-    char buf[PBC_1K];
-    char *start = NULL;
-    char *end = NULL;
-    int len = ( contents != NULL ? strlen(contents) : 0 );
-    char func[] = "flb_get_field_html";
-
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: hello", func);
-
-    filelen = strlen(field_path) + strlen("/") + strlen(field_page) + 1;
-
-    fieldfile = malloc( filelen *sizeof(char) );
-
-    if ( snprintf( fieldfile, filelen, "%s%s%s",
-                   field_path,
-                   field_path[strlen(field_path) - 1 ] == '/' ? "" : "/",
-                   field_page ) > filelen )  {
-        /* Need to do something, we would have overflowed. */
-        abend(p, "field filename overflow!\n");
-    }
-
-    field_file = pbc_fopen(p, fieldfile, "r" );
-
-    if (field_file == NULL) {
-        libpbc_abend(p, "Cannot open field file %s", fieldfile );
-    }
-
-    field_len = file_size(p, field_file);
-
-    if (field_len == 0)
-        return NULL;
-
-    if ( field_len >= sizeof(buf) ) {
-        libpbc_abend(p,  "Need bigger buffer for reading form field file, %D not big enough", sizeof(buf) );
-    }
-
-    field_html = malloc( (field_len + 1) * sizeof( char ) + len );
-
-    if ( field_html == NULL ) {
-        /* Out of memory! */
-        libpbc_abend(p,  "Out of memory allocating to field file" );
-    }
-
-    readlen = fread( buf, 1, field_len, field_file );
-
-    if (readlen != field_len) {
-        libpbc_abend(p,  "read %d when expecting %d on field file read.",
-                      readlen, field_len );
-    }
-
-    pbc_fclose(p, field_file);
-    if (fieldfile != NULL)
-        free(fieldfile);
-
-    buf[field_len] = '\0';
-    strcpy(field_html, buf);
-
-    /* if there is a substituion to be made, make it */
-    while ( strstr(buf, "%contents%") != NULL ) {
-        /* cheesy non-generic substitution for field */
-        /* chop up the strings */
-        end = strstr(strstr(buf, "%contents%")+1, "%");
-        start = strstr(field_html, "%contents%");
-
-        /* piece them back together */
-        strcpy(start, (contents != NULL ? contents : ""));
-        strcpy(start+len, end+1);
-
-        strncpy(buf, field_html, PBC_1K);
-    }
-
-    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
-                func, field_html);
-
-    return field_html;
-}
-
 /* figure out what html to use for user field */
 char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
 {
@@ -284,41 +139,49 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
                                 STATIC_USER_FIELD_KIND);
     char *user_field_html;
 
+    if(loser == NULL)
+        loser = strdup("");
+
     if ( strcmp(static_config, STATIC_USER_FIELD_KIND) == 0 ) {
         if ((c && c->user &&
                (reason==FLB_REAUTH || reason==FLB_CACHE_CREDS_WRONG)) ||
-             (l->user && l->ride_free_creds == PBC_BASIC_CRED_ID) ) {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_static",
-                                        "login_user_static" ), loser);
+               (l->user && l->ride_free_creds == PBC_BASIC_CRED_ID) ) {
+            user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
+			libpbc_config_getstring(p, "tmpl_login_user_static",
+                        "login_user_static"), 
+                        "contents", loser);
             l->hide_user = PBC_TRUE;
         }
         else {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
-                                        "login_user_form_field" ), loser);
+            user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
+			libpbc_config_getstring(p, "tmpl_login_user_form_field",
+                        "login_user_form_field" ), 
+                        "contents", loser);
             l->hide_user = PBC_FALSE;
         }
     }
     else if ( strcmp(static_config, STATIC_USER_FIELD_FASCIST) == 0 ) {
         if ( c != NULL && c->user != NULL ||
              l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID ) {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_static",
-                                        "login_user_static" ), loser);
+            user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
+			libpbc_config_getstring(p, "tmpl_login_user_static",
+                        "login_user_static" ), 
+                        "contents", loser);
             l->hide_user = PBC_TRUE;
         }
         else {
-            user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
-                                        "login_user_form_field" ), loser);
+            user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
+			libpbc_config_getstring(p, "tmpl_login_user_form_field",
+                        "login_user_form_field" ), 
+                        "contents", loser);
             l->hide_user = PBC_FALSE;
         }
     }
     else { /* STATIC_USER_FIELD_NEVER */
-        user_field_html = flb_get_field_html(p, libpbc_config_getstring(p,
-                                        "tmpl_login_user_form_field",
-                                        "login_user_form_field" ), loser);
+        user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
+		libpbc_config_getstring(p, "tmpl_login_user_form_field",
+                "login_user_form_field" ), 
+                "contents", loser);
         l->hide_user = PBC_FALSE;
     }
 
@@ -335,9 +198,10 @@ char *flb_get_hidden_user_field(pool *p, login_rec *l, login_rec *c, int reason)
                         : (c != NULL ? c->user : NULL));
 
     if ( l != NULL && l->hide_user == PBC_TRUE )
-        return(flb_get_field_html(p, libpbc_config_getstring(p,
+        return(ntmpl_sub_template(p, libpbc_config_getstring(p,
                                         "tmpl_login_user_hidden",
-                                        "login_user_hidden" ), loser));
+                                        "login_user_hidden" ), 
+				  "contents", loser));
     else
         return(NULL);
 
@@ -362,6 +226,8 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     char now[64];
     int ldur, ldurp;
     char ldurtxt[64], *ldurtyp;
+    char *tag = NULL;
+    char *subst = NULL;
     
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_login_page: hello reason: %d", reason);
 
@@ -414,6 +280,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
         case FLB_FORM_EXPIRED:
             reasonpage = libpbc_config_getstring(p, "tmpl_form_expired",
                                                   "form_expired" );
+            tag = strdup("time");
+            subst = (char *)libpbc_time_text(p, libpbc_config_getint(p, 
+			"form_expire_time", PBC_DEFAULT_FORM_EXPIRE_TIME),
+			PBC_FALSE, PBC_FALSE);
             break;
         case FLB_LCOOKIE_ERROR:
         default:
@@ -429,7 +299,12 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     
     /* Get the HTML for the error reason */
     
-    reason_html = get_reason(p, reasonpage);
+    reason_html = ntmpl_sub_template(p, TMPL_FNAME, reasonpage, tag, subst);
+
+    if(tag != NULL)
+       pbc_free(p, tag);
+    if(subst != NULL)
+       pbc_free(p, subst);
 
     while (hidden_needed_len > hidden_len) {
 

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.49 2004-04-13 02:36:04 jteaton Exp $
+  $Id: index.cgi.h,v 1.50 2004-08-11 00:41:00 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -121,6 +121,8 @@ void print_html(pool *, const char *format, ...);
 void tmpl_print_html(pool *, const char *fpath, const char *fname,...);
 
 void ntmpl_print_html(pool *p, const char *fname, ...);
+
+char *ntmpl_sub_template(pool *, const char *, const char *, ...);
 
 /* print part of the HTTP headers */
 void print_header(pool *, const char *format, ...);

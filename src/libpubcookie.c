@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.72 2004-04-28 21:04:49 willey Exp $
+ * $Id: libpubcookie.c,v 2.73 2004-08-11 00:41:00 willey Exp $
  */
 
 
@@ -28,7 +28,6 @@
 #define pbc_malloc(p, x) apr_palloc(p, x)
 #define pbc_strdup(p, x) apr_pstrdup(p, x)
 #endif
-
 
 # ifdef HAVE_STDIO_H
 #  include <stdio.h>
@@ -916,4 +915,117 @@ void libpbc_dummy(pool *p)
 
 }
 
+/* words for numbers */
+char *numbers[61] = {"zero",
+		     "one", "two", "three", "four", "five",
+                     "six", "seven", "eight", "nine", "ten",
+                     NULL, NULL, NULL, NULL, "fifteen", 
+                     NULL, NULL, NULL, NULL, "twenty", 
+                     NULL, NULL, NULL, NULL, "twenty five", 
+                     NULL, NULL, NULL, NULL, "thirty", 
+                     NULL, NULL, NULL, NULL, "thirty five", 
+                     NULL, NULL, NULL, NULL, "fourty", 
+                     NULL, NULL, NULL, NULL, "fourty five", 
+                     NULL, NULL, NULL, NULL, "fifty", 
+                     NULL, NULL, NULL, NULL, "fifty five", 
+                     NULL, NULL, NULL, NULL, "sixty"};
 
+/* converts number of seconds to number of ... */
+#define SECS2HOURS(x) (int)( (x) / 3600 )
+#define SECS2MINS(x)  (int)( (x) % 3600 / 60 )
+#define SECS2SECS(x)  (int)( (x) % 3600 % 60 )
+/* masks for building text string */
+#define HMASK 4
+#define MMASK 2    
+#define SMASK 1    
+#define AND1MASK 2
+#define AND2MASK 1
+#define NOANDS 0
+
+/**
+ * converts seconds to a text string with hours, mintues and seconds
+ * @param *p apache memory pool
+ * @param secs number of seconds
+ * @param use_numbers always use numbers instead of words
+ * @param cap capitolize the first char
+ * @returns string with time text that must be free'd
+       makes string of the format:
+	h hour(s) m minute(s) and s second(s)  or
+	h hour(s) and m minute(s)              or
+	h hour(s) and s second(s)              or
+	h hour(s)             		       or
+        m minute(s) and s second(s)            or
+        m minute(s)                            or
+        s second(s)   
+ */
+const char *libpbc_time_text(pool *p, int secs, int use_numbers, int cap)
+{
+    char 	*string = NULL;
+    char	*h, *m, *s;
+    int		len = 256;
+    char	hours[20], minutes[20], seconds[20];
+    int		hms = 0;
+
+    int and_array[] = { NOANDS,    /* 0                             */
+                        NOANDS,    /* 1 seconds                     */
+                        NOANDS,    /* 2 minutes                     */
+                        AND2MASK,  /* 3 minutes and seconds         */
+                        NOANDS,    /* 4 hours                       */
+                        AND2MASK,  /* 5 hours and seconds           */
+                        AND1MASK,  /* 6 hours and minutes           */
+                        AND2MASK   /* 7 hours minutes and seconds   */
+                      };
+
+    bzero(hours, 20); bzero(minutes, 20); bzero(seconds, 20);
+    if (!(string = malloc(len)) )
+        libpbc_abend(p, "out of memory");
+    if (!(h = malloc(len)) )
+        libpbc_abend(p, "out of memory");
+    if (!(m = malloc(len)) )
+        libpbc_abend(p, "out of memory");
+    if (!(s = malloc(len)) )
+        libpbc_abend(p, "out of memory");
+
+    /* get words for numbers, maybe */
+    if ( use_numbers == PBC_FALSE ) {
+        if ( numbers[SECS2HOURS(secs)] != NULL ) 
+            strcpy(hours, numbers[SECS2HOURS(secs)]);
+        if ( numbers[SECS2MINS(secs)] != NULL ) 
+            strcpy(minutes, numbers[SECS2MINS(secs)]);
+        if ( numbers[SECS2SECS(secs)] != NULL )
+            strcpy(seconds, numbers[SECS2SECS(secs)]);
+    }
+    if ( *hours == '\0' )
+        snprintf(hours, 20, "%d", SECS2HOURS(secs));
+    if ( *minutes == '\0' )
+        snprintf(minutes, 20, "%d", SECS2MINS(secs));
+    if ( *seconds == '\0' )
+        snprintf(seconds, 20, "%d", SECS2SECS(secs));
+
+    snprintf(m, len, "%s minute%c", minutes, 
+		(SECS2MINS(secs) >= 2 ? 's' : ' '));
+    snprintf(h, len, "%s hour%c", hours, 
+		(SECS2HOURS(secs) >= 2 ? 's' : ' '));
+    snprintf(s, len, "%s second%c", seconds, 
+		(SECS2SECS(secs) >= 2 || SECS2SECS(secs) == 0 ? 's' : ' '));
+
+    if( SECS2HOURS(secs) != 0 ) hms = hms | HMASK;
+    if( SECS2MINS(secs) != 0 ) hms = hms | MMASK;
+    if( SECS2SECS(secs) != 0 ) hms = hms | SMASK;
+
+    if ( secs == 0 )
+        snprintf(string, len, "%s", s);
+    else
+        snprintf(string, len, "%s %s %s %s %s", 
+             (SECS2HOURS(secs) >= 1 ? h : ""),
+             (and_array[hms] & AND1MASK ? "and" : ""),
+             (SECS2MINS(secs) >= 1 ? m : ""),
+             (and_array[hms] & AND2MASK ? "and" : ""),
+             (SECS2SECS(secs) >= 1 ? s : ""));
+
+    if ( cap == PBC_TRUE ) 
+       *string = toupper(*string);
+    free(m); free(h); free(s);
+    return string;
+
+}

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.46 2004-03-19 17:18:26 fox Exp $
+    $Id: libpubcookie.h,v 1.47 2004-08-11 00:41:00 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -116,6 +116,16 @@ int libpbc_base64_encode(pool *p, unsigned char *, unsigned char *, int );
 int libpbc_base64_decode(pool *p, unsigned char *, unsigned char *, int *);
 int libpbc_check_version(pool *p, pbc_cookie_data *);
 int libpbc_check_exp(pool *p, time_t, int);
+
+/**
+ * converts seconds to a text string with hours, mintues and seconds
+ * @param *p apache memory pool
+ * @param secs number of seconds
+ * @param use_numbers always use numbers instead of words
+ * @param cap capitolize the first char
+ * @returns string that must be free'd
+ */
+const char *libpbc_time_text(pool *, int, int, int);
 
 void libpbc_void(pool *p, void *thing);
 
