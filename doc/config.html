@@ -1,502 +1,288 @@
 <html>
 
 <head>
-<title>Pubcookie configuration file</title>
+<title>Pubcookie Config File Variable Reference</title>
 <link rel="stylesheet" href="pubcookie.css" type="text/css">
 </head>
 
 <body>
 
-<h1>Pubcookie config file variables</h1>
+<h1>Pubcookie Config File Variable Reference</h1>
 
-<p>
-The following tables provide an authoritative list of run-time configuration
-variables for the login server, keyserver, and keyclient [fixme: really??].
-Some of these variables are shared by all of the components; while many of 
-them pertain only to the login server.
-</p>
+<p>This is the authoritative reference for variables you can use
+in the Pubcookie <tt>config</tt> file. Some variables are shared by
+all components; many pertain only to the login server components.</p>
+
+<p><i>Included on this page:</i></p>
+
+<ul>
+<li><a href="#common">Common Variables</a></li>
+<li><a href="#login">Login CGI Variables</a></li>
+<li><a href="#keyserver">Keyserver Variables</a></li>
+<li><a href="#krb5">Kerberos Verifier Variables</a></li>
+<li><a href="#ldap">LDAP Verifier Variables</a></li>
+<li><a href="#other">Other Variables</a></li>
+<li><a href="#values">Definitions</a></li>
+</ul>
 
 <p>See <a href="config.sample">config.sample</a> and <a 
 href="config.login.sample">config.login.sample</a> for example
 configuration for an application server and login server, respectively.</p>
 
-<table border width="95%">
+<h4><a name="common">Common Variables</a></h4>
 
-<tr>
- <th>Name</th> 
- <th><a href="#types">Type</a></th> 
- <th>Description</th>
-</tr>
+<p>The following variables are common to the keyclient, keyserver, and/or the 
+login cgi:</p>
 
-<tr>
- <td>logging_level</td>
- <td>int</td>
- <td>Defines how much information is logged; increase with your level of
-    frustration. Levels: 0-5</td>
-</tr>
+<dl>
 
-<tr>
-<td>login_uri</td><td>string</td><td>The complete URI of the login cgi</td>
-</tr>
+<dt> <a name="audit_facility">audit_facility</a> <i>string</i></dt>
+<dd> The log facility to log audit log messages.</dd>
 
-<tr>
-<td>logout_prog</td><td>string</td><td>The name under which the logout program was invoked, includes the path.  
-</td>
-</tr>
+<dt> <a name="general_facility">general_facility</a> <i>string</i></dt>
+<dd> The log facility to log general log messages.</dd>
 
-<tr>
-<td>login_servers</td><td>   list</td><td>
-    List of all of the login servers for our domain;
-                        keyserver uses this to distribute keys to the other
-                        login servers</td>
-</tr>
+<dt> <a name="granting_key_file">granting_key_file</a> <i>string</i></dt>
+<dd> Path and filename of the "granting" private key 
+     file (only found on login servers).</dd> 
 
-<tr>
-<td>ssl_ca_file</td><td> string</td><td> Path and filename of the
-                        Cerificate Authority which signed our SSL
-                        key</td> </tr>
+<dt> <a name="granting_cert_file">granting_cert_file</a> <i>string</i></dt>
+<dd> Path and filename of the "granting" certificate 
+     file (found on all servers).</dd>
 
-<tr>
-<td>ssl_ca_path</td><td> string</td><td> Path of directory containing
-                        CA certificates named by their hashes for all
-                        CAs that we should trust</td> </tr>
+<dt> <a name="logging_level">logging_level</a> <i>int</i></dt>
+<dd> Defines how much information is logged; increase with your level of
+     frustration.</dd>
+<dd> Values: 0 (errors), 1 (audit activity, e.g. auths, redirects), 2 (debug lite), 
+     3 (verbose debug), 5 (verbose debug with HTML)</dd>
 
-<tr>
-<td>ssl_cert_file</td><td> string</td><td> Path and filename of our
-SSL certificate</td> </tr>
+<dt> <a name="login_host">login_host</a> <i>string</i></dt>
+<dd> The hostname of login server.</dd>
+<dd> Example: <i>weblogin.example.edu</i></dd>
 
-<tr>
-<td>ssl_key_file</td><td> string</td><td> Path and filename of our SSL
-key</td> </tr> 
+<dt> <a name="login_uri">login_uri</a> <i>full-uri</i></dt>
+<dd> The full URI of the login cgi.</dd>
+<dd> Example: <i>https://weblogin.example.edu</i></dd>
 
-<tr> <td>granting_key_file</td><td>string</td><td>Path and filename of
-the secret portion of the granting keypair (only found on login
-servers)</td> </tr>
+<dt> <a name="logout_prog">logout_prog</a> <i>string</i></dt>
+<dd> The name under which direct logout is invoked, includes the path.</dd>
+<dd> Example: <i>/logout/index.cgi</i></dd>
 
-<tr>
-<td>granting_cert_file</td><td> string</td><td> Path and filename of
-the public portion of the granting keypair (found on all servers)</td>
-</tr>
+<dt> <a name="keydir">keydir</a> <i>string</i></dt>
+<dd> The location of the keystore; one symmetric encryption key for each 
+     participating server.</dd>
 
-<tr>
-<td>enterprise_domain</td><td> string</td><td> The DNS domain under
-                            which all hosts will live.  must be at
-                            least a second level domain
-                            (e.g. <tt>example.edu</tt>); used to scope
-                            cookies for communication between the
-                            login server and app servers</td> </tr>
+<dt> <a name="keymgt_uri">keymgt_uri</a> <i>string</i></dt>
+<dd> The full URI of the keyserver.</dd>
+<dd> Example: <i>https://weblogin.washington.edu:2222</i></dd> 
 
-<tr>
- <td>keymgt_uri </td>
- <td>string</td>
- <td>The location of the keyserver.</td> 
-</tr>
+<dt> <a name="ssl_ca_file">ssl_ca_file</a> <i>string</i></dt>
+<dd> Path and filename containing trusted
+     Cerificate Authority certificates used by keyclient
+     and keyserver to verify peer certificates.</dd> 
 
-<tr>
- <td>keydir</td>
- <td>string</td>
- <td>The location of DES encryption keys, one for each server.</td>
-</tr>
+<dt> <a name="ssl_ca_path">ssl_ca_path</a> <i>string</i></dt>
+<dd> Path of directory containing trusted
+     Certificate Authority certificates named with OpenSSL 
+     hashes. Used by keyclient and keyserver to verify peer certificates.</dd>
 
-<tr>
- <td>keyserver_client_list</td>
- <td>list</td>
- <td>The hosts authorized to use the keyclient "permit" option to 
-   add new servers to the keystore.</td>
-</tr>
+<dt> <a name="ssl_cert_file">ssl_cert_file</a> <i>string</i></dt>
+<dd> Path and filename of the SSL certificate.</dd> 
 
-<tr>
- <td>keymgt_peers</td>
- <td>list</td>
- <td>The peer host(s) authorized to push keys to this keyserver. Used when a 
-   keyserver host is not in the keyserver cluster.</td>
-</tr>
+<dt> <a name="ssl_key_file">ssl_key_file <i>string</i></dt>
+<dd> Path and filename of the SSL key.</dd>  
 
-<tr>
- <td>keyserver_max_wait_time</td>
- <td>time</td>
- <td>Sets the maximum time that keyserver
-    will wait for data after a connection is established.
-    Non-zero value allows keyserver to break hung connections.
-    Default is zero (i.e. off, no timeout).</td>
-</tr>
+<dt> <a name="umask">umask</a> <i>string</i></dt>
+<dd> The umask used when creating files.</dd>
 
-<tr>
- <td>umask</td>
- <td> string</td>
- <td> The umask used when creating files.</td>
-</tr>
+<dt> debug <i>int</i></dt>
+<dd> Deprecated in Pubcookie 3.1. Use <tt>logging_level</tt> instead. Non-zero value enables debug 
+     logging. The higher the number, the more debugging output that is generated.</dd>
 
-<tr>
- <td>general_facility</td>
- <td>string</td>
- <td>The log facility to log general log messages</td>
-</tr>
+</dl>
 
-<tr>
- <td>audit_facility</td>
- <td>string</td>
- <td>The log facility to log audit log messages</td>
-</tr>
+<h4><a name="login">Login CGI Variables</a></h4>
 
-<tr>
- <td>debug</td>
- <td>int</td>
- <td>Deprecated. Use <tt>logging_level</tt> instead. Non-zero value enables debug 
-    logging. The higher the number, the more debugging output that is generated.</td>
-</tr>
+<p>The following variables are used only by the login cgi:</p>
 
-<tr>
-<th colspan="3">login cgi specific options</th>
-</tr>
+<dl>
 
-<tr>
- <td>basic_verifier</td>
- <td> string</td>
- <td> The verifier to use for the "basic" flavor</td>
-</tr>
+<dt> <a name="app_logout_string">app_logout_string-<i>servername</i>-<i>appid</i></a> <i>string</i></dt>
+<dd> A custom logout response msg for <i>appid</i> on <i>servername</i></dd> 
 
-<tr>
- <td>default_l_expire</td>
- <td>time</td>
- <td>Defines the default duration of a single sign-on session (login cookie expiry). Default: 8 hours.</td>
-</tr>
+<dt> <a name="append_realm">append_realm</a> <i>switch</i></dt>
+<dd> If true, the authentication
+     realm is appended to the user name after
+     authentication but before issuing cookies (eg,
+     the cookie will contain user@REALM)</dd> 
 
-<tr>
- <td>static_user_field</td>
- <td>enumerated</td>
- <td>Defines the site policy on the editability of the userid field on the login page.
-   Policy values are: <tt>never</tt>, which never denies the user to change the userid,
-   even on session reauth; <tt>kind</tt>, which allows the user to change the userid if
-   the login cookie has expired; and <tt>always</tt>, which keeps the userid field static 
-   and uneditable whenever there is a userid available in the login cookie (expired or 
-   otherwise). Default: <tt>kind</tt>.</td>
-</tr>
+<dt> <a name="basic_verifier">basic_verifier</a> <i>string</i></dt>
+<dd> The active verifier used by the basic login flavor.</dd>
 
-<tr>
- <td>retain_username_on_failed_authn</td>
- <td>int</td>
- <td>Defines whether the userid is retained on failed authentication attempts. Values: 
-   <tt>1</tt> to retain; <tt>0</tt> not to retain. Default: [fixme: we'll find out... i
-   think it's 0]</td>
-</tr>
+<dt> <a name="default_realm">default_realm</a> <i>string</i></dt>
+<dd> optional default authentication realm to pass to the 
+     verifier when none is submitted via the form</dd>
 
-<tr>
- <td>trim_username_to_atsign</td>
- <td>int</td>
- <td>Defines the site policy on verifying userids that have been entered as email addresses
-   (e.g. <i>joe@example.edu</i>). Values: <tt>1</tt>, trims off the realm before verifying; 
-   <tt>0</tt>, doesn't trim. Default: <tt>0</tt>. [fixme: 0/1, or off/on??]</td>
-</tr>
+<dt> <a name="default_l_expire">default_l_expire</a> <i>time</i></dt>
+<dd> Defines the default duration of a single sign-on session (login cookie expiry). Default: 8 hours.</dd>
 
-<tr>	 
-<td>login_host</td><td>string</td><td>The hostname of login server</td>	 
-</tr>
+<dt> <a name="egd_socket">egd_socket</a> <i>socket-locatin</i></dt>
+<dd> Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</dd>
 
-<tr>
-<td>app_logout_string-<i>servername</i>-<i>appid</i></td><td>string</td><td> A custom
-logout response msg for <i>appid</i> on <i>servername</i></td> </tr>
+<dt> <a name="enterprise_domain">enterprise_domain</a> <i>string</i></dt>
+<dd> The DNS domain under which all participating hosts will live.  Must be at
+     least a second level domain; used to scope "granting" cookies sent between 
+     the login server and application servers. Servers outside this domain must
+     use a Pubcookie relay to authenticate users.</dd> 
+<dd> Example: <i>example.edu</i> or <i></i></dd>
 
-<tr>
-<td>append_realm</td><td> switch</td><td> If true, the authentication
-                        realm is appended to the user name after
-                        authentication but before issuing cookies (eg,
-                        the cookie will contain user@REALM)</td> </tr>
+<dt> <a name="kiosk">kiosk</a> <i>special</i></dt>
+<dd> Kiosk policy configuration for reduced SSO duration; matches by
+     user-agent string, remote IP addresses, or IP address ranges.</dd>
+<dd> Syntax: <tt>time agent|ip [agent|ip] ... [ time agent|ip ... ]</tt></dd>
 
-<tr>
-<td>default_realm</td><td>   string</td><td>  optional default
-                        authentication realm to pass to the 
-                        verifier when none is submitted via the form</td>
-</tr>
+<dt> <a name="min_countdown">min_countdown</a> <i>time</i></dt>
+<dd> The minimum countdown for automatically reloading the status page.</dd>
 
-<tr>
-<td>mirrorfile</td><td> string</td><td> full path to a file to keep a
-                        mirrored copy of all output sent to the client
-                        by the most recent call to the login cgi</td>
-                        </tr>
+<dt> <a name="mirrorfile">mirrorfile</a> <i>string</i></dt>
+<dd> full path to a file to keep a mirrored copy of all output sent 
+     to the client by the most recent call to the login cgi</dd>
+                        
+<dt> <a name="retain_username_on_failed_authn">retain_username_on_failed_authn</a> <i>int</i></dt>
+<dd> Defines whether the userid is retained on failed authentication attempts.</dd>
+<dd> Values: <tt>1</tt> to retain; <tt>0</tt> not to retain.</dd>
+<dd> Default: [fixme: we'll find out... i think it's 0]</dd>
 
-<tr>
- <td>kiosk</td>
- <td>special</td>
- <td>Kiosk policy configuration for reduced SSO duration; matches by
-    user-agent string, remote IP addresses, or IP address ranges.
-    Syntax: <tt>kiosk: time agent|ip [agent|ip] ... [ time agent|ip ... ]</tt>
-</td>
-</tr>
+<dt> <a name="static_user_field">static_user_field</a> <i>enumerated</i></dt>
+<dd> Defines the site policy on the editability of the userid field on the login page.</dd>
+<dd> Values: <tt>never</tt>, which never denies the user to change the userid,
+     even on session reauth; <tt>kind</tt>, which allows the user to change the userid if
+     the login cookie has expired; and <tt>always</tt>, which keeps the userid field static 
+     and uneditable whenever there is a userid available in the login cookie (expired or 
+     otherwise).</dd>
+<dd> Default: <tt>kind</tt>.</dd>
 
-<tr>
-<td>min_countdown</td>
-<td>time</td>
-<td>The minimum countdown for automatically reloading the status page.</td>
-</tr>
+<dt> <a name="template_root">template_root</a> <i>string</i></dt>
+<dd> The root directory for the templates.</dd>
+<dd> Default: <tt>PREFIX/login_templates</tt>.</dd>
+</dd>
 
-<tr>
-<td>egd_socket</td><td>       socket-location </td>
-<td>Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</td>
-</tr>
+<dt> <a name="trim_username_to_atsign">trim_username_to_atsign</a> <i>int</i></dt>
+<dd> Defines the site policy on verifying userids that have been 
+     entered as email addresses.</dd>
+<dd> Values: <tt>1</tt>, trims off the realm before verifying; 
+     <tt>0</tt>, doesn't trim.</dd>
+<dd> Default: <tt>0</tt>. [fixme: 0/1, type switch, or off/on??]</dd>
 
 <!-- lets put deprecated variables down here for now -->
 
-<tr>
- <td>kiosk_keys</td><td>      list</td>
- <td>Deprecated. Use <tt>kiosk</tt> instead. User-Agent strings that identify Kiosk Machines</td>
-</tr>
+<dt> kiosk_keys <i>list</i></dt>
+<dd> Deprecated in Pubcookie 3.1. Use <tt>kiosk</tt> instead.</dd>
 
-<tr>
- <td>kiosk_values</td><td>    list</td>
- <td>Deprecated. Use <tt>kiosk</tt> instead. Duration of login cookie for kiosk machines (same order as
-  <tt>kiosk_keys</tt>)
- </td>
-</tr>
+<dt> kiosk_values <i>list</i></dt>
+<dd> Deprecated in Pubcookie 3.1. Use <tt>kiosk</tt> instead.</dd>
 
-<tr>
-<th colspan="3">Template File Options</th>
-</tr>
+</dl>
 
-<tr>
- <td>template_root</td>
- <td>string</td>
- <td>The root directory for the templates.  Default:
-  <tt>{PUBCOOKIE_DIR}/login_templates</tt>.
- </td>
-</tr>
+<h4><a name="keyserver">Keyserver Variables</a></h4>
 
-<tr>
- <td>tmpl_login</td>
- <td>string</td>
- <td>The template for the login page.  Default: login</td>
-</tr>
+<p>The following variables are used only by the keyserver:</p>
 
-<tr>
- <td>tmpl_login_user_form_field</td>
- <td>string</td>
- <td>The template for the user input field. Default: login_user_form_field</td>
-</tr>
+<dl>
 
-<tr>
- <td>tmpl_login_user_static</td>
- <td>string</td>
- <td>The template for a static user field for reauthentication. Default: login_user_static</td>
-</tr>
+<dt> <a name="login_servers">login_servers</a> <i>list</i></dt>
+<dd> List of all of the login servers for our domain;
+     keyserver uses this to distribute keys to the other
+     login servers</dd>
 
-<tr>
- <td>tmpl_login_bad_auth</td>
- <td>string</td>
- <td>File containing HTML snippet to display on the login page when 
-  authentication fails. Default: login_bad_auth.
- </td>
-</tr>
+<dt> <a name="keymgt_peers">keymgt_peers</a> <i>list</i></dt>
+<dd> The peer host(s) authorized to push keys to this keyserver. Used when a 
+     keyserver host is not in the keyserver cluster.</dd>
 
-<tr>
- <td>tmpl_login_reauth</td>
- <td>string</td>
- <td>File containing HTML snippet to display on the login page when the 
-  application requests reauthentication.  Default: login_reauth.</td>
-</tr>
- 
-<tr>
- <td>tmpl_login_cache_creds_wrong</td>
- <td>string</td>
- <td>File containing HTML snippet to display on the login page when the 
-  application requests credentials that are different from those in use 
-  already by the weblogin service.  Default: login_reauth.</td>
-</tr>
+<dt> <a name="keyserver_client_list">keyserver_client_list</a> <i>list</i></dt>
+<dd> The hosts authorized to use the keyclient "permit" option to 
+     add new servers to the keystore.</dd>
 
-<tr>
- <td>tmpl_error</td>
- <td>string</td>
- <td>Template displayed when there is an internal error.  Default: 
-  error</td>
-</tr>
+<dt> <a name="keyserver_max_wait_time">keyserver_max_wait_time</a> <i>time</i></dt>
+<dd> Sets the maximum time that keyserver
+     will wait for data after a connection is established.
+     Non-zero value allows keyserver to break hung connections.</dd>
+<dd> Default: zero (i.e. off, no timeout).</dd>
 
-<tr>
- <td>tmpl_logout_app</td>
- <td>string</td>
- <td>Default: logout_app.</td>
-</tr>
+</dl>
 
-<tr>
- <td>tmpl_logout_app_custom_prefix</td>
- <td>string</td>
- <td>Default: logout_app_custom_prefix</td>
-</tr>
+<h4><a name="krb5">Kerberos Verifier Variables</a></h4>
 
-<tr>
- <td>tmpl_logout_app_custom_suffix</td>
- <td>string</td>
- <td>Default: logout_app_custom_suffix</td>
-</tr>
+<dl>
 
-<tr>
- <td>tmpl_logout_part1</td>
- <td>string</td>
- <td>Default: logout_part1</td>
-</tr>
+<dt> <a name="kerberos5_keytab">kerberos5_keytab</a> <i>string</i></dt>
+<dd> Full path to the K5 keytab file that contains the service key.</dd>
+<dd> Default: <tt>/etc/krb5.keytab</tt></dd>
 
-<tr>
- <td>tmpl_logout_part2</td>
- <td>string</td>
- <td>Default: logout_part2</td>
-</tr>
+<dt> <a name="kerberos5_service_name">kerberos5_service_name</a> <i>string</i></dt>
+<dd> Service name or "primary" used in the principal for
+     the service key. 
+<dd> Default: <tt>host</tt></dd>
 
-<tr>
- <td>tmpl_logout_already_weblogin</td>
- <td>string</td>
- <td>Default: logout_already_weblogin</td>
-</tr>
+</dl>
 
-<tr>
- <td>tmpl_logout_postscript_still_others</td>
- <td>string</td>
- <td>Default: logout_postscript_still_others</td>
-</tr>
+<h4><a name="ldap">LDAP Verifier Variables</a></h4>
 
-<tr>
- <td>tmpl_logout_still_weblogin</td>
- <td>string</td>
- <td>Default: logout_still_weblogin</td>
-</tr>
+<dl>
 
-<tr>
- <td>tmpl_logout_time_remaining</td>
- <td>string</td>
- <td>Default: logout_time_remaining</td>
-</tr>
+<dt> <a name="ldap_uri">ldap_uri</a> <i>list</i></dt>
+<dd> The full LDAP URI.</dd>
+<dd> URI Format:
+<pre>ldaps://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
+ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password</pre>
+<dd> Note: <tt>(uid=%s)</tt> is the search filter for finding an account by netid.  
+     The <tt>%s</tt> will be replaced with the netid.  The host string can optionally
+     contain a port number. The filter can only contain one <tt>%s</tt> at this time.
+<dd> Note: <tt>x-BindDN</tt> and <tt>x-Password</tt> are the Bind DN and Password, URL
+     encoded. They may be omitted entirely if the connection is anonymous.</dd>
+<dd> <b>Warning:</b> Commas must be encoded as <tt>%2c</tt> and spaces as 
+     <tt>%20</tt>.</dd>
 
-<tr>
- <td>tmpl_logout_postscript_still_weblogin</td>
- <td>string</td>
- <td>Default: logout_postscript_still_weblogin</td>
-</tr>
+<dt> <a name="cert_db_path">cert_db_path</a> <i>string</i></dt>
+<dd> Path to where Netscape's cert7.db and key3.db can be found.</dd>
+<dd> Default: <tt>PREFIX/keys</tt></dd>
 
-<tr>
- <td>tmpl_status</td>
- <td>string</td>
- <td>The template for the status page displayed when the user goes to the 
-  weblogin server directly.  Default: status</td>
-</tr>
+</dl>
 
-<tr>
- <td>tmpl_nonpost_redirect</td>
- <td>string</td>
- <td>Template for the redirect back to the app after login.</td>
-</tr>
+<h4><a name="other">Other Variables</a></h4>
 
-<tr>
- <td>tmpl_notok_part1</td>
- <td>string</td>
- <td>Default: notok_part1</td>
-</tr>
+<dl>
 
-<tr>
- <td>tmpl_notok_part2</td>
- <td>string</td>
- <td>Default: notok_part2</td>
-</tr>
+<dt> <a name="save_credentials">save_credentials</a> <i>switch</i></dt> 
+<dd> Controls whether the basic flavor, when used with the Kerberos verifier,
+     saves a copy of the user's master credentials for later use by flavor_getcred.</dd> 
 
-<tr>
- <td>tmpl_pinit_responce1</td>
- <td>string</td>
- <td>Default: pinit_responce1</td>
-</tr>
+<dt> <a name="getcred_authz_file">getcred_authz_file</a> <i>string</i></dt> 
+<dd> flavor_getcred uses this file to determine which application are authorized to request
+     what credentials.</dd> 
 
-<tr>
- <td>tmpl_pinit_responce2</td>
- <td>string</td>
- <td>Default: pinit_responce2</td>
-</tr>
+</dl>
 
-<tr>
- <td>tmpl_welcome_back</td>
- <td>string</td>
- <td>Default: welcome_back</td>
-</tr>
-
-<tr>
-<th colspan="3"><tt>kerberos_v5</tt> verifier options</th>
-</tr>
-
-<tr>
- <td>kerberos5_keytab</td>
- <td>string</td>
- <td>Full path to the K5 keytab file that contains the service key. 
-  Default is "/etc/krb5.keytab".</td>
-</tr>
-
-<tr>
- <td>kerberos5_service_name</td>
- <td>string</td>
- <td>Service name or "primary" used in the principal for
-  the service key. Default is "host".</td>
-</tr>
-
-<tr>
-<th colspan="3"><tt>ldap</tt> verifier options</th>
-</tr>
-
-<tr>
-    <td>ldap_uri</td><td>        list</td>
-    <td>    The LDAP URI in this format:
-        <pre>            
-            ldaps://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
-            ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
-        </pre>
-        <ul>
-            <li>(uid=%s) is the search filter for finding an account by netid.  The
-            %s will be replaced with the netid.  The host string can optionally
-            contain a port number.  The filter can only contain one %s at this time.
-            </li>
-
-            <li>x-BindDN and x-Password are the Bind DN and Password, URL
-            encoded.
-            <b>(Commas must be encoded as %2c and spaces as %20.)</b>
-            The x-BindDN and x-Password may be omitted entirely if the
-            connection is anonymous.
-            </li>
-        </ul>
-    </td>
-</tr>
-
-<tr>
- <td>cert_db_path</td><td>string</td>
- <td>Path to where Netscape's cert7.db and key3.db can be found.
-  Default: <tt>{PUBCOOKIE_DIR}/keys</tt></td>
-</tr>
-
-<tr>
-<th colspan="3">Unsupported/experimental options</th>
-</tr>
-
-<tr>
-<td>save_credentials </td> <td>switch</td> <td>Controls whether
-                flavor_basic saves a copy of the user's master
-                credentials for later use by flavor_getcred</td> </tr>
-
-<tr>
-<td>getcred_authz_file</td> <td>string</td><td> flavor_getcred uses
-                this file to determine who is authorized to request
-                what credentials</td> </tr>
-
-</table>
-
-<h4><a name="types">Types of Values</a></h4>
+<h4><a name="defs">Definitions</a></h4>
 
 <p>Some of the config variables share the same types of values.</p>
 
-<dl compact="compact">
-<dt> int </dt>
-<dd> an integer value </dd>
-<dt> string </dt>
-<dd> a string value </dd>
-<dt> list </dt>
-<dd> a list of values </dd>
-<dt> time </dt>
-<dd> an integer value representing time; use 
+<dl>
+
+<dt> <i>int</i></dt>
+<dd> an integer value</dd>
+
+<dt> <i>string</i></dt>
+<dd> a character string value </dd>
+
+<dt> <i>list</i></dt>
+<dd> a list of string values </p>
+
+<dt> <i>time</i> </dt>
+<dd> an integer value representing time in seconds; use 
      a suffix of 'm' to mean minutes or 'h' to mean hours, 
-     e.g. 5m means 300 and 1h means 3600.
-</dd>
+     e.g. 5m means minutes, 1h means an hour.</dd>
 </dl>
 
 </body>
-
 </html>
