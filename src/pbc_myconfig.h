@@ -41,10 +41,14 @@
  */
 
 /*
- * $Revision: 1.3 $
+ * $Revision: 1.4 $
  */
 #ifndef INCLUDED_PBC_MYCONF_H
 #define INCLUDED_PBC_MYCONF_H
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 /**
  * initialize the config subsystem

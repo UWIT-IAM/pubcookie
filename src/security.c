@@ -1,4 +1,10 @@
-#include <stdio.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "security.h"
 

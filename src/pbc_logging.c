@@ -1,5 +1,16 @@
-#include <time.h>
-#include <syslog.h>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
 #include "libpubcookie.h"
 #include "pbc_myconfig.h"
 #include "pbc_logging.h"

@@ -1,6 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
 
 #include "verify.h"
 
@@ -34,7 +47,9 @@ verifier *get_verifier(const char *name)
 
 #ifdef TEST_VERIFY
 
-#include <ctype.h>
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif /* HAVE_CTYPE_H */
 
 int debug = 1; /* in case one of the verifiers wants it */
 

@@ -1,15 +1,48 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <syslog.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <assert.h>
 
-#include <openssl/pem.h>
-#include <openssl/des.h>
-#include <openssl/rand.h>
-#include <openssl/err.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+/* openssl */
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+# include <openssl/des.h>
+# include <openssl/rand.h>
+# include <openssl/err.h>
+#else
+# include <pem.h>
+# include <des.h>
+# include <rand.h>
+# include <err.h>
+#endif /* OPENSSL_IN_DIR */
+
+#ifdef HAVE_ASSERT_H
+# include <assert.h>
+#endif /* HAVE_ASSERT_H */
 
 #include "pbc_config.h"
 #include "pbc_myconfig.h"

@@ -1,20 +1,59 @@
 /*
- $Id:
+ $Id: securid_securid.c,v 1.4 2002-07-05 23:35:48 jjminer Exp $
  */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include <strings.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <netinet/in.h>
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif /* HAVE_CTYPE_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif /* HAVE_STRINGS_H */
+
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
+#endif /* HAVE_SYS_RESOURCE_H */
+
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+
 #include "index.cgi.h"
 
 #include "li-access.h"

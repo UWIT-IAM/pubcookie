@@ -18,42 +18,89 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.31 2002-07-02 18:39:43 jjminer Exp $
+    $Id: libpubcookie.c,v 2.32 2002-07-05 23:35:48 jjminer Exp $
  */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #if defined (APACHE1_3)
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
+# include "httpd.h"
+# include "http_config.h"
+# include "http_core.h"
+# include "http_log.h"
+# include "http_main.h"
+# include "http_protocol.h"
+# include "util_script.h"
 #endif
 
 #if defined (WIN32)
-#include <windows.h>
-typedef  int pid_t;  /* win32 process ID */
-#include <process.h>  /* getpid */
-#else
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <syslog.h>
-#include <time.h>
-#include <string.h>
-#include <sys/time.h>
-#include <sys/utsname.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <netdb.h>
-#endif
 
-/* ssleay lib stuff */
-#include <pem.h>
-#include <des.h>
-#include <rand.h>
-#include <err.h>
+# include <windows.h>
+typedef  int pid_t;  /* win32 process ID */
+# include <process.h>  /* getpid */
+
+#else /* WIN32 */
+
+# ifdef HAVE_STDIO_H
+#  include <stdio.h>
+# endif /* HAVE_STDIO_H */
+
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif /* HAVE_STDLIB_H */
+
+# ifdef HAVE_STDARG_H
+#  include <stdarg.h>
+# endif /* HAVE_STDARG_H */
+
+# ifdef HAVE_SYSLOG_H
+#  include <syslog.h>
+# endif /* HAVE_SYSLOG_H */
+
+# ifdef HAVE_TIME_H
+#  include <time.h>
+# endif /* HAVE_TIME_H */
+
+# ifdef HAVE_STRING_H
+#  include <string.h>
+# endif /* HAVE_STRING_H */
+
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# endif /* HAVE_SYS_TIME_H */
+
+# ifdef HAVE_SYS_UTSNAME_H
+#  include <sys/utsname.h>
+# endif /* HAVE_SYS_UTSNAME_H */
+
+# ifdef HAVE_NETINET_IN_H
+#  include <netinet/in.h>
+# endif /* HAVE_NETINET_IN_H */
+
+# ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+# endif /* HAVE_UNISTD_H */
+
+# ifdef HAVE_NETDB_H
+#  include <netdb.h>
+# endif /* HAVE_NETDB_H */
+
+#endif /* WIN32 */
+
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+# include <openssl/des.h>
+# include <openssl/rand.h>
+# include <openssl/err.h>
+#else
+# include <pem.h>
+# include <des.h>
+# include <rand.h>
+# include <err.h>
+#endif /* OPENSSL_IN_DIR */
 
 /* pubcookie lib stuff */
 #include "pubcookie.h"

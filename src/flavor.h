@@ -6,6 +6,10 @@
 #ifndef INCLUDED_FLAVOR_H
 #define INCLUDED_FLAVOR_H
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "index.cgi.h"
 
 typedef enum {

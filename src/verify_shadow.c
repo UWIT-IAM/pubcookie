@@ -6,13 +6,29 @@
  *  @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  */
 
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
 #include "verify.h"
 
-#ifdef HAVE_SHADOW
-#include <shadow.h>
-#include <crypt.h>
-#include <string.h>
+#ifdef ENABLE_SHADOW
+
+#ifdef HAVE_SHADOW_H
+# include <shadow.h>
+#endif /* HAVE_SHADOW_H */
+
+#ifdef HAVE_CRYPT_H
+# include <crypt.h>
+#endif /* HAVE_CRYPT_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
 
 static int shadow_v(const char *userid,
 		    const char *passwd,
@@ -62,7 +78,7 @@ static int shadow_v(const char *userid,
     return -1;
 }
 
-#else /* HAVE_SHADOW */
+#else /* ENABLE_SHADOW */
 
 static int shadow_v(const char *userid,
 		    const char *passwd,
@@ -77,6 +93,6 @@ static int shadow_v(const char *userid,
     return -1;
 }
 
-#endif /* HAVE_SHADOW */
+#endif /* ENABLE_SHADOW */
 
 verifier shadow_verifier = { "shadow", &shadow_v, NULL, NULL };

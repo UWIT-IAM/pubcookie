@@ -18,8 +18,12 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.87 2002-07-02 18:39:43 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.88 2002-07-05 23:35:48 jjminer Exp $
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 /* apache includes */
 #include "httpd.h"
@@ -31,10 +35,18 @@
 #include "util_script.h"
 
 /* ssleay lib stuff */
-#include <pem.h>
-#include <des.h>
-#include <rand.h>
-#include <err.h>
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+# include <openssl/des.h>
+# include <openssl/rand.h>
+# include <openssl/err.h>
+#else
+# include <pem.h>
+# include <des.h>
+# include <rand.h>
+# include <err.h>
+#endif /* OPENSSL_IN_DIR */
 
 /* pubcookie stuff */
 #include "pbc_myconfig.h"
@@ -44,11 +56,26 @@
 #include "pbc_version.h"
 
 /* system stuff */
-#include <time.h>
-#include <string.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif /* HAVE_SYS_STAT_H */
+
 
 /* misc prototype */
 char *make_session_cookie_name(pool *, char *, unsigned char *);

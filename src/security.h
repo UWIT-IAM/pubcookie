@@ -1,6 +1,10 @@
 #ifndef INCLUDED_SECURITY_H
 #define INCLUDED_SECURITY_H
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 /**
  * initializes the security subsystem.
  * the configuration & logging subsystems are required prerequisites

@@ -1,10 +1,14 @@
 # -*- make -*-
 #
 # Makefile, overall Makefile for CVS sources.
+#
+# @configure_input@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile,v 1.51 2002-06-28 03:30:17 jjminer Exp $
+# $Id: Makefile.in,v 2.1 2002-07-05 23:35:48 jjminer Exp $
+
+@SET_MAKE@
 
 include Makefile.settings
 
@@ -21,6 +25,10 @@ mod_pubcookie.so:
 clean:
 	$(MAKE) -f Makefile.login clean
 	$(MAKE) -f Makefile.apxs clean
+
+distclean:
+	$(MAKE) -f Makefile.login distclean
+	$(MAKE) -f Makefile.apxs distclean
 
 install: clean
 	$(MAKE) -f Makefile.login install

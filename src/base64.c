@@ -1,4 +1,12 @@
-#include <string.h>  /* for win32 */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STRING_H
+# include <string.h>  /* for win32 */
+#endif /* HAVE_STRING_H */
+
 
 /* BASE64 encoding stuff. */
 
@@ -122,8 +130,14 @@ int libpbc_base64_decode(unsigned char *in, unsigned char *out, int *osizep) {
 
 #ifdef TEST_BASE64
 
-#include <stdio.h>
-#include <unistd.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
 
 int main(int argc, char *argv[])
 {

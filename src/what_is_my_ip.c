@@ -2,17 +2,57 @@
 
 /* Copyright 1999-2001, University of Washington.  All rights reserved. */
 
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <pem.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/utsname.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif /* HAVE_NETDB_H */
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+/* openssl */
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+
+#ifdef HAVE_SYS_UTSNAME_H
+# include <sys/utsname.h>
+#endif /* HAVE_SYS_UTSNAME_H */
+
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif /* HAVE_ARPA_INET_H */
+
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"

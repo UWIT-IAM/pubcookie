@@ -1,3 +1,8 @@
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "flavor.h"
 
 extern struct login_flavor login_flavor_basic;

@@ -3,27 +3,43 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.7 2002-07-02 16:38:31 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.8 2002-07-05 23:35:48 jjminer Exp $
  */
-#include <stdlib.h>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
 
 #include "verify.h"
 
-#ifdef HAVE_LDAP
+#ifdef ENABLE_LDAP
 
 /* LibC */
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
 /* ldap - using OpenLDAP SDK or Netscape SDK */
-#include "ldap.h"
+#ifdef HAVE_LDAP_H
+# include <ldap.h>
+#endif /* HAVE_LDAP_H */
 
 /* login cgi includes */
 #include "index.cgi.h"
 #include "pbc_myconfig.h"
-
-#include "verify.h"
 
 /** The debug level */
 extern int debug;
@@ -406,7 +422,7 @@ static int ldap_v( const char *userid,
 }
 
 
-#else /* HAVE_LDAP */
+#else /* ENABLE_LDAP */
 
 static int ldap_v(const char *userid,
 		  const char *passwd,

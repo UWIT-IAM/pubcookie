@@ -27,14 +27,25 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.14 2002-06-05 16:52:29 greenfld Exp $
+    $Id: pubcookie.h,v 1.15 2002-07-05 23:35:48 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
 #define PUBCOOKIE_MAIN
 
-#include <time.h>
-#include <pem.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
 
 #define PBC_USER_LEN 42
 #define PBC_VER_LEN 4

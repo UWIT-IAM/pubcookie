@@ -42,19 +42,46 @@
  */
 
 /*
- * $Revision: 1.7 $
+ * $Revision: 1.8 $
  */
 
 /* xxx this should almost certainly use the registry on windows */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <syslog.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sysexits.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif /* HAVE_CTYPE_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif /* HAVE_SYS_STAT_H */
+
+#ifdef HAVE_SYSEXITS_H
+# include <sysexits.h>
+#endif /* HAVE_SYSEXITS_H */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -276,7 +303,10 @@ static void fatal(const char *s, int ex)
 #ifdef TEST_MYCONFIG
 /* a short test program for pbc_myconfig */
 
-#include <stdio.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
 
 int errno;
 

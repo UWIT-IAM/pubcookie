@@ -17,31 +17,65 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.17 2002-06-27 23:34:57 jteaton Exp $
+    $Id: keyserver.c,v 2.18 2002-07-05 23:35:48 jjminer Exp $
  */
 
-#include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <syslog.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#ifndef KEYSERVER_CGIC
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
 
-# ifdef HAVE_GETOPT_H
-#  include <getopt.h>
-# endif /* HAVE_GETOPT_H */
+#ifdef HAVE_ASSERT_H
+# include <assert.h>
+#endif /* HAVE_ASSERT_H */
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif /* HAVE_SYS_WAIT_H */
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
 # include <openssl/crypto.h>
 # include <openssl/x509.h>
 # include <openssl/pem.h>
 # include <openssl/ssl.h>
 # include <openssl/err.h>
-
 #else
-# include <cgic.h>
+# include <pem.h>
+# include <crypto.h>
+# include <x509.h>
+# include <pem.h>
+# include <ssl.h>
+# include <err.h>
+#endif /* OPENSSL_IN_DIR */
+
+#ifndef KEYSERVER_CGIC
+# ifdef HAVE_GETOPT_H
+#  include <getopt.h>
+# endif /* HAVE_GETOPT_H */
+#else /* ifndef KEYSERVER_CGIC */
+# ifdef HAVE_CGIC_H
+#  include <cgic.h>
+# endif /* HAVE_CGIC_H */
 #endif /* ifndef KEYSERVER_CGIC */
 
 #include "pbc_config.h"

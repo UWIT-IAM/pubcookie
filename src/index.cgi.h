@@ -18,16 +18,24 @@
  */
 
 /*
- * $Revision: 1.30 $
+ * $Revision: 1.31 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
 #define PUBCOOKIE_LOGIN_CGI
 
-/* cgic---needed for typenames */
-#include <cgic.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#include <time.h>
+/* cgic---needed for typenames */
+#ifdef HAVE_CGIC_H
+# include <cgic.h>
+#endif /* HAVE_CGIC_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
 
 typedef struct {
     char	*args;
@@ -126,7 +134,6 @@ void tmpl_print_html(const char *fname,...);
 
 /* print part of the HTTP headers */
 void print_header(const char *format, ...);
-
 
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"

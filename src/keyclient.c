@@ -16,25 +16,60 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.12 2002-06-28 20:51:19 greenfld Exp $
+    $Id: keyclient.c,v 2.13 2002-07-05 23:35:48 jjminer Exp $
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <string.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#include <unistd.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
 
-#include <openssl/crypto.h>
-#include <openssl/x509.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif /* HAVE_ARPA_INET_H */
+
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif /* HAVE_NETDB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+# include <openssl/crypto.h>
+# include <openssl/x509.h>
+# include <openssl/ssl.h>
+# include <openssl/err.h>
+# include <openssl/rand.h>
+#else
+# include <pem.h>
+# include <crypto.h>
+# include <x509.h>
+# include <ssl.h>
+# include <err.h>
+# include <rand.h>
+#endif /* OPENSSL_IN_DIR */
 
 #include "pbc_config.h"
 #include "pbc_myconfig.h"

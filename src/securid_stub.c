@@ -1,22 +1,70 @@
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 /* LibC */
-#include <arpa/inet.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/utsname.h>
-#include <sys/socket.h>
-#include <time.h>
-#include <unistd.h>
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif /* HAVE_ARPA_INET_H */
+
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif /* HAVE_CTYPE_H */
+
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif /* HAVE_NETDB_H */
+
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif /* HAVE_STDARG_H */
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_SYS_UTSNAME_H
+# include <sys/utsname.h>
+#endif /* HAVE_SYS_UTSNAME_H */
+
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
 /* openssl */
-#include <pem.h>
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
+
 /* krb5  */
-#include <com_err.h>
-#include <krb5.h>
+#ifdef ENABLE_KRB5
+# include <com_err.h>
+# include <krb5.h>
+#endif
+
 /* securid */
 #include "securid.h"
 /* pubcookie things */
@@ -25,8 +73,12 @@
 #include "pbc_config.h"
 #include "pbc_version.h"
 #include "index.cgi.h"
+
 /* cgic */
-#include <cgic.h>
+#ifdef HAVE_CGIC_H
+# include <cgic.h>
+#endif /* HAVE_CGIC_H */
+
 
 // extra debugging
 FILE	*mirror;

@@ -3,11 +3,32 @@
 /* Copyright 2000, University of Washington.  All rights reserved.            */
 /*                                                                            */
 
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
-#include <pem.h>
-#include <unistd.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"

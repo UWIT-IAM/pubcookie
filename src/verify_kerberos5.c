@@ -8,8 +8,12 @@
  */
 
 /*
- * $Revision: 1.11 $
+ * $Revision: 1.12 $
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 /* login cgi includes */
 #include "index.cgi.h"
@@ -17,21 +21,50 @@
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 
-#ifdef HAVE_KRB5
+#ifdef ENABLE_KRB5
 
 /* LibC */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <assert.h>
-#include <syslog.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef HAVE_ASSERT_H
+# include <assert.h>
+#endif /* HAVE_ASSERT_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif /* HAVE_SYS_STAT_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
 
 /* krb5  */
-#include <com_err.h>
-#include <krb5.h>
+#ifdef HAVE_COM_ERR_H
+# include <com_err.h>
+#endif /* HAVE_COM_ERR_H */
+
+#ifdef HAVE_KRB5_H
+# include <krb5.h>
+#endif /* HAVE_KRB5_H */
 
 #define KRB5_DEFAULT_OPTIONS 0
 #define KRB5_DEFAULT_LIFE (PBC_DEFAULT_EXPIRE_LOGIN)
@@ -536,9 +569,9 @@ static int kerberos5_v(const char *userid,
 verifier kerberos5_verifier = { "kerberos_v5", 
 				&kerberos5_v, &creds_free, &creds_derive };
 
-#else /* HAVE_KRB5 */
+#else /* ENABLE_KRB5 */
 
 verifier kerberos5_verifier = { "kerberos_v5", NULL, NULL, NULL };
 
-#endif /* HAVE_KRB5 */
+#endif /* ENABLE_KRB5 */
 

@@ -1,42 +1,39 @@
 # -*- make -*-
 # 
 # Makefile.settings, All of those exciting settings
+#
+# @configure_input@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.settings,v 1.7 2002-06-28 19:54:48 greenfld Exp $
+# $Id: Makefile.settings.in,v 2.1 2002-07-05 23:35:48 jjminer Exp $
 
-CC=cc
-
-SSL_BASE=/usr/local/ssl
-SSL_OTHER_INC_DIR=
-SSL_OTHER_LIB_DIR=
-
-EXTRA_CFLAGS=
-EXTRA_LDFLAGS=
-EXTRA_LIBS=
+CC=@CC@
 
 # Define if you do actually have getopt.h (unlike Solaris, bah.)
-DEFINES += -DHAVE_GETOPT_H
+# DEFINES += -DHAVE_GETOPT_H
 
-PUBCOOKIE_DIR=/usr/local/pubcookie
+prefix=@prefix@
 
-INSTALL=install -p -b
+PUBCOOKIE_DIR=$(prefix)
+
+INSTALL=@INSTALL@ -p -b
 INSTALL_BIN=$(INSTALL) -m 755 -o root -g other
 INSTALL_OTHER=$(INSTALL) -m 644 -o root -g other
 INSTALL_DIR=$(INSTALL) -d
 
-RM=rm
+
+RM=@RM@
 FORCE_RM=$(RM) -f
 RECURSIVE_FORCE_RM=$(RM) -rf
-CP=cp
-RECURSIVE_CP=cp -r
-MKDIR=mkdir
-MV=mv
-AWK=awk
-SED=sed
-TAR=tar
-GZIP=gzip
+CP=@CP@
+RECURSIVE_CP=$(CP) -r
+MKDIR=@MKDIR@
+MV=@MV@
+AWK=@AWK@
+SED=@SED@
+TAR=@TAR@
+GZIP=@GZIP@
 
 MAKEFILES += Makefile.settings
 
@@ -53,13 +50,10 @@ LOGIN_DIR=$(PUBCOOKIE_DIR)/login
 
 PBC_PATH=-DPBC_PATH=\"$(PUBCOOKIE_DIR)/\"
 
-LIBS=-lssl -lcrypto
+LIBS=@LIBS@
+CFLAGS=@CFLAGS@ @DEFS@ $(PBC_PATH)
+LDFLAGS=@LDFLAGS@ $(LIBS)
+CPPFLAGS=@CPPFLAGS@
 
-CFLAGS=-I. -I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl \
-	   $(SSL_OTHER_INC_DIR) $(EXTRA_CFLAGS) $(PBC_PATH) \
-	   $(DEFINES)
-
-LDFLAGS=-L$(SSL_BASE)/lib $(SSL_OTHER_LIB_DIR) \
-		$(EXTRA_LDFLAGS) $(EXTRA_LIBS) $(LIBS) 
 
 # vim: set noet:

@@ -20,31 +20,90 @@
  */
 
 /*
- * $Revision: 1.69 $
+ * $Revision: 1.70 $
  */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 /* LibC */
-#include <arpa/inet.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <sys/utsname.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <pwd.h>
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif /* HAVE_ARPA_INET_H */
+
+#ifdef HAVE_CTIME_H
+# include <ctype.h>
+#endif /* HAVE_CTIME_H */
+
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif /* HAVE_NETDB_H */
+
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif /* HAVE_NETINET_IN_H */
+
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif /* HAVE_STDARG_H */
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif /* HAVE_STRINGS_H */
+
+#ifdef HAVE_SYS_UTSNAME_H
+# include <sys/utsname.h>
+#endif /* HAVE_SYS_UTSNAME_H */
+
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif /* HAVE_SYS_SOCKET_H */
+
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif /* HAVE_FCNTL_H */
+
+#ifdef HAVE_PWD_H
+# include <pwd.h>
+#endif /* HAVE_PWD_H */
+
 /* openssl */
-#include <pem.h>
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
+
 /* cgic */
-#include <cgic.h>
+#ifdef HAVE_CGIC_H
+# include <cgic.h>
+#endif /* HAVE_CGIC_H */
+
 
 /* pubcookie things */
 #include "pubcookie.h"

@@ -1,9 +1,21 @@
-#include <stdlib.h>
-#include <assert.h>
-#include <syslog.h>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_ASSERT_H
+# include <assert.h>
+#endif /* HAVE_ASSERT_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
 
 #include "pbc_config.h"
-
 #include "index.cgi.h"
 #include "flavor.h"
 #include "security.h"

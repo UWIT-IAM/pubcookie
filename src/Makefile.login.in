@@ -1,18 +1,24 @@
 # -*- makefile -*-
-# 
+#
 # Makefile.login, Makefile for the login server
+#
+# @configure_input@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login,v 1.10 2002-06-28 19:54:01 greenfld Exp $
+# $Id: Makefile.login.in,v 2.1 2002-07-05 23:35:48 jjminer Exp $
 
 include Makefile.settings
 
-CGIC_DIR=/usr/user/cgic1.07-pubcookie1.01
-CGIC_LIB=$(CGIC_DIR)/libcgic.a
+CFLAGS=@LOGINCFLAGS@ @DEFS@ $(PBC_PATH)
+LIBS=@LOGINLIBS@
+LDFLAGS=@LOGINLDFLAGS@ $(LIBS)
 
-EXTRA_CFLAGS += -g -I$(CGIC_DIR)
-EXTRA_LIBS += -ldl
+# CGIC_DIR=../../../cgic
+# CGIC_LIB=$(CGIC_DIR)/libcgic.a
+
+# EXTRA_CFLAGS += -I$(CGIC_DIR)
+# EXTRA_LIBS += -ldl
 # Socket Libraries
 # EXTRA_LIBS += -lnsl -lsocket
 
@@ -20,21 +26,21 @@ EXTRA_LIBS += -ldl
 # DEFINES += -DHAVE_KRB4
 
 ## HAVE_KRB5 - you want the kerberos 5 verifier
-DEFINES += -DHAVE_KRB5
-EXTRA_LIBS += -ldes -lkrb5 -ldes
+# DEFINES += -DHAVE_KRB5
+# EXTRA_LIBS += -ldes -lkrb5
 
 ## HAVE_LDAP - you want the ldap verifier
 # DEFINES += -DHAVE_LDAP
-# EXTRA_LIBS += -lldapssl30
-# EXTRA_CFLAGS += -I/data/netscape/sdk3/include
-# EXTRA_LDFLAGS += -L/data/netscape/sdk3/include
+# EXTRA_LIBS += -lldap -llber
+# EXTRA_CFLAGS += -I/usr/local/gnu/include
+# EXTRA_LDFLAGS += -L/usr/local/gnu/lib
 
 ## HAVE_SHADOW - you want the shadow password verifier.
-DEFINES += -DHAVE_SHADOW
+# DEFINES += -DHAVE_SHADOW
 
 # There be dragons here...
 
-PBC_PATH=-DPBC_PATH=\"$(PUBCOOKIE_DIR)/\"
+# PBC_PATH=-DPBC_PATH=\"$(PUBCOOKIE_DIR)/\"
 
 TEST_SRC=pbc_create.c pbc_verify.c candv.c dtest.c make_crypted_blob.c \
 		 check_crypted_blob.c

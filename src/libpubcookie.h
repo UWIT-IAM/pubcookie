@@ -26,18 +26,29 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.22 2002-06-28 19:59:12 greenfld Exp $
+    $Id: libpubcookie.h,v 1.23 2002-07-05 23:35:48 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
 #define PUBCOOKIE_LIB
 
-#include <opensslv.h>
-#if OPENSSL_VERSION_NUMBER < 0x00904000
-#define PRE_OPENSSL_094
+#ifdef HAVE_CONFIG_H
+# include "config.h"
 #endif
+
+/* openssl */
+#ifdef OPENSSL_IN_DIR
+# include <openssl/opensslv.h>
+#else
+# include <opensslv.h>
+#endif /* OPENSSL_IN_DIR */
+
+#if OPENSSL_VERSION_NUMBER < 0x00904000
+# define PRE_OPENSSL_094
+#endif
+
 #if OPENSSL_VERSION_NUMBER == 0x0922
-#define OPENSSL_0_9_2B
+# define OPENSSL_0_9_2B
 #endif
 
 #include "pubcookie.h"

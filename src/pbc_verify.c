@@ -2,7 +2,7 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_verify.c,v 1.12 2002-06-17 18:19:58 jteaton Exp $
+    $Id: pbc_verify.c,v 1.13 2002-07-05 23:35:48 jjminer Exp $
  */
 
 /*                                                                            */
@@ -13,10 +13,28 @@
 /* cookie comes in on stdin, contenets are printed to stdout                  */
 /*                                                                            */
 
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <pem.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
+
 #include "pbc_config.h"
 #include "pubcookie.h"
 #include "libpubcookie.h"

@@ -39,8 +39,12 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /*
- * $Id: strlcpy.h,v 1.1 2002-06-13 20:36:12 jteaton Exp $
+ * $Id: strlcpy.h,v 1.2 2002-07-05 23:35:48 jjminer Exp $
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dst, const char *src, size_t len);

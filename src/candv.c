@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.17 2002-06-27 22:27:53 jteaton Exp $
+    $Id: candv.c,v 1.18 2002-07-05 23:35:48 jjminer Exp $
  */
 
 /*                                                                            */
@@ -7,12 +7,36 @@
 /*                                                                            */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <pem.h>
-#include <unistd.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif /* HAVE_TIME_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef OPENSSL_IN_DIR
+# include <openssl/pem.h>
+#else
+# include <pem.h>
+#endif /* OPENSSL_IN_DIR */
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
 #include "pubcookie.h"
 #include "libpubcookie.h"
 #include "pbc_config.h"
@@ -93,7 +117,7 @@ int main(int argc, char **argv) {
 
     if ( ! (cookie_data=libpbc_unbundle_cookie( (char *) cookie, v_ctx_plus, c_stuff)) ) {
         printf("test failed: cookie couldn't be unbundled\n");
-	exit (1);
+        exit (1);
     }
     printf("update that cookie\n");
     updated_cookie = libpbc_update_lastts(cookie_data, s_ctx_plus, c_stuff);

@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.6 2002-03-02 00:41:11 willey Exp $
+/* $Id: securid.c,v 1.7 2002-07-05 23:35:48 jjminer Exp $
 
    function: securid  
    args:     reason - points to a reason string
@@ -24,14 +24,37 @@
  */
 /* -------------------------------------------------------------------- */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
-#include <syslog.h>
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#include <mgoapi.h>
-#include <securid.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif /* HAVE_CTYPE_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
+
+#ifdef HAVE_SYSLOG_H
+# include <syslog.h>
+#endif /* HAVE_SYSLOG_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_MGOAPI_H
+# include <mgoapi.h>
+#endif /* HAVE_MGOAPI_H */
+
+#ifdef HAVE_SECURID_H
+# include <securid.h>
+#endif /* HAVE_SECURID_H */
 
 #define SECURID_TRUE 1
 

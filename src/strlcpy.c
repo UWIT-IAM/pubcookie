@@ -39,12 +39,24 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /*
- * $Id: strlcpy.c,v 2.1 2002-06-05 16:52:29 greenfld Exp $
+ * $Id: strlcpy.c,v 2.2 2002-07-05 23:35:48 jjminer Exp $
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif /* HAVE_STRING_H */
 
 #ifndef HAVE_STRLCPY
 /* strlcpy -- copy string smartly.
@@ -57,15 +69,15 @@ size_t strlcpy(char *dst, const char *src, size_t len)
 
     if (len <= 0) return strlen(src);
     for (n = 0; n < len; n++) {
-	if ((dst[n] = src[n]) == '\0') break;
+        if ((dst[n] = src[n]) == '\0') break;
     }
     if (src[n] == '\0') {
-	/* copied entire string */
-	return n;
+        /* copied entire string */
+        return n;
     } else {
-	dst[n] = '\0';
-	/* ran out of space */
-	return n + strlen(src + n);
+        dst[n] = '\0';
+        /* ran out of space */
+        return n + strlen(src + n);
     }
 }
 #endif
@@ -74,19 +86,19 @@ size_t strlcpy(char *dst, const char *src, size_t len)
 size_t strlcat(char *dst, const char *src, size_t len)
 {
     size_t i, j, o;
-    
+
     o = strlen(dst);
     if (len < o + 1)
-	return o + strlen(src);
+        return o + strlen(src);
     len -= o + 1;
     for (i = 0, j = o; i < len; i++, j++) {
-	if ((dst[j] = src[i]) == '\0') break;
+        if ((dst[j] = src[i]) == '\0') break;
     }
     dst[j] = '\0';
     if (src[i] == '\0') {
-	return j;
+        return j;
     } else {
-	return j + strlen(src + i);
+        return j + strlen(src + i);
     }
 }
 #endif

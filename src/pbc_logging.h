@@ -1,6 +1,10 @@
 #ifndef INCLUDED_PBC_LOGGING_H
 #define INCLUDED_PBC_LOGGING_H
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #define PBC_LOG_ERROR 0
 #define PBC_LOG_AUDIT 1
 #define PBC_LOG_DEBUG_LOW 2
@@ -15,7 +19,9 @@
 # define LOG_MAKEPRI(fac, pri) fac|pri
 #endif
 
-#include <stdarg.h>
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif /* HAVE_STDARG_H */
 
 /**
  *Initializes the logging system.  Optional.

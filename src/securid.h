@@ -1,8 +1,10 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.h,v 1.3 2001-10-29 20:03:08 willey Exp $         */
+/* $Id: securid.h,v 1.4 2002-07-05 23:35:48 jjminer Exp $         */
 /* -------------------------------------------------------------------- */
 
-#include <mgoapi.h>
+#ifdef HAVE_MGOAPI_H
+# include <mgoapi.h>
+#endif /* HAVE_MGOAPI_H */
 
 #define SECURID_DO_SID    1
 #define SECURID_ONLY_CRN  0

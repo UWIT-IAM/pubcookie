@@ -26,11 +26,15 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.58 2002-06-28 20:02:09 greenfld Exp $
+    $Id: pbc_config.h,v 1.59 2002-07-05 23:35:48 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
 #define PUBCOOKIE_CONFIG
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #if defined (APACHE1_3)
 #define APACHE
