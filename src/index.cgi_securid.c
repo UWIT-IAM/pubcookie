@@ -18,12 +18,14 @@
  */
 
 /*
-    $Id: index.cgi_securid.c,v 1.1 2000-08-22 19:30:45 willey Exp $
+    $Id: index.cgi_securid.c,v 1.2 2000-09-08 19:20:24 willey Exp $
  */
 
 
 /* LibC */
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 /* securid */
 #include "securid.h"
 /* pubcookie things */
@@ -33,12 +35,27 @@
 char *auth_securid(char *username, char *sid, int next, login_rec *l) 
 {
     int		intret;
+    char	*reason;
+
+    /* take back being root */
+    if( setreuid(65534, 0) != 0 )
+        log_message("%s auth_securid: unable to setuid root", l->first_kiss);
 
     /* securid and next prn */
-    if( (intret=securid(username, sid,0,SECURID_TYPE_NORM,SECURID_DO_SID) == -1) ) {
+    intret = securid(reason,username,sid,1,SECURID_TYPE_NORM,SECURID_DO_SID);
+
+#ifdef DEBUG
+    log_message("auth_securid: message from securid %s", reason);
+#endif
+
+    /* give it up permanently */
+    if( setreuid(65534, 65534) != 0 )
+        log_message("%s auth_securid: unable to setuid nobody", l->first_kiss);
+
+    if( intret == -1 ) {
          print_login_page(l, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
     } 
-    else if( intret == 0 ) {
+    else if( intret == 0 ) {       /* O.K. !!!!!!!! */
         return(NULL);
     }
 
