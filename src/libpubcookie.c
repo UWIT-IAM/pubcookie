@@ -4,7 +4,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.55 2003-06-03 03:41:53 jjminer Exp $
+    $Id: libpubcookie.c,v 2.56 2003-06-03 06:03:05 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -234,13 +234,31 @@ void libpbc_augment_rand_state(pool *p, unsigned char *array, int len)
     memcpy(buf, &ts.wMilliseconds, sizeof(ts.wMilliseconds));
     RAND_seed(buf, sizeof(ts.wMilliseconds));
 #else
-    struct timeval 	tv; 
-    struct timezone 	tz;
-    unsigned char	buf[sizeof(tv.tv_usec)];
+    const char * egd_sock;
+    int alloc;
 
-    gettimeofday(&tv, &tz);
-    memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
-    RAND_seed(buf, sizeof(tv.tv_usec));
+    if (RAND_status()) {
+        pbc_log_activity( p, PBC_LOG_DEBUG_LOW,
+                          "Sufficient Randomness: nothing to do." );
+        return;
+    }
+
+    if ( ( egd_sock = libpbc_myconfig_getstring( p, "egd_socket", NULL ) )
+         != NULL ) {
+
+        pbc_log_activity( p, PBC_LOG_DEBUG_LOW, "Querying EGD Socket: %s",
+                          egd_sock );
+
+        if ( (alloc = RAND_egd(egd_sock)) > 0) {
+            pbc_log_activity( p, PBC_LOG_DEBUG_LOW,
+                              "Got %d Random Bytes from egd.", alloc );
+        } else {
+            pbc_log_activity( p, PBC_LOG_ERROR, "Got %d Random Bytes from egd on %s.",
+                              egd_sock );
+            pbc_log_activity( p, PBC_LOG_ERROR, 
+                              "Continuing, but it probably won't work." );
+        }
+    }
 #endif
 
 }

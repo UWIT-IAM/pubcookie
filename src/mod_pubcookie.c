@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.118 2003-05-06 23:51:19 willey Exp $
+    $Id: mod_pubcookie.c,v 1.119 2003-06-03 06:03:05 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -992,6 +992,10 @@ static void mylog(pool *p, int logging_level, const char *msg)
     /* convert pubcookie error level to apache error level */
     if (logging_level == PBC_LOG_ERROR)
         apri = APLOG_ERR;
+    else if (logging_level == PBC_LOG_DEBUG_LOW ||
+             logging_level == PBC_LOG_DEBUG_VERBOSE ||
+             logging_level == PBC_LOG_DEBUG_OUTPUT )
+        apri = APLOG_DEBUG;
 
     ap_log_error(APLOG_MARK, apri, NULL, "%s", msg);
 /*    fprintf(stderr, msg); */
@@ -1929,6 +1933,18 @@ const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
     return NULL;
 }
 
+/** 
+ * handle the PubCookieEgdDevice directive
+ */
+
+const char *pubcookie_set_egd_device( cmd_parms *cmd, void *mconfig, char *v) {
+    pubcookie_server_rec * scfg = (pubcookie_server_rec *)
+        ap_get_module_config(cmd->server->module_config, &pubcookie_module);
+
+    ap_table_set(scfg->configlist, "egd_socket", v);
+    return NULL;
+}
+
 /*                                                                            */
 const char *set_session_reauth(cmd_parms *cmd, void *mconfig, int f) {
     pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
@@ -2037,6 +2053,8 @@ command_rec pubcookie_commands[] = {
      "Set the name of the certfile for Session PubCookies."},
     {"PubCookieCryptKeyfile", pubcookie_set_crypt_keyf, NULL, RSRC_CONF, TAKE1,
      "Set the name of the encryption keyfile for PubCookies."},
+    {"PubCookieEgdDevice", pubcookie_set_egd_device, NULL, RSRC_CONF, TAKE1,
+     "Set the name of the EGD Socket if needed for randomness."},
 
     {"PubCookieNoBlank", pubcookie_set_no_blank, NULL, RSRC_CONF, TAKE1,
      "Do not blank cookies."},
