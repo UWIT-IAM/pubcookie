@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.23 2001-05-29 20:49:48 willey Exp $
+    $Id: index.cgi.c,v 1.24 2001-08-23 17:37:12 willey Exp $
  */
 
 
@@ -112,6 +112,10 @@ char *get_string_arg(char *name, cgiFormResultType (*f)())
     int			length;
     char		*s;
     cgiFormResultType 	res;
+
+#ifdef DEBUG
+    fprintf(stderr, "get_string_arg: hello\n");
+#endif
 
     cgiFormStringSpaceNeeded(name, &length);
     s = calloc(length+1, sizeof(char));
@@ -509,11 +513,13 @@ int cgiMain()
     init_mirror_file();
 #endif
 
+#ifndef PORT80_TEST
     /* bail if not ssl */
     if( !getenv("HTTPS") || strcmp( getenv("HTTPS"), "on" ) ) { 
         notok(notok_need_ssl);
         exit(0);
     }
+#endif
 
     /* check to see what cookies we have */
     /* if there is an error print the error page */
@@ -692,14 +698,22 @@ void print_login_page(login_rec *l, char *message, char *reason, int need_clear_
     }
 
     if( need_clear_login ) 
+#ifdef PORT80_TEST
+        print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s\n",
+#else
         print_out("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+#endif
             PBC_L_COOKIENAME, 
             PBC_CLEAR_COOKIE,
             hostname, 
             LOGIN_DIR, 
             EARLIEST_EVER);
     if( need_clear_greq ) 
+#ifdef PORT80_TEST
+        print_out("Set-Cookie: %s=%s; domain=%s; path=/\n",
+#else
         print_out("Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
+#endif
             PBC_G_REQ_COOKIENAME, 
             G_REQ_RECIEVED,
             PBC_ENTRPRS_DOMAIN);
@@ -1339,18 +1353,30 @@ void print_redirect_page(login_rec *l)
 
     /* create the http header line with the cookie */
     snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
+#ifdef PORT80_TEST
+		"Set-Cookie: %s=%s; domain=%s; path=/", 
+#else
 		"Set-Cookie: %s=%s; domain=%s; path=/; secure", 
+#endif
 		PBC_G_COOKIENAME,
                 g_cookie,
                 PBC_ENTRPRS_DOMAIN);
     snprintf( l_set_cookie, sizeof(l_set_cookie)-1, 
+#ifdef PORT80_TEST
+		"Set-Cookie: %s=%s; domain=%s; path=%s", 
+#else
 		"Set-Cookie: %s=%s; domain=%s; path=%s; secure", 
+#endif
 		PBC_L_COOKIENAME,
                 l_cookie,
                 get_domain_hostname(),
                 LOGIN_DIR);
     snprintf( clear_g_req_cookie, sizeof(l_set_cookie)-1, 
+#ifdef PORT80_TEST
+		"Set-Cookie: %s=%s; domain=%s; path=/", 
+#else
 		"Set-Cookie: %s=%s; domain=%s; path=/; secure", 
+#endif
 		PBC_G_REQ_COOKIENAME,
                 PBC_CLEAR_COOKIE,
                 PBC_ENTRPRS_DOMAIN);
@@ -1361,7 +1387,11 @@ void print_redirect_page(login_rec *l)
     else
         redirect_uri = l->fr;
 
+#ifdef PORT80_TEST
+    snprintf(redirect_dest, PBC_4K-1, "http://%s%s%s", 
+#else
     snprintf(redirect_dest, PBC_4K-1, "https://%s%s%s", 
+#endif
 		l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
 
     if( l->args ) {
@@ -1514,6 +1544,10 @@ login_rec *get_query()
     char		*g_req_clear;
     struct timeval	t;
 
+#ifdef DEBUG
+    fprintf(stderr, "get_query: hello\n");
+#endif
+
     /* init something in login rec */
     l->first_kiss = NULL;
     l->appsrv_err = NULL;
@@ -1521,6 +1555,10 @@ login_rec *get_query()
 
     /* even if we hav a granting request post stuff will be in the request */
     l->post_stuff	= get_string_arg(PBC_GETVAR_POST_STUFF, YES_NEWLINES_FUNC);
+
+#ifdef DEBUG
+    fprintf(stderr, "get_query: looked at post_stuff\n");
+#endif
 
     /* take everything out of the environment */
     l = load_login_rec(l);
