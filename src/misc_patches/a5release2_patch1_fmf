@@ -1,0 +1,170 @@
+*** pubcookie-a5release2/mod_pubcookie.c	Thu Jul 22 16:08:49 1999
+--- mod_pubcookie.c	Fri Jul 23 10:43:41 1999
+***************
+*** 204,211 ****
+      return 0;
+  
+    /* if we aint got an authtype they we definately aint pubcookie */
+    if(!auth_type(r))
+!     return DECLINED;
+  
+    /* add an equal on the end */
+    name_w_eq = pstrcat(r->pool, name, "=", NULL);
+--- 204,212 ----
+      return 0;
+  
+    /* if we aint got an authtype they we definately aint pubcookie */
++   /* then again, we want to always blank cookies
+    if(!auth_type(r))
+!     return DECLINED; */
+  
+    /* add an equal on the end */
+    name_w_eq = pstrcat(r->pool, name, "=", NULL);
+***************
+*** 215,222 ****
+      return 0;
+  
+    /* if we aint got an authtype they we definately aint pubcookie */
+    if(!ap_auth_type(r))
+!     return DECLINED;
+  
+    /* add an equal on the end */
+    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+--- 216,224 ----
+      return 0;
+  
+    /* if we aint got an authtype they we definately aint pubcookie */
++   /* then again, we want to always blank cookies
+    if(!ap_auth_type(r))
+!     return DECLINED; */
+  
+    /* add an equal on the end */
+    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+***************
+*** 340,346 ****
+  
+      if ( ! host ) 
+  #ifdef APACHE1_2
+!         host = pstrdub(r->pool, r->server->server_hostname);
+  #else
+          host = ap_pstrdup(r->pool, r->server->server_hostname);
+  #endif
+--- 342,348 ----
+  
+      if ( ! host ) 
+  #ifdef APACHE1_2
+!         host = pstrdup(r->pool, r->server->server_hostname);
+  #else
+          host = ap_pstrdup(r->pool, r->server->server_hostname);
+  #endif
+***************
+*** 555,561 ****
+  
+  #ifdef APACHE1_2
+  #ifdef NO_JIMB_SESSION_NAMES
+!     name = pstrdub(p, PBC_S_COOKIENAME);
+  #else
+      name = pstrcat(p, PBC_S_COOKIENAME, "_", app_id, NULL);
+  #endif
+--- 557,563 ----
+  
+  #ifdef APACHE1_2
+  #ifdef NO_JIMB_SESSION_NAMES
+!     name = pstrdup(p, PBC_S_COOKIENAME);
+  #else
+      name = pstrcat(p, PBC_S_COOKIENAME, "_", app_id, NULL);
+  #endif
+***************
+*** 1040,1049 ****
+  }
+  
+  /*                                                                            */
+! static int pubcookie_fixups(request_rec *r)
+  {
+      pubcookie_dir_rec *cfg;
+  
+  #ifdef APACHE1_2
+      cfg = (pubcookie_dir_rec *)get_module_config(r->per_dir_config,
+  					   &pubcookie_module);
+--- 1042,1056 ----
+  }
+  
+  /*                                                                            */
+! static int pubcookie_hparse(request_rec *r)
+  {
++ /*
+      pubcookie_dir_rec *cfg;
++ */
++     char *cookies;
++     char *nextcookie;
+  
++ /*
+  #ifdef APACHE1_2
+      cfg = (pubcookie_dir_rec *)get_module_config(r->per_dir_config,
+  					   &pubcookie_module);
+***************
+*** 1051,1060 ****
+      cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
+  					   &pubcookie_module);
+  #endif
+  
+!     blank_cookie(r, make_session_cookie_name(r->pool, genr_app_id(r, cfg)));
+!     blank_cookie(r, PBC_G_COOKIENAME);
+  
+      return OK;
+  }
+  
+--- 1058,1091 ----
+      cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
+  					   &pubcookie_module);
+  #endif
++ */
+  
+! #ifdef APACHE1_2
+!     if (! (cookies = table_get (r->headers_in, "Cookie")))
+! 	return OK;
+!     cookies = pstrdup (r->pool, cookies);
+! #else
+!     if (! (cookies = ap_table_get (r->headers_in, "Cookie")))
+! 	return OK;
+!     cookies = ap_pstrdup (r->pool, cookies);
+! #endif
+!     nextcookie = cookies;
+!     while (nextcookie) {
+! 	char *c = nextcookie;
+  
++ 	if (nextcookie = strchr (c, ';'))
++ 	    *nextcookie++ = '\0';
++ 	if (strncasecmp (c, PBC_G_COOKIENAME, sizeof (PBC_G_COOKIENAME) - 1) ||
++ 		strncasecmp (c, PBC_S_COOKIENAME,
++ 				sizeof (PBC_S_COOKIENAME) - 1)) {
++ 	    char *s = strchr (c, '=');
++ 	    if (s) {
++ 		*s = '\0';
++ 		get_cookie (r, c);
++ 	    }
++ 	}
++     }
++ 
+      return OK;
+  }
+  
+***************
+*** 1274,1281 ****
+     pubcookie_auth,	   	/* check auth */
+     NULL,                        /* check access */
+     pubcookie_typer,             /* type_checker */
+!    pubcookie_fixups,	        /* fixups */
+     NULL,		        /* logger */
+!    NULL                         /* header parser */
+  };
+  
+--- 1305,1312 ----
+     pubcookie_auth,	   	/* check auth */
+     NULL,                        /* check access */
+     pubcookie_typer,             /* type_checker */
+!    NULL,		        /* fixups */
+     NULL,		        /* logger */
+!    pubcookie_hparse             /* header parser */
+  };
+  

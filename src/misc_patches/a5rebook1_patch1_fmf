@@ -1,0 +1,126 @@
+From fmf@cac.washington.edu Wed May 26 13:58:06 1999
+Date: Wed, 26 May 1999 12:49:00 -0700
+From: Frank Fujimoto <fmf@cac.washington.edu>
+To: Steve Willey <willey@cac.washington.edu>
+Subject: Re: pubcookie test release with post support 
+
+here are my diffs.  this is to get it to compile, and doesn't include
+the two lines i added for r->unparsed_uri
+
+*** pubcookie-a4reebok1/mod_pubcookie.c	Wed May 26 11:25:52 1999
+--- mod_pubcookie.c	Wed May 26 12:47:08 1999
+***************
+*** 191,200 ****
+  #ifdef APACHE1_2
+    if(table_get(mr->notes, name) ||
+        !(cookie_header = table_get(r->headers_in, "Cookie")))
+  #else
+    if(ap_table_get(mr->notes, name) ||
+        !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
+- #endif
+      return 0;
+  
+    /* if we aint got an authtype they we definately aint pubcookie */
+--- 191,207 ----
+  #ifdef APACHE1_2
+    if(table_get(mr->notes, name) ||
+        !(cookie_header = table_get(r->headers_in, "Cookie")))
++     return 0;
++ 
++   /* if we aint got an authtype they we definately aint pubcookie */
++   if(!auth_type(r))
++     return DECLINED;
++ 
++   /* add an equal on the end */
++   name_w_eq = pstrcat(r->pool, name, "=", NULL);
+  #else
+    if(ap_table_get(mr->notes, name) ||
+        !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
+      return 0;
+  
+    /* if we aint got an authtype they we definately aint pubcookie */
+***************
+*** 202,210 ****
+      return DECLINED;
+  
+    /* add an equal on the end */
+- #ifdef APACHE1_2
+-   name_w_eq = pstrcat(r->pool, name, "=", NULL);
+- #else
+    name_w_eq = ap_pstrcat(r->pool, name, "=", NULL);
+  #endif
+  
+--- 209,214 ----
+***************
+*** 346,352 ****
+      table_add(r->headers_out, "Set-Cookie", new_cookie);
+  
+      /* we want to make sure agents don't cache the redirect */
+!     table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
+      table_set(r->headers_out, "Cache-Control", "no-cache");
+      table_set(r->headers_out, "Pragma", "no-cache");
+  
+--- 350,356 ----
+      table_add(r->headers_out, "Set-Cookie", new_cookie);
+  
+      /* we want to make sure agents don't cache the redirect */
+!     table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
+      table_set(r->headers_out, "Cache-Control", "no-cache");
+      table_set(r->headers_out, "Pragma", "no-cache");
+  
+***************
+*** 379,387 ****
+      /* a bad mix of stuff here and stuff in pbc_config.h */
+  #ifdef APACHE1_2
+          rprintf(r, "<HTML><HEAD>\n");
+!         rptintf(r, "</HEAD>\n");
+          rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
+!         rptintf(r, "<CENTER>\n");
+  
+          rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
+          rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
+--- 383,391 ----
+      /* a bad mix of stuff here and stuff in pbc_config.h */
+  #ifdef APACHE1_2
+          rprintf(r, "<HTML><HEAD>\n");
+!         rprintf(r, "</HEAD>\n");
+          rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
+!         rprintf(r, "<CENTER>\n");
+  
+          rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
+          rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
+***************
+*** 399,405 ****
+          rprintf(r, "%s", PBC_HTML_COPYRIGHT);
+  
+          rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
+!         rptintf(r, "</CENTER>\n");
+          rprintf(r, "</BODY></HTML>\n");
+  #else
+          ap_rprintf(r, "<HTML><HEAD>\n");
+--- 403,409 ----
+          rprintf(r, "%s", PBC_HTML_COPYRIGHT);
+  
+          rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
+!         rprintf(r, "</CENTER>\n");
+          rprintf(r, "</BODY></HTML>\n");
+  #else
+          ap_rprintf(r, "<HTML><HEAD>\n");
+***************
+*** 969,975 ****
+  #ifdef NO_JIMB_SESSION_NAMES
+                "/");
+  #else
+!               get_app_path(r->pool, r->unparsed_uri), r->filename);
+  #endif
+  
+        table_add(r->headers_out, "Set-Cookie", new_cookie);
+--- 973,979 ----
+  #ifdef NO_JIMB_SESSION_NAMES
+                "/");
+  #else
+!               get_app_path(r->pool, r->unparsed_uri, r->filename));
+  #endif
+  
+        table_add(r->headers_out, "Set-Cookie", new_cookie);
+

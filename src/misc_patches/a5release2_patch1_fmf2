@@ -1,0 +1,14 @@
+From fmf@cac.washington.edu Fri Jul 23 16:17:15 1999
+Date: Fri, 23 Jul 1999 14:08:03 -0700
+From: Frank Fujimoto <fmf@cac.washington.edu>
+To: Steve Willey <willey@cac.washington.edu>
+Subject: mod_pubcookie.c change
+
+here's the new first "if" in the while loop for pubcookie_hparse:
+
+        if (nextcookie = strchr (c, ';')) {
+            *nextcookie++ = '\0';
+            while (*nextcookie && *nextcookie == ' ')
+                ++nextcookie;
+        }
+
