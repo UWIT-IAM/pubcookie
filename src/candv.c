@@ -1,9 +1,9 @@
 /*
-    $Id: candv.c,v 1.13 2001-08-29 18:18:59 willey Exp $
+    $Id: candv.c,v 1.14 2002-04-03 20:02:06 willey Exp $
  */
 
 /*                                                                            */
-/* Copyright 2000,2001, University of Washington.  All rights reserved.       */
+/* Copyright 2000-2002 University of Washington.  All rights reserved.       */
 /*                                                                            */
 
 
@@ -91,9 +91,6 @@ int main(int argc, char **argv) {
     printf("cook up a cookie\n");
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
 
-    printf("please wait while take a quick nap\n");
-    sleep(2);
-
     if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
         printf("test failed: cookie couldn't be unbundled\n");
 	exit (1);
@@ -120,9 +117,6 @@ int main(int argc, char **argv) {
 
     printf("cook up another cookie\n");
     cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
-
-    printf("please wait while take a quick nap\n");
-    sleep(2);
 
     printf("verify and show me the cookie\n");
     if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
