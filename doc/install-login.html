@@ -148,8 +148,6 @@ and the distribution comes with several:</p>
 <dd>verifies credentials using <tt>/etc/shadow</tt></dd>
 <dt>alwaystrue</dt>
 <dd>verifies all credentials as successful. good for testing.</dd>
-<dt>fork</dt>
-<dd>[fixme: do we want to document this?]</dd>
 </dl>
 
 <p>Compile-time decisions and run-time configuration determines
@@ -234,8 +232,8 @@ service. Review the configure help for the build options.</p>
 
 <pre>$ ./configure --help</pre>
 
-<p>Then rerun the configure script accordingly. [fixme: might
-link to krb and ldap sections here.]</p>
+<p>Refer also to the <a href="#krb5">Kerberos</a> and <a
+href="#ldap">LDAP</a> configuration sections.</p>
 
 <h4><a name="keypairs">SSL &amp; Granting Key Pairs</a></h4>
 
@@ -428,7 +426,8 @@ in the keystore</i>. But it's not, becuase site administrators can use
 the keyclient's "permit" option to authorize new servers to request keys.
 For example:</p>
 
-<pre>$ keyclient -P newserver.example.edu</pre>
+<pre>$ keyclient -P new.example.edu
+Host new.example.edu is permitted</pre>
 
 <p>This can be done manually or by some kind of automated web-based
 registration service. The <tt>keyserver_client_list</tt> defines which
@@ -594,8 +593,9 @@ $ mkdir logout
 $ cd logout
 $ ln -s ../index.cgi index.cgi</pre>
 
-<p>Adjust the directory according to the location of your login cgi. Now any request to <tt>/logout/</tt>
-on the server will map to your login cgi. [fixme: is there a better way to do this in httpd.conf?]</p>
+<p>Adjust the directory according to the location of your login cgi. Now
+any request to <tt>/logout/</tt> on the server will map to your login
+cgi.</p>
 
 <p>Now add the appropriate <tt>logout_prog</tt> variable to your config file:</p>
 
@@ -613,8 +613,6 @@ for each application, where the server name and id are tacked on using dashes. F
           &lt;font size="+1"&gt;Testapp logout worked just fine.&lt;/font&gt;
 <a href="config.html#app_logout_string">app_logout_string-</a>webmail.example.edu-webmail: \
           &lt;font size="+1"&gt;Webmail Logout Successful!&lt;/font&gt;</pre>
-
-<p>[fixme: better retest the backslash syntax]</p>
 
 <p>Note: Since the login cgi reads the config file and its HTML
 templates on each request, there's no need to recompile the login cgi
@@ -753,29 +751,27 @@ LDAP URI.</p>
 
 <h4><a name="clusters">Redundant Login Server Configuration</a></h4>
 
-<p>TBD</p>
+<p>The login cgi and keyserver can be deployed in a redundant 
+configuration, provided that they share the same cluster
+name and settings. Use the 
+<a href="config.html#login_servers"><tt>login_servers</tt></a>
+variable to configure keyserver to push new keys to its peers.</p>
 
 <h4><a name="upgrading">Upgrading</a></h4>
 
-<p>TBD.. new login_templates.default ... new config file</p>
+<p>Servers running version 3.0.0 of the login server can build
+and install things without overwriting the current <tt>config</tt>
+file or templates. Compare your configuration with the new 
+<tt>config.login.sample</tt> and look in <tt>login_templates.default</tt>
+for new templates to install.</p>
 
 <h4><a name="apps">Supporting Application Servers</a></h4>
 
-<p>When the time comes, generating host keys for application servers is
-very similar. First, someone with rights to use the "permit" option must
-use it to authorize the server to request a key. Then the server can
-request a key, provided that the certicate presented by the keyclient
-(probably the server's SSL certificate) is signed by a CA trusted by your
-keyserver.</p>
-
-<p>how trust is handled by your site's Pubcookie keyserver. You'll need
-to know which Certificate Authorities the keyserver trusts to verify
-certificates. Similarly, you'll need to know which Certificate Authority
-can verify the keyserver's certificate. Ask your administrator for
-guidelines; it'll save you time and effort. 
-
-<p>Note: in order to configure applications servers, other system
-administrators will need to know the URL of your login server. </p>
+<p>To support application servers, other system administrators
+will need to know the location of your login server, keyserver, and
+how trust is handled on your keyserver. That is, which CAs the
+keyserver trusts to verify keyclient certificates; and which CA
+can be used by the keyclient to verify your keyserver certificate.</p>
 
 <h4><a name="apacheconfig">Appendix A: Apache Configuration</a></h4>
 
@@ -882,7 +878,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.23 2004-05-11 22:33:44 dors Exp $
+$Id: install-login.html,v 1.24 2004-05-15 15:57:15 dors Exp $
 </pre>
 </body>
 

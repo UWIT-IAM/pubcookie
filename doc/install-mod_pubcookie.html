@@ -51,19 +51,25 @@
                   for instructions on deploying a Pubcookie login server.</p>
 
                   <h4><a name="new"></a>What's New</h4>
-                  <p>Significant changes since mod_pubcookie-3.0.0:</p>
+                  <p>Significant improvements since version 3.0.0:</p>
                   <ul>
-                    <li> 
-                      <p>TBD</p>
-                    </li>
+                    <li>Apache 2.0 support</li>
+                    <li><a href="#vhosts">Virtual host support</a></li> 
+                    <li><a href="#relay">Cross-DNS-domain relay</a></li> 
+                    <li>New <a href="mod_pubcookie-directives.html#PubcookieOnDemand">PubcookieOnDemand</a> directive</li> 
+                    <li>New <a href="mod_pubcookie-directives.html#PubcookieNoPrompt">PubcookieNoPrompt</a> directive</li> 
+                    <li>Enhanced <a href="mod_pubcookie-directives.html#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a> with grace time</li> 
+                    <li>New, improved <tt>configure</tt> script; new <tt>--with-apxs</tt> and <tt>--with-apache-src</tt> options</li>
+                    <li>New <tt>keyclient -G</tt> option to download "granting" certificate</li>
+                    <li>Improved OpenSSL compatibility</li>
+                    <li>Revised, improved documentation</li>
                   </ul>
+                  <p>Note: some new features require a Pubcookie 3.1.0 or higher login server.</p>
                   <h4><a name="upgrading"></a>Upgrading</h4>
-                  <p>Upgrading from mod_pubcookie-3.0.0:</p>
-                  <ul>
-                    <li>
-                      <p>TBD</p>
-                    </li>
-                  </ul>
+                  <p>Servers running version 3.0.0 should be easy to upgrade and can reuse their
+                  existing configuration, granting certificate, and symmetric key.</p>
+                  <p>Servers running earlier versions may need to be more careful and will need
+                  to obtain a new symmetric key from their local keyserver.</p>
                   <h4><a name="pre">Prerequisites</a></h4>
                   <p>The module relies on additional infrastructure at your site.
                   Here are some general prerequisites that,  if fulfilled, will lead
@@ -111,7 +117,7 @@
                     <li><p>SSL enabled web server. The <a href="http://www.modssl.org">mod_ssl</a> 
                       package is recommended. See our <a href="http://www.pubcookie.org/faq.html">FAQ</a>
                       for information about using Apache-SSL.</p></li>
-                    <li><p>SSL keypair. An SSL server certificate and private key. [fixme: PEM encoded? not encrypted?]</p>
+                    <li><p>SSL keypair. An SSL server certificate and private key.</p>
                       <p>Note: Pubcookie uses elements of public-key infrastructure (PKI) for
                       server authentication and data privacy. Therefore, as you might expect, your 
                       SSL server certificate and private key can play a role here. However, a
@@ -120,8 +126,9 @@
                       </p>Note: If your server doesn't share a common DNS subdomain 
                       (e.g. <i>.example.edu</i>) with
                       your site's Pubcookie login server (e.g. <i>weblogin.example.edu</i>)
-                      you will have to build and use the Pubcookie relay cgi to authenticate
-                      across DNS domains. [fixme: note country code top-level domains.]</p></li>
+                      or if your enterprise DNS domain is in a country code top-level domain
+                      (e.g. <i>example.ca</i>) then you may have to build and use the Pubcookie relay 
+                      cgi to authenticate across DNS domains.</p></li>
                   </ul>
 
                   <!-- build and install sections -->
@@ -326,17 +333,19 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                     </table></p>
                     <p>Notes:</p>
                       <ul>
+                        <!-- P3.1 keyclient seems to support encrypted keys so lets comment this out for now
                         <li><p>The keyclient cannot read encrypted RSA private keys; that is, to 
                            run keyclient, your <tt>ssl_key_file</tt> cannot require a passphrase 
-                           to decrypt the private key. [fixme: is this true for 3.1? what's the resulting error msg?]</p></li>
+                           to decrypt the private key.</p></li>
+                        -->
                         <li><p>To negotiate the SSL/TLS connection to your keyserver, the SSL 
                            certificate used by the keyclient (i.e., <tt>ssl_cert_file</tt>) 
-                           must be signed by a Certificate Authority trusted by your site's keyserver. [fixme: what if it's not? what error msg?]</p></li>
+                           must be signed by a Certificate Authority trusted by your site's keyserver.</p></li>
                         <li><p>Likewise, the certificate presented by the keyserver to the keyclient
                            must be signed by a CA trusted by your keyclient; that is, it will be
                            verified using the CA root certificates define by <tt>ssl_ca_file</tt>  
-                           or <tt>ssl_ca_path</tt>. Ask your administrator if they recommend or require specific CAs.
-                           [fixme: ditto. what error msg?]</p></li>
+                           or <tt>ssl_ca_path</tt>. Ask your administrator if they recommend or require 
+                           specific CAs.</p></li>
                       </ul>
                     <li> 
                       <p>Save the changes to your config file.</p>
@@ -362,12 +371,13 @@ Set crypt key for appserver.example.edu</pre>
                       </table> 
                     <p>Notes:</p>
                       <ul>
-                        <li><p>The keyclient cannot read encrypted RSA private keys. [fixme: that's a lie and 
-this whole note needs fixing.]
+                        <!-- P3.1 we think it can read encrypted keys 
+                        <li><p>The keyclient cannot read encrypted RSA private keys. 
                            If reading your key (i.e., <tt>ssl_key_file</tt>) normally 
                            requires a passphrase, then keyclient will fail, complaining that it 
                            "couldn't parse the session key". To work around this contraint, make a 
-                           temporary, unencrypted copy of your private key. [fixme: openssl how?]</p>
+                           temporary, unencrypted copy of your private key.</p>
+                        -->
                         <li><p>The keyclient uses the installation prefix by default to determine
                            the path to your keys directory. You can override this using the <tt>keydir</tt>
                            config file variable.</p></li>
@@ -534,8 +544,8 @@ PubcookieInactiveExpire -1
                       </li>
                       <li>
                         <p>Warning: If your LoadModule and AddModule directives 
-                        reside within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive [fixme: as they are in what circumstances 
-                        specifically? older redhat?] then all the module's configuration directives must also reside
+                        reside within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive 
+                        then all the module's configuration directives must also reside
                         within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive. This is the
                         convention used throughout this guide.</p>
                       </li>
@@ -610,7 +620,7 @@ href="http://httpd.apache.org/docs/mod/core.html#allowoverride">AllowOverride</a
                       parse session key</tt>", then your RSA private key represented by <a
                       href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKeyFile</a>
                       is probably encrypted. The module won't initialize and therefore Apache won't start if this
-                      key requires a passphrase. [fixme: we told you so.]</p>
+                      key requires a passphrase.</p>
                     </li>
                   </ul>
   

@@ -102,10 +102,11 @@ Should be the same server name as the Common Name field of your SSL
 certificate.</p>
 
 <p>Note: If your server doesn't share a common DNS subdomain (e.g. 
-.example.edu) with your site's Pubcookie login server (e.g. 
-weblogin.example.edu) you will have to install and use the Pubcookie relay
-cgi to authenticate across DNS domains. [fixme: note country code
-top-level domains too.]</p>
+<i>.example.edu</i>) with your site's Pubcookie login server (e.g. 
+<i>weblogin.example.edu</i>) or if your enterprise DNS domain is 
+in a country code top-level domain  (e.g. <i>example.ca</i>) you will 
+have to install and use the Pubcookie relay cgi to authenticate 
+across DNS domains.</p>
 
 <p>Note: a host file can work for testing, but production systems need
 enterprise dns.</p>
@@ -178,7 +179,7 @@ login server.</p>
 
 <p>For the cleanest upgrade from an earlier version of Pubcookie:</p>
 
-<ul>
+<ol>
 
 <li><p>Stop IIS.</p></li>
 
@@ -187,7 +188,7 @@ login server.</p>
 
 <li><p>Run the InstallShield Wizard for Pubcookie 3.1</p></li>
 
-</ul>
+</ol>
 
 <p>Note: the installer won't overwrite the web properties (registry 
 settings) you've assigned to your website, folders, or resources. It 
@@ -200,7 +201,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-filter.html,v 1.2 2004-05-13 23:40:25 dors Exp $
+$Id: install-filter.html,v 1.3 2004-05-15 15:57:15 dors Exp $
 </pre>
 </body>
 

@@ -151,7 +151,7 @@ login cgi:</p>
 <dt> <a name="retain_username_on_failed_authn">retain_username_on_failed_authn</a> <i>int</i></dt>
 <dd> Defines whether the userid is retained on failed authentication attempts.</dd>
 <dd> Values: <tt>1</tt> to retain; <tt>0</tt> not to retain.</dd>
-<dd> Default: [fixme: we'll find out... i think it's 0]</dd>
+<dd> Default: <tt>0</tt>.</dd>
 
 <dt> <a name="static_user_field">static_user_field</a> <i>enumerated</i></dt>
 <dd> Defines the site policy on the editability of the userid field on the login page.</dd>
@@ -172,7 +172,7 @@ login cgi:</p>
      entered as email addresses.</dd>
 <dd> Values: <tt>1</tt>, trims off the realm before verifying; 
      <tt>0</tt>, doesn't trim.</dd>
-<dd> Default: <tt>0</tt>. [fixme: 0/1, type switch, or off/on??]</dd>
+<dd> Default: <tt>0</tt>.</dd>
 
 <!-- lets put deprecated variables down here for now -->
 
@@ -191,7 +191,7 @@ login cgi:</p>
 <dl>
 
 <dt> <a name="login_servers">login_servers</a> <i>list</i></dt>
-<dd> List of all of the login servers for our domain;
+<dd> List of all of the login servers URLs for our domain;
      keyserver uses this to distribute keys to the other
      login servers</dd>
 
