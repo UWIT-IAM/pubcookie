@@ -27,9 +27,9 @@ void CPBC_PropSheet::GetEffectiveValue(int i) {
 
 	ReadValAsString(key,i,L"/");
 
-	// Then root key  **Deprecated but implemented in filter**
-	StringCbCopy (key, BUFFSIZE, PBC_WEB_VAR_LOCATION);
-	ReadValAsString(key,i,L"/");
+	// Then root key  **Deprecated**
+	//StringCbCopy (key, BUFFSIZE, PBC_WEB_VAR_LOCATION);
+	//ReadValAsString(key,i,L"/");
 
 	// Then traverse pwzRegPath
 	ptr = pwzRegPath;
@@ -155,9 +155,10 @@ void CPBC_PropSheet::WriteValues() {
 				}
 			}
 		} else { // Commit Delete
-			DeleteRegVal(pwzRegPath,directive[i].name.c_str());
-			if (!wcslen(pwzRegPath)) {  //Two places to delete root directory values
+			if (!wcslen(pwzRegPath)) {  //Delete root directory values from default key only
 				DeleteRegVal(_T(PBC_DEFAULT_KEY),directive[i].name.c_str());
+			} else {
+				DeleteRegVal(pwzRegPath,directive[i].name.c_str());
 			}
 		}
 	}

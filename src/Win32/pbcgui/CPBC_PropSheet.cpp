@@ -182,10 +182,10 @@ BOOL CPBC_PropSheet::WriteRegString(const _TCHAR* szKey,
             (BYTE *)szValue,
             (_tcslen(szValue)+1)*sizeof(_TCHAR)) ;
 		// If we just set the default value, delete the value from /
-		if (!_wcsicmp(szKey,_T(PBC_DEFAULT_KEY))) {
+		// Actually, don't.  Some sever directives have the same names.
+		/*if (!_wcsicmp(szKey,_T(PBC_DEFAULT_KEY))) {
 			DeleteRegVal(L"",szValueName);
-		}
-
+		}*/
     }
 
     RegCloseKey(hKey) ;
@@ -219,10 +219,10 @@ BOOL CPBC_PropSheet::WriteRegInt(const _TCHAR* szKey,
         RegSetValueEx(hKey, szValueName, 0, REG_DWORD,
             (BYTE *)&value,
             sizeof(DWORD)) ;
-		// If we just set the default value, delete the value from /
-		if (!_wcsicmp(szKey,_T(PBC_DEFAULT_KEY))) {
+		// Actually, don't.  Some sever directives have the same names.
+		/*if (!_wcsicmp(szKey,_T(PBC_DEFAULT_KEY))) {
 			DeleteRegVal(L"",szValueName);
-		}
+		}*/
     }
 
     RegCloseKey(hKey) ;
