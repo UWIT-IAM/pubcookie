@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi_securid.c,v 1.6 2001-09-28 17:34:15 willey Exp $
+    $Id: index.cgi_securid.c,v 1.7 2002-03-02 00:43:07 willey Exp $
  */
 
 
@@ -56,10 +56,6 @@ char *auth_securid(char *user, char *sid, int next, login_rec *l)
         prn = sid;
     }
 
-    /* take back being root */
-    if( setreuid(65534, 0) != 0 )
-        log_message("%s auth_securid: unable to setuid root", l->first_kiss);
-
 #ifdef DEBUG
     log_message("%s auth_securid: about to securid check user: %s card_id: %s prn: %s ", l->first_kiss, user, card_id, prn);
 #endif
@@ -74,10 +70,6 @@ char *auth_securid(char *user, char *sid, int next, login_rec *l)
 #ifdef DEBUG
     log_message("auth_securid: message from securid %s", reason);
 #endif
-
-    /* give it up permanently */
-    if( setreuid(65534, 65534) != 0 )
-        log_message("%s auth_securid: unable to setuid nobody", l->first_kiss);
 
     if( intret == -1 ) {
          print_login_page(l, c, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
