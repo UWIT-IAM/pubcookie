@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.138 2004-08-23 21:48:35 willey Exp $
+ * $Id: index.cgi.c,v 1.139 2004-08-23 22:05:47 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2065,7 +2065,6 @@ void notok (pool *p, notok_event event, char *reason)
         print_header(p, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s\n", 
 		     PBC_FORM_MP_COOKIENAME, 
 		     PBC_CLEAR_COOKIE,
-		     PBC_ENTRPRS_DOMAIN, 
                      enterprise_domain(p), 
 		     EARLIEST_EVER);
     }
