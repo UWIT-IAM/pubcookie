@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.49 $
+ * $Revision: 1.50 $
  */
 
 
@@ -1576,7 +1576,6 @@ char *check_l_cookie(login_rec *l, login_rec *c)
 			c->expire_ts, 
                         t);
         return "expired";
-	c->expire_ts = l->expire_ts = 0;
     }
 
     if (debug) {
