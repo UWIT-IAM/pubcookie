@@ -18,13 +18,13 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.41 2001-11-14 01:09:08 willey Exp $
+#   $Id: Makefile,v 1.42 2001-12-09 09:10:06 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-CFLAGS=-O3 -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/ -I/usr/local/include
+CFLAGS=-O3 -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/ -I/usr/local/include -DDEBUG
 # order is important here
 LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto -ldl
 # nfast stuff
@@ -52,7 +52,7 @@ LOGINSRC=index.cgi.c \
          login_templates/nonpost_redirect \
          login_templates/notok_part1 \
          login_templates/notok_part2 \
-	 make_crypted_bit.c \
+	 make_crypted_blob.c \
 	 pbc_key_generic.c \
 	 pbc_key_local.txt \
 	 pbc_key_local.c
@@ -82,11 +82,11 @@ TAR=tar
 RM=rm
 GZIP=gzip
 
-default:	tar
+default:	all
 
-test_apps:	candv dtest speed_test pbc_create pbc_verify
+test_apps:	candv dtest speed_test pbc_create pbc_verify check_crypted_blob
 
-all:	candv dtest pbc_key_generic pbc_key_local make_crypted_bit candv dtest pbc_create pbc_verify
+all:	candv dtest pbc_key_generic pbc_key_local make_crypted_blob candv dtest pbc_create pbc_verify check_crypted_blob
 
 
 speed_test:	speed_test.o libpubcookie.o base64.o
@@ -98,8 +98,8 @@ candv:		candv.o libpubcookie.o base64.o
 dtest:		dtest.o libpubcookie.o 
 	$(CC) ${CFLAGS} -o $@ dtest.o libpubcookie.o base64.o $(LDFLAGS)
 
-test_local_c_key:	test_local_c_key.o libpubcookie.o 
-	$(CC) ${CFLAGS} -o $@ test_local_c_key.o libpubcookie.o base64.o $(LDFLAGS)
+check_crypted_blob:	check_crypted_blob.o libpubcookie.o 
+	$(CC) ${CFLAGS} -o $@ check_crypted_blob.o libpubcookie.o base64.o $(LDFLAGS)
 
 pbc_create:	pbc_create.o libpubcookie.o base64.o
 	$(CC) ${CFLAGS} -o $@ pbc_create.o libpubcookie.o base64.o $(LDFLAGS)
@@ -116,8 +116,8 @@ pbc_key_generic:	pbc_key_generic.o libpubcookie.o
 pbc_key_local:		pbc_key_local.o libpubcookie.o 
 	$(CC) ${CFLAGS} -o $@ pbc_key_local.o libpubcookie.o base64.o $(LDFLAGS)
 
-make_crypted_bit:	make_crypted_bit.o libpubcookie.o 
-	$(CC) ${CFLAGS} -o $@ make_crypted_bit.o libpubcookie.o base64.o $(LDFLAGS)
+make_crypted_blob:	make_crypted_blob.o libpubcookie.o 
+	$(CC) ${CFLAGS} -o $@ make_crypted_blob.o libpubcookie.o base64.o $(LDFLAGS)
 
 what_is_my_ip:		what_is_my_ip.o libpubcookie.o base64.o
 	$(CC) ${CFLAGS} -o $@ what_is_my_ip.o libpubcookie.o base64.o $(LDFLAGS)
@@ -168,14 +168,14 @@ base64.o: base64.c ${GENERALHEAD} ${MAKEFILE}
 candv.o: candv.c ${GENERALHEAD} ${MAKEFILE}
 dtest.o: dtest.c ${GENERALHEAD} ${MAKEFILE}
 libpubcookie.o: libpubcookie.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
-make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
+make_crypted_blob.o: make_crypted_blob.c libpubcookie.h ${GENERALHEAD} ${MAKEFILE}
 pbc_key_generic.o: pbc_key_generic.c ${GENERALHEAD} ${MAKEFILE}
 pbc_key_local.o: pbc_key_local.c ${GENERALHEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
 pbc_create.o: pbc_create.c ${GENERALHEAD} ${MAKEFILE}
 pbc_verify.o: pbc_verify.c ${GENERALHEAD} ${MAKEFILE}
 t.o: t.c ${GENERALHEAD} ${MAKEFILE}
-test_local_c_key.o: test_local_c_key.c ${GENERALHEAD} ${MAKEFILE}
+check_crypted_blob.o: check_crypted_blob.c ${GENERALHEAD} ${MAKEFILE}
 what_is_my_ip.o: what_is_my_ip.c ${GENERALHEAD} ${MAKEFILE}
 uwnetid_stub.o: uwnetid_stub.c ${GENERALHEAD} ${MAKEFILE}
 index.cgi_krb.o: index.cgi_krb.c ${GENERALHEAD} ${MAKEFILE}
@@ -183,7 +183,7 @@ securid.o: securid.c securid.h ${GEN_HEAD} ${MAKEFILE}
 k5auth.o: k5auth.c k5auth.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip pbc_key_generic pbc_key_local uwnetid_stub securid_stub
+	$(RM) -f *.o *~ core test candv dtest out check_crypted_blob mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_blob what_is_my_ip pbc_key_generic pbc_key_local uwnetid_stub securid_stub
 
 # to purify candv {then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a

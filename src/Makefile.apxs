@@ -5,12 +5,13 @@ APXS=/usr/local/apache/bin/apxs
 SSL_BASE=/usr/local/ssl
 
 # some mod_pubcookie compile flags
-#  -DAPACHE1_3 - for old apaches
+#  -DAPACHE1_2 - for old apaches
+#  -DAPACHE1_3 - for to be old apaches
 #  -DAPACHE2 - for 2.x apaches
 #  -DPORT80_TEST - for non-ssl testing 
 #  -DNO_JIMB_SESSION_NAMES - makes session cookies all be named the same
 #  -DUSE_SECURID - UWash securid only
-CFLAGS=-DAPACHE2 -Wall
+CFLAGS=-DAPACHE1_3 -Wall
 
 INCS=-I$(SSL_BASE)/include -I$(SSL_BASE)/include/openssl
 LIBS=$(EXTRA_LDFLAGS) -L$(SSL_BASE)/lib -lssl -lcrypto 
