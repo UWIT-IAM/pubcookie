@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.1 2002-08-15 22:50:06 jjminer Exp $
+# $Id: Makefile.in,v 1.2 2002-08-15 23:05:18 jjminer Exp $
 
 @SET_MAKE@
 
@@ -41,11 +41,6 @@ AWK=@AWK@
 SED=@SED@
 TAR=@TAR@
 GZIP=@GZIP@
-
-DOCS=doc/README.txt \
-	 doc/CREDITS.txt \
-	 doc/LICENSE.txt \
-	 doc/config.sample
 
 LIBS=@LIBS@
 CPPFLAGS=@CPPFLAGS@ @DEFS@
@@ -135,7 +130,14 @@ LOGIN_TEMPLATES=src/login_templates.generic/login_part1 \
 DOCS=doc/NEW_SITE.txt \
 	 doc/INSTALL.login.txt \
 	 doc/CHANGES.login.txt \
-	 doc/CHANGES.mod_pubcookie.txt
+	 doc/CHANGES.mod_pubcookie.txt \
+	 doc/README.txt \
+	 doc/CREDITS.txt \
+	 doc/LICENSE.txt \
+	 doc/config.sample \
+	 doc/CONFIG.txt \
+	 doc/install-mod_pubcookie-3.0.html \
+	 doc/mod_pubcookie-directives.html
 
 L_VERSION := `$(AWK) '/PBC_LOGIN_VERSION/{print $$3}' src/pbc_version.h | $(SED) 's/"//g'`
 L_BASENAME := pubcookie_login-$(L_VERSION)
