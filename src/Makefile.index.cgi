@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.13 2001-12-09 09:13:01 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.14 2002-03-04 20:07:48 jteaton Exp $
 #
 
 # your compiler here
@@ -63,7 +63,7 @@ ALLHEAD=${GEN_HEAD}
 SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
 
 MAKEFILE=Makefile.index.cgi
-ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c index.cgi_krb.c 
+ALLSRC=pbc_create.c pbc_verify.c libpubcookie.c base64.c pbc_myconfig.c index.cgi_krb.c 
 ALLHEAD=${GEN_HEAD}
 
 RM=rm
@@ -77,8 +77,8 @@ all:	index.cgi
 #		$(CC) ${CFLAGS} -o $@ index.cgi.o libpubcookie.o base64.o $(CGIC) $(LDFLAGS)
 
 # version used at UWash with two auth modules
-index.cgi:	index.cgi.o  libpubcookie.o base64.o index.cgi_krb.o 
-		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_krb.o libpubcookie.o base64.o $(CGIC) $(LDFLAGS)
+index.cgi:	index.cgi.o  libpubcookie.o base64.o index.cgi_krb.o pbc_myconfig.o
+		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_krb.o libpubcookie.o base64.o pbc_myconfig.o $(CGIC) $(LDFLAGS)
 
 base64.o: base64.c ${GEN_HEAD} ${MAKEFILE}
 candv.o: candv.c ${GEN_HEAD} ${MAKEFILE}
@@ -86,9 +86,9 @@ dtest.o: dtest.c ${GEN_HEAD} ${MAKEFILE}
 libpubcookie.o: libpubcookie.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
-index.cgi.o: index.cgi.c index.cgi.h libpubcookie.o ${MAKEFILE} $(CGIC) 
+index.cgi.o: index.cgi.c index.cgi.h libpubcookie.o pbc_myconfig.o ${MAKEFILE} $(CGIC) 
 index.cgi_krb.o: index.cgi_krb.c index.cgi.h libpubcookie.o ${MAKEFILE}
 
 clean: 
-	$(RM) -f index.cgi.o core index.cgi libpubcookie.o uwnetid_stub base64.o  index.cgi_krb.o
+	$(RM) -f index.cgi.o core index.cgi libpubcookie.o uwnetid_stub base64.o  index.cgi_krb.o pbc_myconfig.o
 

@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.16 2001-11-15 01:57:45 willey Exp $
+    $Id: index.cgi.h,v 1.17 2002-03-04 20:07:48 jteaton Exp $
  */
 
 typedef struct {
@@ -362,3 +362,5 @@ Please email <a href=\"mailto:help@cac.washington.edu\">help@cac.washington.edu<
 <P>I'm sorry this page is only accessible via a ssl protected connection.<BR>\n\
 "
 
+/* how big can a filled-in template be? */
+#define MAX_EXPANDED_TEMPLATE_SIZE (110*1024)
