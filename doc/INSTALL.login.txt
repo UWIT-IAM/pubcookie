@@ -8,16 +8,14 @@
 
     Created by the Pubcookie Team
 
-    Comments and suggestions:
-	Internal to U. of Washington: pubcookie@cac.washington.edu
-	External to U. of Washington: pubcookie-ext@cac.washington.edu
-    Pubcookie on the Web: http://www.washington.edu/computing/pubcookie/
+    Comments and suggestions: pubcookie-dev@u.washington.edu
+    Pubcookie on the Web: http://www.pubcookie.org/
 
     this is installation documentation for the login sever
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.18 2002-06-26 21:18:29 greenfld Exp $
+    $Id: INSTALL.login.txt,v 1.19 2002-07-22 19:29:05 willey Exp $
  */
 
 
