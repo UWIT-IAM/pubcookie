@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.169 2005-02-24 23:26:38 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.170 2005-03-29 23:29:00 fox Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -3211,6 +3211,7 @@ static int login_reply_handler (request_rec * r)
     pdata = ap_table_get (args, PBC_GETVAR_POST_STUFF);
     if (pdata && *pdata) {
         char *a, *v;
+        char *t;
         int needclick = 0;
 
         post_data = ap_pstrdup (p, pdata);
@@ -3234,6 +3235,7 @@ static int login_reply_handler (request_rec * r)
                    p = WebTemplate_html2text(v);
                    WebTemplate_assign(W, "ARGVAL", p);
                  */
+                for (t=v;*t;t++) if (*t=='+') *t = ' ';
                 ap_unescape_url (v);
 
                 if (need_area (v)) {
@@ -3250,12 +3252,15 @@ static int login_reply_handler (request_rec * r)
         const char *a = ap_table_get (args, "get_args");
         printf ("relay is get\n");
 
-        if (a && *a)
+        if (a && *a) {
+            char *t;
+            for (t=a;*t;t++) if (*t=='+') *t = ' ';
             arg =
                 ap_psprintf (p, "%d;URL=%s?%s", PBC_REFRESH_TIME, r_url,
                              a);
-        else
+        } else {
             arg = ap_psprintf (p, "%d;URL=%s", PBC_REFRESH_TIME, r_url);
+        }
         ap_rprintf (r, redirect_html, arg);
 
     }
