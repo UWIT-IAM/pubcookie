@@ -9,6 +9,10 @@ if (!defined &PUBCOOKIE_MAIN) {
     eval 'sub PBC_4K () {4096;}' unless defined(&PBC_4K);
     eval 'sub PBC_1K () {1024;}' unless defined(&PBC_1K);
     eval 'sub PBC_RAND_MALLOC_BYTES () {8;}' unless defined(&PBC_RAND_MALLOC_BYTES);
+    eval 'sub PBC_X_STRING () {"XXXXXXXXXXXXX";}' unless defined(&PBC_X_STRING);
+    eval 'sub PBC_XS_IN_X_STRING () {13;}' unless defined(&PBC_XS_IN_X_STRING);
+    eval 'sub PBC_X_CHAR () {ord(\'X\');}' unless defined(&PBC_X_CHAR);
+    eval 'sub PBC_NO_FORCE_REAUTH () {"NFR";}' unless defined(&PBC_NO_FORCE_REAUTH);
     eval 'sub PBC_INIT_IVEC () {{0x4c,0x43,0x5f,0x98,0xbc,0xab,0xef,0xca};}' unless defined(&PBC_INIT_IVEC);
     eval 'sub PBC_INIT_IVEC_LEN () {8;}' unless defined(&PBC_INIT_IVEC_LEN);
     eval 'sub PBC_DES_INDEX_FOLDER () {30;}' unless defined(&PBC_DES_INDEX_FOLDER);
