@@ -373,8 +373,14 @@ AddModule mod_pubcookie.c
                         Pubcookie login server. It holds the login server's public 
                         key, which is required in order to verify the signature 
                         of the granting cookies sent from the login server to 
-                        your application server. During configuration, this certificate 
-                        corresponds with PubcookieGrantingCertFile directive in httpd.conf.</p>
+                        your application server. 
+                      </p>
+                      <p>Note: During configuration, this certificate corresponds with 
+                        the PubcookieGrantingCertFile directive in httpd.conf. It
+                        also corresponds with the <tt>granting_cert_file</tt> config
+                        file variable, which is only necessary if you choose a
+                        filename other than pubcookie_granting.cert.
+                      </p>
 		    </li> 
 		  </ol>
 		  <h4><a name="config">Configure Pubcookie Config File (config)</a></h4>
