@@ -26,7 +26,8 @@
 	directive[3].description  = L"Authentication type, as offered by your login server. The string is case-insensitive.\nThese strings can be redefined at the server or web instance level.";
 	directive[3].bound_val[0] = PBC_AUTHTYPE0;
 	directive[3].bound_val[1] = PBC_AUTHTYPE1;
-	directive[3].bound_val[2] = PBC_AUTHTYPE3;
+	directive[3].bound_val[2] = PBC_AUTHTYPE2;
+	directive[3].bound_val[3] = PBC_AUTHTYPE3;
 	directive[3].defined_in   = L"(Program Default)";
 
 	directive[4].name         = L"Logout_Action";

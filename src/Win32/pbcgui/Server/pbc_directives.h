@@ -1,4 +1,4 @@
-#define NUM_DIRECTIVES 16
+#define NUM_DIRECTIVES 17
 #ifdef SERVER_VALS_INIT
 	wchar_t dbuffer[BUFFSIZE];
 
@@ -37,41 +37,41 @@
 	directive[4].defined_in   = defined_in;
 	directive[4].description  = L"Name of authentication type that corresponds to your login server's first login flavor (e.g. flavor_basic).";
 
-	directive[5].name         = L"AuthTypeName3";
+	directive[5].name         = L"AuthTypeName2";
 	directive[5].type         = D_FREE_STRING;
-	directive[5].value        = PBC_AUTHTYPE3;
+	directive[5].value        = PBC_AUTHTYPE2;
 	directive[5].defined_in   = defined_in;
-	directive[5].description  = L"Name of authentication type that corresponds to your login server's third login flavor.";
+	directive[5].description  = L"Name of authentication type that corresponds to your login server's second login flavor";
 
-	directive[6].name         = L"PUBLIC_dir_name";
+	directive[6].name         = L"AuthTypeName3";
 	directive[6].type         = D_FREE_STRING;
-	directive[6].value        = PBC_PUBLIC_NAME;
+	directive[6].value        = PBC_AUTHTYPE3;
 	directive[6].defined_in   = defined_in;
-	directive[6].description  = L"If LegacyDirNames names is enabled, a directory with this name implicitly sets the ";
-	directive[6].description  += PBC_AUTHTYPE0;
-	directive[6].description  += L" authentication type and SetHeaderValues will be enabled.";
+	directive[6].description  = L"Name of authentication type that corresponds to your login server's third login flavor.";
 
-	directive[7].name         = L"NETID_dir_name";
+	directive[7].name         = L"PUBLIC_dir_name";
 	directive[7].type         = D_FREE_STRING;
-	directive[7].value        = PBC_NETID_NAME;
+	directive[7].value        = PBC_PUBLIC_NAME;
 	directive[7].defined_in   = defined_in;
 	directive[7].description  = L"If LegacyDirNames names is enabled, a directory with this name implicitly sets the ";
-	directive[7].description  += PBC_AUTHTYPE1;
-	directive[7].description  += L" authentication type.";
+	directive[7].description  += PBC_AUTHTYPE0;
+	directive[7].description  += L" authentication type and SetHeaderValues will be enabled.";
 
-	directive[8].name         = L"SECURID_dir_name";
+	directive[8].name         = L"NETID_dir_name";
 	directive[8].type         = D_FREE_STRING;
-	directive[8].value        = PBC_SECURID_NAME;
+	directive[8].value        = PBC_NETID_NAME;
 	directive[8].defined_in   = defined_in;
 	directive[8].description  = L"If LegacyDirNames names is enabled, a directory with this name implicitly sets the ";
-	directive[8].description  += PBC_AUTHTYPE3;
+	directive[8].description  += PBC_AUTHTYPE1;
 	directive[8].description  += L" authentication type.";
 
-	directive[9].name         = L"System_Root";
+	directive[9].name         = L"SECURID_dir_name";
 	directive[9].type         = D_FREE_STRING;
-	directive[9].value        = L"";
-	directive[9].defined_in   = L"(Program Default)";
-	directive[9].description  = L"Base directory for Pubcookie debug and config files. Leave blank to use the Windows system directory.";
+	directive[9].value        = PBC_SECURID_NAME;
+	directive[9].defined_in   = defined_in;
+	directive[9].description  = L"If LegacyDirNames names is enabled, a directory with this name implicitly sets the ";
+	directive[9].description  += PBC_AUTHTYPE3;
+	directive[9].description  += L" authentication type.";
 
 	directive[10].name         = L"ClientLogFormat";
 	directive[10].type         = D_FREE_STRING;
@@ -112,6 +112,13 @@
 	directive[15].description  = L"Set to 1 to support legacy directory names.";
 	directive[15].bound_val[0] = L"0";
 	directive[15].bound_val[1] = L"1";
+
+	directive[16].name         = L"System_Root";
+	directive[16].type         = D_FREE_STRING;
+	directive[16].value        = L"";
+	directive[16].defined_in   = L"(Program Default)";
+	directive[16].description  = L"Base directory for Pubcookie debug and config files. Leave blank to use the Windows system directory.";
+
 
 #endif
 

@@ -4,7 +4,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.94 2004-03-19 17:18:26 fox Exp $
+     $Id: pbc_config.h,v 1.95 2004-04-13 23:58:27 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -47,6 +47,7 @@
 	#define PBC_IGNORE_POLL (libpbc_config_getint(p, "Ignore_Poll", 0))
 	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
 	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
+	#define PBC_AUTHTYPE2 (libpbc_config_getstring(p, "AuthTypeName2", ""))
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
 	#define PBC_FILTER_KEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))

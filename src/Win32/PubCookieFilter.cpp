@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.29 2004-03-24 22:08:52 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.30 2004-04-13 23:58:27 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -731,13 +731,16 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 			NULL, NULL, (LPBYTE) authname, &dwRead);
 		if ( strlen(authname) > 0 ) {
 			if ( stricmp(authname,(PBC_AUTHTYPE1)) == 0 ) 
-				p->AuthType = AUTH_NETID;
+				p->AuthType = 1;
 			else
-				if ( stricmp(authname,(PBC_AUTHTYPE3))== 0 ) 
-					p->AuthType = AUTH_SECURID;
+				if ( stricmp(authname,(PBC_AUTHTYPE2))== 0 ) 
+					p->AuthType = 2;
 				else
-					if ( stricmp(authname,(PBC_AUTHTYPE0)) == 0 )
-						p->AuthType = AUTH_NONE;
+					if ( stricmp(authname,(PBC_AUTHTYPE3))== 0 ) 
+						p->AuthType = 3;
+					else
+						if ( stricmp(authname,(PBC_AUTHTYPE0)) == 0 )
+							p->AuthType = 0;
 		}
 
 		dwRead = sizeof (p->default_url);
