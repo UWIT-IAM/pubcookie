@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.14 2002-07-18 20:06:08 greenfld Exp $
+    $Id: keyclient.c,v 2.15 2002-07-19 19:48:58 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
     /* make the HTTP query */
     if (newkeyp == -1) {
         char enckey[PBC_DES_KEY_BUF * 2];
-        if (libpbc_get_crypt_key(&c_stuff, hostname) != PBC_OK) {
+        if (libpbc_get_crypt_key(&c_stuff, (char *) hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
             exit(1);
         }

@@ -220,7 +220,8 @@ static login_result process_getcred(login_rec *l, login_rec *c,
 
 	/* decode base 64 */
 	plain = (char *) malloc(strlen(cookie));
-	if (!libpbc_base64_decode(cookie, plain, &plainlen)) {
+	if (!libpbc_base64_decode( (unsigned char *) cookie,
+                               (unsigned char *) plain, &plainlen)) {
 	    pbc_log_activity(PBC_LOG_ERROR, 
                              "flavor_getcred: malformed base64 %s",
                              PBC_CRED_COOKIENAME);
@@ -270,7 +271,8 @@ static login_result process_getcred(login_rec *l, login_rec *c,
 
     /* base64 */
     out64 = (char *) malloc(outlen * 4 / 3 + 20);
-    libpbc_base64_encode(outbuf, out64, outlen);
+    libpbc_base64_encode( (unsigned char *) outbuf,
+                          (unsigned char *) out64, outlen);
 
     /* set cookie */
     print_header("Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
