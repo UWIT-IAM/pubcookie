@@ -1,0 +1,18 @@
+
+APXS=apxs
+
+CFLAGS=-DAPACHE1_3
+INCS=-I$(SSL_BASE)/include
+LIBS=-L$(SSL_BASE) -lssl -lcrypto -lRSAglue -L$(RSA_BASE) -lrsaref
+all: mod_pubcookie.so
+
+mod_pubcookie.so: mod_pubcookie.c libpubcookie.c base64.c
+	$(APXS) -c $(CFLAGS) $(INCS) mod_pubcookie.c libpubcookie.c base64.c $(LIBS)
+
+install: all
+	$(APXS) -i -a -n pubcookie mod_pubcookie.so
+
+clean:
+	-rm -f mod_pubcookie.o libpubcookie.o base64.o mod_pubcookie.so so_locations
+
+
