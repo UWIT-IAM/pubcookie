@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.154 2004-09-01 21:13:36 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.155 2004-09-11 16:16:28 fox Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -1644,8 +1644,7 @@ int pubcookie_user(request_rec *r, pubcookie_server_rec *scfg,
                   cfg->hard_exp,
                   time(NULL),
                   r->uri);
-          rr->failed = PBC_BAD_G_STATE;
-          rr->stop_message = ap_pstrdup(p, "Expired granting message, clock set correctly?");
+          rr->failed = PBC_BAD_AUTH;
           rr->redir_reason_no = PBC_RR_SHARDEX_CODE;
           return OK;
         }
