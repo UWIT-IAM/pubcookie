@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.69 2005-01-17 23:03:35 willey Exp $
+ * $Id: flavor_basic.c,v 1.70 2005-01-17 23:07:42 willey Exp $
  */
 
 
@@ -273,8 +273,8 @@ int get_custom_login_msg (pool * p, const char *appid,
         free (filename);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "%s: bye message mout: %s ", func, 
-		      *mout == NULL ? "(null)" : *mout);
+                      "%s: bye message mout: %s ", func,
+                      *mout == NULL ? "(null)" : *mout);
 
     return (PBC_OK);
 
