@@ -1,4 +1,4 @@
-
+ 
 
 /*
 
@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.11 2002-01-12 00:26:34 willey Exp $
+    $Id: INSTALL.login.txt,v 1.12 2002-03-07 00:29:04 willey Exp $
  */
 
 
@@ -286,7 +286,24 @@ You will need a c_key for all pubcookie hosts, whether login server or
 appliction webserver.  If you managing the login server and infrastructure
 be prepared for requests from sysadmins for c_key files.
 
-12. Test to verify encryption key (c_key) on application webserver is correct
+10. Run-time configuration:
+
+The only compile-time configuration that needs to be editted in the source
+to get the login cgi working is the location of the root pubcookie
+directory.
+
+Everything else is read from {PUBCOOKIE_PATH}/config as "attr: value"
+lines.  A sample configuration file is included as "config.sample".
+
+Attributes are:
+
+debug - Non-zero value enables debug logging.
+login_host - the hostname of login server
+enterprise_domain - the domain under which all hosts will live.  must be 
+	atleast a second level domain (e.g. somewhere.edu)
+
+11. Test to verify encryption key (c_key) on application webserver is 
+correct
 
 This test involves two programs named make_crypted_blob and 
 check_crypted_blob.  Run make_crypted_blob on your login server, this will 
@@ -337,7 +354,7 @@ of pubcookie.  If they are able to create and decrypt text then, in theory,
 other parts of pubcookie should be able to encrypt and decrypt cookies.
 
 
-11. Old Tools That Might Be Handy for Debugging:
+12. Old Tools That Might Be Handy for Debugging:
 
 pbc_create - creates a pubcookie cookie, convenient for creating cookies 
 ad hoc.  Arguments come in via stdin and the cookie is put out on stdout. 
@@ -366,5 +383,4 @@ appsrvid: appsrvid
 appid: appid
 create_ts: 1006986719
 last_ts: 1006986719
-
 
