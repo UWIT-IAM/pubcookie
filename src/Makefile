@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.9 1999-01-11 22:02:12 willey Exp $
+# $Id: Makefile,v 1.10 1999-01-11 22:37:54 willey Exp $
 #
 
 CC=gcc
@@ -9,7 +9,7 @@ LDFLAGS=-L./ssleay -lssl -lRSAglue -lcrypto ./rsaref/build/rsaref.a
 
 GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c base64.c dtest.c candv.c
-MISC=README pubcookie.txt Makefile Makefile.tmpl
+MISC=README pubcookie.txt Makefile Makefile.tmpl Makefile.axps
 
 BASENAME=pubcookie
 VERSION=v1
@@ -44,8 +44,8 @@ tar:
 	mkdir $(NAME); \
 	for i in $(SRC) $(GEN_HEAD) $(MISC) ;\
 	do \
-		chmod 664 $(NAME)/$$i; \
 		cp $$i $(NAME); \
+		chmod 664 $(NAME)/$$i; \
 	done; \
 	$(TAR) cf $(TARFILE) $(NAME); \
 	$(GZIP) -f $(TARFILE); \
