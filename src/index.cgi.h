@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.10 2001-09-28 17:27:25 willey Exp $
+    $Id: index.cgi.h,v 1.11 2001-10-17 02:04:06 willey Exp $
  */
 
 typedef struct {
@@ -29,6 +29,7 @@ typedef struct {
     char	*version;
     char	creds;
     char	creds_from_greq;
+    char	ride_free_creds;
     char	*appid;
     char	*appsrvid;
     char	*fr;
@@ -86,14 +87,14 @@ void print_login_page_expire_info();
 login_rec *verify_unload_login_cookie (login_rec *);
 int create_cookie(char *, char *, char *, char, char, int, char *, int);
 login_rec *get_query();
-char *check_login(login_rec *);
+char *check_login(login_rec *, login_rec *);
 char *check_l_cookie(login_rec *, login_rec *);
 void print_redirect_page(login_rec *, login_rec *);
 int get_next_serial();
 char *url_encode();
 char *get_cookie_created(char *);
 char *decode_granting_request(char *);
-int ride_free_zone(login_rec *, login_rec *);
+char ride_free_zone(login_rec *, login_rec *);
 
 #define RIDE_FREE_TIME (10 * 60)
 #define LOGIN_DIR "/"
