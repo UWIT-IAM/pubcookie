@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.73 $
+ * $Revision: 1.74 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1263,7 +1263,6 @@ void login_status_page(login_rec *c)
     tmpl_print_html(TMPL_FNAME "logout_time_remaining", time_remaining_text(c));
     tmpl_print_html(TMPL_FNAME "logout_postscript_still_weblogin");
     tmpl_print_html(TMPL_FNAME "status_part2");
-    do_output();
 }
 
 /**
@@ -1322,8 +1321,6 @@ int pinit(login_rec *l, login_rec *c)
 	    /* xxx shouldn't we be using vector_request() instead of
 	       calling the flavor ourselves? */
 	}
-	do_output();
-	exit(0);
     }
     else {
         login_status_page(c);
