@@ -8,8 +8,6 @@
 	}
 
 void syslog(int whichlog, const char *message, ...);
-void pbc_log_activity(int logging_level, const char *message,...);
-void pbc_vlog_activity( int logging_level, const char * format, va_list args );
 VOID Close_Debug_Trace ();
 BOOL Open_Debug_Trace ();
 VOID OutputDebugMsg (char *buff);

@@ -8,6 +8,7 @@
 #include <direct.h>
 #include "debug.h"
 
+typedef void pool;
 
 char Trace_Date[64];
 char Instance[64];
@@ -50,7 +51,7 @@ extern void syslog(int whichlog, const char *message, ...) {
     va_end(args);
 
 }
-extern void pbc_log_activity(int logging_level, const char *message,...)
+extern void pbc_log_activity(pool *p, int logging_level, const char *message,...)
 {
     va_list   args;
 

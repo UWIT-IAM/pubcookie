@@ -35,7 +35,7 @@ typedef struct {
 	DWORD			logout_action;
 	char			Error_Page[MAX_PATH];
 	char			Enterprise_Domain[1024];
-	char			Web_Login[1024];
+	char			Login_URI[1024];
     pbc_cookie_data *cookie_data;
 	DWORD			Set_Server_Values;
 	DWORD			legacy;
