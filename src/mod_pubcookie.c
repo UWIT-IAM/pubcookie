@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.156 2004-10-07 19:13:46 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.157 2004-10-07 20:23:40 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -1452,13 +1452,6 @@ static int pubcookie_user_hook(request_rec *r)
           ap_log_rerror(PC_LOG_DEBUG, r,
       			" .. user_hook: Can't use Granting cookie");
           stop_the_show(r, scfg, cfg, rr);
-          return DONE;
-       } else if (rr->failed == PBC_NO_PS_MATCH) {
-          ap_log_rerror(PC_LOG_DEBUG, r,
-      			      " .. user_hook: mis-matched pre-sess token");
-          r->content_type = "text/html";
-          ap_send_http_header(r);
-          ap_rprintf(r, "Unauthorized user.");
           return DONE;
        } else if (rr->failed == PBC_BAD_USER) {
           ap_log_rerror(PC_LOG_DEBUG, r,
