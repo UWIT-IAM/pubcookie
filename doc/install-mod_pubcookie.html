@@ -24,8 +24,7 @@
                     <li><a href="#build">Build Pubcookie</a></li>
                     <li><a href="#install">Install Pubcookie</a></li>
                     <li><a href="#granting">Install Granting Certificate</a></li>
-                    <li><a href="#config">Configure Pubcookie Config File (config)</a></li>
-                    <li><a href="#keyclient">Request an Encryption Key (using keyclient)</a></li>
+                    <li><a href="#keyclient">Configure &amp; Run Keyclient</a></li>
                     <li><a href="#httpd">Configure &amp; Start Apache (httpd.conf)</a></li>
                     <li><a href="#logout">Logout Configuration and Use</a></li>
                     <li><a href="#test">Test Pubcookie (with sample .htaccess)</a></li>
@@ -293,15 +292,16 @@ AddModule mod_pubcookie.c
                       </ol>
                   </ol>
 
-                  <h4><a name="granting" id="granting">Install Granting Certificate</a></h4>
-                  <p>mod_pubcookie uses your site's "granting" certificate to verify the
-                    signature of "granting" cookies sent from your login server. 
+                  <h4><a name="granting">Install Granting Certificate</a></h4>
+                  <p>The Pubcookie module uses your login server's "granting" certificate to verify the
+                    signature of the "granting" cookies sent from your login server to your
+                    application server.</p>
                   <ol>
 		    <li> 
                       <p>Obtain a copy of your login server's "granting"
                         certificate (e.g., <tt>pubcookie_granting.cert</tt>). 
-                        If you didn't deploy the login server,
-                        you may have to contact the people who did.</p>
+                        You may have to contact your login server administrator
+                        for the location.</p>
 		    </li>
 		    <li>
                       <p>Place the granting certificate in the keys subdirectory of your 
@@ -320,15 +320,20 @@ AddModule mod_pubcookie.c
                     file variable, which is only necessary if you choose a
                     filename other than pubcookie_granting.cert. [fixme: does keyclient
                     run without this config variable?]</p>
-		  <h4><a name="config">Configure Pubcookie Config File (config)</a></h4>
-                  <p>[fixme: should this be the keyclient.conf file section?] 
-                    The Pubcookie keyclient utility uses a run-time configuration 
-                    file. In this section you will create your Pubcookie config 
-                    file and add all the necessary configuration variables required
-                    by the keyclient utility.</p>
+
+                  <!-- keyclient section -->
+
+		  <h4><a name="keyclient">Configure &amp; Run Keyclient</a></h4>
+                  <p>Pubookie version 3 uses a keyserver to distribute DES encryption keys 
+                    between a site's login server and participating application servers. 
+                    This section describes how to configure and run the keyclient utility 
+                    to negotiate a key from your local keyserver.</p>
+                  <p>Note: The keyclient depends quite a bit on local practices, so contact 
+                    your login server administrator for local tips and recommended configuration.</p>
+                  <p><b>To create a configuration file for the keyclient:</b></p>
                   <ol>
                     <li> 
-                      <p>Create and edit your Pubcookie config file:</p>
+                      <p>Create and edit your keyclient config file:</p>
                     </li>
                     <p> 
                     <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
@@ -336,9 +341,10 @@ AddModule mod_pubcookie.c
                         <td> <pre>% pico /usr/local/pubcookie/config</pre></td>
                       </tr>
                     </table></p>
+                    <p>[fixme: should this be keyclient.conf?] </p>
                     <li>
-                      <p>Add the following <a href="config.html">configuration file variables</a>
-                        to the file and adjust their values according to your site: 
+                      <p>Add the following <a href="config.html">configuration variables</a>
+                        and adjust their values according to your site: 
                         [fixme: config.sample may be outdated]</p>
                     <p> 
                     <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
@@ -360,26 +366,19 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                       must be signed by a CA trusted by your keyclient (i.e., via <tt>ssl_ca_file</tt>  
                       or <tt>ssl_ca_path</tt>). Contact your login server administrator to find out
                       the recommend CA configuration for requesting keys.</p>
+                    <p>Warning: the keyclient utility cannot read RSA private keys encrypted with a
+                      passphrase. To run keyclient, your <tt>ssl_key_file</tt> cannot require a password.</p>
                     <li> 
-                      <p>Save the changes to your new Pubcookie config file.</p>
+                      <p>Save the changes to your new keyclient config file.</p>
                     </li>
                   </ol>
 				  
-                  <h4><a name="keyclient"></a>Request an Encryption Key (using 
-                    keyclient)</h4>
-                  <p>Pubookie version 3 uses a keyclient utility and a keyserver daemon
-                    to negotiate and distribute DES encryption keys between
-                    a site's login server and participating  application servers. The 
-                    purpose of these keys is to encrypt and decrypt various cookies used 
-                    by Pubcookie.</p>
-                  <p>To request a new key for your server:</p>
+                  <p><b>To request a new encryption key for your server:</b></p>
                   <ol>
                     <li>
-                      <p>Before requesting a DES encryption key, your site's 
-                        login server administrator first may have to "permit" your server.
-                        This depends on site policy on registration as well as the version 
-                        of keyserver being used. Check with your login server administrator
-                        for details.</p>
+                      <p>Your login server administrator may have to "permit" your server to request a key.
+                        This depends on the local policy on server registration as well as the version of 
+                        keyserver being used. Check with your login server administrator for details.</p>
                     </li> 
                     <li> 
                       <p>Once your server has been permitted to request a key (if that was
@@ -391,12 +390,19 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                         </tr>
                       </table>
                       </p>
-                      <p>The keyclient will use configuration from the config file you created in
-                        the previous section.</p>
+                      <p>The keyclient will use the run-time settings defined by your keyclient configuration 
+                      file.</p>
+                      <p>Note: keyclient cannot read RSA private keys that have been encrypted 
+                      with a pass phrase. If reading your key (i.e., <tt>ssl_key_file</tt>) normally 
+                      requires a password, then keyclient will fail, complaining that it 
+                      couldn't parse the session key. [fixme: better check on that msg.] To work
+                      around this contraint, make a temporary copy of your private key without the 
+                      pass phrase on it.</p>
                     <li>
-                      <p>If successful, keyclient saves the key in your keys directory 
-                        in a file named after the Common Name on the certificate provided to
-                        keyclient. List the contents of your keys directory to find out:</p>
+                      <p>If successful, keyclient will save the key in your keys directory 
+                        in a file named after the Common Name defined in your server certificate 
+                        (i.e., <tt>ssl_cert_file</tt>). List the contents of your keys directory to 
+                        find the new key:</p>
                       <p> 
                       <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
                         <tr> 
@@ -458,7 +464,7 @@ PubcookieInactiveExpire -1
                         </TR>
                       </TABLE>
                       <p>It is recommended that you define each of these directives even
-                        though they are not all required in order to start Apache. 
+                        though they are not all required in order to start Apache. [fixme: can we be more specific?]</p>
                       <p>Note: The <a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
                         directive defines the strings that mod_pubcookie enables as additional arguments to 
                         the <a href="mod_pubcookie-directives.html#AuthType">AuthType</a> directive.</p>
@@ -473,6 +479,8 @@ PubcookieInactiveExpire -1
                         with an &lt;IfDefine HAVE_SSL&gt; block directive. This, 
                         of course, is how it is done throughout this installation 
                         guide. </p>
+                      <p>[fixme: permissions on cert/keyfile - what's required? also, can 
+                         PubcookieSessionKeyfile be encrypted with a pass phrase?]
                     <li> 
                       <p>Take this opportunity also to add any other system-wide 
                         configuration you want for your Pubcookie application 
