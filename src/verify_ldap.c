@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.14 2002-11-14 21:12:12 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.15 2002-12-06 00:56:01 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -116,6 +116,112 @@ static int do_bind( LDAP *ld, char * user, const char * password, const char ** 
     return 0;
 }
 
+#ifdef LDAP_SUN
+
+void urlcpy( char * dest, char * src, int len ) {
+    if ( strchr( src, '%' ) == NULL ) {
+        strlcpy( dest, src, len );
+    } else {
+        int i = 0;
+        int j = 0;
+
+        /* I know, it's sloppy to just fail to char-by-char, but I'm lazy. */
+
+        for ( i = 0; i < len && src[i] != '\0'; i++ ) {
+            if (src[i] != '%') {
+                dest[j] = src[i];
+            } else {
+                int num = 0;
+                int old;
+
+                old = src[i+3];
+                src[i+3] = '\0';
+
+                num = (int) strtol( &src[i+1], NULL, 16 );
+
+                dest[j] = num;
+
+                src[i+3] = old;
+
+                i += 2;
+            }
+
+            j++;
+        }
+        dest[j] = '\0';
+    }
+}
+
+char ** parse_url_exts( char * ldap_url ) {
+    char *p = ldap_url;
+    char *q = NULL;
+    int i;
+    char ** retval = NULL;
+    int retnum = 0;
+    int len;
+
+    /* Skip the first four '?' to get to the extended data. */
+    for (i = 0; i < 4; i++) {
+        p = strchr( p, '?' );
+        if (p == NULL)
+            return NULL;
+        p++;
+    }
+
+    /* p should point to the '?' beginning the extended data */
+
+    if (*p == '?' && *(p-1) != '?' ) {
+        pbc_log_activity( PBC_LOG_ERROR, "Error parsing \"%s\": p=\"%s\"",
+                          ldap_url, p );
+        return NULL;
+    }
+
+    if (*p == '\0') {
+        pbc_log_activity( PBC_LOG_ERROR, "No Extended data on \"%s\"",
+                          ldap_url );
+        return NULL;
+    }
+
+    while (p != NULL) {
+
+        retnum++;
+
+        q = strchr(p, ',');
+
+        if (q != NULL)
+            *q = '\0';
+
+        if (retval == NULL)
+            retval = malloc( sizeof( char * ) * retnum );
+        else
+            retval = realloc( retval, sizeof( char * ) * retnum );
+
+        len = strlen(p) + 1;
+
+        retval[retnum - 1] = malloc( sizeof( char ) * len );
+
+        urlcpy( retval[ retnum - 1 ], p, len );
+
+        if (q != NULL) {
+            *q = ',';
+            p = q + 1;
+        } else
+            p = NULL;
+
+        q = NULL;
+
+    }
+
+    if (retval != NULL) {
+        retval = realloc( retval, sizeof( char *) * retnum + 1 );
+        retval[retnum] = NULL;
+    }
+
+    return retval;
+}
+
+#endif
+
 /**
  * Connects to an LDAP Server
  * @param ld LDAP **
@@ -127,15 +233,15 @@ static int ldap_connect( LDAP ** ld,
 			 char * ldap_uri, 
 			 const char ** errstr ) 
 {
-    int rc;
+    int rc = 0;
     char *tmp_uri, *p;
-    int tmplen;
+    int tmplen = 0;
 
     char *dn = NULL;
     char *pwd = NULL;
 
     LDAPURLDesc *ludp;
-    char **exts;
+    char **exts = NULL;
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "ldap_connect: hello\n" );
 
@@ -145,7 +251,17 @@ static int ldap_connect( LDAP ** ld,
         return -1;
     }
 
-    if ( (exts = ludp->lud_exts) != NULL ) {
+    if ( (exts = 
+#ifdef LDAP_OPENLDAP
+          ludp->lud_exts
+#else
+# ifdef LDAP_SUN
+          parse_url_exts(ldap_uri)
+# else
+#  error "No LDAP API!"
+# endif /* LDAP_SUN */
+#endif /* LDAP_OPENLDAP */
+          ) != NULL ) {
 
         while( *exts != NULL ) {
             char *val = strchr(*exts, '=');
@@ -174,6 +290,8 @@ static int ldap_connect( LDAP ** ld,
         }
     }
 
+#ifdef LDAP_OPENLDAP
+
     /*
      * Work around a bug in the OpenLDAP stuff that causes the init to fail when
      * there are things other than the server name in the URI.
@@ -194,8 +312,39 @@ static int ldap_connect( LDAP ** ld,
     rc = ldap_initialize(ld, tmp_uri);
 
     free( tmp_uri );
+#else
+# ifdef LDAP_SUN
+    if (exts != NULL)
+        free(exts);
 
-    if (rc != LDAP_SUCCESS || ld == NULL) {
+    pbc_log_activity( PBC_LOG_DEBUG_VERBOSE, "Server: %s Port: %d SSL: %d",
+                      ludp->lud_host, ludp->lud_port,
+                      ludp->lud_options & LDAP_URL_OPT_SECURE);
+
+    if (ludp->lud_options & LDAP_URL_OPT_SECURE) {
+
+        if ( ldapssl_client_init( CERT_DB_PATH, NULL ) != 0 ) {
+            pbc_log_activity( PBC_LOG_ERROR, "Error loading cert db \"%s\"!",
+                              CERT_DB_PATH );
+            return -2;
+        }
+
+        *ld = (LDAP *) ldapssl_init( ludp->lud_host, ludp->lud_port, 1 );
+    }
+
+    if (*ld == (LDAP *) -1) 
+        *ld = NULL;
+
+    if (*ld != NULL) {
+        int three = LDAP_VERSION3;
+
+        rc = ldap_set_option( *ld, LDAP_OPT_PROTOCOL_VERSION, &three );
+    }
+
+# endif /* LDAP_SUN */
+#endif /* LDAP_OPENLDAP */
+
+    if (rc != LDAP_SUCCESS || *ld == NULL) {
         pbc_log_activity( PBC_LOG_DEBUG_VERBOSE,
                           "ldap_connect: LDAP Initialization error %d.\n", rc  );
         *errstr = "connection to ldap server failed -- auth failed";
@@ -215,7 +364,7 @@ static int ldap_connect( LDAP ** ld,
     if( rc == -1 ) {
         /* Here a bind failing isn't catastrophic..  */
         pbc_log_activity(PBC_LOG_DEBUG_LOW, "ldap_connect: Bind Failed.\n"  );
-        ldap_unbind(*ld);
+        /* ldap_unbind(*ld); */
         return -2;
     }
 
@@ -242,12 +391,13 @@ static int get_dn( LDAP * ld,
                    char ** dn,
                    const char ** errstr )
 {
-    int err;
+    int err = 0;
     int num_entries;
     
 
-    LDAPMessage * results, * entry;
-    LDAPURLDesc *ludp;
+    LDAPMessage * results = NULL;
+    LDAPMessage * entry = NULL;
+    LDAPURLDesc *ludp = NULL;
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "get_dn: hello\n" );
 
@@ -259,10 +409,16 @@ static int get_dn( LDAP * ld,
         return -1;
     }
 
+    pbc_log_activity( PBC_LOG_DEBUG_VERBOSE, "searching: %s for %s",
+                      ludp->lud_dn, ludp->lud_filter );
+
     err = ldap_search_s( ld, ludp->lud_dn, LDAP_SCOPE_SUBTREE,
                          ludp->lud_filter, NULL, 0, &results );
 
     if (err != LDAP_SUCCESS) {
+        pbc_log_activity( PBC_LOG_DEBUG_VERBOSE,
+                          "User not found - error %d (%s)!",
+                          err, ldap_err2string(err) );
         *errstr = "user not found -- auth failed";
         return -1;
     }
@@ -293,7 +449,7 @@ static int get_dn( LDAP * ld,
     
     if (*dn == NULL) {
         ldap_msgfree(results);
-#ifdef NETSCAPE_LDAP_SDK
+#ifdef LDAP_SUN
         ldap_msgfree(entry);
 #endif
         *errstr = "error getting ldap dn -- auth failed";
@@ -302,7 +458,7 @@ static int get_dn( LDAP * ld,
     }
 
     ldap_msgfree( results );
-#ifdef NETSCAPE_LDAP_SDK
+#ifdef LDAP_SUN
     ldap_msgfree( entry );
 #endif
 

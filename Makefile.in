@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.23 2002-11-23 22:41:23 jjminer Exp $
+# $Id: Makefile.in,v 1.24 2002-12-06 00:56:01 jjminer Exp $
 
 @SET_MAKE@
 
@@ -22,6 +22,9 @@ PUBCOOKIE_DIR=$(prefix)
 KEY_DIR=$(PUBCOOKIE_DIR)/keys
 TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
 LOGIN_DIR=$(PUBCOOKIE_DIR)/login
+CERT_DB_DIR=$(PUBCOOKIE_DIR)/keys
+
+CERT_DB_SOURCE=@CERT_DB_PATH@
 
 INSTALL=@INSTALL@ -p -b
 INSTALL_BIN=$(INSTALL) -m 755
@@ -226,7 +229,7 @@ $(builddir)/src/pbc_path.h: $(builddir)/stamp-h
 $(builddir)/stamp-h: $(srcdir)/src/config.h.in $(srcdir)/src/pbc_path.h.in $(builddir)/config.status
 	$(builddir)/config.status
 
-$(builddir)/Makefile: $(srcdir)/Makefile.in $(builddir)/config.status
+$(builddir)/Makefile: $(srcdir)/Makefile.in $(builddir)/src/config.h
 	$(builddir)/config.status
 
 $(builddir)/config.status: $(srcdir)/configure
@@ -295,6 +298,9 @@ install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMP
 	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
 	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR).default
 	$(INSTALL_BIN) $(KEYMGT_FILES) $(PUBCOOKIE_DIR)
+	-test "x$(CERT_DB_SOURCE)" != "x" && \
+		$(INSTALL_OTHER) $(CERT_DB_SOURCE)/cert7.db $(CERT_DB_SOURCE)/key3.db \
+						 $(CERT_DB_DIR)
 
 install-apache: apache_module
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.24 $)
+AC_REVISION($Revision: 1.25 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -354,12 +354,9 @@ AC_ARG_WITH(ldap-lib-dir,
   esac ])
 
     AC_CHECK_HEADERS([lber.h])
-    AC_CHECK_HEADERS([ldap.h])
-    AC_CHECK_LIB(lber, ber_init)
-    AC_CHECK_LIB(ldap, ldap_init)
-
-    # For now, Blow up if we aren't using OpenLDAP.
-
+    AC_CHECK_HEADERS([ldap.h],,,[#include <lber.h>])
+    
+    AC_MSG_CHECKING([if LDAP API is OpenLDAP])
     AC_TRY_RUN( [ 
     #include <ldap.h>
 
@@ -367,9 +364,81 @@ AC_ARG_WITH(ldap-lib-dir,
         exit( strcmp(LDAP_VENDOR_NAME, "OpenLDAP") );
     }
                 ],
-                [],
-                AC_MSG_ERROR( "LDAP API must be OpenLDAP!" ),
+                [ AC_MSG_RESULT([yes])
+                  AC_DEFINE( LDAP_OPENLDAP, 1,
+                             [Define to 1 if the LDAP library is OpenLDAP] )
+                  LDAP_OPENLDAP=1
+                ],
+                [ AC_MSG_RESULT([no])
+                  AC_MSG_WARN( "Warning: No OpenLDAP API found." ) 
+                  LDAP_OPENLDAP=0
+                ],
                 AC_MSG_WARN( "Cross-Compiling not supported."  ) )
+    
+    if test "$LDAP_OPENLDAP" = "1"; then
+        AC_CHECK_LIB(lber, ber_init)
+        AC_CHECK_LIB(ldap, ldap_init)
+    else
+
+        AC_MSG_CHECKING([if LDAP API is Sun/Netscape/iPlanet])
+        AC_TRY_RUN( [ 
+        #include <lber.h>
+        #include <ldap.h>
+
+        int main() {
+
+        if ( (strcmp(LDAP_VENDOR_NAME, "Sun Microsystems Inc.") == 0)
+            && LDAP_VENDOR_VERSION >= 508 )
+            exit(0);
+
+            exit(2);
+        }
+                    ],
+                    [ AC_MSG_RESULT([yes])
+                    AC_MSG_WARN( "Warning: Non-OpenLDAP API found.  YMMV." ) 
+                    AC_DEFINE( LDAP_SUN, 1,
+                    [Define to 1 if the LDAP library is Sun/Netscape/iPlanet] )
+                    LDAP_SUN=1
+                    ],
+                    [ AC_MSG_RESULT([no])
+                    LDAP_SUN=0
+                    ],
+                    AC_MSG_WARN( "Cross-Compiling not supported."  ) )
+
+
+        if test "$LDAP_SUN" = "1"; then
+            AC_CHECK_HEADERS([ldap_ssl.h ldappr.h],,,
+            [ #include <lber.h>
+              #include <ldap.h>
+            ])
+            AC_CHECK_LIB(ldap50, ldap_init)
+            AC_CHECK_LIB(ssl3, SSL_AuthCertificate)
+            AC_CHECK_LIB(nss3, CERT_VerifyCert)
+            AC_CHECK_LIB(prldap50, prldap_init)
+            AC_CHECK_LIB(ssldap50, ldapssl_init)
+
+            if test "x$with_cert_db_path" = "x"; then
+                with_cert_db_path=no
+            fi
+
+            AC_MSG_CHECKING([for cert7.db and key3.db path])
+            AC_ARG_WITH(cert-db-path,
+                        AC_HELP_STRING([--with-cert-db-path=PATH],
+                        [cert7 and key3 db path (from a Netscape installation)]),
+            [ case "$withval" in
+            no)
+            AC_MSG_ERROR([with-cert-db-path must be specified with Sun SDK.], 1)
+            ;;
+            *)
+            AC_SUBST(CERT_DB_PATH, "$withval")
+            AC_MSG_RESULT($withval)
+            ;;
+        esac ])
+    fi
+fi
+
+    # For now, Blow up if we aren't using OpenLDAP.
+
 fi
 
 AC_ARG_ENABLE(shadow,

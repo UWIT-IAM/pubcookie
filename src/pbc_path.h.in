@@ -36,4 +36,8 @@
 
 #define KEYCLIENT (libpbc_config_getstring("keyclient", "@prefix@/keyclient"))
 
+/* The path to the cert db, if this is using the Netscape SDK */
+
+#define CERT_DB_PATH (libpbc_config_getstring("cert_db_path", "@prefix@/keys"))
+
 #endif
