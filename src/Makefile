@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.5 1999-01-09 00:10:35 willey Exp $
+# $Id: Makefile,v 1.6 1999-01-09 01:08:40 willey Exp $
 #
 
 CC=gcc
@@ -9,7 +9,7 @@ LDFLAGS=-L./ssleay -lssl -lRSAglue -lcrypto ./rsaref/build/rsaref.a
 
 GEN_HEAD=pbc_config.h pubcookie.h libpubcookie.h pbc_version.h
 SRC=libpubcookie.c mod_pubcookie.c test_local_c_key.c libpubcookie.c  base64.c dtest.c candv.c
-MISC=README pubcookie.txt Makefile
+MISC=README pubcookie.txt Makefile Makefile.tmpl
 
 TARFILE=pubcookie-v1.tar
 
