@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.40 2002-08-23 19:38:28 ryanc Exp $
+    $Id: libpubcookie.c,v 2.41 2002-09-26 17:50:35 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -767,49 +767,6 @@ void libpbc_free_crypt_np(crypt_stuff *c_stuff)
     pbc_free(c_stuff);  
 }
 
-/*                                                                            */
-#ifdef APACHE
-unsigned char *libpbc_sign_cookie_p(pool *p, unsigned char *cookie_string, md_context_plus *ctx_plus)
-#else
-unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_plus *ctx_plus)
-#endif
-{
-    unsigned char	*sig;
-    unsigned int	sig_len = 0;
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-    libpbc_debug("libpbc_sign_cookie: signing with key '%s'\n",ctx_plus->key_file);
-#endif
-
-    sig = (unsigned char *)libpbc_alloc_init(PBC_SIG_LEN);
-
-    EVP_SignInit(ctx_plus->ctx, EVP_md5());
-    EVP_SignUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
-    if( EVP_SignFinal(ctx_plus->ctx, sig, &sig_len, ctx_plus->private_key) )
-        return sig;
-    else {
-        pbc_free(sig);
-        return (unsigned char *)NULL;
-    }
-}
-
-/* check a signature after context is established                             */
-int libpbc_verify_sig(unsigned char *sig, unsigned char *cookie_string, md_context_plus *ctx_plus)
-{
-    int	res = 0;
-
-#ifdef DEBUG_ENCRYPT_COOKIE
-    libpbc_debug("libpbc_verify_cookie: verify with key '%s'\n",ctx_plus->key_file);
-#endif
-
-    EVP_VerifyInit(ctx_plus->ctx, EVP_md5());
-    EVP_VerifyUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
-    res = EVP_VerifyFinal(ctx_plus->ctx, sig, PBC_SIG_LEN, ctx_plus->public_key);
-
-    return res;
-
-}
-
 unsigned char *libpbc_stringify_seg(unsigned char *start, unsigned char *seg, unsigned len)
 {
     int			seg_len;
@@ -1179,7 +1136,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in,
 
     memset(buf, 0, sizeof(buf));
 
-    if ( strlen(in) < PBC_SIG_LEN || strlen(in) > PBC_4K ) {
+    if ( strlen(in) < sizeof(pbc_cookie_data) || strlen(in) > PBC_4K ) {
         libpbc_debug("libpbc_unbundle_cookie: malformed cookie %s\n", in);
         return 0;
     }
@@ -1196,7 +1153,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in,
 
     if (plainlen != sizeof(pbc_cookie_data)) {
         libpbc_debug("libpbc_unbundle_cookie: cookie wrong size: %d != %d\n",
-                     plainlen, sizeof(pbc_cookie_data) + PBC_SIG_LEN);
+                     plainlen, sizeof(pbc_cookie_data));
         return 0;
     }
 
