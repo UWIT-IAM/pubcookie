@@ -1,5 +1,5 @@
 # 1 is a good starting point
-debug: 1
+logging_level: 1
 
 # this allows any username/password combination to successfully authenticate
 basic_verifier: alwaystrue
@@ -15,6 +15,9 @@ login_uri: https://login.example.edu/
 login_host: login.example.edu
 enterprise_domain: .example.edu
 logout_prog: /logout/index.cgi
+
+# site-specific policies
+default_l_expire: 8h
 
 # custom logout msgs
 app_logout_string-appserver.example.edu-testapp: <font size="+1">Testapp logout worked just fine.</font>

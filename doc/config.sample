@@ -1,5 +1,5 @@
 # 1 is a good starting point
-debug: 1
+logging_level: 1
 
 # other site-specific config
 granting_cert_file: /usr/local/pubcookie/keys/pubcookie_granting.cert 

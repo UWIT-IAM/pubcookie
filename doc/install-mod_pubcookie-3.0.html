@@ -29,7 +29,7 @@
                     <li><a href="#httpd">Configure &amp; Start Apache (httpd.conf)</a></li>
                     <li><a href="#logout">Logout Configuration and Use</a></li>
                     <li><a href="#test">Test Pubcookie (with sample .htaccess)</a></li>
-                    <li><a href="#debug">Debugging</a></li>
+                    <li><a href="#debug">Troubleshooting</a></li>
                   </ul>
                   <h4><a name="obj">Objectives</a></h4>
                   <p>This guide helps you install mod_pubcookie on Apache 1.3.x.
@@ -453,7 +453,7 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                       </table></p>
 					  <li>
                       <p>If keyclient is not successful retrieving a key, note 
-                        any error messages and refer to the <a href="#debug">Debugging</a> 
+                        any error messages and refer to the <a href="#debug">troubleshooting</a> 
                         section below.</p>
                   </ol>
 
@@ -731,28 +731,22 @@ require valid-user</pre></TD>
                         world!" message. If you do, you have successfully installed 
                         and configured Pubcookie. Congratulations!</p>
                     <li>
-                      <p>If this test is unsuccessful, refer to the <a href="#debug">Debugging</a> 
+                      <p>If this test is unsuccessful, refer to the <a href="#debug">troubleshooting</a> 
                         section below.</p>
                     
                   </ol>
-		  <h4><a name="debug"></a>Debugging</h4>
-		  <p>To debug problems with the keyclient utility, look in your 
-                    syslog log files. If need be, add the following variables 
-                    to your Pubcookie config file to increase the amount of reporting 
-                    and re-run keyclient:</p>
-				  <p> 
-                    <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
-                      <TR> 
-                        <TD> <pre>debug: 9
-logging_level: 20</pre></TD>
-                      </TR>
-                    </TABLE>
+		  <h4><a name="debug"></a>Troubleshooting</h4>
+		  <p>To troubleshoot problems with keyclient, review the error messages
+                    it produces [fixme: does it send anything to syslog???] and if need be
+                    contact the administrator of your local Pubcookie login server to find 
+                    out what messages keyserver sent to syslog when you made your keyclient 
+                    request.
                   </p>
-		  <p>To debug problems with mod_pubcookie, look in your Apache 
+		  <p>To troubleshoot problems with mod_pubcookie, look in your Apache 
                     server's error_log. If need be, edit your Apache httpd.conf 
                     file and turn on the debug mode (requires server restart) 
                     to get additional information:</p>
-				  <p> 
+		  <p> 
                     <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                       <TR> 
                         <TD> <pre>LogLevel: debug</pre></TD>

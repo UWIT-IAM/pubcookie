@@ -10,37 +10,40 @@
 <h1>Pubcookie config file variables</h1>
 
 <p>
-The following should be an authoritative list of run-time configurable
-variables for the login server, <tt>keyserver</tt>, <tt>keyclient</tt> and
-mod_pubcookie. Some of these variables are shared by all of the code
-(they're used in libpubcookie) while many of them pertain
-just to the login server.
+The following tables provide an authoritative list of run-time configuration
+variables for the login server, keyserver, and keyclient [fixme: really??].
+Some of these variables are shared by all of the components; while many of 
+them pertain only to the login server.
 </p>
 
 <p>See <a href="config.sample">config.sample</a> and <a 
-href="config.login.sample">config.login.sample</a> for examples
-containing the minimum options for an application server and login
-server, respectively.</p>
+href="config.login.sample">config.login.sample</a> for example
+configuration for an application server and login server, respectively.</p>
 
 <table border width="95%">
-<tr><th>Name</th> <th>Type</th> <th>Description</th></tr>
+
 <tr>
- <td>debug</td>
-  <td>int</td>
-   <td>Non-zero value enables debug logging. The higher the
-   number, the more debugging output that is generated.</td>
+ <th>Name</th> 
+ <th><a href="#types">Type</a></th> 
+ <th>Description</th>
 </tr>
+
 <tr>
-<td>logging_level</td><td>int</td><td>Increase with your level of
-frustration.</td>
+ <td>logging_level</td>
+ <td>int</td>
+ <td>Defines how much information is logged; increase with your level of
+    frustration. Levels: 0-5</td>
 </tr>
+
 <tr>
 <td>login_uri</td><td>string</td><td>The complete URI of the login cgi</td>
 </tr>
+
 <tr>
 <td>logout_prog</td><td>string</td><td>The name under which the logout program was invoked, includes the path.  
 </td>
 </tr>
+
 <tr>
 <td>login_servers</td><td>   list</td><td>
     List of all of the login servers for our domain;
@@ -109,12 +112,27 @@ the public portion of the granting keypair (found on all servers)</td>
 </tr>
 
 <tr>
+ <td>debug</td>
+ <td>int</td>
+ <td>Deprecated. Use <tt>logging_level</tt> instead. Non-zero value enables debug 
+    logging. The higher the number, the more debugging output that is generated.</td>
+</tr>
+
+<tr>
 <th colspan="3">login cgi specific options</th>
 </tr>
 
 <tr>
-<td>basic_verifier</td><td> string</td><td> The verifier to use for
-the "basic" flavor</td> </tr>
+ <td>basic_verifier</td>
+ <td> string</td>
+ <td> The verifier to use for the "basic" flavor</td>
+</tr>
+
+<tr>
+ <td>default_l_expire</td>
+ <td>time</td>
+ <td>Defines the default duration of a single sign-on session (login cookie expiry). Default: 8 hours.</td>
+</tr>
 
 <tr>	 
 <td>login_host</td><td>string</td><td>The hostname of login server</td>	 
@@ -141,30 +159,39 @@ logout response msg for <i>appid</i> on <i>servername</i></td> </tr>
                         mirrored copy of all output sent to the client
                         by the most recent call to the login cgi</td>
                         </tr>
+
 <tr>
- <td>default_l_expire</td><td>    int </td>
- <td>The expiration for the login server.  Default: 8 hours.</td>
+ <td>kiosk</td>
+ <td>special</td>
+ <td>Kiosk policy configuration for reduced SSO duration; matches by
+    user-agent string, remote IP addresses, or IP address ranges.
+    Syntax: <tt>kiosk: time agent|ip [agent|ip] ... [ time agent|ip ... ]</tt>
+</td>
 </tr>
 
 <tr>
- <td>kiosk_keys</td><td>      list</td>
- <td>User-Agent strings that identify Kiosk Machines</td>
-</tr>
-<tr>
- <td>kiosk_values</td><td>    list</td>
- <td>Duration of login cookie for kiosk machines (same order as
-  <tt>kiosk_keys</tt>)
- </td>
-</tr>
-
-<tr>
-<td>min_countdown</td><td>       int </td>
+<td>min_countdown</td>
+<td>time</td>
 <td>The minimum countdown for automatically reloading the status page.</td>
 </tr>
 
 <tr>
 <td>egd_socket</td><td>       socket-location </td>
 <td>Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</td>
+</tr>
+
+<!-- lets put deprecated variables down here for now -->
+
+<tr>
+ <td>kiosk_keys</td><td>      list</td>
+ <td>Deprecated. Use <tt>kiosk</tt> instead. User-Agent strings that identify Kiosk Machines</td>
+</tr>
+
+<tr>
+ <td>kiosk_values</td><td>    list</td>
+ <td>Deprecated. Use <tt>kiosk</tt> instead. Duration of login cookie for kiosk machines (same order as
+  <tt>kiosk_keys</tt>)
+ </td>
 </tr>
 
 <tr>
@@ -396,6 +423,24 @@ logout response msg for <i>appid</i> on <i>servername</i></td> </tr>
                 what credentials</td> </tr>
 
 </table>
+
+<h4><a name="types">Types of Values</a></h4>
+
+<p>Some of the config variables share the same types of values.</p>
+
+<dl compact="compact">
+<dt> int </dt>
+<dd> an integer value </dd>
+<dt> string </dt>
+<dd> a string value </dd>
+<dt> list </dt>
+<dd> a list of values </dd>
+<dt> time </dt>
+<dd> an integer value representing time; use 
+     a suffix of 'm' to mean minutes or 'h' to mean hours, 
+     e.g. 5m means 300 and 1h means 3600.
+</dd>
+</dl>
 
 </body>
 

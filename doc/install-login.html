@@ -29,9 +29,11 @@ version of this document</a> is always the most up-to-date version.
 <li><a href="#keyserver">Keyserver Setup</a></li>
 <li><a href="#keyclient">Run Keyclient For Login Server</a></li>
 <li><a href="#install">Install &amp; Test Login CGI (index.cgi)</a></li>
+<li><a href="#debug">Logging &amp; Debugging</a></li>
 <li><a href="#templates">Login Page Templates</a></li>
-<li><a href="#ok_browsers">The "ok_browsers" File</a></li>
+<li><a href="#ok_browsers">Browser Acceptance Configuration</a></li>
 <li><a href="#logout">Logout Configuration</a></li>
+<li><a href="#kiosk">Kiosk Configuration</a></li>
 <li><a href="#krb5">Kerberos 5 Verifier Configuration</a></li>
 <li><a href="#upgrading">Upgrading</a></li>  
 <li><a href="#advconfig">Advanced Configuration</a></li>
@@ -240,7 +242,8 @@ The login cgi and keyserver share a simple configuration file:
 the Pubcookie <tt>config</tt> file. Most run-time configuration 
 can be set up via this file, which is located at
 <tt>{PUBCOOKIE_DIR}/config</tt>. The format is one attribute-value
-pair per line.
+pair per line, except where a trailing backslash "\" is used to continue
+a value to the next line.
 </p>
 
 <p>
@@ -260,9 +263,8 @@ variables are:
 </p>
 
 <dl compact="compact">
-<dt> debug </dt> 
-<dd> An integer. A non-zero value enables debug logging.  The higher
-  the number, the more debugging output that is generated.</dd>
+<dt> logging_level </dt> 
+<dd> Defines the amount of logging.</dd>
 
 <dt> login_host </dt>
 <dd> The hostname of login server (e.g. weblogin.example.edu)</dd>
@@ -411,8 +413,7 @@ service keyserver
 
 <h5>Generate a DES key for the login server with keyclient</h5>
 
-<p>
-Now run keyclient to generate a DES key for the login server:</p>
+<p>Now run keyclient to generate a DES key for the login server:</p>
 
 <pre>
 % /usr/local/pubcookie/keyclient
@@ -422,10 +423,12 @@ Now run keyclient to generate a DES key for the login server:</p>
 the login server to use to provide confidentiality for the login
 cookies.</p>
 
+<p>Hint: look in syslog and refer to the <a href="#debug">debugging</a> 
+section if you run into problems with keyserver.</p>
+
 <h5>Generating DES keys for the application servers with keyclient</h5>
 
-<p>
-When the time comes, generating DES keys for application servers is 
+<p>When the time comes, generating DES keys for application servers is 
 very similar. You configure the keyclient on the application server
 ahead of time, making sure the keyclient's certicate (probably the
 server's SSL certificate) is signed by the same CA trusted by your 
@@ -449,7 +452,37 @@ simply open your login URL in a browser and it should ask you to log in
 using whichever verifier you've configured. This direct approach to
 your login cgi is known as a "pinit" or "Pubcookie init" since it 
 establishes a single sign-on session without authenticating you to 
-any applications.</p>
+a specific application.</p>
+
+<p>Hint: look in syslog and refer to the <a href="#debug">debugging</a> 
+section if you run into problems with the login cgi.</p>
+
+<h4><a name="debug">Logging &amp; Debugging</a></h4>
+
+<p>The login server components send messages to syslog and
+can be configured to do so in greater volumes using the 
+<tt>logging_level</tt> config variable, which takes the
+following values:</p>
+
+<dl compact="compact">
+<dt> 0 </dt>
+<dd> errors only </dd>
+<dt> 1 </dt>
+<dd> audit activity (auths, redirects, etc.)</dd>
+<dt> 2 </dt>
+<dd> some debugging messages </dd>
+<dt> 3 </dt>
+<dd> verbose debugging messages  </dd>
+<dt> 5 </dt>
+<dd> also logs HTML output </dd>
+</dl>
+
+<p>To troubleshoot problems with the keyserver and/or the login cgi,
+increase the logging level in your config file to level 3, exercise
+the component again, and then look in syslog for new messages.</p>
+
+<p>Note: the basic auditing provided by logging level 1 is most 
+likely sufficient for normal operation of the login server.</p>
 
 <h4><a name="templates">Login Page Templates</a></h4>
 
@@ -517,22 +550,22 @@ more user-friendly.  The list below will be updated as work progresses.</p>
  </dd>
 </dl>
 
-<h4><a name="ok_browsers">The "ok_browsers" File</a></h4>
+<h4><a name="ok_browsers">Browser Acceptance Configuration </a></h4>
 
 <p>
-The <tt>{PUBCOOKIE_DIR}/ok_browsers</tt> file contains a list of acceptable
-browsers.  The idea behind ok_browsers is to block browsers that
-either have a known security flaw (i.e. don't forget cookies when they
-should) or don't work with Pubcookie. The ok_browsers file is optional.
+The optional <tt>{PUBCOOKIE_DIR}/ok_browsers</tt> file contains a list of browsers
+accepted by the login cgi. The ok_browsers file provides the ability to 
+block browsers that either have a known security flaw (i.e. don't forget 
+cookies when they should) or don't work with Pubcookie. The ok_browsers 
+file is optional.
 </p>
 
 <p>
 Note: At the University of Washington, we've so far been too chicken to 
-really use the 'ok_browsers' functionality to block browsers that we know 
+use the 'ok_browsers' functionality to block browsers that we suspect
 don't work.  Our ok_browsers file has a single line: "Mozilla". This 
 pattern matches most of the browsers we support and/or encounter; mainly 
-MS Internet Explorer, Netscape, and Mozilla. Proceed according to your own 
-policy.
+Internet Explorer, Netscape, Mozilla, and Safari. 
 </p>
 
 <h4><a name="logout">Logout Configuration</a></h4>
@@ -593,6 +626,39 @@ app_logout_string-webmail.example.edu-webmail: &lt;font size="+1"&gt;Webmail Log
 
 <p>Note: Since the login cgi reads the config file and its HTML templates on each request, 
 there's no need to recompile the login cgi in order to modify response text.</p>
+
+<h4><a name="kiosk">Kiosk Configuration</a></h4>
+
+<p>Use the <tt>kiosk</tt> variable to apply a site policy for reduced
+single sign-on duration for identified kiosks. The login cgi supports 
+matching by user-agent string, remote IP address, or IP address ranges.
+For example:</p>
+
+<pre>
+kiosk:   20m Safari/85.6 \
+         15m Safari \
+         10m ExampleKiosk 140.142.14.39 140.142.21.* \
+         1h  140.142.15.10-200
+</pre>
+
+<p>This sets a curiously elaborate, but nonetheless illustrative,
+kiosk policy: a 20-minute SSO duration for Safari 85.6, a 15-minute 
+SSO for all other versions of Safari, a 10-minute SSO to remote browsers
+with "ExampleKiosk" in the user-agent string as well as to the remote IP
+address 140.142.14.39 and the 140.142.21 subdomain, and a one-hour 
+SSO duration for IP addresses in the range 140.142.15.10-200.</p>
+
+<p>Matching by user-agent string is particularly useful for 
+applying reduced SSO to managed kiosks that have a locally
+customized user-agent string such as:</p>
+
+<pre>
+User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; ExampleKiosk; Windows NT 5.0)
+</pre>
+
+<p>How to customize user-agent strings is beyond the scope of this guide,
+but resources and tools, such as the <a href="http://www.microsoft.com/windows/ieak/default.asp">Internet 
+Explorer Administration Kit</a>, do exist to help with this task.</p>
 
 <h4><a name="krb5">Kerberos 5 Verifier Configuration</a></h4>
 
@@ -754,11 +820,11 @@ last_ts: 1006986719
 
 <hr>
 <p>
-Copyright 1999-2003, University of Washington.  All rights reserved.<br>
+Copyright 1999-2004, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.14 2003-07-02 22:33:53 dors Exp $
+$Id: install-login.html,v 1.15 2004-01-30 23:33:41 dors Exp $
 </pre>
 </body>
 
