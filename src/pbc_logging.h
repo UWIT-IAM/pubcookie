@@ -21,11 +21,20 @@
 void pbc_log_init();
 
 /**
- *Log activity messages
- *@param logging_level the importance level of the message
- *@param message the message to be logged
+ * Log activity messages
+ * @param logging_level the importance level of the message
+ * @param message the message format to be logged
+ * @param ... stuff to be logged.
  */
 void pbc_log_activity(int logging_level, const char *message,...);
+
+/**
+ * Log activity messages, takes a va_list.
+ *@param logging_level the importance level of the message
+ *@param message the message to be logged
+ *@param arg a va_list to be logged.
+ */
+void pbc_vlog_activity(int logging_level, const char *format, va_list arg);
 
 /**
  *Create well-formed messages to be logged

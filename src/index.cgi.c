@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.68 $
+ * $Revision: 1.69 $
  */
 
 
@@ -153,7 +153,7 @@ void print_html(const char *format, ...)
 
     va_start(args, format);
     vfprintf(htmlout, format, args);
-    pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, format, args);
+    pbc_vlog_activity(PBC_LOG_DEBUG_OUTPUT, format, args);
 
     if (mirror) {
 	vfprintf(mirror, format, args);
@@ -170,11 +170,14 @@ void print_html(const char *format, ...)
  */
 void print_header(const char *format, ...)
 {
+
     va_list args;
 
     va_start(args, format);
+
     vfprintf(headerout, format, args);
-    pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, format, args);
+
+    pbc_vlog_activity(PBC_LOG_DEBUG_OUTPUT, format, args);
 
     if (mirror) {
 	vfprintf(mirror, format, args);
@@ -2225,6 +2228,10 @@ int create_cookie(char *user_buf,
     if (cookie_local) {
 	/* dynamically allocated by libpbc_get_cookie_with_expire() */
 	free(cookie_local);
+    }
+
+    if(debug) {
+        fprintf(stderr, "create_cookie: goodbye\n"); 
     }
 
     return (PBC_OK);

@@ -59,26 +59,27 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 
     /* set the cookies */
     if (need_clear_login) {
-	print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
-		     PBC_L_COOKIENAME, 
-		     PBC_CLEAR_COOKIE,
-		     PBC_LOGIN_HOST,
-		     LOGIN_DIR, 
-		     EARLIEST_EVER);
+        print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
+                     PBC_L_COOKIENAME, 
+                     PBC_CLEAR_COOKIE,
+                     PBC_LOGIN_HOST,
+                     LOGIN_DIR, 
+                     EARLIEST_EVER);
     }
 
     if (need_clear_greq) {
         print_header("Set-Cookie: %s=%s; domain=%s; path=/; secure\n",
-		     PBC_G_REQ_COOKIENAME, 
-		     PBC_CLEAR_COOKIE,
-		     PBC_ENTRPRS_DOMAIN);
+                     PBC_G_REQ_COOKIENAME, 
+                     PBC_CLEAR_COOKIE,
+                     PBC_ENTRPRS_DOMAIN);
+
     }
 
     /* text before the form fields */
     snprintf(message_out, sizeof(message_out), 
 	     "<p>The resource you requested requires you to authenticate."
 	     "  %s</p>\n", *errstr ? *errstr : "");
-
+    
     tmpl_print_html(TMPL_FNAME "login_part1", 
 		    "", "this reason not implemented", 
 		    PBC_LOGIN_URI,
@@ -140,6 +141,8 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
     tmpl_print_html(TMPL_FNAME "login_part2", 
 		    message_out,
 		    "this reason not implemented");
+
+    pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
 }
 
 /* process_basic():
