@@ -4,7 +4,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.54 2003-05-29 22:02:10 jjminer Exp $
+    $Id: libpubcookie.c,v 2.55 2003-06-03 03:41:53 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -123,7 +123,8 @@ const char *redirect_reason[] = {
     "Wrong appid",		/* 8 */
     "Wrong app server id",	/* 9 */
     "Wrong version id",		/* 10 */
-    "Wrong creds"		/* 11 */
+    "Wrong creds",		/* 11 */
+    "Bad Pre-session Cookie" /* 12 */
 };
 
 const char *get_my_hostname(pool *p)
