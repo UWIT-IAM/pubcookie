@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.81 2003-07-03 04:25:21 willey Exp $
+    $Id: pbc_config.h,v 1.82 2003-09-26 22:27:02 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -19,7 +19,9 @@
 #endif
 
 #ifdef WIN32
-#  define PBC_KEY_DIR (AddSystemRoot("\\inetsrv\\pubcookie\\keys"))
+#  define PBC_KEY_DIR (AddSystemRoot(p, SystemRootBuff,"\\inetsrv\\pubcookie\\keys"))
+#  define libpbc_config_getstring(p, k, d) libpbc_config_sb_getstring(p, strbuff, k, d)
+#  define gstring(p, k, d) gstring(p, strbuff, k, d)
 #else
 #  include "pbc_path.h"
 #endif
@@ -32,9 +34,6 @@
 #endif /* HAVE_DMALLOC_H */
 
 /* names of the login servers */
-#ifndef WIN32
-	#define PBC_LOGIN_HOST (libpbc_config_getstring(p,"login_host", "weblogin.washington.edu"))
-#endif
 #define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
 #define PBC_KEYMGT_URI (libpbc_config_getstring(p,"keymgt_uri", "https://weblogin.washington.edu/cgi-bin/keyserver"))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
@@ -48,11 +47,9 @@
 	#define PBC_DEBUG_TRACE (libpbc_config_getint(p, "Debug_Trace", 0))
 	#define PBC_IGNORE_POLL (libpbc_config_getint(p, "Ignore_Poll", 0))
 	#define PBC_DEBUG_DIR (libpbc_config_getstring(p, "Debug_Dir", "\\LogFiles\\Pubcookie"))
-	#define PBC_SYSTEM_ROOT (libpbc_config_getstring(p, "System_Root","")) /*null causes a Windows API call to locate*/
 	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
 	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
 	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
-	#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
 	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
 	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", "System\\CurrentControlSet\\Services\\PubcookieFilter"))

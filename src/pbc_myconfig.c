@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.34 2003-09-24 00:46:55 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.35 2003-09-26 22:27:02 ryanc Exp $
  */
 
 
@@ -174,21 +174,6 @@ const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
     return def;
 }
 
-#else /*WIN32*/
-
-const char *libpbc_myconfig_getstring(pool *p, const char *key, const char *def)
-{
-    int opt;
-    
-    for (opt = 0; opt < nconfiglist; opt++) {
-        if (!stricmp(key, configlist[opt].key))
-	    return configlist[opt].value;
-    }
-    return def;
-}
-
-#endif
-
 /* output must be free'd.  (no subpointers should be free'd.) */
 char **libpbc_myconfig_getlist(pool *p, const char *key)
 {
@@ -258,8 +243,6 @@ int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
 
     return def;
 }
-
-#ifndef WIN32
 
 #define CONFIGLISTGROWSIZE 30 /* 100 */
 static void myconfig_read(pool *p, const char *alt_config, int required)
@@ -351,16 +334,6 @@ static void fatal(pool *p, const char *s, int ex)
     exit(ex);
 }
 
-#else  /*WIN32*/
-
-static void fatal(pool *p, const char *s, int ex)
-{
-    fprintf(stderr, "fatal error: %s\n", s);
-	syslog(LOG_ERR, "fatal error: %s\n", s);
-    exit(ex);
-}
-#endif
-
 #ifdef TEST_MYCONFIG
 /* a short test program for pbc_myconfig */
 
@@ -395,9 +368,7 @@ int main(int argc, char *argv[])
 }
 #endif
 
-#ifdef WIN32
-
-/* Windows registry functions added by Ryan Campbell */
+#else  /*WIN32*/
 
 #include <windows.h>
 #include <stdio.h>
@@ -413,95 +384,108 @@ int main(int argc, char *argv[])
 
 #define CONFIGLISTGROWSIZE 50
 
+static void fatal(pool *p, const char *s, int ex)
+{
+	syslog(LOG_ERR, "fatal error: %s\n", s);
+    exit(ex);
+}
+
+
+char *libpbc_myconfig_copystring(char **outputstring, const char *inputstring, int size)
+{
+	if (inputstring != NULL) {
+		strncpy(*outputstring,inputstring,MAX_REG_BUFF);  
+	}
+	else {
+		free(*outputstring);
+		*outputstring = NULL;
+	}
+	return *outputstring;
+}
+
+char *libpbc_myconfig_getstring(pool *p, char *strbuff, const char *key, const char *def)
+{
+	char keyBuff[1024];
+	HKEY hKey;
+	int dsize;
+
+	dsize = MAX_REG_BUFF;
+	strcpy (keyBuff,PBC_PUBKEY);  /* config. settings in main pubcookie service key */
+	
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
+		libpbc_myconfig_copystring(&strbuff,def,MAX_REG_BUFF);  
+	}
+	else {
+		if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)strbuff,
+			&dsize) != ERROR_SUCCESS) {
+			libpbc_myconfig_copystring(&strbuff,def,MAX_REG_BUFF);
+		}
+		RegCloseKey(hKey);
+	}
+
+	return strbuff;  /* Note that this must have been allocated by the calling process */
+}
+
+
+int libpbc_myconfig_getint(pool *p, const char *key, int def)
+{
+	char keyBuff[1024];
+	HKEY hKey;
+	UCHAR *dataBuff;
+    int dsize, value;
+
+	if (!(dataBuff = (UCHAR *)malloc(sizeof (DWORD)))) {
+		fatal(p,"malloc failed in libpbc_myconfig_getint.",2);
+	}
+	dsize = sizeof(DWORD);
+	strcpy (keyBuff,PBC_PUBKEY);  /* config. settings in main pubcookie service key */
+	
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
+		return def;  
+	}
+	
+	if (RegQueryValueEx(hKey, key, NULL, NULL, dataBuff,
+		&dsize) != ERROR_SUCCESS) {
+		RegCloseKey(hKey);
+		return def;
+	}
+
+	value = (int)*dataBuff;
+	free(dataBuff);
+	RegCloseKey(hKey);
+	return value;
+}
+
+int libpbc_myconfig_getswitch(pool *p, const char *key, int def)
+{
+	/* Unimplemented */
+	return def;
+}
+
+char **libpbc_myconfig_getlist(pool *p, const char *key)
+{
+	/* Unimplemented */
+	return NULL;
+}
 
 int libpbc_myconfig_init(pool *p, const char *alt_config, const char *ident)
 {
-	int rslt;
-	HKEY hKey;
-	char keyBuff[1024];
-	DWORD dwkey,dwdata,type;
-    int alloced = 0;
-	char dataBuff[2048],fmtstr[34];
-
-	nconfiglist = 0;
-	strcpy (keyBuff,PBC_PUBKEY);  //config. settings in main pubcookie service key
-
-	if (rslt = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
-		return TRUE;  //It's OK if the key doesn't exist yet
-	}
-
-	DebugMsg((DEST,"Config. Values:\n"));  //Won't work if Debug_Trace is off
-
-	while (1) {
-		if (nconfiglist == alloced) {
-            alloced += CONFIGLISTGROWSIZE;
-            configlist = (struct configlist *)
-                realloc((char *)configlist, alloced*sizeof(struct configlist));
-            if (!configlist) {
-				RegCloseKey (hKey);
-				return FALSE;
-            }
-		}
-		
-		dwkey =sizeof(keyBuff);
-		dwdata=sizeof(dataBuff);
-		if (RegEnumValue(hKey,nconfiglist,keyBuff,&dwkey,NULL,&type,dataBuff,&dwdata) == ERROR_SUCCESS) {
-			
-			
-			configlist[nconfiglist].key = pbc_strdup(p, keyBuff);
-			if (!configlist[nconfiglist].key) {
-				RegCloseKey (hKey);
-				return FALSE;
-			}
-			
-			switch (type) {
-
-			case REG_SZ:
-				
-				configlist[nconfiglist].value = pbc_strdup(p, dataBuff);
-				if (!configlist[nconfiglist].value) {
-					RegCloseKey (hKey);
-					return FALSE;
-				}
-				DebugMsg((DEST,"                %-20s= %s\n",configlist[nconfiglist].key,configlist[nconfiglist].value));
-				break;
-				
-			case REG_DWORD: //store DWORD as string for function spec. compatability
-				configlist[nconfiglist].value = pbc_strdup(p, itoa((DWORD)*dataBuff,fmtstr,10));
-				if (!configlist[nconfiglist].value) {
-					RegCloseKey (hKey);
-					return FALSE;
-				}
-				DebugMsg((DEST,"                %-20s= %d\n",configlist[nconfiglist].key,(DWORD)dataBuff));
-				break;
-				
-			default:
-				break;
-
-			}
-
-
-			nconfiglist++;
-			
-		}
-		else {  //RegEnumKeyValue != ERROR_SUCCESS; we're done.
-			RegCloseKey (hKey);
-			return TRUE;
-		}
-	}
+		return TRUE;
 }
 
-extern char *SystemRoot;
-
-const char *AddSystemRoot(const char *subdir) 
+char *AddSystemRoot(pool *p, char *buff,const char *subdir) 
 {
-	static char *buff=NULL;
+	char strbuff[MAX_REG_BUFF];
 
-	buff = (char*)realloc(buff,(MAX_PATH+1));
-	strcpy(buff,SystemRoot);
-	strcat(buff,subdir);
-	return (buff);
-
+	strncpy(buff, libpbc_config_sb_getstring(p, strbuff, "System_Root",""),MAX_PATH+1);
+	if (strcmp(buff,"") == 0) {
+		GetSystemDirectory(buff,MAX_PATH+1);
+	}
+	strncat(buff,subdir,MAX_PATH+1);
+	return (buff);  //Note, must be allocated by calling process
 }
+
+
 #endif /*WIN32*/

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.38 2003-08-19 21:19:07 ryanc Exp $
+    $Id: libpubcookie.h,v 1.39 2003-09-26 22:27:02 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -136,10 +136,11 @@ int capture_cmd_output(pool *p, char **cmd, char *out, int len);
 #  define bcopy(s, d, siz)        memcpy((d), (s), (siz))
 #  define bzero(d, siz)   memset((d), '\0', (siz))
 #  define snprintf _snprintf
-#  define LOG_ERR 0
-#  define LOG_DEBUG 3
-#  define LOG_WARN 1
-#  define LOG_INFO 2
+#  define LOG_ERR -1
+#  define LOG_WARN 0
+#  define LOG_INFO 1
+#  define LOG_DEBUG 2
+/* see ../pbc_logging.h for more error levels */
 #endif
 
 

@@ -6,9 +6,8 @@
 /** @file pbc_configure.c
  * Configure stuff
  *
- * $Id: pbc_configure.c,v 2.5 2003-07-03 04:25:21 willey Exp $
+ * $Id: pbc_configure.c,v 2.6 2003-09-26 22:27:02 ryanc Exp $
  */
-
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -106,10 +105,17 @@ int libpbc_config_getswitch(pool *p, const char *key, int def)
     return(gswitch(p, key, def));
 }
 
+#ifndef WIN32
 const char *libpbc_config_getstring(pool *p, const char *key, const char *def)
 {
     return(gstring(p, key, def));
 }
+#else
+char *libpbc_config_sb_getstring(pool *p, char *strbuff, const char *key, const char *def)
+{
+    return(gstring(p, strbuff, key, def));
+}
+#endif
 
 char **libpbc_config_getlist(pool *p, const char *key)
 {

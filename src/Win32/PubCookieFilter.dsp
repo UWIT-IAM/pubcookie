@@ -71,8 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "PUBCOOKIEFILTER_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MT /W3 /Gm /GX /ZI /Od /I ".\include" /I ".\include\openssl" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "STATICLIB" /D "HAVE_STRING_H" /D "HAVE_STDIO_H" /D "HAVE_VARARGS_H" /FR /YX /FD /GZ /c
-# SUBTRACT CPP /X
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I ".\include" /I ".\include\openssl" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "STATICLIB" /D "HAVE_STRING_H" /D "HAVE_STDIO_H" /D "HAVE_STDARG_H" /D "HAVE_SNPRINTF" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"

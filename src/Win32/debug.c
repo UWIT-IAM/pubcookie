@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.9 2003-08-07 04:17:20 ryanc Exp $
+//  $Id: debug.c,v 1.10 2003-09-26 22:27:02 ryanc Exp $
 //
 
 #include <windows.h>
@@ -28,22 +28,20 @@ typedef void pool;
 #include "../pbc_configure.h"
 #include "debug.h"
 
-char Trace_Date[64];
-char Instance[64];
-char Debug_Dir[MAX_PATH];
-FILE *debugFile=NULL;
-int Debug_Trace = 0;
 pool *p=NULL;
 
+#define BUFFSIZE 4096
 
-void pbc_vlog_activity( int logging_level, const char * format, va_list args )
+extern void filter_log_activity ( const char * source, int logging_level, const char * format, va_list args )
 {
-    char      log[4096];
+
+    char      log[BUFFSIZE];
 	HANDLE hEvent;
 	PTSTR pszaStrings[1];
 	unsigned short errortype;
-	
-    if ((logging_level < LOG_WARN) || (libpbc_config_getint(p,"logging_level", Debug_Trace)))    {
+	DWORD eventid=PBC_ERR_ID_SIMPLE;
+
+    if (logging_level <= (libpbc_config_getint(p,"Debug_Trace", LOG_WARN)))    {
 		
 		switch (logging_level) {
 		case LOG_INFO:
@@ -51,6 +49,7 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
             break;
 		case LOG_DEBUG:
             errortype = EVENTLOG_INFORMATION_TYPE;
+			eventid = PBC_ERR_ID_DEBUG;
             break;
 		case LOG_ERR:
             errortype = EVENTLOG_ERROR_TYPE;
@@ -60,17 +59,23 @@ void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 			errortype = EVENTLOG_WARNING_TYPE;
 			
 		}
-		
-        _vsnprintf(log, sizeof(log)-1, format, args);
+        _vsnprintf(log, BUFFSIZE, format, args);
 		pszaStrings[0] = log;
-        hEvent = RegisterEventSource(NULL,"W3SVC");
+        hEvent = RegisterEventSource(NULL,source);
 		if (hEvent) 
 		{
-			ReportEvent(hEvent, errortype, 0, (DWORD)8675309, NULL, (WORD)1, 0,                  
+			ReportEvent(hEvent, errortype, 0, eventid, NULL, (WORD)1, 0,                  
                 (const char **)pszaStrings, NULL);                   
 			DeregisterEventSource(hEvent);
 		}
 	}
+
+
+}
+
+void pbc_vlog_activity( int logging_level, const char * format, va_list args )
+{
+	filter_log_activity ("Pubcookie", logging_level, format, args);
 }
 
 extern void syslog(int whichlog, const char *message, ...) {
@@ -95,80 +100,20 @@ extern void pbc_log_activity(pool *p, int logging_level, const char *message,...
     va_end(args);
 }
 
+char * AddToLog(char*LogBuff, const char *format, ...) {
+	char *LogPos;
 
-extern VOID OutputDebugMsg (char *buff)
-{			
-	time_t ltime;
-	struct tm *today;
-	char Todays_Date [64];
+	va_list   args;
 
-	// For debugger if used
-	OutputDebugString(buff);
+    va_start(args, format);
 
-	if ( debugFile ) {
-		// Open new trace file if this is a new day
-		time(&ltime);
-		today = localtime(&ltime);
-		strftime(Todays_Date,64,"%Y%m%d\0",today);
-		if (strcmp (Todays_Date,Trace_Date) != 0)
-			Open_Debug_Trace ();
+	LogPos = LogBuff + strlen(LogBuff);
 
-		fprintf(debugFile,"%s",buff);
-		fflush(debugFile);
-	}
-}
+    _vsnprintf(LogPos, LOGBUFFSIZE - (LogPos - LogBuff), format, args);
 
-VOID Close_Debug_Trace ()
-{
-	time_t ltime;
+    va_end(args);
 
-	if ( debugFile ) {
-
-		time(&ltime);
-
-		fclose(debugFile);
-
-		debugFile = NULL;
-
-	}
+    return (LogBuff);
 }
 
 
-BOOL Open_Debug_Trace ()
-{
-    char szName[256], szBuff[1024];
-	time_t ltime;
-	struct tm *today;
-
-	time(&ltime);
-	today = localtime(&ltime);
-
-	strftime(Trace_Date,64,"%Y%m%d\0",today);
-	sprintf(szBuff,"%s%s",Debug_Dir,Instance);
-	sprintf(szName,"%s%s\\%s.log",Debug_Dir,Instance,Trace_Date);
-
-	// Directory must exist else open will fail
-
-	mkdir(szBuff);
-
-	// output stats if file already open
-
-	Close_Debug_Trace ();
-
-	debugFile = fopen(szName, "a");
-
-	if ( !debugFile ) {
-		syslog(LOG_ERR,"[Open_Debug_Trace] Failed to open trace file %s",szName);
-			}
-	else
-			syslog(LOG_INFO,"[Open_Debug_Trace] opened trace file %s",szName);
-
-		
-	DebugMsg((DEST, "\n**********************************************************************\n %s\n\n Opening Debug File %s\n\n",
-		ctime(&ltime),szName));
-
-	if ( debugFile ) 
-		return TRUE;
-	else
-		return FALSE;
-}

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.3 2003-08-07 04:17:20 ryanc Exp $
+  $Id: winkeyclient.c,v 1.4 2003-09-26 22:27:02 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -127,6 +127,8 @@ static char *extract_cn(char *s)
  */
 static void make_crypt_keyfile(const char *peername, char *buf)
 {
+	char SystemRootBuff[MAX_PATH+1];
+
     strlcpy(buf, PBC_KEY_DIR, 1024);
 
     if (buf[strlen(buf)-1] != '/') {
@@ -214,6 +216,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	CredHandle hClientCreds;
 	char *Reply = NULL;
 	char sztmp[1024];
+	char *fp[1];
+	char SystemRootBuff[MAX_PATH+1];
+
 
 	strcpy(Instance,"KeyClient");  
 		
@@ -231,12 +236,13 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     libpbc_config_init(p, NULL, "keyclient");
 
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
-	if (strlen(PBC_SYSTEM_ROOT) > 0) {
-		strcpy(SystemRoot,PBC_SYSTEM_ROOT);
+	if (strlen((fp[0] = PBC_SYSTEM_ROOT)) > 0) {
+		strcpy(SystemRoot,fp[0]);
 	}
 	else {
 		GetSystemDirectory(SystemRoot,MAX_PATH);
 	}
+	free(fp[0]);
 
 	gethostname(sztmp, sizeof(sztmp)-1);
 	h = gethostbyname(sztmp);
@@ -262,7 +268,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
     /* figure out the key management server */
 	if (!keymgturi) {
-		keymgturi = PBC_KEYMGT_URI;
+		keymgturi = (fp[0] = PBC_KEYMGT_URI);
+		free(fp[0]);
 	}
     keyhost = strdup(keymgturi);
 

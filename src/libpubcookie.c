@@ -6,7 +6,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.61 2003-08-19 21:19:07 ryanc Exp $
+ * $Id: libpubcookie.c,v 2.62 2003-09-26 22:27:02 ryanc Exp $
  */
 
 
@@ -370,7 +370,9 @@ unsigned char *libpbc_gethostip(pool *p)
  */
 static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
-
+#ifdef WIN32
+	char SystemRootBuff[MAX_PATH+1];
+#endif 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);

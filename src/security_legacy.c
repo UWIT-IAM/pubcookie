@@ -6,7 +6,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.29 2003-09-20 02:10:55 ryanc Exp $
+ * $Id: security_legacy.c,v 1.30 2003-09-26 22:27:02 ryanc Exp $
  */
 
 
@@ -74,11 +74,10 @@ typedef void pool;
 
 #include "pbc_config.h"
 #include "pbc_logging.h"
-#include "pbc_myconfig.h"
 #include "libpubcookie.h"
-#include "pbc_configure.h"
 #include "strlcpy.h"
 #include "snprintf.h"
+#include "pbc_configure.h"
 
 #include "security.h"
 #include "pubcookie.h"
@@ -169,7 +168,10 @@ int security_init(pool *p)
     /* the granting key & certificate */
     char *g_keyfile;
     char *g_certfile;
-
+#ifdef WIN32
+	char SystemRootBuff[MAX_PATH+1];
+	char strbuff[MAX_REG_BUFF];
+#endif 
     FILE *fp;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "security_init: hello\n");
@@ -254,7 +256,6 @@ int security_init(pool *p)
 		"security_init: couldn't find session keyfile (try setting ssl_key_file?)");
         return -1;
     }
-
     if (!certfile) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
 		"security_init: couldn't find session certfile (try setting ssl_cert_file?)");
@@ -461,7 +462,9 @@ const char *libpbc_get_cryptname(pool *p)
  */
 static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
-    
+#ifdef WIN32
+	char SystemRootBuff[MAX_PATH+1];
+#endif 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "make_crypt_keyfile: hello\n");
 
     strlcpy(buf, PBC_KEY_DIR, 1024);

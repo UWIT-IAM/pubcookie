@@ -4,19 +4,10 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.22 2003-06-04 02:24:10 jjminer Exp $
+//  $Id: PubCookieFilter.h,v 1.23 2003-09-26 22:27:02 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
-
-typedef struct {
-	char				*g_certfile;
-	char				*s_keyfile;
-	char				*s_certfile;
-	char				*crypt_keyfile;
-	int					serial_s_sent;
-	char				server_hostname[MAX_PATH];
-} pubcookie_server_rec;
 
 typedef struct {
 	char			remote_host[MAX_PATH];
@@ -47,28 +38,17 @@ typedef struct {
     pbc_cookie_data *cookie_data;
 	DWORD			Set_Server_Values;
 	DWORD			legacy;
+	char			*g_certfile;
+	char			*s_keyfile;
+	char			*s_certfile;
+	char			*crypt_keyfile;
+	int				serial_s_sent;
+	char			server_hostname[MAX_PATH];
+	char			instance_id[8];
 
 } pubcookie_dir_rec;
 
-DWORD Notify_Flags;
-
-pubcookie_server_rec scfg;
-
-// One lock to protect all three global ctx_plus structures
-// session_sign_ctx_plus  session_verf_ctx_plus  granting_verf_ctx_plus
-// libpbc cookie routines scribble on .._ctx_plus->ctx 
-
-CRITICAL_SECTION Ctx_Plus_CS;
-
-// Statistic variables
-
-unsigned int Total_Requests;
-unsigned int Max_Url_Length;
-unsigned int Max_Query_String;
-unsigned int Max_Content_Length;
-unsigned int Max_Cookie_Size;
-unsigned int Max_Bytes_Sent;
-unsigned int Max_Bytes_Recvd;
+// Statistic variables removed
 
 #define START_COOKIE_SIZE  1024
 #define MAX_COOKIE_SIZE	   10500	// allow enough room for 20 session cookies
@@ -80,25 +60,6 @@ unsigned int Max_Bytes_Recvd;
 #define OK		  0             /* Module has handled this stage. */
 
 
-#define DEST buff
-#define MAX_DEBUG_SIZE 4096
-
-//  DebugMsg() is used for debugging 
-//  use sprintf instead of wsprintf so we can use things line "%.*s"
-
-#define DebugMsg(x)						\
-	if (Debug_Trace) {					\
-		char buff[4096];				\
-		sprintf x;						\
-		OutputDebugMsg(buff);			\
-	}
-
-
-#define DebugFlush						\
-	{									\
-	if ( debugFile )					\
-		fflush(debugFile);				\
-	}
 extern VOID OutputDebugMsg (char *buff);
 extern int Debug_Trace;
 extern FILE *debugFile;
@@ -147,3 +108,19 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 #define LOGOUT_LOCAL 1  //NOTE: overrides AuthType to PUBLIC
 #define LOGOUT_REDIRECT 2
 #define LOGOUT_REDIRECT_CLEAR_LOGIN 3
+
+// Only need two marked below for functionality, rest for debug
+const DWORD 	
+Notify_Flags =  ( SF_NOTIFY_SECURE_PORT         |
+					  SF_NOTIFY_NONSECURE_PORT      |
+//					  SF_NOTIFY_READ_RAW_DATA       | // Only for Global Filters
+					  SF_NOTIFY_PREPROC_HEADERS     | // ** Needed
+					  SF_NOTIFY_URL_MAP             |
+					  SF_NOTIFY_AUTHENTICATION      | // ** Needed
+					  SF_NOTIFY_ACCESS_DENIED       |
+					  SF_NOTIFY_SEND_RESPONSE       |
+//					  SF_NOTIFY_SEND_RAW_DATA       |  // Too many debug calls
+					  SF_NOTIFY_END_OF_REQUEST      |
+					  SF_NOTIFY_LOG                 |
+					  SF_NOTIFY_END_OF_NET_SESSION  |
+					  SF_NOTIFY_ORDER_DEFAULT );

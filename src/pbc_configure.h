@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: pbc_configure.h,v 2.5 2003-07-03 04:25:21 willey Exp $
+  $Id: pbc_configure.h,v 2.6 2003-09-26 22:27:02 ryanc Exp $
  */
 
 #ifndef INCLUDED_PBC_CONFIGURE_H
@@ -25,7 +25,12 @@ typedef int config_initialize(pool *p, void *alt_config,
                                       const char *ident);
 typedef int config_getint(pool *p, const char *key, int def);
 typedef char** config_getlist(pool *p, const char *key);
+#ifndef WIN32
 typedef const char* config_getstring(pool *p, const char *key, const char *def);
+#else
+typedef char* config_getstring(pool *p, char *strbuff, const char *key, const char *def);
+#endif
+
 typedef int config_getswitch(pool *p, const char *key, int def);
 
 /**
@@ -55,7 +60,13 @@ void pbc_configure_init(pool *p, const char *ident,
 
 int libpbc_config_getint(pool *p, const char *key, int def);
 char** libpbc_config_getlist(pool *p, const char *key);
+#ifndef WIN32
 const char* libpbc_config_getstring(pool *p, const char *key, const char *def);
+#else 
+char* libpbc_config_sb_getstring(pool *p, char *strbuff, const char *key, const char *def);
+#define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
+                             and malloc to find/set the buffer size */
+#endif
 int libpbc_config_getswitch(pool *p, const char *key, int def);
 
 #endif /* INCLUDED_PBC_CONFIGURE_H */
