@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.5 2001-05-29 20:55:50 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.6 2001-08-03 17:42:08 willey Exp $
 #
 
 # your compiler here
@@ -59,7 +59,7 @@ default:	index.cgi
 all:	index.cgi
 
 index.cgi:	index.cgi.o  securid.o libpubcookie.o base64.o index.cgi_securid.o index.cgi_krb.o 
-		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_securid.o index.cgi_krb.o libpubcookie.o base64.o securid.o /usr/local/lib/libcgic.a /usr/local/mauth/authsrv-x86.o $(LDFLAGS)
+		$(CC) ${CFLAGS} -o $@ index.cgi.o index.cgi_securid.o index.cgi_krb.o libpubcookie.o base64.o securid.o /usr/local/lib/libcgic.a $(LDFLAGS)
 
 uwnetid_stub:	uwnetid_stub.o  uwnetid_stub.o libpubcookie.o base64.o
 		$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o $(LDFLAGS)
