@@ -888,14 +888,16 @@ webtpl library without adding further configuration options.</p>
 used by the relay. This should be set to the real location of your site's login cgi.</p>
 
 <li><p>Now, when you <a href="#config">configure the module</a>, specify the relay 
-as your login server. For example, if your application server is <i>remote.site.org</i>
-and you've installed the relay as <tt>pcrelay</tt> at the root of your website, then you'd
-use this as your login server location:</p></li>
+as your login server and use a localized enterprise domain. For example, if your application 
+server is <i>remote.site.org</i> and you've installed the relay as <tt>pcrelay</tt> at the 
+root of your website, then, along with all the other usual directives, you'd define these
+directives like this:</p></li>
 
 <p> 
 <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
 <TR> 
-<TD><pre>PubcookieLogin https://remote.site.org/pcrelay/?domain=.site.org</pre></TD>
+<TD><pre>PubcookieLogin https://remote.site.org/pcrelay/?domain=.site.org
+PubcookieDomain .site.org</pre></TD>
 </TR>
 </TABLE></p>
 
@@ -903,7 +905,10 @@ use this as your login server location:</p></li>
 handle getting them to the remote login server and back again.</p>
 
 <p>Note: The relay accepts the <tt>domain</tt> argument to allow a single
-relay to serve multiple servers and mulitiple domains. In the typical case
+relay to serve multiple servers and mulitiple domains. It should match your
+<a href="mod_pubcookie-directives.html#PubcookieDomain">PubcookieDomain</a> value
+because the relay and the module need it to synchronize their cookie scoping.  
+In the typical case
 it can be set to the enterprise domain you would have used if the login server 
 had been in the same domain as your application server (i.e., <i>.site.org</i> in 
 the example above). If your application server is in a country code top-level 
@@ -912,7 +917,8 @@ the immediate subdomain (i.e., <tt>domain=.subdomain.example.ca</tt>) or if
 the resource and relay reside on the same server, use the server name itself 
 (i.e., <tt>domain=site.subdomain.example.ca</tt>). If no <tt>domain</tt> argument 
 is specified, the relay falls back to reading the <tt>enterprise_domain</tt> 
-config file variable.</p>
+config file variable, which, if used, should match your PubcookieDomain value
+too.</p>
 
 </ol>
 
