@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.23 2000-01-27 22:35:24 willey Exp $
+#   $Id: Makefile,v 1.24 2000-01-28 01:36:14 willey Exp $
 #
 
 # your compiler here
@@ -47,7 +47,7 @@ MISC=README \
 BASENAME=pubcookie
 #sed -e '/^#define PBC_VERSION/!d' -e '/^#define PBC_VERSION/s/^#define PBC_VERSION "\(a2\)".*$/\1/' pbc_version.h` \
 
-VERSION=a5release6
+VERSION=a5release7
 DIR_NAME=$(BASENAME)-$(VERSION)
 TARFILE=$(BASENAME)-$(VERSION).tar
 
