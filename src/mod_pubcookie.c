@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.158 2004-11-03 22:50:18 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.159 2004-11-05 02:25:11 willey Exp $
  */
 
 #define MAX_POST_DATA 2048  /* arbitrary */
@@ -1017,6 +1017,10 @@ static int auth_failed_handler(request_rec *r, pubcookie_server_rec *scfg,
 #endif
     }
 
+    ap_log_rerror(PC_LOG_DEBUG, r,
+        "auth_failed_handler: redirect sent. uri: %s reason: %d",
+        mr->uri, rr->redir_reason_no);
+
     return(OK);
 
 }
@@ -1408,7 +1412,7 @@ static int pubcookie_user_hook(request_rec *r)
     if(!ap_auth_type(r)) return DECLINED;
 
     /* bail if the request is for favicon.ico */
-    if ( ! strncasecmp(r->unparsed_uri, "/favicon.ico", 12) ) return DECLINED;
+    if ( ! strncasecmp(r->unparsed_uri, "/favicon.ico", 12) ) return OK;
 
     /* if it's basic auth then it's not pubcookie */
 /*
@@ -1946,6 +1950,9 @@ static int pubcookie_authz_hook(request_rec *r) {
 
     /* get pubcookie creds or bail if not a pubcookie auth_type */
     if(pubcookie_auth_type(r) == PBC_CREDS_NONE) return DECLINED;
+
+    /* pass if the request is for favicon.ico */
+    if ( ! strncasecmp(r->unparsed_uri, "/favicon.ico", 12) ) return OK;
 
     /* a failed noprompt login is all we check for */
     if( (!*r->USER) && (cfg->noprompt>0) ) {
@@ -2978,7 +2985,6 @@ static int login_reply_handler(request_rec *r)
       ap_rprintf(r, redirect_html, arg);
 
     }
-
 
     return (OK);
 }
