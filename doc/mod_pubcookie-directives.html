@@ -8,6 +8,13 @@
 <p><b>mod_pubcookie</b> uses the following run-time configuration
 directives:</p>
 
+<p>
+<b>Important Note:</b> If you put the <tt>LoadModule</tt> and <tt>AddModule</tt>
+within <tt>&lt;IfDefine HAVE_SSL&gt;</tt>, you will need to put any
+<tt>httpd.conf</tt> configuration directives within
+<tt>&lt;IfDefine HAVE_SSL&gt;</tt>, or <tt>apachectl restart</tt> and
+<tt>apachectl configtest</tt> will fail.  </p>
+
 <ul>
 <li><a href="#AuthType">AuthType</a></li>
 <li><a href="#PubcookieInactiveExpire">PubcookieInactiveExpire</a></li>

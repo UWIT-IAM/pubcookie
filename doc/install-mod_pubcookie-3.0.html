@@ -405,9 +405,13 @@ logout_prog: /logout/index.cgi</pre></td>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre># Pubcookie Configuration
+                            <TD> <pre>
+&lt;IfDefine HAVE_SSL&gt;
+# Pubcookie Configuration
 PubcookieAuthTypeNames EGNetID
-PubcookieInactiveExpire -1</pre></TD>
+PubcookieInactiveExpire -1
+&lt;/IfDefine&gt;
+</pre></TD>
                         </TR>
                       </TABLE>
                       <p>PubcookieAuthTypeNames defines the strings that mod_pubcookie 
