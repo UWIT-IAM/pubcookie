@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.15 2002-07-19 19:48:58 jjminer Exp $
+    $Id: keyclient.c,v 2.16 2002-08-06 16:01:46 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -98,6 +98,22 @@ static void usage(void)
     exit(1);
 }
 
+/* destructively returns the value of the CN */
+static char *extract_cn(char *s)
+{
+    char *p = strstr(s, "CN=");
+    char *q;
+
+    if (p) {
+        p += 3;
+        q = strstr(p, "/Email=");
+        if (q) {
+            *q = '\0';
+        }
+    }
+
+    return p;
+}
 
 int main(int argc, char *argv[])
 {
@@ -132,14 +148,10 @@ int main(int argc, char *argv[])
     cafile = libpbc_config_getstring("ssl_ca_file", NULL);
     cadir = libpbc_config_getstring("ssl_ca_path", NULL);
 
-    hostname = get_my_hostname();
-    if (!hostname) {
-        perror("get_my_hostname");
-        exit(1);
-    }
+    hostname = NULL;
 
     newkeyp = 1;
-    while ((c = getopt(argc, argv, "apc:k:C:D:nudh:L:")) != -1) {
+    while ((c = getopt(argc, argv, "apc:k:C:D:nudH:L:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -184,8 +196,7 @@ int main(int argc, char *argv[])
                 newkeyp = -1;
                 break;
 
-            case 'h':
-                free((char *) hostname);
+            case 'H':
                 hostname = strdup(optarg);
                 break;
 
@@ -241,10 +252,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    /* xxx verify that 'certfile' is a certificate for 'hostname' */
-
     ssl = SSL_new(ctx);
     if (!ssl) {
+        fprintf(stderr, "SSL_connect() failed:\n");
         ERR_print_errors_fp(stderr);
     }
 
@@ -308,21 +318,47 @@ int main(int argc, char *argv[])
     }
 
     str = X509_NAME_oneline (X509_get_subject_name (server_cert),0,0);
-    if (str == NULL) {
+    p = extract_cn(str);
+    if (p == NULL) {
         fprintf(stderr, "str == NULL???\n");
         exit(1);
     }
-    if (!strcasecmp(str, PBC_LOGIN_HOST)) {
+    if (strcasecmp(p, PBC_LOGIN_HOST)) {
         fprintf(stderr, "certificate presented isn't the login host: %s != %s\n",
-                str, PBC_LOGIN_HOST);
+                p, PBC_LOGIN_HOST);
         exit(1);
     }
     free(str);
 
+    if (!hostname) {
+        X509 *mycert;
+        /* retrieve the hostname from the client cert we're using */
+        mycert = SSL_get_certificate(ssl);
+        if (mycert == NULL) {
+            fprintf(stderr, "mycert == NULL???\n");
+            exit(1);
+        }
+
+        str = X509_NAME_oneline (X509_get_subject_name (mycert),0,0);
+        hostname = extract_cn(str);
+        if (hostname) {
+            /* warn if hostname != get_my_hostname() */
+            if (strcasecmp(hostname, get_my_hostname())) {
+                fprintf(stderr, "warning: certificate name (%s) doesn't match"
+                        " my hostname (%s)\n", hostname, get_my_hostname());
+            }
+        } else {
+            fprintf(stderr, 
+                    "warning: no hostname in my certificate? trying anyway.\n");
+            hostname = get_my_hostname();
+        }
+    }
+
     /* make the HTTP query */
     if (newkeyp == -1) {
         char enckey[PBC_DES_KEY_BUF * 2];
-        if (libpbc_get_crypt_key(&c_stuff, (char *) hostname) != PBC_OK) {
+
+        if (libpbc_get_crypt_key(&c_stuff, hostname) != PBC_OK) {
             fprintf(stderr, "couldn't retrieve key\r\n");
             exit(1);
         }
