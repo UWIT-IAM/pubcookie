@@ -58,8 +58,13 @@ The pubcookie login server distribution contains the following files:
 	pbc_config.h
 	pbc_version.h
 	pubcookie.h
+        dtest.c
+        what_is_my_ip.c
+        pbc_create.c
+        pbc_verify.c
+        candv.c
 	contrib/*   
 
 
-$Id: README.txt,v 1.10 2001-10-24 22:24:09 willey Exp $
+$Id: README.txt,v 1.11 2001-12-12 23:19:57 willey Exp $
 
