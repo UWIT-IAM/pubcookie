@@ -1,14 +1,16 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbcgui-directive", "pbcgui-directive.vcproj", "{3AF94CCA-390E-44E7-AC7D-2A8E6F15DE9B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbcgui-server", "pbcgui-server.vcproj", "{3AF94CCA-390E-44E7-AC7D-2A8E6F15DE9B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
+		Debug = Debug
+		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{3AF94CCA-390E-44E7-AC7D-2A8E6F15DE9B}.Debug.ActiveCfg = Debug|Win32

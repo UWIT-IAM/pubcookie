@@ -451,7 +451,38 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
  if ( pwzService )
 	 CPBC_PropSheet::ExtractString(lpIDataObject, s_cfService, pwzService, dwLength);
 
- LPWSTR ppath = wcschr(pwzParentPath,L'/');
+ //XP Pro IIS gets the above strings wrong so we can't trust and have to rebuild them from pwzMetaPath
+
+ LPWSTR str1 = wcsstr(pwzMetaPath,L"W3SVC/");
+ if (str1) {  //if the web service key isn't in the metabase path, we must be at the root and can skip this
+	wcsncpy(pwzService,L"W3SVC",7);
+	LPWSTR str1 = wcsstr(pwzMetaPath,L"W3SVC/");
+	str1+=6;
+	LPWSTR str2 = wcschr(str1,L'/');    
+	wcsncpy(pwzInstance,str1,str2-str1);
+
+	pwzInstance[str2-str1]=0;
+
+	str1=str2+1;
+	LPWSTR ppathstart = str1;
+	LPWSTR ppathend = 0;
+
+	while (str1 = wcschr(str1+1,L'/')) {
+		 ppathend=str1;
+	}
+
+	if (ppathend) {
+		wcsncpy(pwzParentPath,ppathstart,ppathend-ppathstart);
+		pwzParentPath[ppathend-ppathstart]=0;
+		wcsncpy(pwzNode,ppathend+1,MAX_PATH);
+	 } else {
+		 wcsncpy(pwzParentPath,ppathstart,MAX_PATH);
+		 pwzNode[0]=0;
+	 }
+ }
+// end of XP bug workaround
+
+ LPWSTR ppath = wcsstr(pwzParentPath,L"/");
  if (ppath) {
 	StringCbCopy(pwzRegPath, MAX_PATH*2 ,ppath+1);
 	StringCbCat (pwzRegPath, MAX_PATH*2 ,L"/");

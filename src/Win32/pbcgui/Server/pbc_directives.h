@@ -83,7 +83,7 @@
 	directive[11].type         = D_FREE_STRING;
 	directive[11].value        = PBC_WEB_VAR_LOCATION;
 	directive[11].defined_in   = defined_in;
-	directive[11].description  = L"Location of the Pubcookie directive database within the Windows registry.";
+	directive[11].description  = L"Location of the Pubcookie directive database within the Windows registry.\nUse this if you wish to keep completely separate file and folder directives for the target web site.";
 
 	directive[12].name         = L"Enterprise_Domain";
 	directive[12].type         = D_FREE_STRING;

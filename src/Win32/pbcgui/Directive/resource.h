@@ -27,11 +27,13 @@
 #define IDC_ValueBox                    1009
 #define IDC_ValueEdit                   1014
 #define IDC_InheritedFrom               1015
+#define IDC_InheritedFrombak            1015
 #define IDC_MoreInfo                    1016
 #define IDC_NAME                        1018
 #define IDC_InheritedFromStatic         1019
 #define IDC_Delete                      1020
 #define IDC_Refresh                     1021
+#define IDC_EDIT1                       1023
 #define IDB_ROCKET                      40004
 #define IDB_CAR                         40005
 #define IDB_PLANE                       40006
@@ -67,7 +69,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40032
-#define _APS_NEXT_CONTROL_VALUE         1023
+#define _APS_NEXT_CONTROL_VALUE         1024
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

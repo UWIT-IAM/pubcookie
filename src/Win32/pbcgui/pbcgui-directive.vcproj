@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="pbcgui-directive"
 	ProjectGUID="{3AF94CCA-390E-44E7-AC7D-2A8E6F15DE9B}"
 	SccProjectName=""
@@ -73,7 +73,13 @@ echo regsvr32 exec. time &gt; &quot;$(OutDir)\regsvr32.trg&quot;
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -136,30 +142,38 @@ echo regsvr32 exec. time &gt; &quot;$(OutDir)\regsvr32.trg&quot;
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath=".\BaseSnap.Def">
-			</File>
-			<File
 				RelativePath=".\BaseSnap.cpp">
 			</File>
 			<File
-				RelativePath="CPBC_PropSheet.cpp">
+				RelativePath=".\BaseSnap.Def">
 			</File>
 			<File
-				RelativePath=".\Registry.cpp">
+				RelativePath="CPBC_PropSheet.cpp">
 			</File>
 			<File
 				RelativePath="Directive\directive.Cpp">
 			</File>
 			<File
 				RelativePath="gui_myconfig.cpp">
+			</File>
+			<File
+				RelativePath=".\Registry.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -172,22 +186,22 @@ echo regsvr32 exec. time &gt; &quot;$(OutDir)\regsvr32.trg&quot;
 				RelativePath="CPBC_PropSheet.h">
 			</File>
 			<File
-				RelativePath="Directive\GUIDs.h">
-			</File>
-			<File
 				RelativePath=".\Globals.h">
 			</File>
 			<File
-				RelativePath=".\LocalRes.h">
+				RelativePath="Directive\GUIDs.h">
 			</File>
 			<File
-				RelativePath=".\Registry.h">
+				RelativePath=".\LocalRes.h">
 			</File>
 			<File
 				RelativePath="..\..\pbc_config.h">
 			</File>
 			<File
 				RelativePath="Directive\pbc_directives.h">
+			</File>
+			<File
+				RelativePath=".\Registry.h">
 			</File>
 			<File
 				RelativePath="Directive\resource.h">
