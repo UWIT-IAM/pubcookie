@@ -6,7 +6,7 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 1.7 2002-08-16 15:33:37 jjminer Exp $
+# $Id: Makefile.in,v 1.8 2002-08-16 16:09:05 jjminer Exp $
 
 @SET_MAKE@
 
@@ -49,7 +49,7 @@ LOGINLIBS=@LOGINLIBS@ -lcgic
 
 APXS=@APXS@
 
-CONFIGURE_TMP_FILES=config.status config.log src/config.h Makefile src/pbc_path.h
+CONFIGURE_TMP_FILES=config.status config.log src/config.h Makefile src/pbc_path.h stamp-h
 
 CONFIGURE_FILES=configure configure.ac Makefile.in install-sh stamp-h.in
 
