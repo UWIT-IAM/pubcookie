@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.62 2004-08-18 00:53:10 willey Exp $
+ * $Id: flavor_basic.c,v 1.63 2004-08-19 00:34:43 willey Exp $
  */
 
 
@@ -150,14 +150,14 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
             user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
 			libpbc_config_getstring(p, "tmpl_login_user_static",
                         "login_user_static"), 
-                        "contents", loser);
+                        "contents", loser, NULL);
             l->hide_user = PBC_TRUE;
         }
         else {
             user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
 			libpbc_config_getstring(p, "tmpl_login_user_form_field",
                         "login_user_form_field" ), 
-                        "contents", loser);
+                        "contents", loser, NULL);
             l->hide_user = PBC_FALSE;
         }
     }
@@ -167,14 +167,14 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
             user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
 			libpbc_config_getstring(p, "tmpl_login_user_static",
                         "login_user_static" ), 
-                        "contents", loser);
+                        "contents", loser, NULL);
             l->hide_user = PBC_TRUE;
         }
         else {
             user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
 			libpbc_config_getstring(p, "tmpl_login_user_form_field",
                         "login_user_form_field" ), 
-                        "contents", loser);
+                        "contents", loser, NULL);
             l->hide_user = PBC_FALSE;
         }
     }
@@ -182,7 +182,7 @@ char *flb_get_user_field(pool *p, login_rec *l, login_rec *c, int reason)
         user_field_html = ntmpl_sub_template(p, TMPL_FNAME, 
 		libpbc_config_getstring(p, "tmpl_login_user_form_field",
                 "login_user_form_field" ), 
-                "contents", loser);
+                "contents", loser, NULL);
         l->hide_user = PBC_FALSE;
     }
 
@@ -202,7 +202,7 @@ char *flb_get_hidden_user_field(pool *p, login_rec *l, login_rec *c, int reason)
         return(ntmpl_sub_template(p, TMPL_FNAME, libpbc_config_getstring(p,
                                         "tmpl_login_user_hidden",
                                         "login_user_hidden" ), 
-				  "contents", loser));
+				  "contents", loser, NULL));
     else
         return(NULL);
 
@@ -302,7 +302,7 @@ static int print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
     
     /* Get the HTML for the error reason */
     
-    reason_html = ntmpl_sub_template(p, TMPL_FNAME, reasonpage, tag, subst);
+    reason_html = ntmpl_sub_template(p, TMPL_FNAME, reasonpage, tag, subst, NULL);
     if ( reason_html == NULL ) {
         ret = PBC_FAIL;
         goto done;
