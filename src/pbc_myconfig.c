@@ -6,7 +6,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.38 2004-01-23 05:00:26 ryanc Exp $
+ * $Id: pbc_myconfig.c,v 1.39 2004-01-24 07:34:45 ryanc Exp $
  */
 
 
@@ -403,6 +403,7 @@ int main(int argc, char *argv[])
 #include <windows.h>
 #include <time.h>
 #include <httpfilt.h>
+#include <tchar.h>
 #include <strsafe.h>
 
 #include "pubcookie.h"
@@ -429,33 +430,31 @@ LPTSTR libpbc_myconfig_copystring(LPTSTR outputstring, LPCTSTR inputstring, int 
 {
 	if (inputstring != NULL) {
 		StringCchCopy(outputstring, size, inputstring);  
+		return outputstring;
 	}
 	else {
-		free(outputstring);
-		outputstring = NULL;
+		return NULL;
 	}
-	return outputstring;
 }
 
-/* Note that strbuff must have been allocated by the calling process */
-LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def)
-{
-	char keyBuff[PBC_1K];
-	HKEY hKey;
-	int dsize;
+/* This will return either p->strbuff or NULL.  p->strbuff will contain 
+   the found value or def, unless def is NULL. */
+LPTSTR get_reg_value(pool *p, LPCTSTR key, LPDWORD size, LPCTSTR def) {
 
-	if (!p) fatal(p, "libpbc_myconfig_getstring called without an allocated pool",3);
-	
-	dsize = MAX_REG_BUFF;
+	char keyBuff[PBC_1K];
+	LPTSTR value;
+	HKEY hKey;
+
 	/* first look in web key */
 	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);
 	StringCchCat (keyBuff, PBC_1K, "\\");
 	StringCchCat (keyBuff, PBC_1K, PBC_INSTANCE_KEY);
-//	StringCchCat (keyBuff, PBC_1K, "\\");
-//	StringCchCat (keyBuff, PBC_1K, web_instance);
-
+	if (strlen(p->instance_id) > 0) {
+		StringCchCat (keyBuff, PBC_1K, "\\");
+		StringCchCat (keyBuff, PBC_1K, p->instance_id);
+	}
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyBuff,0,KEY_READ,&hKey) == ERROR_SUCCESS) {
-		if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)p->strbuff, &dsize) == ERROR_SUCCESS) {
+		if (RegQueryValueEx(hKey, key, NULL, NULL, (LPBYTE)p->strbuff, size) == ERROR_SUCCESS) {
 			/* if we find the value here, we're done */
 			RegCloseKey(hKey);
 			return p->strbuff;  
@@ -467,48 +466,60 @@ LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def)
 	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);  
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyBuff,0,KEY_READ,&hKey) == ERROR_SUCCESS) {
-		if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)p->strbuff, &dsize) != ERROR_SUCCESS) {
-			libpbc_myconfig_copystring(p->strbuff,def,MAX_REG_BUFF);
-		} /* else if ERROR_SUCCESS we keep the value returned in strbuff */
-		RegCloseKey(hKey);
+		if (RegQueryValueEx(hKey, key, NULL, NULL, (LPBYTE)p->strbuff, size) == ERROR_SUCCESS) {
+			/* if we find the value here, we're done */
+			RegCloseKey(hKey);
+			return p->strbuff;  
+		} else {
+			RegCloseKey(hKey);
+			value = libpbc_myconfig_copystring(p->strbuff,def,MAX_REG_BUFF);
+		}
 	} else {
-		libpbc_myconfig_copystring(p->strbuff,def,MAX_REG_BUFF);
+		value = libpbc_myconfig_copystring(p->strbuff,def,MAX_REG_BUFF);
 	}
 
-	return p->strbuff;  
+	return value;
+}
+
+/* Note that p must have been allocated by the calling process */
+/* Note that functions in pbc_myconfig should not call libpbc_getstring or libpbc_getint
+   as there is only one static buffer defined for p. This includes syslog()*/
+LPTSTR libpbc_myconfig_getstring(pool *p, LPCTSTR key, LPCTSTR def)
+{
+	DWORD dsize;
+
+	if (!p) {
+		syslog(LOG_ERR, "libpbc_myconfig_getstring(p,%s,%s) called without an allocated pool",key,def);
+		exit(3);
+	}
+	
+	dsize = MAX_REG_BUFF;
+
+	return (get_reg_value(p, key, &dsize, def));
 }
 
 
 int libpbc_myconfig_getint(pool *p, LPCTSTR key, int def)
 {
-	char keyBuff[PBC_1K];
-	HKEY hKey;
-	UCHAR *dataBuff;
-    int dsize, value;
+    DWORD dsize;
+	LPSTR value;
 
-	if (!p) fatal(p, "libpbc_myconfig_getint called without an allocated pool",3);
-
-	if (!(dataBuff = (UCHAR *)malloc(sizeof (DWORD)))) {
-		fatal(p,"malloc failed in libpbc_myconfig_getint.",2);
+	if (!p) {
+		syslog(LOG_ERR, "libpbc_myconfig_getint(p,%s,%d) called without an allocated pool",key,def);
+		exit(3);
 	}
+
 	dsize = sizeof(DWORD);
-	StringCchCopy(keyBuff, PBC_1K, PBC_FILTER_KEY);  /* config. settings in main pubcookie service key */
-	
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-		keyBuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
-		return def;  
-	}
-	
-	if (RegQueryValueEx(hKey, key, NULL, NULL, dataBuff,
-		&dsize) != ERROR_SUCCESS) {
-		RegCloseKey(hKey);
+
+	bzero(p->strbuff,8); 
+
+	value = get_reg_value(p, key, &dsize, "NONE");
+
+	if (_tcsncmp("NONE",value,4)) {
+		return (int)*value; /* sizeof(int) = sizeof(DWORD) only on 32-bit systems */
+	} else {
 		return def;
 	}
-
-	value = (int)*dataBuff;
-	free(dataBuff);
-	RegCloseKey(hKey);
-	return value;
 }
 
 int libpbc_myconfig_getswitch(pool *p, LPCTSTR key, int def)

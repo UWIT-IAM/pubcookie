@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.12 2004-01-23 05:00:26 ryanc Exp $
+//  $Id: debug.c,v 1.13 2004-01-24 07:34:45 ryanc Exp $
 //
 
 #include <windows.h>
@@ -38,8 +38,18 @@ extern void filter_log_activity (pool *p, const char * source, int logging_level
 	PTSTR pszaStrings[1];
 	unsigned short errortype;
 	DWORD eventid=PBC_ERR_ID_SIMPLE;
+	pool *pp=NULL;
 
-    if (logging_level <= (libpbc_config_getint(p,"Debug_Trace", LOG_WARN)))    {
+	if (!p) {
+		syslog(LOG_INFO, "filter_log_activity(p,%s,%d,%s,...) called without an allocated pool",source,logging_level,format);
+		pp = (pool *)malloc(sizeof(pool));
+		bzero(pp,sizeof(pool));
+	}
+	else {
+		pp = p;
+	}
+
+    if (logging_level <= (libpbc_config_getint(pp,"Debug_Trace", LOG_WARN)))    {
 		
 		switch (logging_level) {
 		case LOG_INFO:
@@ -67,6 +77,9 @@ extern void filter_log_activity (pool *p, const char * source, int logging_level
 			DeregisterEventSource(hEvent);
 		}
 	}
+	if (!p) {
+		free(pp);
+	}
 
 
 }
@@ -76,6 +89,7 @@ void pbc_vlog_activity(pool *p, int logging_level, const char * format, va_list 
 	filter_log_activity (p, "Pubcookie", logging_level, format, args);
 }
 
+/* Called whenever you don't have a pool yet available */
 extern void syslog(int whichlog, const char *message, ...) {
 
 	pool *p;
@@ -93,15 +107,28 @@ extern void syslog(int whichlog, const char *message, ...) {
 	free(p);
 
 }
+
+/* Called from libpubcookie, we can't trust its pool pointer */
 extern void pbc_log_activity(pool *p, int logging_level, const char *message,...)
 {
+	pool *pp; 
     va_list   args;
 
+	if (p) {
+		pp=p;
+	} else {
+		pp = malloc(sizeof(pool)); 
+		bzero(pp,sizeof(pool));
+	}
     va_start(args, message);
 
-    pbc_vlog_activity(p, logging_level, message, args );
+    pbc_vlog_activity(pp, logging_level, message, args );
 
     va_end(args);
+
+	if (!p) {
+		free(pp);
+	}
 }
 
 char * AddToLog(char*LogBuff, const char *format, ...) {

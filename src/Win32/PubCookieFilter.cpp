@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.24 2004-01-23 05:00:26 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.25 2004-01-24 07:34:45 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -32,7 +32,7 @@ typedef pubcookie_dir_rec pool;
 }
 #define HDRSIZE 56
 
-VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
+VOID filterlog(pool *p, int loglevel, const char *format, ...) {
 	char source[HDRSIZE];
 
 	va_list   args;
@@ -277,6 +277,9 @@ BOOL Pubcookie_Init ()
 	int rslt;
 	pool *p=NULL;
 
+	p = (pool *)malloc(sizeof(pool));
+	bzero(p,sizeof(pool));
+
 	// Need TCPIP for gethostname stuff
 	   
 	WSADATA wsaData;
@@ -296,7 +299,7 @@ BOOL Pubcookie_Init ()
 	if (!libpbc_pubcookie_init(p)) {
 		return FALSE;
 	}
-
+	free(p);
     return TRUE;
 
 }  /* Pubcookie_Init */
@@ -1006,15 +1009,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	// Get userid, timeouts, AuthType, etc for this app.  Could change appid.
 	Get_Effective_Values(pFC,pHeaderInfo,ptr);
-//debug
-	{
-		char data[16384];
-		DWORD cbdata=16384;
-		pFC->GetServerVariable(pFC,"ALL_HTTP",data,&cbdata);
-		filterlog(p, LOG_ERR,"HTTP Headers: %s",data);
-	}
-//debug
-    /* Log out if indicated */
+
+	/* Log out if indicated */
 
 	if (p->logout_action > LOGOUT_NONE) {
 #ifdef COOKIE_PATH
@@ -1457,7 +1453,7 @@ DWORD OnReadRawData (HTTP_FILTER_CONTEXT *pFC,
 		"  Revision: x%x\n"
 		"  Secure  : x%x\n"
 		,pFC->Revision,pFC->fIsSecurePort);
-	{
+	/*{
 		LPSTR lpRawData;
 		DWORD dwRawSize;
 		lpRawData = (LPSTR)pRawDataInfo->pvInData;
@@ -1465,7 +1461,7 @@ DWORD OnReadRawData (HTTP_FILTER_CONTEXT *pFC,
 	
 		syslog(LOG_ERR, "  Read:(%d) \n%s",  
 			dwRawSize,lpRawData);
-	}//debug
+	}*/
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 
 }  /* OnReadRawData */
@@ -1531,7 +1527,9 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	strncpy(p->appsrvid, szBuff, PBC_APPSRV_ID_LEN);   // Use SERVER_NAME for appsrvid
 
 	filterlog(p, LOG_INFO,"\n %s \n PBC_OnPreprocHeaders\n",ctime(&ltime));
-	filterlog(p, LOG_INFO,"\n Using crypt key: %s\\%s",PBC_KEY_DIR,p->server_hostname);
+	/* Have to use szBuff here since p->strbuff in PBC_KEY_DIR will be overwritten with the filterlog call*/
+	snprintf(szBuff,1024,"\n Using crypt key: %s\\%s",PBC_KEY_DIR,p->server_hostname);
+	filterlog(p, LOG_INFO, szBuff);
 
 	szBuff[0]= NULL; dwBuffSize=1024;
 	pFC->GetServerVariable(pFC, "REMOTE_HOST",
@@ -1789,7 +1787,7 @@ DWORD OnSendRawData (HTTP_FILTER_CONTEXT* pFC,
 	AddToLog(LogBuff,"  Sending(%d): \n%.*s\n",
 		pRawDataInfo->cbInData,pRawDataInfo->cbInData,pRawDataInfo->pvInData);
 
-	syslog(LOG_ERR, LogBuff); //debug LOG_INFO
+	syslog(LOG_INFO, LogBuff);  
 
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 

@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.85 2004-01-23 05:00:26 ryanc Exp $
+    $Id: pbc_config.h,v 1.86 2004-01-24 07:34:45 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -38,6 +38,8 @@
 #define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
 #define PBC_KEYMGT_URI (libpbc_config_getstring(p,"keymgt_uri", "https://weblogin.washington.edu/cgi-bin/keyserver"))
 #define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
+#define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "RelayTemplatePath", "")
+#define PBC_RELAY_URI libpbc_config_getstring(p, "relay_uri", "https://relay.example.url/relay/index.cgi")
 
 #if defined (WIN32)
 	#define PBC_PUBLIC_NAME (libpbc_config_getstring(p, "PUBLIC_dir_name", "PUBLIC")) 
@@ -55,8 +57,6 @@
 	#define PBC_PUB_KEY "Software\\"
 	#define PBC_CLIENT_LOG_FMT (libpbc_config_getstring(p, "ClientLogFormat", "%w(%p)"))
 	#define PBC_WEB_VAR_LOCATION (libpbc_config_getstring(p, "WebVarLocation", "System\\CurrentControlSet\\Services\\PubcookieFilter"))
-	#define PBC_TEMPLATES_PATH libpbc_config_getstring(p, "RelayTemplatePath", "D:\\Inetpub\\wwwroot\\relay\\")
-	#define PBC_RELAY_URI libpbc_config_getstring(p, "relay_uri", "https://relay.example.url/relay/index.cgi")
 	#define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
 	#define PBC_INSTANCE_KEY "_PBC_Web_Instances"
 	#define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
