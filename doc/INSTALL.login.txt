@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.6 2001-12-09 09:09:39 willey Exp $
+    $Id: INSTALL.login.txt,v 1.7 2001-12-12 03:53:42 willey Exp $
  */
 
 
@@ -168,14 +168,14 @@ localized copy:
 #define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 
-Use the pbc_make_generic utility to generate a master key (m_key). For 
+Use the pbc_key_generic utility to generate a master key (m_key). For 
 example:
 
-% pbc_make_generic > m_key
+% pbc_key_generic > m_key
 
 Put this master key in the location defined by PBC_MASTER_CRYPT_KEYFILE.
 
-Now use the pbc_make_local utility to hash the master key to the primary
+Now use the pbc_key_local utility to hash the master key to the primary
 IP address of your login server and create the localized copy:
 
 % pbc_key_local -a 209.211.239.212 > c_key
@@ -184,7 +184,7 @@ Current key management in Pubcookie is a simple shared key (m_key) hashed
 to each participating host's primary IP address. There is no current
 mechanism for revoking a key or forcing new keys to be generated.
 
-Note: Use the pbc_make_local utility to create a localized key (c_key)  
+Note: Use the pbc_key_local utility to create a localized key (c_key)  
 for each target application server based on its primary IP address. If you 
 are not installing Pubcookie on target application servers, be prepared 
 for requests from sysadmins for c_key files.
@@ -192,8 +192,8 @@ for requests from sysadmins for c_key files.
 9. Ancillary tools
 
 Tools that you need for key management:
-pbc_make_local - 'localizes' master crypt key for a specific host (ip).
-pbc_make_generic - Makes a blob of bits that can be used for a master c_key.
+pbc_key_local - 'localizes' master crypt key for a specific host (ip).
+pbc_key_generic - Makes a blob of bits that can be used for a master c_key.
 
 Tool rarely used for debugging:
 test_local_c_key
