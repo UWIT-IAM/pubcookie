@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.16 2001-05-29 20:49:48 willey Exp $
+    $Id: libpubcookie.c,v 2.17 2001-08-24 01:38:35 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -58,6 +58,57 @@ typedef  int pid_t;  /* win32 process ID */
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
+
+/*
+ * print the passed bytes
+ */
+static void print_hex_nybble(FILE *f,int n)
+{
+  char *hex="0123456789abcdef";
+  n&=0x0f;
+  fputc(hex[n],f);
+}
+
+static void print_hex_bytes(FILE *f,void *s_in,int len)
+{
+  unsigned char *s=(unsigned char *)s_in;
+  fprintf(f,"[%lx]",(long)s);
+  if(s==0) {
+    fprintf(f,"(null)");
+    return;
+  }
+  while(len-->0) {
+    print_hex_nybble(f,(*s)>>4);
+    print_hex_nybble(f,(*s));
+    s++;
+  }
+}
+
+/* dummy des stub */
+#define zzdes_cfb64_encrypt(xin,xout,xlen,xks,xivec,xi,xdirection) memcpy(xout,xin,len)
+
+#ifdef DEBUG_ENCRYPT_COOKIE
+/* really has more to do with aligning the buffers */
+static unsigned char cfb_iv[8]={0x12,0x34,0x56,0x78,0x90,0xab,0xcd,0xef};
+static unsigned char cfb_tmp[8];
+
+static void xdes_cfb64_encrypt(const unsigned char *in,unsigned char *out,long length,des_key_schedule schedule,des_cblock *ivec,int *num,int enc)
+{
+#ifdef RUBBISH
+  while(length-- > 0)
+    *out++ = (*in++)^1;
+#endif
+
+  long long xin[4200];
+  long long xout[4200];
+
+  memcpy(&xin,in,length);
+  memcpy(cfb_tmp,cfb_iv,sizeof(cfb_iv));
+  des_cfb64_encrypt(&xin,&xout,length,schedule,&cfb_tmp,num,enc);
+  memcpy(out,&xout,length);
+}
+#define des_cfb64_encrypt xdes_cfb64_encrypt
+#endif
 
 /* get a nice pretty log time                                                 */
 char *libpbc_time_string(time_t t)
@@ -245,6 +296,18 @@ unsigned char *libpbc_alloc_init_np(int len)
     return pointer;
 }
 
+static void limit_strcpy(char *dst, char *src, int siz)
+{
+    while(siz-->1) {
+        char ch= *src++;
+        if(ch==0)
+            break;
+        *dst++=ch;
+    }
+    if(siz>0)
+        *dst=0;
+}
+
 /* read and store a private key                                               */
 /*    no return value b/c it's fail out or succeed onward                     */
 #ifdef APACHE
@@ -257,17 +320,19 @@ int libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
     FILE	*key_fp;
     EVP_PKEY	*key;
 
-/*  libpbc_debug("libpbc_get_private_key\n");  */
+    limit_strcpy(ctx_plus->key_file,keyfile,sizeof(ctx_plus->key_file));
 
     if( ! keyfile ) {
-        libpbc_abend("libpbc_get_private_key: No keyfile specified\n");
-	return 0;
+        libpbc_debug("libpbc_get_private_key: No keyfile specified\n");
+	return PBC_FAIL;
     }
 
     if( ! (key_fp = pbc_fopen(keyfile, "r")) ) {
-        libpbc_abend("libpbc_get_private_key: Could not open keyfile: %s\n", keyfile);
-        return 0;
+        libpbc_debug("libpbc_get_private_key: Could not open keyfile: %s\n", keyfile);
+        return PBC_FAIL;
     }
+
+    libpbc_debug("libpbc_get_private_key: reading private key '%s'\n", keyfile);
 
 #ifdef PRE_OPENSSL_094
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
@@ -276,14 +341,14 @@ int libpbc_get_private_key_np(md_context_plus *ctx_plus, char *keyfile)
     if( ! (key = (EVP_PKEY *)PEM_ASN1_read((char *(*)())d2i_PrivateKey,
 		  PEM_STRING_EVP_PKEY, key_fp, NULL, NULL, NULL)) ) {
 #endif
-        libpbc_abend("libpbc_get_private_key: Could not read keyfile: %s\n", keyfile);
-        return 0;
+        libpbc_debug("libpbc_get_private_key: Could not read keyfile: %s\n", keyfile);
+        return PBC_FAIL;
     }
 
     pbc_fclose(key_fp);
     memcpy(ctx_plus->private_key, key, sizeof(EVP_PKEY));
 
-    return 1;
+    return PBC_OK;
 }
 
 /* read, decode,  and store a public key                                      */
@@ -298,17 +363,19 @@ int libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
     X509	*x509;
     EVP_PKEY	*key;
 
-/*  libpbc_debug("libpbc_get_public_key\n"); */
+    limit_strcpy(ctx_plus->key_file, certfile, sizeof(ctx_plus->key_file));
 
     if( ! certfile ) {
-        libpbc_abend("libpbc_get_public_key: No certfile specified\n");
-        return 0;
+        libpbc_debug("libpbc_get_public_key: No certfile specified\n");
+        return PBC_FAIL;
     }
 
     if( ! (fp = pbc_fopen(certfile, "r")) ) {
-	libpbc_abend("libpbc_get_public_key: Could not open keyfile: %s\n", certfile);
-        return 0;
+	libpbc_debug("libpbc_get_public_key: Could not open keyfile: %s\n", certfile);
+        return PBC_FAIL;
     }
+
+    libpbc_debug("libpbc_get_public_key: reading public cert '%s'\n", certfile);
 
 #ifdef PRE_OPENSSL_094
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
@@ -317,19 +384,19 @@ int libpbc_get_public_key_np(md_context_plus *ctx_plus, char *certfile)
     if( ! (x509 = (X509 *) PEM_ASN1_read((char *(*)())d2i_X509, 
 		           PEM_STRING_X509, fp, NULL, NULL, NULL)) ) {
 #endif
-        libpbc_abend("libpbc_get_public_key: Could not read cert file: %s\n", certfile);
-        return 0;
+        libpbc_debug("libpbc_get_public_key: Could not read cert file: %s\n", certfile);
+        return PBC_FAIL;
     }
 
     if( ! (key = X509_extract_key(x509)) ) {
-        libpbc_abend("libpbc_get_public_key: Could not convert cert to public key\n");
-        return 0;
+        libpbc_debug("libpbc_get_public_key: Could not convert cert to public key\n");
+        return PBC_FAIL;
     }
 
     pbc_fclose(fp);
     memcpy(ctx_plus->public_key, key, sizeof(EVP_PKEY));
 
-    return 1;
+    return PBC_OK;
 }
 
 /* mallocs a pbc_cookie_data struct                                           */
@@ -490,16 +557,18 @@ int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
     key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
     if( ! (fp = pbc_fopen(keyfile, "rb")) ) { /* win32 - must be binary read */
-        libpbc_abend("libpbc_get_crypt_key: Failed open: %s\n", keyfile);
-        return 0;
+        libpbc_debug("libpbc_get_crypt_key: Failed open: %s\n", keyfile);
+        return PBC_FAIL;
     }
     
     if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
-        libpbc_abend("libpbc_get_crypt_key: Failed read: %s\n", keyfile);
+        libpbc_debug("libpbc_get_crypt_key: Failed read: %s\n", keyfile);
 	pbc_fclose(fp);
-	return 0;
+	return PBC_FAIL;
     }
     
+    libpbc_debug("libpbc_get_crypt_key: reading crypt key '%s'\n", keyfile);
+
     pbc_fclose(fp);
 
     addr = libpbc_gethostip();
@@ -507,7 +576,7 @@ int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *keyfile)
     pbc_free(key_in);
     pbc_free(addr);
 
-    return 1;
+    return PBC_OK;
 }
 
 /*                                                                            */
@@ -519,11 +588,15 @@ crypt_stuff *libpbc_init_crypt_np(char *keyfile)
 {
     crypt_stuff	*c_stuff;
 
-/*  libpbc_debug("libpbc_init_crypt: keyfile= %s\n",keyfile); */
+/*    libpbc_debug("libpbc_init_crypt: keyfile= %s\n",keyfile); */
 
     c_stuff=(crypt_stuff *)libpbc_alloc_init(sizeof(crypt_stuff));
 
-    if ( libpbc_get_crypt_key(c_stuff, keyfile) ) {
+    if ( libpbc_get_crypt_key(c_stuff, keyfile) == PBC_OK ) {
+#ifdef DEBUG_ENCRYPT_COOKIE
+        libpbc_debug("read key >");
+        print_hex_bytes(stderr,c_stuff->key_a,sizeof(c_stuff->key_a));
+#endif
         return c_stuff;
     } else {
 	libpbc_free_crypt(c_stuff);
@@ -551,6 +624,10 @@ unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_pl
     unsigned char	*sig;
     unsigned int	sig_len = 0;
 
+#ifdef DEBUG_ENCRYPT_COOKIE
+    libpbc_debug("libpbc_sign_cookie: signing with key '%s'\n",ctx_plus->key_file);
+#endif
+
     sig = (unsigned char *)libpbc_alloc_init(PBC_SIG_LEN);
 
     EVP_SignInit(ctx_plus->ctx, EVP_md5());
@@ -567,6 +644,10 @@ unsigned char *libpbc_sign_cookie_np(unsigned char *cookie_string, md_context_pl
 int libpbc_verify_sig(unsigned char *sig, unsigned char *cookie_string, md_context_plus *ctx_plus)
 {
     int	res = 0;
+
+#ifdef DEBUG_ENCRYPT_COOKIE
+    libpbc_debug("libpbc_verify_cookie: verify with key '%s'\n",ctx_plus->key_file);
+#endif
 
     EVP_VerifyInit(ctx_plus->ctx, EVP_md5());
     EVP_VerifyUpdate(ctx_plus->ctx, cookie_string, sizeof(pbc_cookie_data));
@@ -710,6 +791,16 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
        return 0;
     }
 
+#ifdef DEBUG_ENCRYPT_COOKIE
+    fprintf(stderr,"index1=%d index2=%d len=%ld key=",index1,index2,len);
+    print_hex_bytes(stderr,key,sizeof(key));
+    fprintf(stderr," ivec=");
+    print_hex_bytes(stderr,ivec,sizeof(ivec));
+    fprintf(stderr," in=");
+    print_hex_bytes(stderr,in,len+2);
+    fprintf(stderr,"\n");
+#endif
+
 #ifdef OPENSSL_0_9_2B
     des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_ENCRYPT);
 #else
@@ -720,6 +811,13 @@ int libpbc_encrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
     /* stick the indices on the end of the train */
     out[len] = (unsigned char)index1;
     out[len+1] = (unsigned char)index2;
+
+#ifdef DEBUG_ENCRYPT_COOKIE
+    fprintf(stderr,"out=");
+    print_hex_bytes(stderr,out,len+2);
+    fprintf(stderr,"\n");
+#endif
+
     return 1;
 
 }
@@ -756,10 +854,26 @@ int libpbc_decrypt_cookie(unsigned char *in, unsigned char *out, crypt_stuff *c_
        return 0;
     }
 
+#ifdef DEBUG_ENCRYPT_COOKIE
+    fprintf(stderr,"index1=%d index2=%d len=%ld key=",index1,index2,len);
+    print_hex_bytes(stderr,key,sizeof(key));
+    fprintf(stderr," ivec=");
+    print_hex_bytes(stderr,ivec,sizeof(ivec));
+    fprintf(stderr," in=");
+    print_hex_bytes(stderr,in,len+2);
+    fprintf(stderr,"\n");
+#endif
+
 #ifdef OPENSSL_0_9_2B
     des_cfb64_encrypt(in, out, len, ks, ivec, &i, DES_DECRYPT);
 #else
     des_cfb64_encrypt(in, out, len, ks, &ivec, &i, DES_DECRYPT);
+#endif
+
+#ifdef DEBUG_ENCRYPT_COOKIE
+    fprintf(stderr,"out=");
+    print_hex_bytes(stderr,out,len);
+    fprintf(stderr,"\n");
 #endif
 
     return 1;
@@ -849,7 +963,7 @@ md_context_plus *libpbc_verify_init_np(char *certfile)
 
     ctx_plus = libpbc_init_md_context_plus();
 
-    if ( libpbc_get_public_key(ctx_plus, certfile) ) {
+    if ( libpbc_get_public_key(ctx_plus, certfile) == PBC_OK ) {
         return ctx_plus;
     } else {
 	libpbc_free_md_context_plus(ctx_plus);
@@ -873,7 +987,7 @@ md_context_plus *libpbc_sign_init_np(char *keyfile)
 
     ctx_plus = libpbc_init_md_context_plus();
 
-    if ( libpbc_get_private_key(ctx_plus, keyfile) ) {
+    if ( libpbc_get_private_key(ctx_plus, keyfile) == PBC_OK ) {
 	return ctx_plus;
     } else {
 	libpbc_free_md_context_plus(ctx_plus);
@@ -1003,6 +1117,17 @@ unsigned char *libpbc_update_lastts_np(pbc_cookie_data *cookie_data, md_context_
     cookie = libpbc_sign_bundle_cookie(cookie_string, ctx_plus, c_stuff);
 
     return cookie;
+
+}
+
+/*                                                                            */
+/* something that should never be executed, but shuts-up the compiler warning */
+/*                                                                            */
+void libpbc_dummy()
+{
+    char c;
+
+    c=*(redirect_reason[0]);
 
 }
 
