@@ -6,7 +6,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.130 2004-02-20 18:35:24 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.131 2004-02-27 17:31:53 fox Exp $
  */
 
 
@@ -115,6 +115,12 @@ typedef apr_table_t table;
 typedef apr_pool_t ap_pool;
 #define ap_send_http_header(r) ;
 
+#include "apr_optional.h"
+APR_DECLARE_OPTIONAL_FN(char*, ssl_var_lookup, (apr_pool_t *,
+         server_rec *, conn_rec *, request_rec *, char *));
+static APR_OPTIONAL_FN_TYPE(ssl_var_lookup) *lookup_ssl_var = NULL;
+
+
 #else     /* is apache 1.3 */
 
 #define PC_LOG_DEBUG APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO
@@ -125,7 +131,7 @@ typedef apr_pool_t ap_pool;
 #define AUTH_TYPE connection->ap_auth_type
 #define APR_SUCCESS HTTP_OK
 
-#endif
+#endif /* which aoache */
 
 
 void dump_server_rec(request_rec *r, pubcookie_server_rec *scfg) {
@@ -188,11 +194,14 @@ int put_out_post(request_rec *r) {
    if (ap_should_client_block(r)) {
         int len_read;
 
-        /* AP2 ap_hard_timeout("copy script args", r); */
-
+#ifdef APACHE1_3
+        ap_hard_timeout("copy script args", r); 
+#endif
         while ((len_read =
                 ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN)) > 0) {
-            /* ap_reset_timeout(r); */
+#ifdef APACHE1_3
+            ap_reset_timeout(r);
+#endif
             if (ap_rwrite(argsbuffer, len_read, r) < len_read) {
                 /* something went wrong writing, chew up the rest */
                 while(ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
@@ -201,8 +210,9 @@ int put_out_post(request_rec *r) {
                 break;
             }
         }
-
-        /* ap_kill_timeout(r); */
+#ifdef APACHE1_3
+        ap_kill_timeout(r);
+#endif
     }
     return(1);
 
@@ -1375,16 +1385,31 @@ static int pubcookie_user(request_rec *r) {
   sess_cookie_name = make_session_cookie_name(p, PBC_S_COOKIENAME, appid(r));
 
   /* force SSL */
-/** AP2
+     
+#ifdef APACHE2
+  if (lookup_ssl_var) {
+     char *s = NULL;
+     /* 'lookup_ssl_var' doesn't work until 2.0.49. Assume ssl before then */
+     if (atoi(AP_SERVER_MINORVERSION AP_SERVER_PATCHLEVEL)<49) isssl = "on";
+     else {
+        s = lookup_ssl_var(r->pool, r->server, r->connection, r, "HTTPS"); 
+        ap_log_rerror(PC_LOG_DEBUG, r, "pubcookie_user: have ssl_var: %s", s);
+        if (!strcmp(s, "on")) isssl = "on";
+     }
+  } 
+  if (!isssl) {
+
+#else /* apache 1.3 */
   if (ap_hook_call("ap::mod_ssl::var_lookup", &isssl, p, r->server, 
                  r->connection, r, "HTTPS") && isssl && strcmp (isssl, "on")) {
+#endif
+
     ap_log_rerror(PC_LOG_DEBUG, r, 
       		"Not SSL; uri: %s appid: %s", r->uri, appid(r));
     cfg->failed = PBC_BAD_AUTH;
     cfg->redir_reason_no = PBC_RR_NOGORS_CODE;
     return OK;
   }
- **/
 
   /* before we check if they hav a valid S or G cookie see if it's a logout */
   if( check_end_session(r) & PBC_END_SESSION_ANY ) { 
@@ -1975,7 +2000,6 @@ const char *pubcookie_set_login(cmd_parms *cmd, void *mconfig, const char *v) {
                                  ap_get_module_config(s->module_config,
                                  &pubcookie_module);
     
-           /** AP2 **/
     if( ap_parse_uri_components(cmd->pool, v, &uptr) != APR_SUCCESS ) {
         err_string = ap_psprintf(cmd->pool, "PUBCOOKIE: PubCookieLogin not correctly formatted URL.");
         return(err_string);
@@ -2513,6 +2537,15 @@ static const command_rec pubcookie_commands[] = {
 */
     {NULL}
 };
+
+/* Get mod_ssl's var finder */
+static int pc_post_config(apr_pool_t *pconf, apr_pool_t *plog,
+                             apr_pool_t *ptemp, server_rec *s)
+{
+    lookup_ssl_var = APR_RETRIEVE_OPTIONAL_FN(ssl_var_lookup);
+    return OK;
+}
+
 static void register_hooks(pool      * p) {
     ap_hook_post_config(pubcookie_init, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_check_user_id(pubcookie_user, NULL, NULL, APR_HOOK_FIRST);
@@ -2524,6 +2557,7 @@ static void register_hooks(pool      * p) {
     ap_hook_handler(auth_failed_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_handler(do_end_session_redirect_handler, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_handler(bad_user_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_post_config(pc_post_config, NULL, NULL, APR_HOOK_MIDDLE);
 }
 module AP_MODULE_DECLARE_DATA pubcookie_module = {
     STANDARD20_MODULE_STUFF,
