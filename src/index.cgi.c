@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.32 2001-11-08 22:47:36 willey Exp $
+    $Id: index.cgi.c,v 1.33 2001-11-08 23:15:35 willey Exp $
  */
 
 
@@ -956,7 +956,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         field3_prompt = strdup(PROMPT_SECURID);
         if( l->ride_free_creds == PBC_CREDS_CRED1 ) {
             log_in_with = strdup("SecurID");
-            focus_field = strdup("securid");
+            focus_field = strdup("pass2");
         } 
         else {
             if( (c!=NULL && c->user!=NULL) || (l!=NULL && l->user!=NULL) ) {
@@ -1815,7 +1815,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
 
         /* the refresh header should go into the template as soon as it's*/
         /* been tested                                                   */
-        print_out("Refresh: %s\n", redirect_final);
+        print_out("Location: %s\n", redirect_final);
         tmpl_print_out(TMPL_FNAME "nonpost_redirect", redirect_final, REFRESH, redirect_final, redirect_final);
     } /* end if post_stuff */
 
