@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.105 2002-10-03 16:20:54 willey Exp $
+    $Id: mod_pubcookie.c,v 1.106 2002-10-25 22:23:05 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1099,6 +1099,15 @@ static void pubcookie_init(server_rec *s, pool *p) {
 
     /* libpubcookie initialization */
     libpbc_pubcookie_init();
+
+    if (!scfg->login) {
+        /* if the user didn't explicitly configure a login server,
+           let's default to PBC_LOGIN_URI */
+        scfg->login = ap_pstrcat(p, PBC_LOGIN_URI, NULL);
+        ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, s,
+                     "pubcookie_init(): login from PBC_LOGIN_URI: %s",
+                     scfg->login);
+    }
 }
 
 /*                                                                            */
@@ -1106,13 +1115,10 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
   pubcookie_server_rec *scfg;
   scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
 
-  scfg->login = ap_pstrcat(p, PBC_LOGIN_URI, NULL);
-ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, s, "pubcookie_server_create(): login from PBC_LOGIN_URI: %s", scfg->login);
   scfg->dirdepth = PBC_DEFAULT_DIRDEPTH;
   scfg->authtype_names = NULL;
 
   return (void *)scfg;
-
 }
 
 /*                                                                            */
