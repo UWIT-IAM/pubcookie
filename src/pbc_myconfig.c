@@ -42,7 +42,7 @@
  */
 
 /*
- * $Id: pbc_myconfig.c,v 1.1 2002-03-04 20:07:48 jteaton Exp $
+ * $Id: pbc_myconfig.c,v 1.2 2002-05-14 02:58:28 willey Exp $
  */
 
 /* xxx this should almost certainly use the registry on windows */
@@ -51,7 +51,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <syslog.h>
 #include <com_err.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -81,8 +80,6 @@ int libpbc_config_init(const char *alt_config, const char *ident)
 {
     const char *val;
     int umaskval = 0;
-    
-    openlog(ident, LOG_PID, LOG_LOCAL6);
     
     config_read(alt_config);
     
@@ -161,7 +158,7 @@ static void config_read(const char *alt_config)
         if (!*p || *p == '#') continue;
 
         key = p;
-        while (*p && (isalnum((int) *p) || *p == '-' || *p == '_')) {
+        while (*p && (isalnum((int) *p) || *p == '-' || *p == '_' || *p == '.')) {
             if (isupper((unsigned char) *p)) *p = tolower((unsigned char) *p);
             p++;
         }
