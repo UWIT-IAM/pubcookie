@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.27 2001-10-17 16:16:14 willey Exp $
+    $Id: index.cgi.c,v 1.28 2001-10-17 18:30:35 willey Exp $
  */
 
 
@@ -907,11 +907,15 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
     char	*field2_prompt = NULL;
     char	*field3_prompt = NULL;
     char	*focus_field = NULL;
+    char	focus[PBC_1K];
+    char	message_out[PBC_1K];
     char	*hostname = strdup(get_domain_hostname());
     int		field_type = 0;
     int		field1_type = 0;
-    int		field2_type = 0;
-    int		field3_type = 0;
+/* work in progress 
+ *   int		field2_type = 0;
+ *   int		field3_type = 0;
+ */
 
     log_message("%s Printing login page, reason: %s", l->first_kiss, reason);
 
@@ -920,6 +924,7 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         field1_prompt = strdup(PROMPT_UWNETID);
         field2_prompt = strdup(PROMPT_PASSWD);
         log_in_with = strdup("UW NetID and password");
+        focus_field = strdup("user");
         break;
     case '2':
         field1_prompt = NULL;
@@ -930,14 +935,33 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
         field3_prompt = strdup(PROMPT_SECURID);
         if( l->ride_free_creds == PBC_CREDS_CRED1 ) {
             log_in_with = strdup("SecurID");
+            focus_field = strdup("securid");
         } else {
             log_in_with = strdup("UW NetID, password, and SecurID");
+            focus_field = strdup("user");
         }
         break;
     default:
         field1_prompt = NULL;
         break;
     }
+
+    log_message("print_login_page field1_prompt: %s", field1_prompt);
+
+    /* tell the stoopid browser where to put the cursor */
+    sprintf(focus, "onLoad=\"document.query.%s.focus()\"", focus_field);
+
+    log_message("print_login_page focus: %s", focus);
+
+    /* text before the form fields */
+    if( message == NULL || strcmp(message, PRINT_LOGIN_PLEASE) != 0 ) {
+        sprintf(message_out, "<P>The resource you requested requires you to log in with your %s.</P>\n", log_in_with);
+    }
+    else {
+        strcpy(message_out, message);
+    }
+
+    log_message("print_login_page message_out: %s", message_out);
 
     if( need_clear_login ) 
 #ifdef PORT80_TEST
@@ -960,15 +984,10 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
             G_REQ_RECIEVED,
             PBC_ENTRPRS_DOMAIN);
 
-#ifdef DYNAMIC_LOGIN_PAGE
-    tmpl_print_out(TMPL_FNAME "login_part1", message, reason);
-#else
-    print_http_header();
 
-    print_login_page_part1(focus_field);
+    tmpl_print_out(TMPL_FNAME "login_part1", focus, reason, message_out);
 
-    print_login_page_lhs1(message, reason, log_in_with);
-
+#ifndef FORM_FIELDS_IN_TMPL
     if(field1_prompt != NULL) {
         if( c != NULL && c->user != NULL )
             field1_type = FIELD_TYPE_PREFILLED_NONEDITTABLE;
@@ -1008,22 +1027,14 @@ void print_login_page(login_rec *l, login_rec *c, char *message, char *reason, i
                              field_type, 
                              "");
 
-    print_login_page_lhs2a(l);
+    print_out("</form>\n");
+    print_out("</td>\n");
+    print_out("<td width=\"9\">&nbsp;</td>\n");
+
 #endif
+
     print_login_page_hidden_stuff(l);
-#ifdef DYNAMIC_LOGIN_PAGE
     tmpl_print_out(TMPL_FNAME "login_part2", message, reason);
-#else
-    print_login_page_lhs2b(l);
-
-    print_login_page_centre();
-
-    print_login_page_rhs();
-
-    print_login_page_expire_info();
-
-    print_login_page_bottom();
-#endif
 
 }
 
@@ -1330,23 +1341,9 @@ void notok ( void (*notok_f)() )
             EARLIEST_EVER);
     }
 
-#ifdef DYNAMIC_LOGIN_PAGE
-    print_http_header();
-    print_login_page_part1(NO_FOCUS);
-    print_out("<td valign=\"middle\">\n");
-    print_uwnetid_logo();
-#else
     tmpl_print_out(TMPL_FNAME "notok_part1");
-#endif
-
     notok_f();
-
-#ifdef DYNAMIC_LOGIN_PAGE
-    print_out("</td>\n</tr>\n");
-    print_login_page_bottom();
-#else
     tmpl_print_out(TMPL_FNAME "notok_part2");
-#endif
 
 }
 
@@ -1880,21 +1877,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         /*                                                               */
         /* non-post redirect area                 non-post redirect area */
         /*                                                               */
-#ifdef DYNAMIC_LOGIN_PAGE
         tmpl_print_out(TMPL_FNAME "nonpost_redirect", REFRESH, redirect_final,redirect_final);
-#else
-        print_http_header();
-        print_out("<html><head>\n");
-        print_out("<SCRIPT LANGUAGE=\"JavaScript\">\n");
-        print_out("window.location.replace(\"%s\");\n", redirect_final);
-        print_out("</SCRIPT> \n");
-        print_out("<NOSCRIPT>\n");
-        print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_final);
-        print_out("</NOSCRIPT> \n");
-        print_out("<BODY BGCOLOR=\"white\">");
-        print_out("<!--redirecting to %s-->", redirect_final);
-        print_out("</BODY></HTML>\n");
-#endif
     } /* end if post_stuff */
 
     free(g_cookie);
