@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.25 2000-03-03 01:51:17 willey Exp $
+#   $Id: Makefile,v 1.26 2000-03-20 22:35:31 willey Exp $
 #
 
 # your compiler here
@@ -27,7 +27,7 @@ CC=gcc
 #   for convenience i make symlinks to the openssl and rsaref directorys
 #   the two openssl include directories compensate for a openssl
 #     file location shuffling.
-CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include -DUSE_SECURID
+CFLAGS=-O3 -g -Wall -Iopenssl/include/openssl -Iopenssl/include -DUSE_SECURID -DAPACHE1_3
 # order is important here
 LDFLAGS=-L/usr/local/ssl/lib -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref 
 
