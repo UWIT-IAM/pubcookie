@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <assert.h>
@@ -73,17 +72,15 @@ int security_init(void)
 
     FILE *fp;
 
-    struct stat sbuf;
-
     /* first we try to use the ssl files */
     keyfile = mystrdup(libpbc_config_getstring("ssl_key_file", NULL));
-    if (keyfile && stat(keyfile, &sbuf)) {
+    if (keyfile && access(keyfile, R_OK | F_OK)) {
 	free(keyfile);
 	/* not there ? */
 	keyfile = NULL;
     }
     certfile = mystrdup(libpbc_config_getstring("ssl_cert_file", NULL));
-    if (certfile && stat(certfile, &sbuf)) {
+    if (certfile && access(certfile, R_OK | F_OK)) {
 	free(certfile);
 	/* not there ? */
 	certfile = NULL;
@@ -99,7 +96,8 @@ int security_init(void)
 	snprintf(certfile, 1024, "%s/%s", PBC_KEY_DIR,
 		 "pubcookie_session.cert");
 
-	if (stat(keyfile, &sbuf) || stat(certfile, &sbuf)) {
+	if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
+	    /* session keys not valid */
 	    free(keyfile);
 	    free(certfile);
 	    keyfile = NULL;
@@ -117,8 +115,9 @@ int security_init(void)
 	snprintf(certfile, 1024, "%s/%s", PBC_KEY_DIR,
 		 "pubcookie_login.cert");
 
-	if (stat(keyfile, &sbuf) || stat(certfile, &sbuf)) {
-	    free(keyfile);
+	if (access(keyfile, R_OK | F_OK) || access(certfile, R_OK | F_OK)) {
+	    /* login keys not valid */
+ 	    free(keyfile);
 	    free(certfile);
 	    keyfile = NULL;
 	    certfile = NULL;
@@ -152,13 +151,13 @@ int security_init(void)
     }
 
     /* test g_keyfile */
-    if (stat(g_keyfile, &sbuf)) {
+    if (access(g_keyfile, R_OK | F_OK)) {
 	syslog(LOG_DEBUG, "couldn't find granting keyfile (try setting granting_key_file?)");
 	g_keyfile = NULL;
     }
 
     /* test g_certfile; it's a fatal error if this isn't found */
-    if (stat(g_certfile, &sbuf)) {
+    if (access(g_certfile, R_OK | F_OK)) {
 	syslog(LOG_ERR, "couldn't find granting certile (try setting granting_cert_file?): tried %s", g_certfile);
 	return -1;
     }
@@ -397,8 +396,8 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
  * 'peer' is NULL, we assume that this host previously called libpbc_mk_priv
- * @param peer the peer this message came from; if NULL, this message came
- * from this host.
+ * @param peer the peer this message is destined to (the first parameter to
+ * libpbc_mk_priv()).
  * @param buf a pointer to the encrypted message
  * @param len the length of the encrypted message
  * @param outbuf a malloc()ed pointer to the plaintext message
@@ -416,7 +415,6 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
     unsigned char keybuf[PBC_DES_KEY_BUF];
     char mysig[PBC_SIG_LEN];
     static unsigned char ivec_tmp[PBC_INIT_IVEC_LEN] = PBC_INIT_IVEC;
-    const char *peer2;
     int c;
     int r;
 
@@ -425,8 +423,9 @@ int libpbc_rd_priv(const char *peer, const char *buf, const int len,
 	return -1;
     }
 
-    peer2 = peer ? peer : get_my_hostname();
-    if (get_crypt_key(peer2, (char *) keybuf) < 0) {
+    /* since i'm reading a message, i always decrypt using my key in this
+     security model. */
+    if (get_crypt_key(get_my_hostname(), (char *) keybuf) < 0) {
 	return -1;
     }
 

@@ -27,8 +27,9 @@ int libpbc_mk_priv(const char *peer, const char *buf, const int len,
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
  * 'peer' is NULL, we assume that this host previously called libpbc_mk_priv
- * @param peer the peer this message came from; if NULL, this message came
- * from this host.
+ * with NULL.
+ * @param peer the peer this message is destined to (the first parameter to
+ * libpbc_mk_priv()).
  * @param buf a pointer to the encrypted message
  * @param len the length of the encrypted message
  * @param outbuf a malloc()ed pointer to the plaintext message
@@ -56,7 +57,8 @@ int libpbc_mk_safe(const char *peer, const char *buf, const int len,
 
 /**
  * verifies a message signed with libpbc_mk_safe()
- * @param peer the peer this message was sent from; NULL if this is me
+ * @param peer the peer this message was sent to; the first parameter passed
+ * to libpbc_mk_safe()
  * @param buf the plaintext message
  * @param len the length of the plaintext message
  * @param sigbuf the signature returned from libpbc_mk_safe()
