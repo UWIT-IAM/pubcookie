@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.70 2002-11-14 21:12:12 jjminer Exp $
+    $Id: pbc_config.h,v 1.71 2002-11-19 00:48:15 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -41,7 +41,13 @@
 #endif
 
 #include "pbc_myconfig.h" 
-#include "pbc_path.h"
+
+#ifdef WIN32
+#  define PBC_KEY_DIR (AddSystemRoot("\\inetsrv\\pubcookie\\keys"))
+#else
+#  include "pbc_path.h"
+#endif
+
 
 #ifdef HAVE_DMALLOC_H
 # ifndef APACHE

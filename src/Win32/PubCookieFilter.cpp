@@ -747,24 +747,32 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* dcfg)
 		dwRead = sizeof (dcfg->timeout_url);
 		RegQueryValueEx (hKey, "Timeout_Url",
 			NULL, NULL, (LPBYTE) dcfg->timeout_url, &dwRead);
-
+		
 		dwRead = sizeof (dcfg->Web_Login);
 		RegQueryValueEx (hKey, "Web_Login",
-							 NULL, NULL, (LPBYTE) dcfg->Web_Login, &dwRead);
+			NULL, NULL, (LPBYTE) dcfg->Web_Login, &dwRead);
 		dwRead = sizeof (dcfg->Enterprise_Domain);
 		RegQueryValueEx (hKey, "Enterprise_Domain",
-							 NULL, NULL, (LPBYTE) dcfg->Enterprise_Domain, &dwRead);
+			NULL, NULL, (LPBYTE) dcfg->Enterprise_Domain, &dwRead);
 		dwRead = sizeof (dcfg->Error_Page);
 		RegQueryValueEx (hKey, "Error_Page",
-							 NULL, NULL, (LPBYTE) dcfg->Error_Page, &dwRead);
+			NULL, NULL, (LPBYTE) dcfg->Error_Page, &dwRead);
+		dwRead = sizeof (dcfg->Set_Server_Values);
+		RegQueryValueEx (hKey, "SetHeaderValues",
+			NULL, NULL, (LPBYTE) dcfg->Set_Server_Values, &dwRead);
 
-
+#	ifndef COOKIE_PATH
+		dwRead = sizeof (dcfg->appid);
+		RegQueryValueEx (hKey, "AppId",
+			NULL, NULL, (LPBYTE) dcfg->appid, &dwRead);
+#	endif		
+		
 		if (dcfg->logout_action != LOGOUT_NONE) {   //Local logout cannot be authenticated. Redirect could, but isn't
 			dcfg->AuthType = AUTH_NONE;
 		}
-		sprintf(dcfg->s_cookiename,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
 		
 		DebugMsg((DEST,"  Values for: %s\n" ,key));
+		DebugMsg((DEST,"    AppId            : %s\n" ,dcfg->appid));
 		DebugMsg((DEST,"    NtUserId         : %s\n" ,dcfg->pszUser));
 		DebugMsg((DEST,"    Password?        : %d\n" ,(strlen(dcfg->pszPassword) > 0) ));
 		DebugMsg((DEST,"    Inact_Exp        : %d\n" ,dcfg->inact_exp));
@@ -778,9 +786,7 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* dcfg)
 		DebugMsg((DEST,"    Web_Login        : %s\n" ,dcfg->Web_Login));
 		DebugMsg((DEST,"    Enterprise_Domain: %s\n" ,dcfg->Enterprise_Domain));
 		DebugMsg((DEST,"    Error_Page       : %s\n" ,dcfg->Error_Page));
-		
-	} else {
-		DebugMsg((DEST, "  Could not read Pubcookie registry key %s.  %s\n",key,strerror(rslt)));
+		DebugMsg((DEST,"    Set_Server_Values: %d\n",dcfg->Set_Server_Values));
 	}
     
 	RegCloseKey (hKey); 
@@ -814,6 +820,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 //	sprintf(dcfg->Web_Login,"https://%s/%s", PBC_LOGIN_HOST,PBC_LOGIN_URI);
 	strcpy(dcfg->Web_Login, PBC_LOGIN_URI);
 	strcpy(dcfg->Error_Page,"");
+	dcfg->Set_Server_Values = false;
 
 	
     // Then Look in default key
@@ -859,9 +866,10 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 				if ( stricmp((const char *)szBuff, PBC_SECURID_NAME) == 0 )
 					dcfg->AuthType = AUTH_SECURID;
 				else
-					if ( stricmp((const char *)szBuff, PBC_PUBLIC_NAME) == 0 )
+					if ( stricmp((const char *)szBuff, PBC_PUBLIC_NAME) == 0 ) {
 						dcfg->AuthType = AUTH_NONE;
-
+					    dcfg->Set_Server_Values = true;
+					}
 
 			DebugMsg((DEST,"  dir type       : %s\n",szBuff));
 		}
@@ -873,7 +881,8 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 
 	}
 
-		
+	sprintf(dcfg->s_cookiename,"%s_%s",PBC_S_COOKIENAME,dcfg->appid);
+	
 
 } 
 
@@ -995,19 +1004,18 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	// Save Path unchanged so cookies will be returned properly
 	// strcpy(dcfg->path_id,dcfg->appid);
 
-	// Convert appid to lower case if not using COOKIE_PATH
-#ifndef COOKIE_PATH
-	strlwr(dcfg->appid);
-#endif
+	// Convert appid to lower case
 
-	// Get userid, timeouts, AuthType, etc for this app
+	strlwr(dcfg->appid);
+
+	// Get userid, timeouts, AuthType, etc for this app.  Could change appid.
 	Get_Effective_Values(pFC,pHeaderInfo,ptr);
 
     /* Log out if indicated */
 
 	if (dcfg->logout_action > LOGOUT_NONE) {
 #ifdef COOKIE_PATH
-		if ( strcmp(dcfg->appid,PBC_DEFAULT_APP_NAME) == 0 )
+		if ( stricmp(dcfg->appid,PBC_DEFAULT_APP_NAME) == 0 )
 			strcpy(szBuff,"/");
 		else 
 			sprintf(szBuff,"/%s",dcfg->appid);
@@ -1048,7 +1056,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	/* We're done if this is an unprotected page */
 	if (dcfg->AuthType == AUTH_NONE) {
-		dcfg->pszUser[0] = NULL;
+		if (dcfg->Set_Server_Values) {
+			Add_Header_Values   (pFC,pHeaderInfo);
+		}
 		return DECLINED;
 	}
 
@@ -1358,7 +1368,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 
 #ifdef COOKIE_PATH
-			if ( strcmp(dcfg->appid,PBC_DEFAULT_APP_NAME) == 0 )
+			if ( stricmp(dcfg->appid,PBC_DEFAULT_APP_NAME) == 0 )
 				sprintf(new_cookie, "Set-Cookie: %s_%s=%s; domain=%s; path=/; secure\r\n", 
 				PBC_S_COOKIENAME, dcfg->appid,
 				cookie, 

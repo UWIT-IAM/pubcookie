@@ -1,6 +1,5 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 pre-beta4"
-
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 beta-1"
 
 typedef struct {
 	char				*g_certfile;
@@ -38,7 +37,7 @@ typedef struct {
 	char		Enterprise_Domain[1024];
 	char		Web_Login[1024];
     pbc_cookie_data *cookie_data;
-
+	int         Set_Server_Values;
 
 } pubcookie_dir_rec;
 
