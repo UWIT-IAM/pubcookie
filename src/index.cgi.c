@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.20 2001-04-24 01:22:20 willey Exp $
+    $Id: index.cgi.c,v 1.21 2001-05-15 01:10:37 willey Exp $
  */
 
 
@@ -1052,7 +1052,7 @@ void print_copyright()
 /*	################################### UWNetID Logo                      */
 void print_uwnetid_logo()
 {
-    print_out("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\">\n");
+    print_out("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\" oncontextmenu=\"return false\">\n");
 
 }
 
@@ -1131,7 +1131,7 @@ void print_login_page_lhs2(login_rec *l)
 void print_login_page_centre()
 {
     print_out("<td width=\"2\" bgcolor=\"#000000\">\n");
-    print_out("<img src=\"/images/1pixffcc33iystpiwfy.gif\" width=\"1\" height=\"1\" align=\"BOTTOM\" alt=\"\"></td>\n");
+    print_out("<img src=\"/images/1pixffcc33iystpiwfy.gif\" width=\"1\" height=\"1\" align=\"BOTTOM\" alt=\"\" oncontextmenu=\"return false\"></td>\n");
     print_out("<td width=\"9\">&nbsp;</td>\n");
 
 }
@@ -1278,10 +1278,8 @@ void print_redirect_page(login_rec *l)
     char		g_set_cookie[PBC_1K];
     char		l_set_cookie[PBC_1K];
     char		clear_g_req_cookie[PBC_1K];
-/* these are used anymore due to the commenting out some code
     char		*post_stuff_lower = NULL;
     char		*p = NULL;
- */
     int			g_res, l_res;
     int			limitations_mentioned = 0;
     char		*submit_value = NULL;
@@ -1411,8 +1409,8 @@ void print_redirect_page(login_rec *l)
 
         /* depending on whether-or-not there is a SUBMIT field in the form */
         /* use the correct javascript to autosubmit the POST */
-/* for some unknown reason this is commented-out */
-/*
+        /* this should probably be upgraded to only look for submits as field */
+        /* names, not anywhere else */
         post_stuff_lower = strdup(l->post_stuff);
         for(p=post_stuff_lower; *p != '\0'; p++)
             *p = tolower(*p);
@@ -1420,8 +1418,6 @@ void print_redirect_page(login_rec *l)
             print_out("document.query.submit.click()");
         else
             print_out("document.query.submit");
-*/
-	print_out("document.query.submit()");
 
         print_out("\">\n");
 
@@ -1491,7 +1487,14 @@ void print_redirect_page(login_rec *l)
         print_http_header();
 
         print_out("<html><head>\n");
+
+        print_out("<SCRIPT>\n");
+        print_out("window.location.replace("sorry.html");\n");
+        print_out("</SCRIPT> \n");
+        print_out("<NOSCRIPT>\n");
         print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_final);
+        print_out("</NOSCRIPT> \n");
+
         print_out("<BODY BGCOLOR=\"white\">");
         print_out("<!--redirecting to %s-->", redirect_final);
         print_out("</BODY></HTML>\n");
