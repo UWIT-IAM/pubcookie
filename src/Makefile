@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.45 2001-12-14 00:28:36 willey Exp $
+#   $Id: Makefile,v 1.46 2001-12-20 18:37:57 willey Exp $
 #
 
 # your compiler here
@@ -72,7 +72,7 @@ LOGINMISC=CHANGES.login.txt \
 	  NEW_SITE.txt \
           Makefile \
           Makefile.index.cgi \
-          contrib\* \
+          contrib/* \
 	  INSTALL.login
 TESTMISC=Makefile
 ALLMISC=${GENERALMISC} ${TESTMISC} ${LOGINMISC} ${MODULEMISC}
@@ -140,7 +140,7 @@ moduletar:
 	ln -s . $$DIR_NAME; \
 	for i in ${GENERALSRC} $(MODULESRC) $(GENERALHEAD) ${MODULEHEAD} ${MODULEMISC} $(GENERALMISC) ;\
 	do \
-	        $(TAR) rvf $$TARFILE $$DIR_NAME/$$i; \
+	        $(TAR) hrvf $$TARFILE $$DIR_NAME/$$i; \
 	done; \
 	$(GZIP) -f $$TARFILE; \
 	$(RM) -rf $$DIR_NAME; \
@@ -157,7 +157,7 @@ logintar:
 	ln -s . $$DIR_NAME; \
 	for i in ${GENERALSRC} ${LOGINSRC} ${TESTSRC} ${GENERALHEAD} ${LOGINHEAD} ${TESTHEAD} ${LOGINMISC} ${GENERALMISC} ${TESTMISC} ;\
 	do \
-	        $(TAR) rvf $$TARFILE $$DIR_NAME/$$i; \
+	        $(TAR) hrvf $$TARFILE $$DIR_NAME/$$i; \
 	done; \
 	$(GZIP) -f $$TARFILE; \
 	$(RM) -rf $$DIR_NAME; \
