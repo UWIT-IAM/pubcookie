@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.71 2005-02-07 22:26:37 willey Exp $
+ * $Id: flavor_basic.c,v 1.72 2005-02-24 00:25:19 willey Exp $
  */
 
 
@@ -304,7 +304,6 @@ int get_reason_html (pool * p, int reason, login_rec * l, login_rec * c,
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello reason: %d",
                       func, reason);
 
-    /* set the cookies */
     switch (reason) {
     case FLB_BAD_AUTH:
         /* username will be static and prefilled use a different bad
