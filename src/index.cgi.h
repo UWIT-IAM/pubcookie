@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: index.cgi.h,v 1.4 2000-08-22 19:30:45 willey Exp $
+    $Id: index.cgi.h,v 1.5 2000-08-25 22:08:50 willey Exp $
  */
 
 typedef struct {
@@ -37,6 +37,7 @@ typedef struct {
     char	*post_stuff;
     char	*real_hostname;
     char	*appsrv_err;
+    char	*appsrv_err_string;
     char	*file;
     char	*flag;
     char	*referer;
@@ -45,9 +46,7 @@ typedef struct {
     time_t	last_ts;
     int		serial;
     int		next_securid;
-    /* we add this so we hav it handy */
-    char	*remote_host;
-    time_t	first_kiss;
+    char	*first_kiss;
 } login_rec;
 
 /* prototypes */
@@ -59,6 +58,7 @@ void abend(char *);
 int cookie_test();
 void notok( void (*)() );
 void notok_no_g_or_l();
+void print_http_header();
 void print_j_test();
 void notok_need_ssl();
 void notok_no_g();
