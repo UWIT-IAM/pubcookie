@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.45 $
+ * $Revision: 1.46 $
  */
 
 
@@ -1226,12 +1226,21 @@ int logout(login_rec *l, login_rec *c, int logout_action)
     return(PBC_OK);
 }
 
+/**
+ * check_logout checks to see if this is a logout action, and
+ * calls the logout function if so
+ *
+ * @param l login_rec from submission
+ * @param c login_rec from cookies
+ *
+ * @returns PBC_OK if not a logout, or never returns if a logout
+ */
 int check_logout(login_rec *l, login_rec *c) 
 {
-    int         logout_action;
-    char	*logout_prog;
-    char	*uri;
-    char  	*p;
+    int logout_action;
+    char *logout_prog;
+    char *uri;
+    char *p;
 
     if (debug) 
         fprintf(stderr, "check_logout: program name: %s\n", cgiScriptName);
@@ -1259,17 +1268,16 @@ int check_logout(login_rec *l, login_rec *c)
     }
     *p = '\0';
 
-    if ( logout_prog != NULL &&
-         uri != NULL &&
-	 strcasecmp(logout_prog, uri) == 0 ) {
+    if(logout_prog != NULL && uri != NULL &&
+       strcasecmp(logout_prog, uri) == 0 ) {
         logout(l, c, LOGOUT_ACTION_CLEAR_L_NO_APP);
         do_output();
         exit(0);
     }
 
     return(PBC_OK);
-
 }
+
 
 /**
  * prints first part of login status page
@@ -1319,7 +1327,7 @@ int pinit(login_rec *l, login_rec *c)
 	l->host = strdup((char *)login_host());
 	l->appsrvid = strdup(l->host);
 	l->appid = strdup("pinit");
-	l->uri = strdup("/");
+	l->uri = strdup(cgiScriptName);
         if(debug)
             log_message("pinit: ready to print login page");
          print_login_page(l, c, &l->appid);
@@ -1333,16 +1341,18 @@ int pinit(login_rec *l, login_rec *c)
 
 }
 
-/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
-/*	main line                                                          */
-/* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
-
+/**
+ * cgiMain: the main routine, called by libcgic
+ */
 int cgiMain() 
 {
-    login_rec	*l=NULL;   /* culled from various sources */
-    login_rec	*c=NULL;   /* only from login cookie */
-    const char  *mirrorfile;
+    login_rec *l = NULL;   /* culled from various sources */
+    login_rec *c = NULL;   /* only from login cookie */
+    const char *mirrorfile;
 
+    /* the html and headers are written to tmpfiles then 
+     * transmitted to the browser when complete
+     */
     htmlout = tmpfile();
     headerout = tmpfile();
 
@@ -1354,17 +1364,34 @@ int cgiMain()
     print_http_header();
 
     if (debug) {
-	fprintf(stderr, "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
+        fprintf(stderr, "cgiMain: hello built on " __DATE__ " " __TIME__ "\n");
     }
 
     if (mirrorfile) {
-	init_mirror_file(mirrorfile);
+        init_mirror_file(mirrorfile);
     }
 
 #ifndef PORT80_TEST
     /* bail if not ssl */
     if (!getenv("HTTPS") || strcmp( getenv("HTTPS"), "on" ) ) { 
-        notok(notok_need_ssl);
+        /* instead of just bailing, why not just redirect to an SSL port */
+        /* notok(notok_need_ssl); */
+
+        char * redirect_final;
+
+        if (!(redirect_final = malloc(PBC_4K)) ) {
+           abend("out of memory");
+        }
+       
+        snprintf(redirect_final, PBC_4K-1, "https://%s%s",
+                 cgiServerName, cgiScriptName);
+
+        /* this won't work quite right if somehow a form gets
+         * submitted to us on port 80 
+         */
+        tmpl_print_html(TMPL_FNAME "nonpost_redirect", redirect_final,
+                       REFRESH, redirect_final, redirect_final);
+
 	goto done;
     }
 #endif
@@ -1376,26 +1403,26 @@ int cgiMain()
     /* malloc and populate login_rec                                   */
     l = get_query(); 
 
-    /* unload the login cookie if we hav it */
+    /* unload the login cookie if we have it */
     c = verify_unload_login_cookie(l);
 
     /* log the arrival */
     log_message("%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s because: %s", 
-		l->first_kiss, 
-		l->user, 
-		cgiRemoteAddr, 
-		l->host, 
-		l->appid,
-		l->uri,
-		l->appsrv_err_string);
+                l->first_kiss, 
+                l->user, 
+                cgiRemoteAddr, 
+                l->host, 
+                l->appid,
+                l->uri,
+                l->appsrv_err_string);
 
     /* check the user agent */
-    if ( !check_user_agent() ) {
+    if (!check_user_agent()) {
         log_message("%s bad agent: %s user: %s client_addr: %s",
-		    l->first_kiss, 
-		    user_agent(), 
-		    l->user, 
-		    cgiRemoteAddr);
+                    l->first_kiss, 
+                    user_agent(), 
+                    l->user, 
+                    cgiRemoteAddr);
         notok(notok_bad_agent);
 	goto done;
     }
@@ -1414,7 +1441,7 @@ int cgiMain()
     }
 
     /* allow for older versions that don't have force_reauth */
-    if ( !l->fr ) {
+    if (!l->fr) {
         l->fr = strdup("NFR");
     }
     
@@ -1432,7 +1459,6 @@ int cgiMain()
     
 	/* generate the cookies and print the redirect page */
 	print_redirect_page(l, c);
-	
     }
 
  done:
@@ -1727,11 +1753,13 @@ int pinit_responce(login_rec *l, login_rec *c)
 }
 
 /**
- * looks at what cookies we hav to do an inital vectoring of the request
- *      should somehow be merged into vector request but all of these  
- *	things should happen first.
- * @param *c from login cookie
+ * cookie_test: looks at what cookies we have to do an inital vectoring
+ * of the request; should somehow be merged into vector request but all
+ * of these things should happen first.
+ *
  * @param *l from login session
+ * @param *c from login cookie
+ *
  * @returns PBC_FAIL if the program should finish
  * @returns PBC_OK   if the program should continue
  */
@@ -1740,8 +1768,9 @@ int cookie_test(login_rec *l, login_rec *c)
     char        *cookies;
     char        cleared_g_req[PBC_1K];
 
-    if(debug)
+    if (debug) {
         log_message("cookie_test: hello");
+    }
 
     /* if it's a reply from the login server we immediatly leave */
     if ( l->reply == FORM_REPLY && l->appid != NULL) {
@@ -1749,7 +1778,7 @@ int cookie_test(login_rec *l, login_rec *c)
     }
 
     /* if no cookies, then must be pinit */
-    if ( (cookies = getenv("HTTP_COOKIE")) == NULL ){
+    if ((cookies = getenv("HTTP_COOKIE")) == NULL) {
         pinit(l, c);
         return(PBC_FAIL);
     }
@@ -1818,46 +1847,64 @@ char *to_lower(char *in)
 
 }
 
+/**
+ *  clean_ok_browsers_line lowercases a string, and truncates it at
+ *  the first \n
+ *
+ *  @param in pointer to a string, which is modified
+ *  @return nothing
+ */
 void clean_ok_browsers_line(char *in)
 {
-    char	*p;
+    char *p;
 
     for(p = in; *p; p++) {
         *p = tolower(*p);
         if (*p == '\n' ) 
             *p-- = '\0';
     }
-
 }
 
+
+/**
+ *  check_user_agent: checks the user_agent string from the browser
+ *  to see if it contains any of the lines of OK_BROWSERS_FILE as
+ *  a substring
+ *
+ *  @param none
+ *  @return 0 on error
+ *  @return 1 if a valid substring matches
+ *  @return 0 if no match is found (the browser is bad)
+ */
 int check_user_agent()
 {
-    char        line[PBC_1K];
-    char        agent_clean[PBC_1K];
-    FILE	*ifp;
+    char line[PBC_1K];
+    char agent_clean[PBC_1K];
+    FILE *ifp;
 
-    if ( !(ifp = fopen(OK_BROWSERS_FILE, "r")) ) {
+    ifp = fopen(OK_BROWSERS_FILE, "r");
+    if (ifp == NULL) {
         log_error(2, "system-problem", 0,
-		  "can't open ok browsers file: %s, continuing", 
-		  OK_BROWSERS_FILE);
+                  "can't open ok browsers file: %s, continuing", 
+                  OK_BROWSERS_FILE);
         return(0);
     }
 
     /* make the user agent lower case */
-    strncpy( agent_clean, user_agent(), sizeof(agent_clean) );
+    strncpy(agent_clean, user_agent(), sizeof(agent_clean));
     clean_ok_browsers_line(agent_clean);
 
-    while( fgets(line, sizeof(line), ifp) != NULL ) {
+    while(fgets(line, sizeof(line), ifp) != NULL) {
         clean_ok_browsers_line(line);
-        if (line[0] == '#' )
+        if (line[0] == '#' ) {
             continue;
-        if (strstr( agent_clean, line ) ) {
+        } 
+        if (strstr(agent_clean, line)) {
             return(1);
         }
     }
 
     return(0);
-
 }
 
 
