@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.19 2002-07-17 18:31:23 greenfld Exp $
+    $Id: keyserver.c,v 2.20 2002-07-18 20:11:37 greenfld Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -154,7 +154,7 @@ enum optype {
 int pushkey(const char *peer)
 {
     char **lservers = libpbc_config_getlist("login_servers");
-    char *hostname;
+    const char *hostname;
     char *lservername, *p;
     int x;
     int res;
@@ -431,6 +431,8 @@ int main(int argc, char *argv[])
     int r;
 
     libpbc_config_init(NULL, "keyserver");
+    libpbc_pubcookie_init();
+
     debug = libpbc_config_getint("debug", 0);
     keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
