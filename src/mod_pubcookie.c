@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.82 2002-06-25 23:42:09 willey Exp $
+    $Id: mod_pubcookie.c,v 1.83 2002-06-26 14:53:39 greenfld Exp $
  */
 
 /* apache includes */
@@ -59,7 +59,6 @@ typedef struct {
   char                  *g_certfile;
   char                  *s_keyfile;
   char                  *s_certfile;
-  char                  *crypt_keyfile;
   md_context_plus       *session_sign_ctx_plus;
   md_context_plus       *session_verf_ctx_plus;
   md_context_plus       *granting_verf_ctx_plus;
@@ -93,7 +92,6 @@ void dump_server_rec(pubcookie_server_rec *scfg) {
 		g_certfile: %s\n\
 		s_keyfile: %s\n\
 		s_certfile: %s\n\
-		crypt_keyfile: %s\n\
 		session_sign_ctx_plus: %s\n\
 		session_verf_ctx_plus: %s\n\
 		granting_verf_ctx_plus: %s\n\
@@ -109,7 +107,6 @@ void dump_server_rec(pubcookie_server_rec *scfg) {
   		(scfg->g_certfile == NULL ? "" : scfg->g_certfile),
   		(scfg->s_keyfile == NULL ? "" : scfg->s_keyfile),
   		(scfg->s_certfile == NULL ? "" : scfg->s_certfile),
-  		(scfg->crypt_keyfile == NULL ? "" : scfg->crypt_keyfile),
   		(scfg->session_sign_ctx_plus == NULL ? "unset" : "set"),
   		(scfg->session_verf_ctx_plus == NULL ? "unset" : "set"),
   		(scfg->granting_verf_ctx_plus == NULL ? "unset" : "set"),
@@ -301,7 +298,7 @@ char pubcookie_auth_type(request_rec *r) {
     const char                *auth_type;
     const char                *type_names;
     char                      *word;
-    int                       i = 1;
+    int                       i;
     
     scfg=(pubcookie_server_rec *)ap_get_module_config(r->server->module_config,
                                          &pubcookie_module);
@@ -311,16 +308,17 @@ char pubcookie_auth_type(request_rec *r) {
     auth_type = ap_auth_type(r);
 
     /* check list of pubcookie auth_types */
+    /* xxx this only works if the credential id is '0', '1', ... */
+    i = 1;
     while( type_names != NULL && *type_names != '\0' &&
 		 (word = ap_getword_conf(p, &type_names)) ) {
         if( strcasecmp(word, auth_type) == 0 ) 
-            return(i+48);
+            return(i + '0');
         i++;
     }
 
-    /* request isn't pubcookie */
-    return(PBC_CREDS_NONE);
-
+    /* ok, check the list in libpubcookie */
+    return libpbc_get_credential_id(auth_type);
 }
 
 request_rec *main_rrec (request_rec *r) {
@@ -1049,10 +1047,6 @@ static void pubcookie_init(server_rec *s, pool *p) {
 	exit(1);
     }
 
-    /* fix file path, read, and init crypt key */
-    fname = ap_server_root_relative (p,
-	(scfg->crypt_keyfile ? scfg->crypt_keyfile : PBC_CRYPT_KEYFILE));
-
     scfg->c_stuff = libpbc_init_crypt(hostname);
 
     if(scfg->c_stuff==0) {
@@ -1103,8 +1097,7 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
 
   libpbc_config_init(NULL, "mod_pubcookie");
 
-  scfg->login = 
-	ap_pstrcat(p, "https://", PBC_LOGIN_HOST, "/", PBC_LOGIN_URI, NULL);
+  scfg->login = ap_pstrcat(p, PBC_LOGIN_URI, NULL);
   scfg->dirdepth = PBC_DEFAULT_DIRDEPTH;
   scfg->authtype_names = NULL;
 
@@ -1147,8 +1140,6 @@ static void *pubcookie_server_merge(pool *p, void *parent, void *newloc) {
 		nscfg->s_keyfile : pscfg->s_keyfile;
     scfg->s_certfile = nscfg->s_certfile ? 
 		nscfg->s_certfile : pscfg->s_certfile;
-    scfg->crypt_keyfile = nscfg->crypt_keyfile ? 
-		nscfg->crypt_keyfile : pscfg->crypt_keyfile;
 
     scfg->session_sign_ctx_plus = nscfg->session_sign_ctx_plus ? 
 		nscfg->session_sign_ctx_plus : pscfg->session_sign_ctx_plus;
@@ -1672,6 +1663,12 @@ const char *pubcookie_set_appid(cmd_parms *cmd, void *mconfig, unsigned char *v)
     return NULL;
 }
 
+const char *pubcookie_add_request(cmd_parms *cmd, void *mconfig, 
+				  unsigned char *v, unsigned char *w)
+{
+
+
+}
 /*                                                                            */
 const char *pubcookie_set_appsrvid(cmd_parms *cmd, void *mconfig, unsigned char *v) {
     server_rec *s = cmd->server;
@@ -1773,12 +1770,6 @@ const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
 #else
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config,
                                                    &pubcookie_module);
-#endif
-
-#ifdef APACHE1_2
-    scfg->crypt_keyfile = pstrdup(cmd->pool, v);
-#else
-    scfg->crypt_keyfile = ap_pstrdup(cmd->pool, v);
 #endif
 
     return NULL;
@@ -1903,6 +1894,8 @@ command_rec pubcookie_commands[] = {
      "Do not blank cookies."},
     {"PubCookieAuthTypeNames", set_authtype_names, NULL, RSRC_CONF, RAW_ARGS,
      "Sets the text names for authtypes."},
+    {"PubCookieAddlRequest", pubcookie_add_request, NULL, OR_OPTIONS, TAKE2,
+     "Send the following options to the login server along with authentication requests"},
 /* maybe for future exploration
     {"PubCookieNoSSLOK", pubcookie_set_no_ssl_ok, NULL, OR_OPTIONS, TAKE1,
      "Allow session to go non-ssl."},
