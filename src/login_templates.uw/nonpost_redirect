@@ -6,12 +6,17 @@ Content-Type: text/html
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <meta http-equiv="Refresh" content=%s;URL=%s>
+    <SCRIPT LANGUAGE=\"JavaScript\">
+      window.location.replace(\"%s\", redirect_final);
+    </SCRIPT>
+    <NOSCRIPT>
+      <meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">
+    </NOSCRIPT>
     <title>pubcookie redirect</title>
   </head>
 
   <body bgcolor="white">
-  <!--redirecting to %s-->
+    <!--redirecting to %s-->
   </body>
 </html>
 
