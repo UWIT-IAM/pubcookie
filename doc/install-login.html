@@ -35,6 +35,7 @@ version of this document</a> is always the most up-to-date version.
 <li><a href="#ok_browsers">Browser Acceptance Configuration</a></li>
 <li><a href="#logout">Logout Configuration</a></li>
 <li><a href="#kiosk">Kiosk Configuration</a></li>
+<li><a href="#policy">Site Policy Configuration</a></li>
 <li><a href="#krb5">Kerberos 5 Verifier Configuration</a></li>
 <li><a href="#upgrading">Upgrading</a></li>  
 <li><a href="#advconfig">Advanced Configuration</a></li>
@@ -740,6 +741,39 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; ExampleKiosk; Windows NT 5.0)
 but resources and tools, such as the <a href="http://www.microsoft.com/windows/ieak/default.asp">Internet 
 Explorer Administration Kit</a>, do exist to help with this task.</p>
 
+<h4><a name="policy">Site Policy Configuration</a></h4>
+
+<p>This section highlights some of the possible site policies you can
+define in your config file. These options may be overlooked, but they
+can enhance the user experience and shape the security policy of your 
+login server.</p>
+
+<ul>
+
+<li><p>Use <tt>default_l_expire</tt> to define your default single sign-on
+duration.</p></li>
+
+<li><p>Use <tt>static_user_field</tt> to define the editability of the
+userid field during a single browsing session. You may want to allow
+some flexibility or force users to close the browser before switching
+between users.</p>
+
+<li>Use the <tt>retain_username_on_failed_authn</tt> to define whether
+the userid is retained after a failed login attempt. Users will
+appreciate this if they mistyped their password, not their userid.</p></li>
+
+<li><p>Use <tt>trim_username_to_atsign</tt> to define whether users can
+enter a userid that looks like an email address. Sites that aren't 
+verifying full Kerberos principals (e.g. <i>joe@example.edu</i>) or 
+userids that look like email addresses can use this feature to provide 
+some flexibility in this regard, i.e., to trim off the extra realm info 
+the user added and verify just the proper userid.</p></li>
+
+</ul>
+
+<p>Refer to the <a href="config.html">config file reference</a> to review
+these variables and the values they take.</p>
+
 <h4><a name="krb5">Kerberos 5 Verifier Configuration</a></h4>
 
 <p>To build the login cgi with support for the Kerberos 5 verifier,
@@ -904,7 +938,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.17 2004-02-05 23:02:53 dors Exp $
+$Id: install-login.html,v 1.18 2004-02-10 18:59:50 dors Exp $
 </pre>
 </body>
 

@@ -87,16 +87,28 @@ the public portion of the granting keypair (found on all servers)</td>
                             login server and app servers</td> </tr>
 
 <tr>
-<td>keymgt_uri</td><td> string</td><td> the location of the
-"keyserver" CGI.</td> </tr>
+ <td>keymgt_uri </td>
+ <td>string</td>
+ <td>The location of the keyserver.</td> 
+</tr>
 
 <tr>
-<td>keydir</td><td> string</td><td> location of DES keys used for
-                        encrypting cookies sent to the app server</td>
-                        </tr>
+ <td>keydir</td>
+ <td>string</td>
+ <td>The location of DES encryption keys, one for each server.</td>
+</tr>
 
 <tr>
-<td>umask</td><td> string</td><td> umask used when creating files</td>
+ <td>keyserver_client_list</td>
+ <td>list</td>
+ <td>The hosts authorized to use the keyclient "permit" option to 
+   add new servers to the keystore.</td>
+</tr>
+
+<tr>
+ <td>umask</td>
+ <td> string</td>
+ <td> The umask used when creating files.</td>
 </tr>
 
 <tr>
@@ -132,6 +144,33 @@ the public portion of the granting keypair (found on all servers)</td>
  <td>default_l_expire</td>
  <td>time</td>
  <td>Defines the default duration of a single sign-on session (login cookie expiry). Default: 8 hours.</td>
+</tr>
+
+<tr>
+ <td>static_user_field</td>
+ <td>enumerated</td>
+ <td>Defines the site policy on the editability of the userid field on the login page.
+   Policy values are: <tt>never</tt>, which never denies the user to change the userid,
+   even on session reauth; <tt>kind</tt>, which allows the user to change the userid if
+   the login cookie has expired; and <tt>always</tt>, which keeps the userid field static 
+   and uneditable whenever there is a userid available in the login cookie (expired or 
+   otherwise). Default: <tt>kind</tt>.</td>
+</tr>
+
+<tr>
+ <td>retain_username_on_failed_authn</td>
+ <td>int</td>
+ <td>Defines whether the userid is retained on failed authentication attempts. Values: 
+   <tt>1</tt> to retain; <tt>0</tt> not to retain. Default: [fixme: we'll find out... i
+   think it's 0]</td>
+</tr>
+
+<tr>
+ <td>trim_username_to_atsign</td>
+ <td>int</td>
+ <td>Defines the site policy on verifying userids that have been entered as email addresses
+   (e.g. <i>joe@example.edu</i>). Values: <tt>1</tt>, trims off the realm before verifying; 
+   <tt>0</tt>, doesn't trim. Default: <tt>0</tt>. [fixme: 0/1, or off/on??]</td>
 </tr>
 
 <tr>	 
