@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.12 1999-01-09 00:10:35 willey Exp $
+    $Id: mod_pubcookie.c,v 1.13 1999-01-09 01:08:40 willey Exp $
  */
 
 #include "httpd.h"
@@ -254,7 +254,7 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
 
   scfg->appsrv_id = libpbc_alloc_init(PBC_APPSRV_ID_LEN + 1);
 /*  strcpy(scfg->appsrv_id, s->server_hostname); */
-  strcpy(scfg->appsrv_id, ap_get_local_host(p), PBC_APPSRV_ID_LEN);
+  strncpy(scfg->appsrv_id, ap_get_local_host(p), PBC_APPSRV_ID_LEN);
 #endif
 
 
