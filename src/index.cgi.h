@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.24 $
+ * $Revision: 1.25 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -183,7 +183,7 @@ char ride_free_zone(login_rec *, login_rec *);
 const char *login_host();
 const char *enterprise_domain();
 char *login_private_keyfile();
-int init_crypt();
+int init_crypt(char * peername);
 int set_pinit_cookie();
 int clear_pinit_cookie();
 

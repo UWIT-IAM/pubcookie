@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.58 $
+ * $Revision: 1.59 $
  */
 
 
@@ -447,7 +447,10 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
     if ( (l_cookie = malloc(PBC_4K)) == NULL )
         abend("out of memory");
 
-    init_crypt();
+    if (init_crypt(NULL) == PBC_FAIL) {
+       log_message("expire_login_cookie: unable to initialize crypt key");
+       return (PBC_FAIL);
+    }
 
     if( c == NULL || c->user == NULL ) {
         if( l == NULL || l->user == NULL )
@@ -864,19 +867,34 @@ char *granting_private_keyfile()
     return(keyfile(PBC_G_PRIVKEY_FILE_PREFIX));
 }
 
-/* reads the crypt key */
-int init_crypt() 
+/**
+ * reads the crypt key
+ * @param peername of the peer who's key should be read
+ *        or read the local host's key if NULL
+ * @returns PBC_FAIL on failure, PBC_OK on success
+ */
+int init_crypt(char * peername) 
 {
-    unsigned char crypt_keyfile[PBC_4K];
+    int free_peer = 0;
 
-    if (c_stuff != NULL ) {
-        return(PBC_OK);
+    if (peername == NULL) {
+        peername = get_my_hostname();
+        if (peername == NULL) {
+           return(PBC_FAIL);
+        }
+        free_peer = 1;
     }
 
-    if ((c_stuff = libpbc_init_crypt(get_my_hostname())) == NULL ) {
-	return(PBC_FAIL);
+    c_stuff = libpbc_init_crypt(peername);
+
+    if (free_peer == 1) {
+       free(peername);
+    }
+
+    if (c_stuff == NULL ) {
+        return(PBC_FAIL);
     } else {
-	return(PBC_OK);
+        return(PBC_OK);
     }
 }
 
@@ -918,7 +936,6 @@ char *decode_granting_request(char *in, char **peerp)
 {
     char *out = NULL;
     char *peer = NULL;
-    pbc_cookie_data     *cookie_data;
 
     if (debug) {
         fprintf(stderr, "decode_granting_request: in: %s\n", in);
@@ -1522,7 +1539,8 @@ char ride_free_zone(login_rec *l, login_rec *c)
 	fprintf(stderr, "ride_free_zone: hello\n");
     }
 
-    if (init_crypt() == PBC_FAIL) {
+    if (init_crypt(NULL) == PBC_FAIL) {
+        log_message("ride_free_zone: can't initialize crypt key")
         return(PBC_CREDS_NONE);
     }
 
@@ -1583,8 +1601,8 @@ char *check_l_cookie(login_rec *l, login_rec *c)
 	fprintf(stderr, "check_l_cookie: hello\n");
     }
 
-    if (init_crypt() == PBC_FAIL) {
-        return("couldn't load crypt key");
+    if (init_crypt(NULL) == PBC_FAIL) {
+        return("check_l_cookie: couldn't initialize crypt key");
     }
 
     if (c == NULL )
@@ -1985,7 +2003,8 @@ void print_redirect_page(login_rec *l, login_rec *c)
     }
     serial = get_next_serial();
 
-    if (init_crypt() == PBC_FAIL) {
+    if (init_crypt(NULL) == PBC_FAIL) {
+        log_message(
         sprintf( message, "%s%s%s%s%s%s",
 		PBC_EM1_START,
 		TROUBLE_CREATING_COOKIE,
@@ -2012,6 +2031,9 @@ void print_redirect_page(login_rec *l, login_rec *c)
     }
 
     /* cook up them cookies */
+    if (init_crypt(NULL) == PBC_FAIL) {
+        log_message("print_redirect_page: can't initialize crypt key");
+    }
     l_res = create_cookie(url_encode(l->user),
         url_encode(l->appsrvid),
         url_encode(l->appid),
@@ -2023,6 +2045,10 @@ void print_redirect_page(login_rec *l, login_rec *c)
         login_private_keyfile(),
         PBC_4K);
 
+    if (init_crypt(l->host) == PBC_FAIL) {
+        log_message("print_redirect_page: can't initialize crypt key for %s"
+                    l->host);
+    }
     g_res = create_cookie(url_encode(l->user),
         url_encode(l->appsrvid),
         url_encode(l->appid),
@@ -2368,8 +2394,10 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     if ((ctx_plus = libpbc_verify_init(login_public_keyfile())) == NULL )
         abend("Couldn't load public login key");
 
-    if (init_crypt() == PBC_FAIL) 
+    if (init_crypt(NULL) == PBC_FAIL) {
+        log_message("verify_unload_login_cookie: failed to initialize crypt key");
         return((login_rec *)NULL);
+    }
 
     if ((cookie_data=libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff))	== NULL)
         return((login_rec *)NULL);
