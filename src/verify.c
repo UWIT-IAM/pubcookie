@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: verify.c,v 1.11 2002-08-20 20:31:18 greenfld Exp $
+    $Id: verify.c,v 1.12 2002-10-24 20:11:20 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -45,6 +45,7 @@ extern verifier kerberos4_verifier;
 extern verifier kerberos5_verifier;
 extern verifier ldap_verifier;
 extern verifier alwaystrue_verifier;
+extern verifier shadow_verifier;
 
 /* verifiers that we actually compiled */
 static verifier *verifiers[] = {
@@ -52,6 +53,7 @@ static verifier *verifiers[] = {
     &kerberos5_verifier,
     &ldap_verifier,
     &alwaystrue_verifier,
+    &shadow_verifier,
     NULL
 };
 
