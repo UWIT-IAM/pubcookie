@@ -6,7 +6,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.52 2004-05-05 18:43:22 willey Exp $
+ * $Id: keyserver.c,v 2.53 2004-05-07 21:54:24 fox Exp $
  */
 
 
@@ -222,6 +222,7 @@ int pushkey(const char *peer, const security_context *context)
             const char *cmd[15];
             int n = 0;
             cmd[n++] = keyclient;
+            cmd[n++] = "-q";
             cmd[n++] = "-u";
             cmd[n++] = "-H";
             cmd[n++] = peer;

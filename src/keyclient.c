@@ -6,7 +6,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.48 2004-04-28 23:48:02 willey Exp $
+ * $Id: keyclient.c,v 2.49 2004-05-07 21:54:24 fox Exp $
  */
 
 
@@ -95,10 +95,10 @@ extern char * optarg;
 /* We can't use the library because we may not haev a granting cookie.
    We son't actually do much with it anyway, so it's not missed.
    Define this to make keyclient not work */
-#undef USINGPBCLIB
 
 /* globals */
 int noop = 0;
+int verb = 1;
 
 /*
  * keyclient should print errors to standard error, not syslog
@@ -114,21 +114,21 @@ static void mylog(pool *p, int logging_level, const char *msg)
 static void usage(void)
 {
     printf("usage: keyclient [options]                 Download (upload) host key\n");
-    printf("       keyclient -1 <host> [options]       Permit 'host' to access keyserver\n");
+    printf("       keyclient -P <host> [options]       Permit 'host' to access keyserver\n");
     printf("       keyclient -G <gcertfile> [options]  Get granting cert (to gcertfile)\n");
     printf("\n  options:\n");
-    printf("  -K <URI>        : URI of key management server\n");
-    printf("  -c <cert file>  : cert to use for authn. Def: ssl_cert_file\n");
-    printf("  -k <key file>   : key to use for authen. Def: ssl_key_file\n");
     printf("  -C <ca file>    : authorized CA certs file. Def: ssl_ca_file\n");
     printf("  -D <ca dir>     : authorized CA certs dir. Def: ssl_ca_path\n");
-    printf("  -n              : just show what would be done\n");
-    printf("  -d              : don't generate a new hostkey\n");
-    printf("                    just download the existing one\n");
-    printf("  -u              : upload the local hostkey to the server\n");
-    printf("  -a              : expect keyfile in ASN.1\n");
-    printf("  -p              : expect keyfile in PEM (default) \n");
     printf("  -H <hostname>   : pretend to be <hostname> (dangerous!)\n");
+    printf("  -K <URI>        : URI of key management server\n");
+    printf("  -a              : expect keyfile in ASN.1\n");
+    printf("  -c <cert file>  : cert to use for authn. Def: ssl_cert_file\n");
+    printf("  -d              : don't generate a new hostkey, download existing\n");
+    printf("  -k <key file>   : key to use for authen. Def: ssl_key_file\n");
+    printf("  -n              : just show what would be done\n");
+    printf("  -p              : expect keyfile in PEM (default) \n");
+    printf("  -q              : quiet mode\n");
+    printf("  -u              : upload the local hostkey to the server\n");
 
     exit(1);
 }
@@ -183,9 +183,6 @@ int main(int argc, char *argv[])
     int keyport = 443;
     int r;
     pool *p = NULL;
-#ifdef USINGPBCLIB
-    security_context *context = NULL;
-#endif
     char *gcert = NULL;
     const char *cluster = NULL;
 
@@ -208,9 +205,6 @@ int main(int argc, char *argv[])
 
     libpbc_config_init(p, NULL, "keyclient");
     pbc_log_init(p, "keyclient", NULL, &mylog, NULL, NULL);
-#ifdef USINGPBCLIB
-    libpbc_pubcookie_init(p, &context);
-#endif
     keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
     certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
     cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
@@ -221,7 +215,7 @@ int main(int argc, char *argv[])
 
     newkeyp = 1;
     permit = 0;
-    while ((c = getopt(argc, argv, "01apc:k:C:D:nudH:L:K:G:")) != -1) {
+    while ((c = getopt(argc, argv, "01Paqpc:k:C:D:nudH:L:K:G:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -229,6 +223,10 @@ int main(int argc, char *argv[])
 
             case 'p':
                 filetype = SSL_FILETYPE_PEM;
+                break;
+
+            case 'q':
+                verb = 0;
                 break;
 
             case 'c':
@@ -271,7 +269,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'L':
-			case 'K':
+            case 'K':
                 /* connect to the specified key management server
 				   Overrides PBC_KEYMGT_URI */
                 keymgturi = strdup(optarg);
@@ -283,6 +281,7 @@ int main(int argc, char *argv[])
                 permit = -1;
                 break;
 
+            case 'P':
             case '1':
                 /* permit access to a cn */
                 newkeyp = -1;
@@ -432,19 +431,6 @@ int main(int argc, char *argv[])
 
         str = X509_NAME_oneline (X509_get_subject_name (mycert),0,0);
         hostname = extract_cn(str);
-#ifdef USINGPBCLIB
-        if (hostname) {
-            /* warn if hostname != get_my_hostname(p) */
-            if (strcasecmp(hostname, get_my_hostname(p, context))) {
-                fprintf(stderr, "warning: certificate name (%s) doesn't match"
-                 " my hostname (%s)\n", hostname, get_my_hostname(p, context));
-            }
-        } else {
-            fprintf(stderr, 
-                    "warning: no hostname in my certificate? trying anyway.\n");
-            hostname = get_my_hostname(p, context);
-        }
-#endif
         if (!hostname) {
             fprintf(stderr,
               "The %s certificate has no hostname (CN)\n", certfile);
@@ -560,6 +546,7 @@ int main(int argc, char *argv[])
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
                     }
+                    if (verb) printf("Set crypt key for %s\n", hostname);
                 }
             } else if (gcert) {
                 /* If getting a cert, cp points to start of PEM cert */
@@ -570,7 +557,13 @@ int main(int argc, char *argv[])
                 }
                 fputs(cp, cf);
                 fclose(cf);
-                fprintf(stdout,"Granting cert saved to %s\n", gcert);
+                if (verb) printf("Granting cert saved to %s\n", gcert);
+            } else if (permit) {
+                if (verb) printf("Host %s %s\n", hostname,
+                             permit>0?"is permitted":"is denied");
+                
+            } else {
+                if (verb) printf("Uploaded key ofr %s\n", hostname);
             }
 
             done = 1;
@@ -583,7 +576,7 @@ jump:
     SSL_shutdown(ssl);
 
     if (!done) {
-        printf("Failed: %s\n", buf);
+        if (verb) printf("Failed: %s\n", buf);
         r = 1;
     } else {
         r = 0;
