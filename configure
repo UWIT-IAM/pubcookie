@@ -3760,7 +3760,7 @@ echo "$as_me: error: Please correct this error and try again." >&2;}
 echo "${ECHO_T}yes" >&6
   APACHE_PREFIX=`$APXS -q PREFIX`
 
-  APACHE_INSTALLBUILDDIR=`$APXS -q INSTALLBUILDDIR`
+  APACHE_INSTALLBUILDDIR=`$APXS -q exp_installbuilddir`
 
 
   echo "$as_me:$LINENO: checking Apache version" >&5
@@ -9563,7 +9563,7 @@ s/^[^=]*=[ 	]*$//;
 }'
 fi
 
-DEFS=-DHAVE_CONFIG_H 
+DEFS=-DHAVE_CONFIG_H
 
 ac_libobjs=
 ac_ltlibobjs=

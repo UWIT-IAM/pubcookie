@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.64 $)
+AC_REVISION($Revision: 1.65 $)
 AC_INIT(Pubcookie, [3.1.1 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -243,7 +243,7 @@ if ! test "x$APXS" = "x"; then
 
   AC_MSG_RESULT([yes])
   AC_SUBST(APACHE_PREFIX, `$APXS -q PREFIX`)
-  AC_SUBST(APACHE_INSTALLBUILDDIR, `$APXS -q INSTALLBUILDDIR`)
+  AC_SUBST(APACHE_INSTALLBUILDDIR, `$APXS -q exp_installbuilddir`)
 
   AC_MSG_CHECKING([Apache version])
   APACHE_VERSION=
