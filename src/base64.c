@@ -208,7 +208,8 @@ int main(int argc, char *argv[])
         }
 
         outbuf = (char *) malloc(2 * tot );
-        ret = libpbc_base64_encode(inbuf, outbuf, tot);
+        ret = libpbc_base64_encode((unsigned char *) inbuf, 
+                                   (unsigned char *) outbuf, tot);
         outlen = strlen(outbuf);
 
         if (ret) {
@@ -237,7 +238,8 @@ int main(int argc, char *argv[])
     }
 
     outbuf2 = (char *) malloc(tot);
-    ret = libpbc_base64_decode(outbuf, outbuf2, &outlen);
+    ret = libpbc_base64_decode( (unsigned char *) outbuf, 
+                                (unsigned char *) outbuf2, &outlen);
 
     if (ret) {
         if (verbose) {

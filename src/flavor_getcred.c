@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: flavor_getcred.c,v 1.8 2002-08-20 20:31:18 greenfld Exp $
+    $Id: flavor_getcred.c,v 1.9 2002-11-11 14:35:40 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -78,8 +78,8 @@ static int check_authz(const char *server, const char *target)
     int lineno;
     char buf[1024];
 
-    fname = libpbc_config_getstring("getcred_authz_file", 
-                                    PBC_PATH "getcred_authz");
+    fname = GETCRED_AUTHZ;
+
     f = fopen(fname, "r");
     if (!f) {
         pbc_log_activity(PBC_LOG_ERROR,

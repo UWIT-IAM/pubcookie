@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: keyserver.c,v 2.26 2002-11-01 22:22:41 jjminer Exp $
+    $Id: keyserver.c,v 2.27 2002-11-11 14:35:40 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -210,7 +210,7 @@ int pushkey(const char *peer)
             exit(1);
         }
         if (res == 0) {
-            const char *keyclient = (PBC_PATH "bin/keyclient");
+            const char *keyclient = KEYCLIENT;
             const char *cmd[15] = {
                keyclient,
                "-u",

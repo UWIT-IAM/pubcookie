@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.17 2002-11-07 22:39:29 jjminer Exp $
+# $Id: Makefile.in,v 1.18 2002-11-11 14:35:40 jjminer Exp $
 
 @SET_MAKE@
 
@@ -216,7 +216,8 @@ $(srcdir)/stamp-h.in: $(srcdir)/configure.ac
 	echo timestamp > $(srcdir)/stamp-h.in
 
 $(builddir)/src/config.h: $(builddir)/stamp-h
-$(builddir)/stamp-h: $(srcdir)/src/config.h.in $(builddir)/config.status
+$(builddir)/src/pbc_path.h: $(builddir)/stamp-h
+$(builddir)/stamp-h: $(srcdir)/src/config.h.in $(srcdir)/src/pbc_path.h.in $(builddir)/config.status
 	$(builddir)/config.status
 
 $(builddir)/Makefile: $(srcdir)/Makefile.in $(builddir)/config.status
@@ -272,7 +273,7 @@ index.cgi: $(builddir)/cgic/libcgic.a $(LIB_OBJ) $(INDEX_OBJ)
 $(builddir)/cgic/libcgic.a:
 	(cd $(builddir)/cgic; make)
 
-$(INDEX_OBJ): $(LIB_HEAD) $(INDEX_HEAD) $(builddir)/src/config.h
+$(INDEX_OBJ): $(LIB_HEAD) $(INDEX_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 
 keyserver: $(builddir)/src/keyserver.o $(LIB_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(builddir)/src/keyserver.o $(LIB_OBJ) $(LDFLAGS) $(LIBS)
@@ -309,7 +310,7 @@ $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 $(TEMPLATE_DIR).default: $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR).default
 
-$(LIB_OBJ): $(LIB_HEAD)
+$(LIB_OBJ): $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 
 # Test Targets
 
@@ -357,7 +358,7 @@ apache_module: a_ver mod_pubcookie.so keyclient
 a_ver:
 	@echo Making $(DISTNAME) apache module;
 
-mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/config.h
+mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) $(builddir)/src/pbc_path.h $(builddir)/src/config.h
 	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) \
 			$(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 

@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.25 2002-11-01 22:22:41 jjminer Exp $
+    $Id: flavor_basic.c,v 1.26 2002-11-11 14:35:40 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -120,10 +120,12 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 	     "<p>The resource you requested requires you to authenticate."
 	     "  %s</p>\n", *errstr ? *errstr : "");
     
-    tmpl_print_html(TMPL_FNAME "login_part1", 
-		    "", "this reason not implemented", 
-		    PBC_LOGIN_URI,
-		    message_out,
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_login_part1",
+                                            "login_part1"), 
+                    "", "this reason not implemented", 
+                    PBC_LOGIN_URI,
+                    message_out,
                     l->user ? l->user : "");
 
     /* keep all of the state around we need */
@@ -184,9 +186,11 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
     print_html("\n");
 
     /* finish off the customized login page */
-    tmpl_print_html(TMPL_FNAME "login_part2", 
-		    message_out,
-		    "this reason not implemented");
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_login_part2",
+                                            "login_part2"), 
+                    message_out,
+                    "this reason not implemented");
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "print_login_page: goodbye");
 }

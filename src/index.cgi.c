@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.91 $
+ * $Revision: 1.92 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -254,25 +254,52 @@ void print_header(const char *format, ...)
 /*
  * print out using a template
  */
-void tmpl_print_html(const char *fname,...)
-{
-  char buf[MAX_EXPANDED_TEMPLATE_SIZE];
-  va_list args;
+void tmpl_print_html(const char *fpath, const char *fname,...) {
+    char buf[MAX_EXPANDED_TEMPLATE_SIZE];
+    va_list args;
+    char *templatefile;
+    int len;
 
-  va_start(args, fname);
 
-  /* why is this being read here and not being used? -jeaton */
-  /* format=get_file_template(fname); */
+    if (fpath == NULL) {
+        fpath = TMPL_FNAME;
+    }
 
-  buf_template_vprintf(fname, buf, sizeof(buf), args);
-  va_end(args);
+    /* TODO: 
+     * '/' should probably not be used here.  We should use an OS-Neutral path
+     * seperator.
+     *
+     * Note that this also assumes that there _ISN'T_ a '/' at the end of the
+     * path.  that should probably be dealt-with.
+     */
 
-  fprintf(htmlout, "%s", buf);
-  pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, buf);
+    len = strlen(fpath) + strlen("/") + strlen(fname) + 1;
 
-  if (mirror) {
-      fprintf(mirror,"%s",buf);
-  }
+    templatefile = malloc( len * sizeof(char) );
+
+    if ( snprintf( templatefile, len, "%s/%s", fpath, fname ) > len )  {
+        /* Need to do something we would have overflowed.  I don't know how that
+         * could happen, but it's bad. */
+        abend("Template file overflow!\n");
+    }
+
+    va_start(args, fname);
+
+    /* why is this being read here and not being used? -jeaton */
+    /* format=get_file_template(fname); */
+
+    buf_template_vprintf(templatefile, buf, sizeof(buf), args);
+    va_end(args);
+
+    fprintf(htmlout, "%s", buf);
+    pbc_log_activity(PBC_LOG_DEBUG_OUTPUT, buf);
+
+    if (mirror) {
+        fprintf(mirror,"%s",buf);
+    }
+
+    if (templatefile != NULL)
+        free(templatefile);
 }
 
 /**
@@ -968,10 +995,11 @@ int vector_request(login_rec *l, login_rec *c)
 
     case LOGIN_ERR:
 	/* show the user some sort of error */
-	tmpl_print_html(TMPL_FNAME "error", 
-			fl->name,
-			errstr ? errstr : 
-			"unknown error in flavor process_request");
+	tmpl_print_html(TMPL_FNAME, 
+                    libpbc_config_getstring("tmpl_error", "error"), 
+                    fl->name,
+                    errstr ? errstr : 
+                    "unknown error in flavor process_request");
         return PBC_FAIL;
         break;
 
@@ -1128,12 +1156,17 @@ int app_logged_out(login_rec *c, const char *appid, const char *appsrvid)
     *new = '\0';
 
     if( (s=libpbc_config_getstring(app_string, NULL)) == NULL ) {
-        tmpl_print_html(TMPL_FNAME "logout_app");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_app", "logout_app"));
     }
     else {
-        tmpl_print_html(TMPL_FNAME "logout_app_custom_prefix");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_app_custom_prefix",
+                                                "logout_app_custom_prefix"));
         print_html("%s\n", s);
-        tmpl_print_html(TMPL_FNAME "logout_app_custom_suffix");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_app_custom_suffix",
+                                                "logout_app_custom_suffix"));
     }
  
     free(app_string);
@@ -1155,41 +1188,75 @@ int logout(login_rec *l, login_rec *c, int logout_action)
     clear_greq_cookie();     /* just in case there in one lingering */
 
     if( logout_action == LOGOUT_ACTION_NOTHING ) {
-        tmpl_print_html(TMPL_FNAME "logout_part1");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_part1",
+                                                "logout_part1"));
         app_logged_out(c, appid, appsrvid);
         if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL) {
-            tmpl_print_html(TMPL_FNAME "logout_already_weblogin");
-            tmpl_print_html(TMPL_FNAME "logout_postscript_still_others");
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_already_weblogin",
+                                                    "logout_already_weblogin"));
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_postscript_still_others",
+                                                    "logout_postscript_still_others"));
         }
         else {
-            tmpl_print_html(TMPL_FNAME "logout_still_weblogin",
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_still_weblogin",
+                                                    "logout_still_weblogin"),
                         (c == NULL || c->user == NULL ? "unknown" : c->user));
-            tmpl_print_html(TMPL_FNAME "logout_time_remaining", 
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_time_remaining",
+                                                    "logout_time_remaining"), 
 			time_remaining_text(c));
-            tmpl_print_html(TMPL_FNAME "logout_postscript_still_weblogin");
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_postscript_still_weblogin",
+                                                    "logout_postscript_still_weblogin"));
         }
-        tmpl_print_html(TMPL_FNAME "logout_part2");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_part2",
+                                                "logout_part2"));
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L ) {
         expire_login_cookie(l, c);
-        tmpl_print_html(TMPL_FNAME "logout_part1");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_part1",
+                                                "logout_part1"));
         app_logged_out(c, appid, appsrvid);
         if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL)
-            tmpl_print_html(TMPL_FNAME "logout_already_weblogin");
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_already_weblogin",
+                                                    "logout_already_weblogin"));
         else 
-            tmpl_print_html(TMPL_FNAME "logout_weblogin");
-        tmpl_print_html(TMPL_FNAME "logout_postscript_still_others");
-        tmpl_print_html(TMPL_FNAME "logout_part2");
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_weblogin",
+                                                    "logout_weblogin"));
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_postscript_still_others",
+                                                "logout_postscript_still_others"));
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_part2",
+                                                "logout_part2"));
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L_NO_APP ) {
         expire_login_cookie(l, c);
-        tmpl_print_html(TMPL_FNAME "logout_part1");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_part1",
+                                                "logout_part1"));
         if( c == NULL || check_l_cookie_expire(c, time(NULL)) == PBC_FAIL )
-            tmpl_print_html(TMPL_FNAME "logout_already_weblogin");
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_already_weblogin",
+                                                    "logout_already_weblogin"));
         else 
-            tmpl_print_html(TMPL_FNAME "logout_weblogin");
-        tmpl_print_html(TMPL_FNAME "logout_postscript_still_others");
-        tmpl_print_html(TMPL_FNAME "logout_part2");
+            tmpl_print_html(TMPL_FNAME,
+                            libpbc_config_getstring("tmpl_logout_weblogin",
+                                                    "logout_weblogin"));
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_postscript_still_others",
+                                                "logout_postscript_still_others"));
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_logout_part2",
+                                                "logout_part2"));
     }
 
     return(PBC_OK);
@@ -1259,9 +1326,14 @@ void status_part1()
     int		min_delay = libpbc_config_getint("min_countdown", 9999);
 
     if( delay != 0 && delay >= min_delay )
-        tmpl_print_html(TMPL_FNAME "status_part1_with_countdown", delay, delay);
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_status_part1_with_countdown",
+                                                "status_part1_with_countdown"),
+                        delay, delay);
     else
-        tmpl_print_html(TMPL_FNAME "status_part1");
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_status_part1",
+                                                "status_part1"));
         
 }
 
@@ -1272,11 +1344,20 @@ void status_part1()
 void login_status_page(login_rec *c)
 {
     status_part1();
-    tmpl_print_html(TMPL_FNAME "logout_still_weblogin",
-           (c == NULL || c->user == NULL ? "unknown" : c->user));
-    tmpl_print_html(TMPL_FNAME "logout_time_remaining", time_remaining_text(c));
-    tmpl_print_html(TMPL_FNAME "logout_postscript_still_weblogin");
-    tmpl_print_html(TMPL_FNAME "status_part2");
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_logout_still_weblogin",
+                                            "logout_still_weblogin"),
+                    (c == NULL || c->user == NULL ? "unknown" : c->user));
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_logout_time_remaining",
+                                            "logout_time_remaining"), 
+                    time_remaining_text(c));
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_logout_postscript_still_weblogin",
+                                            "logout_postscript_still_weblogin"));
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_status_part2",
+                                            "status_part2"));
 }
 
 /**
@@ -1405,8 +1486,11 @@ int cgiMain()
         /* this won't work quite right if somehow a form gets
          * submitted to us on port 80 
          */
-        tmpl_print_html(TMPL_FNAME "nonpost_redirect", redirect_final,
-                       REFRESH, redirect_final, redirect_final);
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_nonpost_redirect",
+                                                "nonpost_redirect"),
+                        redirect_final,
+                        REFRESH, redirect_final, redirect_final);
 
 	goto done;
     }
@@ -1626,9 +1710,13 @@ void notok ( void (*notok_f)() )
 		     EARLIEST_EVER);
     }
 
-    tmpl_print_html(TMPL_FNAME "notok_part1");
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_notok_part1",
+                                            "notok_part1"));
     notok_f();
-    tmpl_print_html(TMPL_FNAME "notok_part2");
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_notok_part2",
+                                            "notok_part2"));
 
 }
 
@@ -1673,12 +1761,20 @@ int pinit_responce(login_rec *l, login_rec *c)
 
     clear_pinit_cookie();
 
-    tmpl_print_html(TMPL_FNAME "pinit_responce1");
-    tmpl_print_html(TMPL_FNAME "welcome_back",
-               (c == NULL || c->user == NULL ? "unknown" : c->user));
-    tmpl_print_html(TMPL_FNAME "logout_time_remaining",
-               time_remaining_text(c));
-    tmpl_print_html(TMPL_FNAME "pinit_responce2");
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_pinit_responce1",
+                                            "pinit_responce1"));
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_welcome_back",
+                                            "welcome_back"),
+                    (c == NULL || c->user == NULL ? "unknown" : c->user));
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_logout_time_remaining",
+                                            "logout_time_remaining"),
+                    time_remaining_text(c));
+    tmpl_print_html(TMPL_FNAME,
+                    libpbc_config_getstring("tmpl_pinit_responce2",
+                                            "pinit_responce2"));
     return(PBC_OK);
 
 }
@@ -2098,8 +2194,11 @@ void print_redirect_page(login_rec *l, login_rec *c)
 
         /* the refresh header should go into the template as soon as it's*/
         /* been tested                                                   */
-        tmpl_print_html(TMPL_FNAME "nonpost_redirect", redirect_final,
-		       REFRESH, redirect_final, redirect_final);
+        tmpl_print_html(TMPL_FNAME,
+                        libpbc_config_getstring("tmpl_nonpost_redirect",
+                                                "nonpost_redirect"),
+                        redirect_final, REFRESH, redirect_final,
+                        redirect_final);
     } /* end if post_stuff */
 
     free(g_cookie);

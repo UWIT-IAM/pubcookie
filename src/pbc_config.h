@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.68 2002-11-07 19:54:27 willey Exp $
+    $Id: pbc_config.h,v 1.69 2002-11-11 14:35:40 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -41,17 +41,7 @@
 #endif
 
 #include "pbc_myconfig.h" 
-
-#ifndef PBC_PATH
-#  if defined (WIN32)
-#    define PBC_PATH "\\inetsrv\\pubcookie\\"
-#  else 
-#    define PBC_PATH "/usr/www/pubcookie/"
-#  endif
-#endif
-
-/* where the runtime configuration file lives */
-#define PBC_CONFIG (PBC_PATH "config")
+#include "pbc_path.h"
 
 /* names of the login servers */
 #define PBC_LOGIN_HOST (libpbc_config_getstring("login_host", "weblogin.washington.edu"))
@@ -74,13 +64,6 @@
 	#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
 	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
 
-#endif
-
-/* the login server builds it's key Filenames from the hostname     */
-#if defined (WIN32)
-#  define PBC_KEY_DIR (AddSystemRoot("\\inetsrv\\pubcookie\\keys"))
-#else 
-#  define PBC_KEY_DIR (libpbc_config_getstring("keydir", PBC_PATH "keys"))
 #endif
 
 #define PBC_REFRESH_TIME 0

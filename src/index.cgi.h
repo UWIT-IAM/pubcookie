@@ -18,7 +18,7 @@
  */
 
 /*
- * $Revision: 1.35 $
+ * $Revision: 1.36 $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -26,6 +26,7 @@
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 /* cgic---needed for typenames */
@@ -130,7 +131,7 @@ char *get_string_arg(char *name, cgiFormResultType (*f)());
 /* print part of the HTML */
 void print_html(const char *format, ...);
 /* print it from the template "fname" */
-void tmpl_print_html(const char *fname,...);
+void tmpl_print_html(const char *fpath, const char *fname,...);
 
 void ntmpl_print_html(const char *fname, ...);
 
@@ -144,8 +145,6 @@ void print_header(const char *format, ...);
 #define DEFAULT_LOGIN_EXPIRE (8 * 60 * 60)
 #define APP_LOGOUT_STR "app_logout_string"
 #define APP_LOGOUT_STR_SEP '-'
-
-#define TMPL_FNAME PBC_PATH "login_templates/"
 
 /* why print login page ? */
 #define LOGIN_REASON_AUTH_FAIL   "bad auth"
@@ -215,12 +214,6 @@ void print_header(const char *format, ...);
 /* some misc settings */
 #define SERIAL_FILE "/tmp/s"
 #define FIRST_SERIAL 23
-
-/* file to get the list of ok browsers from */
-#define OK_BROWSERS_FILE PBC_PATH "ok_browsers"
-
-/* file to get browser information from */
-#define BROWSERS_FILE PBC_PATH "browsers"
 
 #define PBC_BRWSER_OK 0
 #define PBC_BRWSER_DENY 1
