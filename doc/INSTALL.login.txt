@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.10 2002-01-10 23:14:58 willey Exp $
+    $Id: INSTALL.login.txt,v 1.11 2002-01-12 00:26:34 willey Exp $
  */
 
 
@@ -291,9 +291,10 @@ be prepared for requests from sysadmins for c_key files.
 This test involves two programs named make_crypted_blob and 
 check_crypted_blob.  Run make_crypted_blob on your login server, this will 
 net an encrypted blob.  Transfer the encrypted blob to your application 
-webserver and run check_crypted_blob on it.
+webserver and run check_crypted_blob on it.  See below for windows specific
+instructions
 
-make_crypted_blob - encrypts a plaintext sentance with a pubcookie c_key and
+make_crypted_blob - encrypts a plaintext sentence with a pubcookie c_key and
 outputs the encrypted blob.  The usage is:
 
 make_crypted_blob [-o out_file] [-k c_key_file] [-h]
@@ -315,6 +316,20 @@ check_crypted_blob -c crypted_file [-k c_key_file] [-h]
 	-k c_key_file
 		c_key file.  default is PBC_CRYPT_KEYFILE 
 	-h prints usage
+
+Windows specific instructions - Windows binaries for both make_crypted_blob 
+and check_crypted_blob hav been included in the login server distribution.  
+Additionally, two .bat files (Test_local_blob.bat and Test_login_blob.bat)
+and an OpenSSL binary hav been included to simplify testing.  First, run 
+Test_local_blob.bat and view the results in Test_local_blob.out.  Upon 
+success the output should end with something like "Yeah!  It worked".  This
+verifies that the host can encrypt and decrypt using the pubcookie library.
+Second, get an encrypted blob from the administrator of the login server
+save this as "login_blob" in the same directory with the blob binaries and 
+.bat files.  Run Test_login_blob.bat and view the results in 
+Test_login_blob.out.  Upon success the output should end with something 
+like "Yeah!  It worked".  If both tests are successful then your system 
+should be able to decrypt content encrypted on other pubcookie systems.
 
 
 These two programs use the same pubcookie encryption functions as the rest 
