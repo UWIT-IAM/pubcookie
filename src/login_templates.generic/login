@@ -11,7 +11,7 @@
   <title>pubcookie generic Login</title>
  </head>
 
- <body bgcolor="#FFFFFF">
+ <body bgcolor="#FFFFFF" onLoad="document.query.elements[0].focus()">
   <center>
    <img src="/images/login.gif" alt="" height="64" width="208">
 
