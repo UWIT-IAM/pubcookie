@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.21 2001-05-15 01:10:37 willey Exp $
+    $Id: index.cgi.c,v 1.22 2001-05-15 01:19:16 willey Exp $
  */
 
 
@@ -1488,8 +1488,8 @@ void print_redirect_page(login_rec *l)
 
         print_out("<html><head>\n");
 
-        print_out("<SCRIPT>\n");
-        print_out("window.location.replace("sorry.html");\n");
+        print_out("<SCRIPT LANGUAGE=\"JavaScript\">\n");
+        print_out("window.location.replace(\"%s\");\n", redirect_final);
         print_out("</SCRIPT> \n");
         print_out("<NOSCRIPT>\n");
         print_out("<meta http-equiv=\"Refresh\" content=\"%s;URL=%s\">\n", REFRESH, redirect_final);
