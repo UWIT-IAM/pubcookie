@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.63 $
+ * $Revision: 1.64 $
  */
 
 
@@ -824,7 +824,14 @@ const char *login_host()
 
 const char *enterprise_domain() 
 {
-    return(libpbc_config_getstring("enterprise_domain", PBC_ENTRPRS_DOMAIN));
+    const char  *s;
+
+    s = libpbc_config_getstring("enterprise_domain", PBC_ENTRPRS_DOMAIN);
+
+    if( *s != '.' )
+        log_message("WARNING!!!! enterprise_domain must start with a '.'");
+
+    return(s);
 
 }
 
@@ -1837,14 +1844,14 @@ void print_table_start()
 /*	################################### da copyright, it's ours!         */
 void print_copyright()
 {
-    print_html("<small>Copyright &#169; 2001 University of Washington</small>\n");
+    print_html("<small>Copyright &#169; 2002 University of Washington</small>\n");
 
 }
 
 /*	################################### UWNetID Logo                     */
 void print_uwnetid_logo()
 {
-    print_html("<img src=\"/images/login.gif\" alt=\"\" height=\"64\" width=\"208\" oncontextmenu=\"return false\">\n");
+    print_html("<img src=\"/images/login/weblogin.gif\" alt=\"UW NetID Weblogin\" height=\"57\" width=\"198\" oncontextmenu=\"return false\">\n");
 
 }
 
