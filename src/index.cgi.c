@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.84 $
+ * $Revision: 1.85 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1633,14 +1633,15 @@ void notok ( void (*notok_f)() )
 int set_pinit_cookie() 
 {
     print_header("Set-Cookie: %s=%s; domain=%s; path=/%s\n", 
-#ifdef PORT80_TEST
-                 "",
-#else
-                 "; secure\n", 
-#endif
                  PBC_PINIT_COOKIENAME,
                  PBC_SET,
-                 login_host());
+                 login_host(),
+#ifdef PORT80_TEST
+                 ""
+#else
+                 "; secure"
+#endif
+                     );
 
     return(PBC_OK);
 }
@@ -1648,15 +1649,16 @@ int set_pinit_cookie()
 int clear_pinit_cookie() {
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
-#ifdef PORT80_TEST
-                 "",
-#else
-                 "; secure\n",
-#endif
                  PBC_PINIT_COOKIENAME, 
                  PBC_CLEAR_COOKIE,
                  login_host(),
-                 EARLIEST_EVER);
+                 EARLIEST_EVER,
+#ifdef PORT80_TEST
+                 ""
+#else
+                 "; secure"
+#endif
+                 );
 
     return(PBC_OK);
 
