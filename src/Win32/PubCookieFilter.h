@@ -1,5 +1,5 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 beta-2"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 pre-beta4"
 
 typedef struct {
 	char				*g_certfile;
