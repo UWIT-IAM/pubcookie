@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.7 2000-08-08 00:19:39 willey Exp $
+    $Id: index.cgi.c,v 1.8 2000-08-17 21:53:25 willey Exp $
  */
 
 
@@ -43,7 +43,7 @@
 #include <com_err.h>
 #include <krb5.h>
 /* securid */
-#include "securid_securid.h"
+#include "securid.h"
 /* pubcookie things */
 #include "pubcookie.h"
 #include "libpubcookie.h"
@@ -52,6 +52,8 @@
 #include "index.cgi.h"
 /* cgic */
 #include <cgic.h>
+/* meta-auth */
+#include <authsrv.h>
 
 #ifdef MAKE_MIRROR
 /* the mirror file is a mirror of what gets written out of the cgi */
@@ -110,11 +112,13 @@ char *get_string_arg(char *name, cgiFormResultType (*f)())
 {
     int			length;
     char		*s;
+    cgiFormResultType 	res;
 
     cgiFormStringSpaceNeeded(name, &length);
     s = calloc(length+1, sizeof(char));
 
-    if( f(name, s, length+1) != cgiFormSuccess ) {
+    if( (res=f(name, s, length+1)) != cgiFormSuccess ) {
+fprintf(stderr, "name is %s result is %d\n", name, res);
         return(NULL);
     } 
     else {
@@ -179,7 +183,6 @@ login_rec *load_login_rec(login_rec *l)
 
     l->pass 		= get_string_arg("pass", NO_NEWLINES_FUNC);
     l->pass2 		= get_string_arg("pass2", NO_NEWLINES_FUNC);
-    l->post_stuff	= get_string_arg("post_stuff", YES_NEWLINES_FUNC);
 
     l->args 		= get_string_arg("eight", YES_NEWLINES_FUNC);
     l->uri 		= get_string_arg("seven", NO_NEWLINES_FUNC);
@@ -196,11 +199,13 @@ login_rec *load_login_rec(login_rec *l)
     l->file 		= get_string_arg("file", NO_NEWLINES_FUNC);
     l->flag 		= get_string_arg("flag", NO_NEWLINES_FUNC);
     l->referer 		= get_string_arg("referer", NO_NEWLINES_FUNC);
+    l->next_securid     = get_int_arg("next_securid");
 
 #ifdef DEBUG
     fprintf(stderr, "load_login_rec: bye\n");
 #endif
 
+fprintf(stderr, "load_login_rec post_stuff: %s\n", l->post_stuff);
     return(l);
 
 }
@@ -270,11 +275,16 @@ void log_message(const char *format, ...)
     char	new_format[PBC_4K];
     char	message[PBC_4K];
 
-    va_start(args, format);
-    snprintf(new_format, sizeof(new_format), "%s: %s\n", 
+    bzero(new_format, PBC_4K);
+    bzero(message, PBC_4K);
+
+    snprintf(new_format, sizeof(new_format)-1, "%s: %s\n", 
 			ANY_LOGINSRV_MESSAGE, format);
-    vsnprintf(message, sizeof(message), new_format, args);
+    va_start(args, format);
+    vsnprintf(message, sizeof(message)-1, new_format, args);
+
     va_end(args);
+
     libpbc_debug(message);
 
 }
@@ -311,6 +321,7 @@ void send_pilot_message(int grade, const char *service, int self_clearing, char 
 /*   misc                misc is misc        / not self-clearing              */
 /*   auth-kdc            auth_kdc code       / not self-clearing              */
 /*   auth-securid        auth securid code   / not self-clearing              */
+/*   auth-securid        auth securid code   / not self-clearing              */
 /*                                                                            */
 /*                                                                            */
 void log_error(int grade, const char *service, int self_clearing, const char *format,...)
@@ -320,8 +331,8 @@ void log_error(int grade, const char *service, int self_clearing, const char *fo
     char	message[PBC_4K];
 
     va_start(args, format);
-    snprintf(new_format, sizeof(new_format), "%s: %s", SYSERR_LOGINSRV_MESSAGE, format);
-    vsnprintf(message, sizeof(message), new_format, args);
+    snprintf(new_format, sizeof(new_format)-1, "%s: %s", SYSERR_LOGINSRV_MESSAGE, format);
+    vsnprintf(message, sizeof(message)-1, new_format, args);
     log_message(message);
     send_pilot_message(grade, service, self_clearing, message);
     va_end(args);
@@ -359,7 +370,9 @@ void print_out(char *format,...)
 
     va_start(args, format);
     vprintf(format, args);
+#ifdef DEBUG
     vfprintf(stderr, format, args);
+#endif
 #ifdef MAKE_MIRROR
     vfprintf(mirror, format, args);
 #endif 
@@ -488,7 +501,7 @@ int cgiMain()
     }
 
 #ifdef DEBUG
-    fprintf(stderr, "cgiMain: after user agent get_query\n");
+    fprintf(stderr, "cgiMain: after user check_user_agent\n");
 #endif
 
     /* allow for older versions that don't have froce_reauth */
@@ -527,41 +540,41 @@ int cgiMain()
     /* the main logic */
     if ( l->user ) {                           /* a reply from the login page */
 #ifdef DEBUG
-        fprintf(stderr, "wohooo!, an answer from the login page!");
+        fprintf(stderr, "wohooo!, an answer from the login page!\n");
 #endif
         res = check_login(l);
         if( strcmp(res, CHECK_LOGIN_RET_SUCCESS) ) {
             log_message("Authentication failed: %s type: %c %s", l->user, l->creds, res);
-            if( !strcmp(res, "Authentication Failed") ) {
-                snprintf(message, sizeof(message), "%s%s%s<P>%s",
+            if( !strcmp(res, CHECK_LOGIN_RET_FAIL) ) {
+                snprintf(message, sizeof(message)-1, "%s%s%s<P>%s",
                     PBC_EM1_START,
                     AUTH_FAILED_MESSAGE1,
                     PBC_EM1_END, 
                     AUTH_FAILED_MESSAGE2);
             }
             else {
-                snprintf(message, sizeof(message), "%s%s%s<P>",
+                snprintf(message, sizeof(message)-1, "%s%s%s<P>",
                     PBC_EM1_START,
                     AUTH_TROUBLE,
                     PBC_EM1_END);
             }
-            print_login_page(message, "bad auth", l->creds, NO_CLEAR_LOGIN);
+            print_login_page(l, message, "bad auth", NO_CLEAR_LOGIN);
             exit(0);
         }
         log_message("Authentication success: %s type: %d", l->user, l->creds);
     }
     else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {             /* securid */
         log_message("securid implies reauth by %s at %s", l->host, l->appid);
-        print_login_page(PRINT_LOGIN_PLEASE, "securid", l->creds, YES_CLEAR_LOGIN);
+        print_login_page(l, PRINT_LOGIN_PLEASE, "securid", YES_CLEAR_LOGIN);
         exit(0);
     }
     else if ( !has_login_cookie() ) {          /* no l cookie, must login */
-        print_login_page(PRINT_LOGIN_PLEASE, "no L cookie yet", l->creds, NO_CLEAR_LOGIN);
+        print_login_page(l, PRINT_LOGIN_PLEASE, "no L cookie yet", NO_CLEAR_LOGIN);
         exit(0);
     }
     else if ( (res=check_l_cookie(l)) ) {      /* problem w/ the l cookie*/
         log_message("Login cookie bad: %s", res);
-        print_login_page(PRINT_LOGIN_PLEASE, res, l->creds, YES_CLEAR_LOGIN);
+        print_login_page(l, PRINT_LOGIN_PLEASE, res, YES_CLEAR_LOGIN);
         exit(0);
     }
 
@@ -580,37 +593,47 @@ int cgiMain()
 }
 
 
-void print_login_page(char *message, char *reason, char creds, int need_clear_login)
+void print_form_field(char *field, char *var) {
+    char	*field_type;
+
+    if( !strcmp(field, PROMPT_UWNETID) || !strcmp(field, PROMPT_SECURID) )
+        field_type = strdup("text");
+    else
+        field_type = strdup("password");
+
+    print_out("%s\n", field);
+    print_out("<INPUT TYPE=\"%s\" ", field_type);
+    print_out("NAME=\"%s\" SIZE=\"20\">\n", var);
+    print_out("<P>\n");
+
+}
+
+
+void print_login_page(login_rec *l, char *message, char *reason, int need_clear_login)
 {
-    char	*word;
-    char	*field_label1 = NULL;
-    char	*field_label2 = NULL;
-    char	input_type1[9];
-    char	input_type2[9];
+    char	*log_in_with = NULL;
+    char	*field1 = NULL;
+    char	*field2 = NULL;
+    char	*field3 = NULL;
     char	*hostname = strdup(get_domain_hostname());
 
-    switch (creds) {
+    switch (l->creds) {
     case '1':
-        field_label1 = strdup(PROMPT_UWNETID);
-        word = strdup("password");
-        strcpy(input_type1, "PASSWORD");
+        field1 = strdup(PROMPT_UWNETID);
+        field2 = strdup(PROMPT_PASSWD);
+        log_in_with = strdup("UW NetID and password");
         break;
     case '2':
-        field_label1 = strdup("Invalid request\n");
-        word = strdup("INVALID REQUEST");
-        strcpy(input_type1, "TEXT");
+        field1 = NULL;
         break;
     case '3':
-        field_label2 = strdup(PROMPT_SECURID);
-        field_label1 = strdup(PROMPT_UWNETID);
-        word = strdup("password and SecurID");
-        strcpy(input_type1, "TEXT");
-        strcpy(input_type2, "PASSWORD");
+        field1 = strdup(PROMPT_UWNETID);
+        field2 = strdup(PROMPT_PASSWD);
+        field3 = strdup(PROMPT_SECURID);
+        log_in_with = strdup("UW NetID, password, and SecurID");
         break;
     default:
-        field_label1 = strdup(PROMPT_UWNETID);
-        word = strdup("password");
-        strcpy(input_type1, "TEXT");
+        field1 = NULL;
         break;
     }
 
@@ -621,55 +644,107 @@ void print_login_page(char *message, char *reason, char creds, int need_clear_lo
 
     print_login_page_part1(YES_FOCUS);
 
-    print_out("<P>%s</P>\n", message);
-    print_out("<!-- -- %s -- -->\n", reason);
+    print_login_page_lhs1(message, reason, log_in_with);
 
-    /* if this is a login then print the login stuff */
-    if( !strcmp(message, PRINT_LOGIN_PLEASE) ) {
-        print_login_page_part2a();
-    }
-    print_login_page_part2b();
+    if( field1 ) print_form_field( field1, "user" );
+    if( field2 ) print_form_field( field2, "pass" );
+    if( field3 ) print_form_field( field3, "pass2" );
 
-    print_login_page_part3(word);         /* the form */
+    print_login_page_lhs2(l);
 
-    print_out("%s\n<INPUT TYPE=\"%s", field_label1, input_type1);
-    print_out("\" NAME=\"pass\" SIZE=\"20\">\n<P>\n");
+    print_login_page_centre();
 
-    if( field_label2 ) {
-        print_out("%s<INPUT TYPE=\"%s", field_label2, input_type2);
-        print_out("\" NAME=\"pass2\" SIZE=\"20\">\n");
-    }
+    print_login_page_rhs();
 
-    print_login_page_part4();
+    print_login_page_expire_info();
 
-    print_login_page_part_expire_info();
+    print_login_page_bottom();
 
-    print_login_page_part5();
 
 }
 
-char *check_login_uwnetid(char *user, char *pass)
+const char *mkcred (const char *key, const char *val) {
+    char	*dest = (char *)malloc(strlen(key) + strlen(val) + 2);
+
+    strcpy (dest, key);
+    strcat (dest, "=");
+    strcat (dest, val);
+
+    return dest;
+}
+
+char *check_login_uwnetid(const char *user, const char *pass)
 {
+    char	*res;
 
 #ifdef DEBUG
     fprintf(stderr, "check_login_uwnetid: hello\n");
 #endif 
 
-    if( auth_kdc(user, pass) == OK ) {
-        clear_error("uwnetid-fail", "securid auth ok");
+    if( auth_kdc(user, pass) == NULL ) {
+#ifdef DEBUG
+        fprintf(stderr, "check_login_uwnetid: auth_kdc say ok\n");
+#endif 
+        clear_error("uwnetid-fail", "uwnetid auth ok");
         return(CHECK_LOGIN_RET_SUCCESS);
     }
     else {
-        log_error(2, "uwnetid-err", 1, "problem doing uwnetid auth");
-        return(CHECK_LOGIN_RET_FAIL);
+        /* now check the NDC passwd file */
+        if( (res=auth_ndcpasswd(user, pass)) == NULL ) {
+#ifdef DEBUG
+            fprintf(stderr, "check_login_uwnetid: auth_ndcpasswd say ok\n");
+#endif
+            clear_error("uwnetid-fail", "uwnetid auth ok");
+            return(CHECK_LOGIN_RET_SUCCESS);
+        }
+        else {
+            return(CHECK_LOGIN_RET_FAIL);
+        }
     }
 
 }
 
-char *check_login_securid(char *user, char *sid, login_rec *l)
+/* returns NULL for ok and a message for failure                              */
+char *auth_ndcpasswd(const char *user, const char *pass)
 {
-    if( auth_securid(user, sid, l) == OK ) {
-        clear_error("securid-fail", "uwnetid auth ok");
+    int		success = 0;
+    char	*result = NULL;
+    int		resultlen = 0;
+    int		timeout = 20;
+    const char	*sessid = NULL;
+    short 	flags = REQFL_AUTH_ONLY;
+    FOURBYTEINT	hard_timeout = 1;
+    FOURBYTEINT	int_timeout = 0;
+    const char	*creds[3] = { 0, 0, 0 };
+    const char	*authtypes[] = {
+        "ndcpasswd",
+        0
+    };
+
+    /* make creds array for meta-auth*/
+    creds[0] = mkcred(NDCUSERNAME, user);
+    creds[1] = mkcred(NDCPASSWORD, pass);
+
+    success = authsrv_authenticate ( result, resultlen, timeout, sessid, flags, hard_timeout, int_timeout, authtypes, creds);
+
+#ifdef DEBUG
+            fprintf(stderr, "auth_ndcpasswd: success is %d result is %s\n", success, result);
+#endif
+
+    if( success ) 
+        return(NULL);
+    else
+        if( !result ) 
+            return("NDCpasswd Fail");
+        else
+            return(result);
+
+}
+
+char *check_login_securid(char *user, char *sid, int next, login_rec *l)
+{
+    if( auth_securid(user, sid, next, l) == NULL ) {
+        clear_error("securid-fail", "securid auth ok");
         return(CHECK_LOGIN_RET_SUCCESS);
     }
     else {
@@ -698,7 +773,7 @@ char *check_login(login_rec *l)
         strcpy(ret, check_login_uwnetid(l->user, l->pass));
     }
     else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {
-        strcpy(ret, check_login_securid(l->user, l->pass2, l));
+        strcpy(ret, check_login_securid(l->user, l->pass2, l->next_securid, l));
         if( !strcmp(ret, CHECK_LOGIN_RET_SUCCESS) ) {
             strcpy(ret, check_login_uwnetid(l->user, l->pass));
         }
@@ -870,10 +945,11 @@ void notok ( void (*notok_f)() )
     print_out("\n");
 
     print_login_page_part1(NO_FOCUS);
+    print_uwnetid_logo();
 
     notok_f();
 
-    print_login_page_part5();
+    print_login_page_bottom();
 
 }
 
@@ -913,96 +989,147 @@ int cookie_test()
     return(1);
 }
 
-/*	################################### print copyright                   */
-void print_copyright()
-{
-    print_out("<address>&#169; 1999 University of Washington</address>\n","");
-
-}
-
-
 /*	################################### The beginning of the table        */
 void print_table_start()
 {
-    print_out("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520>\n","");
+    print_out("<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=580>\n");
+
+}
+
+/*	################################### da copyright, it's ours!          */
+void print_copyright()
+{
+    print_out("<address>&copy; 2000 University of Washington</address>\n");
 
 }
 
 /*	################################### UWNetID Logo                      */
 void print_uwnetid_logo()
 {
-    print_out("<TR>\n<TD WIDTH=300 VALIGN=\"MIDDLE\">\n","");
-    print_out("<IMG SRC=\"/images/login.gif\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\">\n","");
+    print_out("<IMG SRC=\"/images/login.gif\" ALT=\"\" HEIGHT=\"64\" WIDTH=\"208\">\n");
 
 }
 
 /*       ################################### part 1                           */
 void print_login_page_part1(int focus)
 {
-    print_out("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n","");
-    print_out("<HTML>\n","");
-    print_out("<HEAD>\n","");
-    print_out("<TITLE>UW NetID Login</TITLE>\n","");
-    print_out("</HEAD>\n","");
+    print_out("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
+    print_out("<HTML>\n");
+    print_out("<HEAD>\n");
+    print_out("<TITLE>UW NetID Login</TITLE>\n");
+    print_out("</HEAD>\n");
 
     if( focus ) {
-        print_out("<BODY BGCOLOR=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n","");
+        print_out("<BODY BGCOLOR=\"#FFFFFF\" onLoad=\"document.query.user.focus()\">\n");
     }
     else {
-        print_out("<BODY BGCOLOR=\"#FFFFFF\">\n","");
+        print_out("<BODY BGCOLOR=\"#FFFFFF\">\n");
     }
 
-    print_out("<CENTER>\n","");
+    print_out("<CENTER>\n");
 
     print_table_start();
+    
+    print_out("<TR>\n");
+}
+
+/*	################################### left hand side of big table       */
+void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
+{
+    print_out("<td width=\"310\" valign=\"MIDDLE\">");
+
     print_uwnetid_logo();
 
+    /* any additional messages and hints from the cgi */
+    if( reason != NULL ) 
+        print_out("<!-- -- %s -- -->\n\n", reason);
+
+    /* open the form */
+    print_out("\n<FORM METHOD=\"POST\" ACTION=\"/\" ENCTYPE=\"application/x-www-form-urlencoded\" NAME=\"query\">\n");
+
+    /* text before the for fields */
+    if( message != NULL && strcmp(message, PRINT_LOGIN_PLEASE) ) {
+        print_out("%s", message);
+    }
+    else {
+        print_out("<P>The resource you requested requires you to log in ");
+        print_out(" with your %s.</P>\n", log_in_with);
+        print_out("<P>\n");
+    }
+
 }
 
-/*	################################### part 2a                           */
-void print_login_page_part2a()
+/*	################################### more, left hand side of big table */
+void print_login_page_lhs2(login_rec *l)
 {
-    print_out("<P>The resource you requested requires you to log in with your UW NetID and password.</P>\n");
-
-}
-
-/*	################################### part 2b                           */
-void print_login_page_part2b()
-{
-    print_out("<p>Need a UW NetID or forget your password? Go to the <a href=\"http://www.washington.edu/computing/uwnetid/\">UW NetID Home Page</a> for help.</p>\n");
-    print_out("<p>Please send email to <a href=\"mailto:help@cac.washington.edu\"> help@cac.washington.edu</a> to report problems.</p>\n");
-    print_out("</TD>\n");
-
-}
-
-/*	################################### part 3                            */
-void print_login_page_part3(char *word) 
-{
-    print_out("<TD WIDTH=9>&nbsp;</TD>\n\n");
-    print_out("<TD WIDTH=2 BGCOLOR=\"#000000\">");
-    print_out("<IMG SRC=\"/images/1pixffcc33iystpiwfy.gif\"");
-    print_out(" WIDTH=\"1\" HEIGHT=\"1\" ALIGN=\"BOTTOM\" ALT=\"\"></TD>\n\n");
-    print_out("<TD WIDTH=9>&nbsp;</TD>\n\n");
-    print_out("<TD WIDTH=200 VALIGN=\"MIDDLE\">\n");
-    print_out("<FORM METHOD=\"POST\" ACTION=\"/%s\" ", THIS_CGI);
-    print_out("ENCTYPE=\"application/x-www-form-urlencoded\"");
-    print_out("NAME=\"query\">\n");
-    print_out("<p>Enter your UW NetID and %s below, ", word);
-    print_out("then click the Login button.</p>\n");
+    print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Login\">\n");
+    print_out("</strong></p>\n");
     print_out("<P>\n");
-    print_out("<B>UW NetID:</B><BR>\n");
-    print_out("<INPUT TYPE=\"TEXT\" NAME=\"user\" SIZE=\"20\">\n");
-    print_out("<BR>\n");
-    print_out("<P>\n");
+    print_login_page_hidden_stuff(l);
+    print_out("</form>\n");
+    print_out("</td>\n");
+    print_out("<td width=\"9\">&nbsp;</td>\n");
 
 }
 
-/*	################################### part 4                            */
-void print_login_page_part4(login_rec *l)
+/*	################################### centre of the page                */
+void print_login_page_centre()
+{
+    print_out("<td width=\"2\" bgcolor=\"#000000\">\n");
+    print_out("<img src=\"/images/1pixffcc33iystpiwfy.gif\" width=\"1\" height=\"1\" align=\"BOTTOM\" alt=\"\">\n");
+    print_out("</td>\n");
+    print_out("<td width=\"9\">&nbsp;</td>\n");
+
+}
+
+/*	################################### right hand side                   */
+void print_login_page_rhs()
 {
 
-    print_out("<P>\n");
-    print_out("<STRONG><INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\"Login\"></STRONG>\n");
+    print_out("<td width=\"250\" valign=\"MIDDLE\">\n");
+    print_out("<dl>\n");
+    print_out("<dt>Need a UW NetID?</dt>\n");
+    print_out("\n");
+    print_out("<dd><a href=\"https://accounts.washington.edu/new/new\">\n");
+    print_out("Students</a></dd>\n");
+    print_out("\n");
+    print_out("<dd><a href=\"https://accounts.washington.edu/new/new?type=staff\">\n");
+    print_out("Faculty or staff</a></dd>\n");
+    print_out("</dl>\n");
+    print_out("\n");
+    print_out("<dl>\n");
+    print_out("<dt>Forget your password?</dt>\n");
+    print_out("\n");
+    print_out("<dd><a href=\"https://accounts.washington.edu/renew/renew\">\n");
+    print_out("Students</a></dd>\n");
+    print_out("\n");
+    print_out("<dd><a href=\n");
+    print_out("\"http://www.washington.edu/computing/uwnetid/password/forget.html#FAC\">\n");
+    print_out("Faculty or staff</a></dd>\n");
+    print_out("</dl>\n");
+    print_out("\n");
+    print_out("<dl>\n");
+    print_out("<dt>Have a question?</dt>\n");
+    print_out("\n");
+    print_out("<dd><a href=\"mailto:help@cac.washington.edu\">\n");
+    print_out("help@cac.washington.edu</a></dd>\n");
+    print_out("</dl>\n");
+    print_out("\n");
+    print_out("<dl>\n");
+    print_out("<dt>Want to know more?</dt>\n");
+    print_out("\n");
+    print_out("<dd><a href=\"http://www.washington.edu/computing/uwnetid/\">About UW\n");
+    print_out("NetIDs</a></dd>\n");
+    print_out("</dl>\n");
+    print_out("</td>\n");
+
+}
+
+/*	################################### hidden stuff                      */
+void print_login_page_hidden_stuff(login_rec *l)
+{
+
+    print_out("\n");
     print_out("<INPUT TYPE=\"hidden\" NAME=\"one\" VALUE=\"%s\">\n", 
 		(l->appsrvid ? l->appsrvid : "") );
     print_out("<INPUT TYPE=\"hidden\" NAME=\"two\" VALUE=\"%s\">\n",
@@ -1029,42 +1156,48 @@ void print_login_page_part4(login_rec *l)
 		(l->file ? l->file : "") );
     print_out("<INPUT TYPE=\"hidden\" NAME=\"flag\" VALUE=\"%s\">\n",
 		(l->flag ? l->flag : "") );
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"next_securid\" VALUE=\"%d\">\n",
+		(l->next_securid ? l->next_securid : 0) );
     print_out("<INPUT TYPE=\"hidden\" NAME=\"referer\" VALUE=\"%s\">\n",
 		(l->referer ? l->referer : "") );
 
     print_out("<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"%s\">\n",
 		(l->post_stuff ? l->post_stuff : "") );
-    print_out("</FORM>\n");
-    print_out("</TD>\n");
 
 }
 
 /*	################################### part 5                            */
-void print_login_page_part5() 
+void print_login_page_bottom() 
 {
-    print_out("</TR>\n");
-    print_out("<TR>\n");
-    print_out("<TD COLSPAN=5 ALIGN=CENTER>\n");
 
+    print_out("<tr>\n");
+    print_out("<td colspan=\"5\" align=\"CENTER\">\n");
     print_copyright();
-
     print_out("</td>\n");
     print_out("</tr>\n");
-    print_out("</TABLE>\n");
-    print_out("</CENTER>\n");
-    print_out("</BODY></HTML>\n");
+    print_out("</table>\n");
+    print_out("</center>\n");
+    print_out("</body>\n");
+    print_out("</html>\n");
+
 }
 
 /*	################################### part expire_info                  */
-void print_login_page_part_expire_info()
+void print_login_page_expire_info()
 {
-    print_out("</TR>\n<TR>\n");
 
-    print_out("<TD COLSPAN=5 ALIGN=CENTER>\n");
-
-    print_out("<p><br>UW NetID login lasts 8 hours or until you exit your browser. To protect your privacy, <STRONG>exit your Web browser</STRONG> when you are done with this session.</p>\n");
-
+    print_out("</tr>\n");
+    print_out("\n");
+    print_out("<tr>\n");
+    print_out("<td colspan=\"5\" align=\"CENTER\">\n");
+    print_out("<p>Login gives you 8-hour access without repeat login to UW\n");
+    print_out("NetID-protected Web resources.</p>\n");
+    print_out("\n");
+    print_out("<p><strong>WARNING</strong>: Protect your privacy! Prevent\n");
+    print_out("unauthorized use! Close all Web browser windows and Web-enabled\n");
+    print_out("applications when you are finished.</p>\n");
     print_out("</td>\n");
+    print_out("</tr>\n");
 
 }
 
@@ -1127,6 +1260,8 @@ void print_redirect_page(login_rec *l)
     char		*l_cookie;
     char		*redirect_uri;
     char		*message;
+    char		*args_enc = NULL; 
+    char		*redirect_dest_tmp = NULL;
     char		*redirect_dest = NULL;
     char		g_set_cookie[PBC_1K];
     char		l_set_cookie[PBC_1K];
@@ -1134,15 +1269,18 @@ void print_redirect_page(login_rec *l)
     int			g_res, l_res;
     int			limitations_mentioned = 0;
     char		*submit_value = NULL;
-    cgiFormEntry 	*c = cgiFormEntryFirst;
-    cgiFormEntry 	*n;
+    cgiFormEntry	*c;
+    cgiFormEntry	*n;
 
 fprintf(stderr, "in print_redirect_page\n");
 
+    if( !(redirect_dest_tmp = malloc(PBC_4K)) ) {
+        abend("out of memory");
+    }
     if( !(redirect_dest = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
-    if( !(message = malloc(PBC_1K)) ) {
+    if( !(message = malloc(PBC_4K)) ) {
         abend("out of memory");
     }
     if( !(g_cookie = malloc(PBC_4K)) ) {
@@ -1182,8 +1320,7 @@ fprintf(stderr, "in print_redirect_page got cookies\n");
       		PBC_EM2_START,
 		PROBLEMS_PERSIST,
          	PBC_EM2_END);
-          print_login_page(message, "cookie create failed", l->creds, 
-		NO_CLEAR_LOGIN);
+          print_login_page(l, message, "cookie create failed", NO_CLEAR_LOGIN);
           log_error(1, "system-problem", 0, "Not able to create cookie for user %s at %s-%s", l->user, l->appsrvid, l->appid);
           free(message);
           return;
@@ -1192,43 +1329,38 @@ fprintf(stderr, "in print_redirect_page got cookies\n");
 fprintf(stderr, "in print_redirect_page cookies are ok\n");
 
     /* create the http header line with the cookie */
-    snprintf( g_set_cookie, sizeof(g_set_cookie), 
+    snprintf( g_set_cookie, sizeof(g_set_cookie)-1, 
 		"Set-Cookie: %s=%s; domain=.washington.edu; path=/; secure", 
 		PBC_G_COOKIENAME,
                 g_cookie);
-    snprintf( l_set_cookie, sizeof(l_set_cookie), 
+    snprintf( l_set_cookie, sizeof(l_set_cookie)-1, 
 		"Set-Cookie: %s=%s; domain=%s; path=%s; secure", 
 		PBC_L_COOKIENAME,
                 l_cookie,
                 get_domain_hostname(),
                 LOGIN_DIR);
-    snprintf( clear_g_req_cookie, sizeof(g_set_cookie), 
+    snprintf( clear_g_req_cookie, sizeof(g_set_cookie)-1, 
 		"Set-Cookie: %s=done; domain=.washington.edu; path=/; expires=%s",
 		PBC_G_REQ_COOKIENAME,
 		EARLIEST_EVER);
-
 
     /* whip up the url to send the browser back to */
     if( !strcmp(l->fr, "NFR") )
         redirect_uri = l->uri;
     else
         redirect_uri = l->fr;
-
-fprintf(stderr, "in print_redirect_page uri is %s\n", redirect_uri);
-
-    snprintf(redirect_dest, PBC_4K, "https://%s%s%s", 
+    snprintf(redirect_dest, PBC_4K-1, "https://%s%s%s", 
 		l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
-    if( l->args ) {
-        char	*args_enc = NULL; 
 
-fprintf(stderr, "about to base64_decode: %s\n", l->args);
+    if( l->args ) {
         args_enc = strdup(l->args);    
 	base64_decode(l->args, args_enc);
-fprintf(stderr, "and they are: %s\n", args_enc);
-        snprintf( redirect_dest, PBC_4K, "%s?%s", redirect_dest, args_enc );
-    }
+        snprintf( redirect_dest, PBC_4K-1, "%s?%s", redirect_dest, args_enc );
+    } 
 
-    log_message ("about to do redirect of %s for host %s, redirect is: %s", 
+    /* we don't use the fab log_message funct here because the url encoding */
+    /* will look like format chars in future *printf's */
+    fprintf(stderr, "about to do redirect of %s for host %s, redirect is: %s\n",
 				l->user, l->host, redirect_dest);
 
     /* now blat out the redirect page */
@@ -1238,6 +1370,8 @@ fprintf(stderr, "and they are: %s\n", args_enc);
 
     /* incase we have a post */
     if ( l->post_stuff ) {
+fprintf(stderr, "this is a post\n");
+fprintf(stderr, "these are the post args %s\n", l->post_stuff);
         /* cgiParseFormInput will extract the arguments from the post */
         /* make them available to subsequent cgic calls */
         if( cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
@@ -1258,10 +1392,11 @@ fprintf(stderr, "and they are: %s\n", args_enc);
         print_table_start();
 	print_out("<TR><TD ALIGN=\"LEFT\">\n");
 
-	print_out("<FORM METHOD=\"POST\" ACTION=\"$redirect_dest\" ");
+	print_out("<FORM METHOD=\"POST\" ACTION=\"%s\" ", redirect_dest);
         print_out("ENCTYPE=\"application/x-www-form-urlencoded\" ");
         print_out("NAME=\"query\">\n");
 
+        c = cgiFormEntryFirst;
         while (c) {
             // in the perl version we had to make sure we were getting
             // rid of this header line
@@ -1313,6 +1448,9 @@ fprintf(stderr, "and they are: %s\n", args_enc);
         print_out("</BODY></HTML>\n");
     }
     else {
+        /*                                                               */
+        /* non-post redirect area                 non-post redirect area */
+        /*                                                               */
         print_out("Content-Type: text/html\n\n\n");
         print_out("<HTML><HEAD>\n");
         print_out("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"%s;URL=%s\">\n", REFRESH, redirect_dest);
@@ -1335,17 +1473,21 @@ login_rec *get_query()
     char		*g_req;
     char		*g_req_clear;
 
-    /* depending how we get to the cgi the arguments are either in the        */
-    /* granting request or in a post from the login page                      */
-    /*                                                                        */
+    /* even if we hav a granting request post stuff will be in the request */
+    l->post_stuff	= get_string_arg("post_stuff", YES_NEWLINES_FUNC);
+
+    /* take everything out of the environment */
+    l = load_login_rec(l);
+
+fprintf(stderr, "did we get any post_stuff the first time: %s\n", l->post_stuff);
+
+fprintf(stderr, "past that printf\n");
+
     /* cgiParseFormInput will extract the arguments from the granting         */
     /* cookie string and make them available to subsequent cgic calls         */
 
     /* if there is a user field there it is a submit from a login */
-    if( (l->user=get_string_arg("user", NO_NEWLINES_FUNC)) ) {
-        l = load_login_rec(l);
-    }
-    else {
+    if( !l->user ) {
         if( !(g_req = get_granting_request()) ) {
             log_message("no granting request cookie");
             notok(notok_generic);
@@ -1353,8 +1495,7 @@ login_rec *get_query()
         }
         g_req_clear = decode_granting_request(g_req);
 
-// ssw debug
-fprintf(stderr, "this is the decoded greg %s\n", g_req_clear);
+fprintf(stderr, "later on\n");
 
         if( cgiParseFormInput(g_req_clear, strlen(g_req_clear)) 
                    != cgiParseSuccess ) {
@@ -1372,12 +1513,17 @@ fprintf(stderr, "this is the decoded greg %s\n", g_req_clear);
         abend("submit from login page problem or granting request mangled");
     }
 
-fprintf(stderr, "from login user: %s\n", l->user);
-fprintf(stderr, "from login version: %s\n", l->version);
-fprintf(stderr, "from login creds: %c\n", l->creds);
-fprintf(stderr, "from login appid: %s\n", l->appid);
-fprintf(stderr, "from login host: %s\n", l->host);
-fprintf(stderr, "from login appsrvid: %s\n", l->appsrvid);
+#ifdef DEBUG 
+    fprintf(stderr, "from login user: %s\n", l->user);
+    fprintf(stderr, "from login version: %s\n", l->version);
+    fprintf(stderr, "from login creds: %c\n", l->creds);
+    fprintf(stderr, "from login appid: %s\n", l->appid);
+    fprintf(stderr, "from login host: %s\n", l->host);
+    fprintf(stderr, "from login appsrvid: %s\n", l->appsrvid);
+    fprintf(stderr, "from login next_securid: %d\n", l->next_securid);
+    fprintf(stderr, "from login post_stuff: %s\n", l->post_stuff);
+#endif
+
     return(l);
 
 }
@@ -1393,11 +1539,11 @@ login_rec *verify_login_cookie (char *cookie, login_rec *l)
 
     new = malloc(sizeof(new));
 
-    snprintf(crypt_keyfile, sizeof(crypt_keyfile), "%s%s.%s", 
+    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
 			KEY_DIR, CRYPT_KEY_FILE, get_my_hostname()); 
     c_stuff = libpbc_init_crypt(crypt_keyfile);
 
-    snprintf(sign_keyfile, sizeof(sign_keyfile), "%s%s", 
+    snprintf(sign_keyfile, sizeof(sign_keyfile)-1, "%s%s", 
 			KEY_DIR, CERT_FILE); 
     ctx_plus = libpbc_verify_init(sign_keyfile);
 
@@ -1462,12 +1608,12 @@ int create_cookie(char *user_buf,
     appsrv_id[sizeof(app_id)-1] = '\0';
 
     /* load up the encryption key stuff */
-    snprintf(crypt_keyfile, sizeof(crypt_keyfile), "%s%s.%s", 
+    snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
 			KEY_DIR, CRYPT_KEY_FILE, get_my_hostname()); 
     c_stuff = libpbc_init_crypt(crypt_keyfile);
 
     /* load up the certificate context */
-    snprintf(cert_keyfile, sizeof(cert_keyfile), "%s%s", 
+    snprintf(cert_keyfile, sizeof(cert_keyfile)-1, "%s%s", 
 			KEY_DIR, CERT_KEY_FILE); 
     ctx_plus = libpbc_sign_init(cert_keyfile);
 
@@ -1480,38 +1626,38 @@ fprintf(stderr, "nice new cookie is: %s\n", cookie);
 
 }
 
-int auth_kdc(char *username, char *passwd)
+char *auth_kdc(const char *username, const char *passwd)
 {
 
 #define KRB5_DEFAULT_OPTIONS 0
 #define KRB5_DEFAULT_LIFE 60*60*10 /* 10 hours */
 
-extern int optind;
-extern char *optarg;
+    extern int optind;
+    extern char *optarg;
+    
+    krb5_data tgtname = {
+        0,
+        KRB5_TGS_NAME_SIZE,
+        KRB5_TGS_NAME
+    };
 
-krb5_data tgtname = {
-    0,
-    KRB5_TGS_NAME_SIZE,
-    KRB5_TGS_NAME
-};
+    /*
+     * Try no preauthentication first; then try the encrypted timestamp
+     */
 
-/*
- * Try no preauthentication first; then try the encrypted timestamp
- */
+    krb5_preauthtype * preauth = NULL;
+    krb5_context kcontext;
+    krb5_deltat lifetime = KRB5_DEFAULT_LIFE;       /* -l option */
+    int options = KRB5_DEFAULT_OPTIONS;
+    krb5_error_code code;
+    krb5_principal me;
+    krb5_principal kserver;
+    krb5_creds my_creds;
+    krb5_timestamp now;
+    krb5_address **addrs = (krb5_address **)0;
+    char *client_name;
 
-krb5_preauthtype * preauth = NULL;
-krb5_context kcontext;
-krb5_deltat lifetime = KRB5_DEFAULT_LIFE;       /* -l option */
-int options = KRB5_DEFAULT_OPTIONS;
-krb5_error_code code;
-krb5_principal me;
-krb5_principal kserver;
-krb5_creds my_creds;
-krb5_timestamp now;
-krb5_address **addrs = (krb5_address **)0;
-char *client_name;
-
-    int		ret = 1;
+    char	*ret = NULL;
 
     code = krb5_init_context(&kcontext);
     if(code) {
@@ -1554,7 +1700,7 @@ char *client_name;
                         0))) {
 	log_error(2, "auth-kdc", 1, "auth_kdc: %s while building kserver name\n", 
 			error_message(code));
-	return(FAIL);
+	return("failed");
     }
 	
     my_creds.server = kserver;
@@ -1569,8 +1715,6 @@ char *client_name;
 					      NULL, preauth, passwd, 0,
 					      &my_creds, 0);
 
-    memset(passwd, 0, sizeof(passwd));
-    
     if (code) {
 	if (code == KRB5KRB_AP_ERR_BAD_INTEGRITY)
 	    log_message("auth_kdc: Password incorrect username: %s\n", 
@@ -1578,7 +1722,7 @@ char *client_name;
 	else 
 	    log_message("auth_kdc: %s while checking credntials username: %s\n",
 			error_message(code), username);
-	ret = FAIL;
+	ret = strdup("Auth failed");
     }
 
     /* my_creds is pointing at server */
@@ -1594,18 +1738,18 @@ char *client_name;
 
 
 /* all of the securid stuff is in files name securid_                         */
-int auth_securid(char *username, char *sid, login_rec *l) 
+char *auth_securid(char *username, char *sid, int next, login_rec *l) 
 {
-    int		ret;
+    int		intret;
 
     /* securid and next prn */
-    if( (ret=securid(username, sid) == -1) ) {
-         print_login_page("Next SecurID PRN", "next PRN", l->creds, NO_CLEAR_LOGIN);
+    if( (intret=securid(username, sid,0,SECURID_TYPE_NORM,SECURID_DO_SID) == -1) ) {
+         print_login_page(l, "Next SecurID PRN", "next PRN", NO_CLEAR_LOGIN);
     } 
-    else if( ret == 0 ) {
-        return(OK);
+    else if( intret == 0 ) {
+        return(NULL);
     }
 
-    return(FAIL);
+    return("SecurID failed");
 
 }
