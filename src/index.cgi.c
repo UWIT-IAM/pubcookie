@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.99 $
+ * $Revision: 1.100 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1317,7 +1317,7 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
     char *logout_prog;
     char *uri;
     char *ptr;
-    char *new_uri;
+    char *ptr2;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 
 			 "check_logout: program name: %s\n", cgiScriptName);
@@ -1333,17 +1333,26 @@ int check_logout(pool *p, login_rec *l, login_rec *c)
         exit(0);
     }
  
-    logout_prog = (char *)libpbc_config_getstring(p, "logout_prog", NULL);
-    uri = strdup(cgiScriptName);
-
-    /* remove multiple slashes */
-    ptr = new_uri = uri;
-    while( *ptr ) {
-        if( ptr == uri || (*ptr != '/' &&  *(ptr-1) != '/') )
-            *new_uri++ = *ptr;
-        ptr++;
+    ptr = ptr2 = uri = strdup(cgiScriptName);
+    /* remove multiple slashes from uri */
+    while( *ptr2 ) {
+        if( ptr2 != uri && *ptr2 == '/' &&  *(ptr2-1) == '/' )
+            ptr2++;
+         else 
+            *ptr++ = *ptr2++;
     }
-    *new_uri = '\0';
+    *ptr = '\0';
+
+    ptr = ptr2 = logout_prog = 
+		(char *)libpbc_config_getstring(p, "logout_prog", NULL);
+    /* remove multiple slashes from config file entry */
+    while( *ptr2 ) {
+        if( ptr2 != logout_prog && *ptr2 == '/' &&  *(ptr2-1) == '/' )
+            ptr2++;
+         else 
+            *ptr++ = *ptr2++;
+    }
+    *ptr = '\0';
 
     if(logout_prog != NULL && uri != NULL &&
        strcasecmp(logout_prog, uri) == 0 ) {
