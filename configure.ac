@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.40 $)
+AC_REVISION($Revision: 1.41 $)
 AC_INIT(Pubcookie, [3.0.0 pre-rc2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -116,6 +116,7 @@ AC_TRY_RUN( [
     [ AC_MSG_RESULT([no])
     ]
 )
+aix_system=yes
     ;;
     *sun*)
 # Check to see if this is the Sun Workshop compiler.
@@ -171,7 +172,30 @@ AC_PATH_PROG(MKDIR, mkdir, mkdir)
 AC_PATH_PROG(MV, mv, mv)
 AC_PATH_PROG(CHMOD, chmod, chmod)
 AC_PATH_PROG(TEST, test, test)
+AC_PATH_PROG(MAKE, make)
+AC_PATH_PROG(GMAKE, gmake)
 
+gnu_make=no
+
+if test "x$MAKE" != "x"; then
+    AC_MSG_CHECKING( [if $MAKE is GNU make] )
+    $MAKE --version > /dev/null 2>&1
+    if test "$?" != "0"; then
+        AC_MSG_RESULT([no])
+        gnu_make=no
+    else
+        AC_MSG_RESULT([yes])
+        gnu_make=yes
+    fi
+fi
+
+if test "$aix_system" = "yes" && \
+   test "x$GMAKE" = "x" && \
+   test "$gnu_make" = "no"; then
+    AC_SUBST( AIX_MAKE, "" )
+else
+    AC_SUBST( AIX_MAKE, [#] )
+fi
 
 if test "$enable_apache" = "yes"; then
 
@@ -698,3 +722,20 @@ AM_MAINTAINER_MODE
 AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
 AC_OUTPUT
+
+if test "x$GMAKE" = "x" && \
+   test "$gnu_make" = "no"; then
+   AC_MSG_WARN([
+   $MAKE is not GNU make and gmake was not found on your system.
+   You may have problems compiling.
+   Please let $PACKAGE_BUGREPORT know if you have a fix.
+   ])
+fi
+if test "x$GMAKE" != "x" && \
+   test "$gnu_make" = "no"; then
+    AC_MSG_WARN([
+    I found make and gmake on your system and
+    $MAKE doesn't seem to be GNU Make.
+    For best results please use $GMAKE.
+    ])
+fi

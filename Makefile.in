@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.41 2003-06-03 22:59:43 jjminer Exp $
+# $Id: Makefile.in,v 1.42 2003-06-04 01:54:18 jjminer Exp $
 
 @SET_MAKE@
 
@@ -239,6 +239,11 @@ DISTNAME = $(BASENAME)-$(VERSION)
 .PHONY: all clean install dist login_server apache_module ver
 
 all: $(builddir)/Makefile @login_server@ @apache_module@ keyclient
+
+# Damned broken make on AIX..
+
+@AIX_MAKE@.c.o:
+@AIX_MAKE@	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(srcdir)/aclocal.m4
 	cd $(srcdir) && $(RECURSIVE_FORCE_RM) $(CONFIGURE_TMP_DIRS)
