@@ -10,7 +10,7 @@ Dim MyObject
 Dim Child 
 Dim Container 
 
-ScriptMap=".pubcookie3,c:\test\test.dll,1,GET,HEAD,POST"
+ScriptMap=".pubcookie3," & session.Property("INSTALLDIR") & "PubcookieFilter.dll,1,GET,HEAD,POST"
 
 'On Error Resume Next
 Set MyObject = GetObject("IIS://Localhost/W3SVC")
@@ -88,10 +88,10 @@ Function DoAdd(ObjectPath)
   if (MapPos = -1) then	
 	Redim preserve NewScriptMaps(Ubound(NewScriptMaps)+1)
 	NewScriptMaps(ubound(NewScriptMaps)) = ScriptMap
-	WScript.Echo( "New Script Map added for extension " & Ext & vbcrlf  & vbcrlf & ScriptMap)
+	'WScript.Echo( "New Script Map added for extension " & Ext & vbcrlf  & vbcrlf & ScriptMap)
   else
     NewScriptMaps(MapPos) = ScriptMap
-   	WScript.Echo( "Script Map modified for extension " & Ext & vbcrlf  & vbcrlf & ScriptMap)
+   	'WScript.Echo( "Script Map modified for extension " & Ext & vbcrlf  & vbcrlf & ScriptMap)
   end if
 
 
@@ -104,7 +104,7 @@ Function DoAdd(ObjectPath)
   end if
   
   IISOBJ.GetInfo
-  DoView(IISOBJ)
+  'DoView(IISOBJ)
   SET IISOBJ = Nothing
 end Function
 
