@@ -7,14 +7,15 @@
  * Manually verify cookies
  *
  * args are:
- *   granting_or_no [encryption_key] [cert_file]
- *      if you specify a cert_file you must also specifiy a crypt key
+ *   granting_or_no 
  *
  * granting or no is 1 for granting or 0 for no
  *
  * cookie comes in on stdin, contenets are printed to stdout
  *
- * $Id: pbc_verify.c,v 1.19 2004-10-07 08:35:45 willey Exp $
+ * key and cert locations all come from pubcookie config
+ *
+ * $Id: pbc_verify.c,v 1.20 2004-10-07 08:39:21 willey Exp $
  */
 
 
@@ -53,8 +54,6 @@ typedef void pool;
 
 
 int main(int argc, char **argv) {
-    md_context_plus	*ctx_plus;
-    crypt_stuff         *c_stuff;
     pbc_cookie_data	*cookie_data;
     char		in[PBC_4K];
     char 		*s;
@@ -62,9 +61,9 @@ int main(int argc, char **argv) {
     security_context 	*context = NULL;
     int			use_granting = 0;
     
-
     fgets(in, sizeof(in), stdin);
 
+    /* clean some junk off the end of message */
     s = in;
     while(*s) {
         if( *s == '\r' || *s == '\n' ) {
@@ -73,10 +72,6 @@ int main(int argc, char **argv) {
         }
         s++;
     }
-/*
-    if ( argc < 2 )
-	exit(1);
- */
 
     use_granting = argv[1][0];
 
