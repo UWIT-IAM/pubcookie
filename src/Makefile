@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.43 2001-12-13 19:56:53 willey Exp $
+#   $Id: Makefile,v 1.44 2001-12-13 23:32:15 willey Exp $
 #
 
 # your compiler here
@@ -63,13 +63,14 @@ TESTSRC=dtest.c \
         candv.c
 ALLSRC=${GENERALSRC} ${TESTSRC} ${LOGINSRC} ${MODULESRC}
 
-GENERALMISC=README \
-            CREDITS \
-            LICENSE
-MODULEMISC=CHANGES.mod_pubcookie \
+GENERALMISC=README.txt \
+            CREDITS.txt \
+            LICENSE.txt
+MODULEMISC=CHANGES.mod_pubcookie.txt \
            Makefile.tmpl \
            Makefile.apxs 
-LOGINMISC=CHANGES.login \
+LOGINMISC=CHANGES.login.txt \
+	  NEW_SITE.txt \
           Makefile \
           Makefile.index.cgi \
           contrib\* \
