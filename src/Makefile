@@ -18,13 +18,13 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.35 2001-08-23 00:21:05 willey Exp $
+#   $Id: Makefile,v 1.36 2001-10-17 18:29:35 willey Exp $
 #
 
 # your compiler here
 CC=gcc
 # choose your flags.
-CFLAGS=-O3 -g -Wall -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/
+CFLAGS=-O3 -g -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include/ -I/usr/local/include
 # order is important here
 LDFLAGS=-L/usr/local/ssl/lib -lssl -lcrypto -ldl
 # nfast stuff
@@ -122,6 +122,9 @@ what_is_my_ip:		what_is_my_ip.o libpubcookie.o base64.o
 uwnetid_stub:		uwnetid_stub.o libpubcookie.o index.cgi_krb.o base64.o
 	$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o index.cgi_krb.o $(LDFLAGS) -lkrb5
 
+securid_stub:	securid_stub.o  securid.o libpubcookie.o base64.o
+	$(CC) ${CFLAGS} -o $@ securid_stub.o libpubcookie.o base64.o securid.o $(LDFLAGS) -lmgoapi -lkrb5
+
 moduletar:
 	VERSION=`awk '/PBC_PUBID/{print $$3}' pbc_version.h | sed 's/"//g'`; \
 	BASENAME=mod_pubcookie; \
@@ -171,9 +174,10 @@ test_local_c_key.o: test_local_c_key.c ${GENERALHEAD} ${MAKEFILE}
 what_is_my_ip.o: what_is_my_ip.c ${GENERALHEAD} ${MAKEFILE}
 uwnetid_stub.o: uwnetid_stub.c ${GENERALHEAD} ${MAKEFILE}
 index.cgi_krb.o: index.cgi_krb.c ${GENERALHEAD} ${MAKEFILE}
+securid.o: securid.c securid.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local uwnetid_stub
+	$(RM) -f *.o *~ core test candv dtest out test_local_c_key mod_pubcookie.so what_is_my_ip pbc_create pbc_verify t make_crypted_bit what_is_my_ip mkc_key_generic mkc_key_local uwnetid_stub securid_stub
 
 # to purify candv {then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
