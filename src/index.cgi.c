@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.28 2001-10-17 18:30:35 willey Exp $
+    $Id: index.cgi.c,v 1.29 2001-10-17 18:50:46 willey Exp $
  */
 
 
@@ -1420,87 +1420,6 @@ void print_http_header()
 
 }
 
-/*       ################################### part 1                           */
-void print_login_page_part1(char *focus)
-{
-    print_out("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-    print_out("<html>\n");
-    print_out("<head>\n");
-    print_out("<title>UW NetID Login</title>\n");
-    print_out("</head>\n");
-
-    if( focus != NULL ) {
-        print_out("<body bgcolor=\"#FFFFFF\" onLoad=\"document.query.%s.focus()\">\n", focus);
-    }
-    else {
-        print_out("<body bgcolor=\"#FFFFFF\">\n");
-    }
-
-    print_out("<center>\n");
-
-    print_table_start();
-    
-    print_out("<tr>\n");
-}
-
-/*	################################### left hand side of big table       */
-void print_login_page_lhs1(char *message, char *reason, char *log_in_with)
-{
-    print_out("<td width=\"310\" valign=\"middle\">\n");
-
-    print_uwnetid_logo();
-
-    /* any additional messages and hints from the cgi */
-    if( reason != NULL ) 
-        print_out("<!-- %s -->\n\n", reason);
-
-    /* open the form */
-    print_out("\n<form method=\"POST\" action=\"/\" enctype=\"application/x-www-form-urlencoded\" name=\"query\" autocomplete=\"off\">\n");
-
-    /* text before the for fields */
-    if( message != NULL && strcmp(message, PRINT_LOGIN_PLEASE) ) {
-        print_out("%s", message);
-    }
-    else {
-        print_out("<P>The resource you requested requires you to log in ");
-        print_out(" with your %s.</P>\n", log_in_with);
-    }
-
-}
-
-/*	################################### more, left hand side of big table */
-void print_login_page_lhs2a(login_rec *l)
-{
-    print_out("<p><strong><input type=\"SUBMIT\" name=\"submit\" value=\"Log in\">");
-    print_out("</strong>\n");
-
-}
-
-/*	################################### more, left hand side of big table */
-void print_login_page_lhs2b(login_rec *l)
-{
-    print_out("</form>\n");
-    print_out("</td>\n");
-    print_out("<td width=\"9\">&nbsp;</td>\n");
-
-}
-
-/*	################################### centre of the page                */
-void print_login_page_centre()
-{
-    print_out("<td width=\"2\" bgcolor=\"#000000\">\n");
-    print_out("<img src=\"/images/1pixffcc33iystpiwfy.gif\" width=\"1\" height=\"1\" align=\"BOTTOM\" alt=\"\" oncontextmenu=\"return false\"></td>\n");
-    print_out("<td width=\"9\">&nbsp;</td>\n");
-
-}
-
-/*	################################### right hand side                   */
-void print_login_page_rhs()
-{
-    print_out("%s\n", LOGIN_PAGE_RHS_TEXT);
-
-}
-
 /*	################################### hidden stuff                      */
 void print_login_page_hidden_stuff(login_rec *l)
 {
@@ -1550,29 +1469,6 @@ void print_login_page_hidden_stuff(login_rec *l)
     /* this tags the incoming request as a form reply */
     print_out("<input type=\"hidden\" name=\"%s\" value=\"%c\">\n",
 		PBC_GETVAR_REPLY, FORM_REPLY);
-
-}
-
-/*	################################### part 5                            */
-void print_login_page_bottom() 
-{
-
-    print_out("<tr>\n");
-    print_out("<td colspan=\"5\" align=\"center\">\n");
-    print_copyright();
-    print_out("</td>\n");
-    print_out("</tr>\n");
-    print_out("</table>\n");
-    print_out("</center>\n");
-    print_out("</body>\n");
-    print_out("</html>\n");
-
-}
-
-/*	################################### part expire_info                  */
-void print_login_page_expire_info()
-{
-    print_out("%s\n", LOGIN_PAGE_BOTTOM_TEXT);
 
 }
 
