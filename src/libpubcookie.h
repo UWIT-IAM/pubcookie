@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.19 2002-06-13 17:41:39 jteaton Exp $
+    $Id: libpubcookie.h,v 1.20 2002-06-25 19:45:00 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -44,8 +44,17 @@
 
 char *get_my_hostname();
 
+/** 
+ * find the credential id value for an authtype name
+ * @param name the name of the authtype
+ * @returns either PBC_CREDS_NONE or the credential id to pass in the cookie
+ */
+const char libpbc_get_credential_id(const char *name);
+
 #ifdef APACHE1_3
-int libpbc_get_crypt_key_p(pool *p, crypt_stuff *c_stuff, char *peer);
+#include "httpd.h"
+
+int libpbc_get_crypt_key_p(ap_pool *p, crypt_stuff *c_stuff, char *peer);
 
 unsigned char *libpbc_get_cookie_p(ap_pool *, unsigned char *, 
 	                         unsigned char, 
@@ -80,7 +89,22 @@ crypt_stuff *libpbc_init_crypt_p(ap_pool *, char *);
 void libpbc_free_md_context_plus_p(ap_pool *, md_context_plus *);
 void libpbc_free_crypt_p(ap_pool *, crypt_stuff *);
 
+/**
+ * generates a random key for peer and writes it to the disk
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+int libpbc_generate_crypt_key_p(ap_pool *, const char *peer);
+
+/**
+ * writes the key 'key' to disk for peer 'peer'
+ * @param a pointer to the 2048-bit key
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+int libpbc_set_crypt_key_p(ap_pool *, const char *key, const char *peer);
 #else
+
 int libpbc_get_crypt_key_np(crypt_stuff *c_stuff, char *peer);
 
 unsigned char *libpbc_get_cookie_np(unsigned char *, 
@@ -116,6 +140,20 @@ crypt_stuff *libpbc_init_crypt_np(char *);
 void libpbc_free_md_context_plus_np(md_context_plus *);
 void libpbc_free_crypt_np(crypt_stuff *);
 
+/**
+ * generates a random key for peer and writes it to the disk
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+int libpbc_generate_crypt_key_np(const char *peer);
+
+/**
+ * writes the key 'key' to disk for peer 'peer'
+ * @param a pointer to the 2048-bit key
+ * @param peer the certificate name of the peer
+ * @return PBC_OK for success, PBC_FAIL for failure
+ */
+int libpbc_set_crypt_key_np(const char *key, const char *peer);
 #endif
 
 char *libpbc_time_string(time_t);
@@ -126,20 +164,6 @@ void free_debug(void *p);
 void libpbc_augment_rand_state(unsigned char *, int);
 char *libpbc_mod_crypt_key(char *, unsigned char *);
 
-/**
- * generates a random key for peer and writes it to the disk
- * @param peer the certificate name of the peer
- * @return PBC_OK for success, PBC_FAIL for failure
- */
-int libpbc_generate_crypt_key(const char *peer);
-
-/**
- * writes the key 'key' to disk for peer 'peer'
- * @param a pointer to the 2048-bit key
- * @param peer the certificate name of the peer
- * @return PBC_OK for success, PBC_FAIL for failure
- */
-int libpbc_set_crypt_key(const char *key, const char *peer);
 
 int libpbc_encrypt_cookie(unsigned char *, 
 	                  unsigned char *, 
@@ -150,7 +174,7 @@ int libpbc_decrypt_cookie(unsigned char *,
                           crypt_stuff *,
 	     	          long);
 int libpbc_base64_encode(unsigned char *, unsigned char *, int );
-int libpbc_base64_decode(unsigned char *, unsigned char *);
+int libpbc_base64_decode(unsigned char *, unsigned char *, int *);
 int libpbc_check_version(pbc_cookie_data *);
 int libpbc_check_exp(time_t, int);
 

@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.26 2002-06-13 17:41:39 jteaton Exp $
+    $Id: libpubcookie.c,v 2.27 2002-06-25 19:44:41 greenfld Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -39,6 +39,7 @@ typedef  int pid_t;  /* win32 process ID */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <syslog.h>
 #include <time.h>
 #include <string.h>
 #include <sys/time.h>
@@ -79,13 +80,13 @@ const char *redirect_reason[] = {
 };
 
 /* lives only on application server */
-const char *PBC_S_CERTFILE = (PBC_PATH "pubcookie_session.cert");
+char PBC_S_CERTFILE[1024];
 /* lives only on application server */
-const char *PBC_S_KEYFILE = (PBC_PATH "pubcookie_session.key");
+char PBC_S_KEYFILE[1024];
 /* lives everywhere (on application servers & login server) */
-const char *PBC_G_CERTFILE = (PBC_PATH "pubcookie_granting.cert");
+char PBC_G_CERTFILE[1024];
 /* lives only on login server */
-const char *PBC_G_KEYFILE = (PBC_PATH "pubcookie_granting.key");
+char PBC_G_KEYFILE[1024];
 
 char *get_my_hostname()
 {
@@ -96,6 +97,22 @@ char *get_my_hostname()
 
     return(strdup(myname.nodename));
 
+}
+
+/** 
+ * find the credential id value for an authtype name
+ * @param name the name of the authtype
+ * @returns either PBC_CREDS_NONE or the credential id to pass in the cookie
+ */
+const char libpbc_get_credential_id(const char *name)
+{
+    if (!strcmp(name, "webiso-vanilla")) {
+	return PBC_BASIC_CRED_ID; /* flavor_basic */
+    } else if (!strcmp(name, "webiso-getcred")) {
+	return PBC_GETCRED_CRED_ID; /* flavor_getcred */
+    } else {
+	return PBC_CREDS_NONE;
+    }
 }
 
 /*
@@ -312,6 +329,19 @@ void libpbc_pubcookie_init_np()
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
 
+    snprintf(PBC_S_CERTFILE, sizeof(PBC_S_CERTFILE),
+	     "%s/%s", PBC_KEY_DIR, "pubcookie_session.cert");
+    snprintf(PBC_S_KEYFILE, sizeof(PBC_S_CERTFILE),
+	     "%s/%s", PBC_KEY_DIR, "pubcookie_session.key");
+    snprintf(PBC_G_CERTFILE, sizeof(PBC_S_CERTFILE),
+	     "%s/%s", PBC_KEY_DIR, "pubcookie_granting.cert");
+    snprintf(PBC_G_KEYFILE, sizeof(PBC_S_CERTFILE),
+	     "%s/%s", PBC_KEY_DIR, "pubcookie_granting.key");
+
+    if (security_init()) {
+	syslog(LOG_ERR, "security_init failed");
+	exit(1);
+    }
 }
 
 /* a local malloc and init                                                    */
@@ -567,14 +597,13 @@ unsigned char *libpbc_gethostip_np()
  */
 static void make_crypt_keyfile(const char *peername, char *buf)
 {
-    strlcpy(buf, libpbc_config_getstring("keydir", PBC_KEY_DIR), 1024);
+    strlcpy(buf, PBC_KEY_DIR, 1024);
     if (buf[strlen(buf)-1] != '/') {
 	strlcat(buf, "/", 1024);
     }
     strlcat(buf, peername, 1024);
 }
     
-#include <syslog.h>
 /**
  * generates a random key for peer and writes it to the disk
  * @param peer the certificate name of the peer
@@ -1158,6 +1187,7 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     unsigned char	sig[PBC_SIG_LEN];
     unsigned char	buf[PBC_4K];
     unsigned char	buf2[PBC_4K];
+    int outlen;
 
     /* libpbc_debug("libpbc_unbundle_cookie: hello\n"); */
 
@@ -1172,8 +1202,15 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
 	return 0;
     }
 
-    if( ! libpbc_base64_decode((unsigned char *)in, buf) ) {
-        libpbc_debug("libpbc_unbundle_cookie: Could not decode cookie.\n");
+    if( ! libpbc_base64_decode((unsigned char *)in, buf, &outlen) ) {
+        libpbc_debug("libpbc_unbundle_cookie: could not base64 decode cookie.\n");
+	return 0;
+    }
+
+    /* size = data + sig + 2 for crypto offsets */
+    if (outlen != sizeof(pbc_cookie_data) + PBC_SIG_LEN + 2) {
+	libpbc_debug("libpbc_unbundle_cookie: base64 wrong size: %d != %d\n",
+		     outlen, sizeof(pbc_cookie_data) + PBC_SIG_LEN);
 	return 0;
     }
 
