@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: keyserver.c,v 2.30 2003-03-24 21:28:14 jjminer Exp $
+    $Id: keyserver.c,v 2.31 2003-04-11 19:57:03 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -226,22 +226,25 @@ int pushkey(const char *peer)
         }
         if (res == 0) {
             const char *keyclient = KEYCLIENT;
-            const char *cmd[15] = {
-               keyclient,
-               "-u",
-               "-H", peer,
-               "-L", lservers[x],
-               "-k", keyfile, 
-               "-c", certfile
-            };
-            int n = 10;
+            const char *cmd[15];
+            int n = 0;
+            cmd[n++] = keyclient;
+            cmd[n++] = "-u";
+            cmd[n++] = "-H";
+            cmd[n++] = peer;
+            cmd[n++] = "-L";
+            cmd[n++] = lservers[x];
+            cmd[n++] = "-k";
+            cmd[n++] = keyfile;
+            cmd[n++] = "-c";
+            cmd[n++] = certfile;
             if (cafile != NULL) {
-               cmd[n++] = "-C";
-               cmd[n++] = cafile;
+                cmd[n++] = "-C";
+                cmd[n++] = cafile;
             }
             if (cadir != NULL) {
-               cmd[n++] = "-D";
-               cmd[n++] = cadir;
+                cmd[n++] = "-D";
+                cmd[n++] = cadir;
             }
             cmd[n] = NULL;
 
