@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.54 $)
+AC_REVISION($Revision: 1.55 $)
 AC_INIT(Pubcookie, [3.0.1 pre-beta2], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -163,6 +163,7 @@ fi
 
 if test "$enable_apache" = "yes"; then
 
+AC_PATH_PROG(APXS, apxs)
 AC_ARG_WITH(apxs,
     AC_HELP_STRING([--with-apxs=PATH],[/path/to/apxs]),
 [ case "$withval" in
@@ -276,6 +277,7 @@ AC_ARG_WITH(apache-src,
    if test "x$apache_src" = "x"; then
          AC_MSG_ERROR(Cannot find the apache source)
    fi
+   APXS=
    AC_MSG_RESULT($withval)
 
 ],[
