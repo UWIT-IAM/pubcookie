@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.12 2001-05-29 20:49:48 willey Exp $
+    $Id: candv.c,v 1.13 2001-08-29 18:18:59 willey Exp $
  */
 
 /*                                                                            */
@@ -31,8 +31,8 @@ int main(int argc, char **argv) {
     unsigned char creds;
     int serial=2147483647;
     char user[PBC_USER_LEN];
-    unsigned char appsrv_id[PBC_APPSRV_ID_LEN];
-    unsigned char app_id[PBC_APP_ID_LEN];
+    unsigned char appsrvid[PBC_APPSRV_ID_LEN];
+    unsigned char appid[PBC_APP_ID_LEN];
     unsigned char       *cookie;
     unsigned char       *updated_cookie;
     pbc_cookie_data	*cookie_data;
@@ -69,8 +69,8 @@ int main(int argc, char **argv) {
 
     type='1';
     creds='9';
-    strncpy(appsrv_id, "appserver id is blah", PBC_APPSRV_ID_LEN);
-    strncpy(app_id, "app id is googoo", PBC_APP_ID_LEN);
+    strncpy(appsrvid, "appserver id is blah", PBC_APPSRV_ID_LEN);
+    strncpy(appid, "app id is googoo", PBC_APP_ID_LEN);
     strncpy(user, "bongo", PBC_USER_LEN);
 
     if ( key_file )
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
         v_ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
 
     printf("cook up a cookie\n");
-    cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
 
     printf("please wait while take a quick nap\n");
     sleep(2);
@@ -109,8 +109,8 @@ int main(int argc, char **argv) {
 	printf("type is:\t>%c<\n", (*cookie_data2).broken.type);
 	printf("cred is:\t>%c<\n", (*cookie_data2).broken.creds);
 	printf("serial is:\t>%d<\n", (*cookie_data2).broken.serial);
-	printf("appsrv_id is:\t>%s<\n", (*cookie_data2).broken.appsrv_id);
-	printf("app_id is:\t>%s<\n", (*cookie_data2).broken.app_id);
+	printf("appsrvid is:\t>%s<\n", (*cookie_data2).broken.appsrvid);
+	printf("appid is:\t>%s<\n", (*cookie_data2).broken.appid);
 	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.create_ts));
 	printf("last is:\t>%s<\n", libpbc_time_string((*cookie_data2).broken.last_ts));
     } 
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
     } 
 
     printf("cook up another cookie\n");
-    cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
+    cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
 
     printf("please wait while take a quick nap\n");
     sleep(2);
@@ -136,8 +136,8 @@ int main(int argc, char **argv) {
 	printf("type is:\t>%c<\n", (*cookie_data).broken.type);
 	printf("cred is:\t>%c<\n", (*cookie_data).broken.creds);
 	printf("serial is:\t>%d<\n", (*cookie_data).broken.serial);
-	printf("appsrv_id is:\t>%s<\n", (*cookie_data).broken.appsrv_id);
-	printf("app_id is:\t>%s<\n", (*cookie_data).broken.app_id);
+	printf("appsrvid is:\t>%s<\n", (*cookie_data).broken.appsrvid);
+	printf("appid is:\t>%s<\n", (*cookie_data).broken.appid);
 	printf("create is:\t>%s<\n", libpbc_time_string((*cookie_data).broken.create_ts));
 	printf("last is:\t>%s<\n", libpbc_time_string((*cookie_data).broken.last_ts));
     } 

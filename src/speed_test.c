@@ -1,5 +1,5 @@
 /*
-    $Id: speed_test.c,v 1.2 2000-04-07 17:37:29 willey Exp $
+    $Id: speed_test.c,v 1.3 2001-08-29 18:18:59 willey Exp $
  */
 
 /* Copyright 1999, University of Washington.  All rights reserved. */
@@ -99,8 +99,8 @@ int main(int argc, char **argv) {
     unsigned char creds;
     int serial=2147483647;
     char user[PBC_USER_LEN];
-    unsigned char appsrv_id[PBC_APPSRV_ID_LEN];
-    unsigned char app_id[PBC_APP_ID_LEN];
+    unsigned char appsrvid[PBC_APPSRV_ID_LEN];
+    unsigned char appid[PBC_APP_ID_LEN];
     unsigned char       *cookie;
     unsigned char       *updated_cookie;
     pbc_cookie_data	*cookie_data;
@@ -143,8 +143,8 @@ int main(int argc, char **argv) {
 
     type='1';
     creds='9';
-    strncpy(appsrv_id, "appserver id is blah", PBC_APPSRV_ID_LEN);
-    strncpy(app_id, "app id is googoo", PBC_APP_ID_LEN);
+    strncpy(appsrvid, "appserver id is blah", PBC_APPSRV_ID_LEN);
+    strncpy(appid, "app id is googoo", PBC_APP_ID_LEN);
     strncpy(user, "bongo", PBC_USER_LEN);
 
     if ( key_file )
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
     start_time();
 
     for( i = 1; i <= iterations; i++ ) {
-        cookie = libpbc_get_cookie(user, type, creds, serial, appsrv_id, app_id, s_ctx_plus, c_stuff);
+        cookie = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, s_ctx_plus, c_stuff);
 
         if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
             printf("test failed: cookie couldn't be unbundled\n");

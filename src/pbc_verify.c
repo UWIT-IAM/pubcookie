@@ -2,7 +2,7 @@
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 /*
-    $Id: pbc_verify.c,v 1.9 1999-08-11 23:00:58 willey Exp $
+    $Id: pbc_verify.c,v 1.10 2001-08-29 18:18:59 willey Exp $
  */
 
 /*                                                                            */
@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
     printf("type: %c\n", (*cookie_data).broken.type);
     printf("creds: %c\n", (*cookie_data).broken.creds);
     printf("serial: %d\n", (*cookie_data).broken.serial);
-    printf("appsrv_id: %s\n", (*cookie_data).broken.appsrv_id);
-    printf("app_id: %s\n", (*cookie_data).broken.app_id);
+    printf("appsrvid: %s\n", (*cookie_data).broken.appsrvid);
+    printf("appid: %s\n", (*cookie_data).broken.appid);
     printf("create_ts: %d\n", (int)(*cookie_data).broken.create_ts);
     printf("last_ts: %d\n", (int)(*cookie_data).broken.last_ts);
     
