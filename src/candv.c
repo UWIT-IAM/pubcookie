@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.15 2002-06-03 20:50:01 jjminer Exp $
+    $Id: candv.c,v 1.16 2002-06-13 17:18:38 jteaton Exp $
  */
 
 /*                                                                            */
@@ -20,7 +20,7 @@
 
 void usage(const char *progname) {
     printf("%s [-k key_file] [-c cert_file] [-s key_for_cert_file][-h]\n\n", progname);
-    printf("\t key_file:\tencyption key, \n\t\t\tdefault is %s\n", PBC_CRYPT_KEYFILE);
+    printf("\t key_file:\tencyption key, \n\t\t\tdefault is %s/HOSTNAME\n", PBC_CRYPT_KEY_PREFIX);
     printf("\t cert_file:\tcetificate file, \n\t\t\tdefault is %s\n", PBC_G_CERTFILE);
     printf("\t key_for_cert_file:\tkey for cetificate file, \n\t\t\tdefault is %s\n\n", PBC_G_KEYFILE);
     exit (1);
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     if ( key_file )
         c_stuff = libpbc_init_crypt(key_file);
     else
-        c_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+        c_stuff = libpbc_init_crypt(get_my_hostname());
 
     if ( g_key_file )
         s_ctx_plus = libpbc_sign_init(g_key_file);

@@ -14,7 +14,7 @@
 
 void usage(const char *progname) {
     printf("%s [-k key_file] [-h]\n\n", progname);
-    printf("\t key_file:\tdefault is %s\n\n", PBC_CRYPT_KEYFILE);
+    printf("\t key_file:\tdefault is %s/%s\n\n", PBC_CRYPT_KEY_PREFIX, get_my_hostname());
     exit (1);
 }
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     if ( key_file )
         c1_stuff = libpbc_init_crypt(key_file);
     else
-        c1_stuff = libpbc_init_crypt(PBC_CRYPT_KEYFILE);
+        c1_stuff = libpbc_init_crypt(get_my_hostname);
 
     bzero(in, 1024);
     bzero(out, 1024);
