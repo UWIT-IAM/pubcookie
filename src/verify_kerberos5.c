@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.15 $
+ * $Revision: 1.16 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -397,6 +397,7 @@ static int kerberos5_v(const char *userid,
     int result = -1;
     char tfname[40];
     char *realm = NULL;
+    char *localpwd = NULL;
 
     if (credsp) *credsp = NULL;
 
@@ -459,18 +460,25 @@ static int kerberos5_v(const char *userid,
 	return -1;
     }
 
+    localpwd = strdup(passwd);
+
+    if (localpwd == NULL)
+        return 1;
+
     krb5_get_init_creds_opt_init(&opts);
     krb5_get_init_creds_opt_set_tkt_life(&opts, KRB5_DEFAULT_LIFE);
     if (krb5_get_init_creds_password(context, &creds, 
-				     auth_user, passwd, NULL, NULL, 
-				     0, NULL, &opts)) {
-	krb5_cc_destroy(context, ccache);
-	krb5_free_principal(context, auth_user);
-	krb5_free_context(context);
-	free(realm);
+				     auth_user, localpwd, NULL, NULL, 
+                     0, NULL, &opts)) {
+        krb5_cc_destroy(context, ccache);
+        krb5_free_principal(context, auth_user);
+        krb5_free_context(context);
+        free(realm);
+        free(localpwd);
         *errstr = "can't get tgt";
-	return -1;
+        return -1;
     }
+    free(localpwd);
 
     /* at this point we should have a TGT. Let's make sure it is valid */
     if (krb5_cc_store_cred(context, ccache, &creds)) {
