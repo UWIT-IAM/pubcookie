@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: INSTALL.login.txt,v 1.8 2001-12-13 03:40:32 willey Exp $
+    $Id: INSTALL.login.txt,v 1.9 2001-12-13 22:22:32 willey Exp $
  */
 
 
@@ -92,7 +92,65 @@ the domain of the organization, and other site specific stuff.
 index.cgi.h defines macros for the location of HTML templates, error
 messages, and an ok_browsers file. They need to be localized as well.
 
-5. Compiling
+5. Choosing the location of your login page
+
+Depending on your instalation environment you may choose to install the
+login server in a number of configurations.  Two general models are
+presented here with any necessary Apache configuration directives.
+
+Specifying the Login URL as a Directory
+
+For a clean looking login URL you can install the login server to be the
+default file in a directory.  The default filename, index.cgi, is a common
+name for a cgi file that would be executed when only directory URL is
+specified.
+
+At the University of Washington we use:
+
+https://weblogin.washington.edu/  
+
+as the login server url, it's very simple for users to identify in the 
+browser's URL field.  
+
+The apache config directive 'DirectoryIndex' tells Apache it how to handle
+requests for directories.  See
+http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex for more
+info.  When a request is made for a directory Apache will choose the first
+file it finds in the DirectoryIndex list.
+
+Our DirectoryIndex line looks something like:
+
+DirectoryIndex index.html index.cgi
+
+In the is configuration you don't want an index.html file in the same
+directory as index.cgi.
+
+Explicit Specification of Login CGI
+
+The login CGI is not name dependant and can be deployed as index.cgi,
+login.cgi, or some other CGI file if you like.  In can also be put in any
+subdirectory you wish.
+
+Your login server's URL could be something like:
+
+  https://www.myuniversity.edu/cgi-bin/login.cgi
+
+Some sites may do this avoid the confusion with the default index page.
+
+Depending how you want to configure things with Apache or which ever Web
+server you want to use for the login server, your login server URL could
+be something like:
+
+  https://www.myuniversity.edu/login
+
+where /login is mapped to the CGI program (index.cgi or whatever you
+rename it to).
+
+The default login server and login URI are specified as PBC_LOGIN_HOST and
+PBC_LOGIN_URI in pbc_config.h.  The default may be overwridden in the
+Apache configuration file with the PubCookieLogin directive.
+
+6. Compiling
 
 Note: it is assumed you have already set up a system running Apache with 
 mod_ssl and have noted the location where OpenSSL is installed.
@@ -118,7 +176,7 @@ Once cgic is compiled, build index.cgi with Makefile.index.cgi
 Then build the key management tools with Makefile. You'll need these tools
 later.
 
-6. Setup: User agent blocking via ok_browsers file
+7. Setup: User agent blocking via ok_browsers file
 
 index.cgi.h defines the location of a ok_browsers file.  The idea behind
 ok_browsers is to block browsers that either have a known security flaw
@@ -133,12 +191,15 @@ ok_browsers has a single line: "Mozilla". Since both Netscape and IE claim
 to be Mozilla that covers the only two browsers known to work with
 Pubcookie. Proceed according to your own policy.
 
-7. More setup: Key pairs for signing and verifying cookies
+8. More setup: Key pairs for signing and verifying cookies
 
 pbc_config.h defines the location of two key pairs used to sign and verify
 login cookies and granting cookies.  The filenames may be either statically 
 defined file names or built from a directory, prefix, and the hostname.  
 The default is filenames that are built from the host name.  
+
+The program what_is_my_ip reports the hostname (in addition to the IP) that
+pubcookie will use.
 
 for hostname based filenames you will need to verify the following 
 defines:
@@ -173,16 +234,22 @@ of PBC_G_CERTFILE must be installed with Pubcookie on target application
 servers, which also need to generate their own keys to sign and verify
 their own session cookies.
 
-8. More setup: DES Encryption key / Key management (as it is)
+9. More setup: DES Encryption key / Key management (as it is)
 
-The DES encryption key is a shared key that is hashed on a per host 
-basis.  Each host that plays the pubcookie game will hav a key file 
-that can only be used on that host.  This key is referred to as the 
-encryption key or the c_key.
+The DES encryption key is a shared key that is hashed on to each 
+participating host's primary IP address.  Each host that plays the 
+pubcookie game will hav a key file that can only be used on that host.  
+This key is referred to as the encryption key or the c_key.
+
+There is no current mechanism for revoking a key or forcing new 
+keys to be generated.
 
 Like the public key files the DES encryption key filename may be either 
 statically defined or built from a directory, prefix, and the hostname.
 The default is a filename built from the host name.
+
+The program what_is_my_ip reports the hostname (in addition to the IP) that
+pubcookie will use.
 
 For a hostname based encryption key filename define:
 
@@ -194,44 +261,32 @@ NO_HOST_BASED_KEY_FILENAMES set and set the following defines
 
 #define PBC_CRYPT_KEYFILE "/usr/local/pubcookie/c_key"
 
-***********
-***********
-*********** There is also 
-***********
-***********#define PBC_MASTER_CRYPT_KEYFILE "/usr/local/pubcookie/m_key"
-
-
-For a new pubcookie installation you will need a source of DES keys to base 
-others on.  Use the pbc_key_generic utility to generate this master key 
-(m_key).  This program simply spits the correct amount of random bits to 
-standard out. 
+For a new pubcookie installation you will need a master source of DES keys
+to base the keyfiles on.  Use the pbc_key_generic utility to generate this
+master keyfile (m_key).  This program simply spits the correct amount of
+random bits to standard out.
 
 % pbc_key_generic > m_key
 
-Put this master key in the location defined by PBC_MASTER_CRYPT_KEYFILE.
+Now, use the pbc_key_local utility to create the keyfiles for all of your
+hosts. You will need the primary IP address for the hosts, what_is_my_ip
+will report the IP that pubcookie will use if there is any confusion.
 
-Now use the pbc_key_local utility to hash the master key to the primary
-IP address of your login server and create the localized copy:
+% pbc_key_local -i m_key -a 209.211.239.212 > c_key
 
-% pbc_key_local -a 209.211.239.212 > c_key
+You may also set the master (m_key) as PBC_MASTER_CRYPT_KEYFILE in 
+pbc_config.h and eliminate the use of the -i argument. 
 
-Current key management in Pubcookie is a simple shared key (m_key) hashed
-to each participating host's primary IP address. There is no current
-mechanism for revoking a key or forcing new keys to be generated.
+pbc_key_local takes the master keyfile an IP (in numbers and dots format) 
+for the host.  The output, either to standard out or to a file specified with
+-o, will be a keyfile localized to the IP address.  This means that 
+pbc_key_local can be run on any machine with 
 
-Note: Use the pbc_key_local utility to create a localized key (c_key)  
-for each target application server based on its primary IP address. If you 
-are not installing Pubcookie on target application servers, be prepared 
-for requests from sysadmins for c_key files.
+You will need a c_key for all pubcookie hosts, whether login server or
+appliction webserver.  If you managing the login server and infrastructure
+be prepared for requests from sysadmins for c_key files.
 
-9. Ancillary tools
-
-Tools that you need for key management:
-pbc_key_local - 'localizes' master crypt key for a specific host (ip).
-pbc_key_generic - Makes a blob of bits that can be used for a master c_key.
-
-Tool rarely used for debugging:
-test_local_c_key
+10. Ancillary tools
 
 Old Tools That Might Be Handy for Debugging:
 
@@ -262,55 +317,5 @@ appsrvid: appsrvid
 appid: appid
 create_ts: 1006986719
 last_ts: 1006986719
-
-
-M. Testing Crypt Keys
-
-N. Choosing the location of your login page
-
-Depending on your instalation environment you may choose to install the 
-login server in a number of configurations.  Two general models are presented
-here with any necessary Apache configuration directives. 
-
-N.1. 
-
-For a clean looking login URLThe apache config directive 'DirectoryIndex'
-tells it how to handle requests for directories.
-
-(see http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex for more
-info) tells it how to handle requests for directories.
-
-It looks like apache is interpreting '/' as 'index.html'.  
-
-Your DirectoryIndex line should look something like:
-DirectoryIndex index.html index.cgi
-
-Apache will choose the first file it finds.  So, you don't want an
-index.html file in the same directory as index.cgi unless you change the
-order.
-
-There are other ways to deal with this but I think this is the most
-straight forward.
-
-N.2. Explicit specification of login cgi
-
-The login CGI is not name dependant and can be deployed as index.cgi, 
-login.cgi, or some other CGI file if you like.  In can also be put in 
-any subdirectory you wish.
-
-Your login server's URL could be something like:
-
-  https://www.myuniversity.edu/cgi-bin/login.cgi
-
-Some sites may do this avoid the confusion with the default index page.
-
-Depending how you want to configure things with Apache or which ever Web
-server you want to use for the login server, your login server URL could
-be something like:
-
-  https://www.myuniversity.edu/login
-
-where /login is mapped to the CGI program (index.cgi or whatever you
-rename it to).
 
 
