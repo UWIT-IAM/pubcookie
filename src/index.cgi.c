@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.53 $
+ * $Revision: 1.54 $
  */
 
 
@@ -2438,7 +2438,10 @@ int create_cookie(char *user_buf,
                                      c_stuff);
     
     strncpy (cookie, cookie_local, max);
-    return (PBC_OK);
 
+    /* free ctx_plus */
+    libpbc_free_md_context_plus(ctx_plus);
+
+    return (PBC_OK);
 }
 
