@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.2 $)
+AC_REVISION($Revision: 2.3 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@blah)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
@@ -22,6 +22,27 @@ AC_PATH_PROG(TAR, tar, tar)
 AC_PATH_PROG(GZIP, gzip, gzip)
 AC_PATH_PROG(MKDIR, mkdir, mkdir)
 AC_PATH_PROG(MV, mv, mv)
+
+if test "x$with_apxs" = "x"; then
+    with_apxs=no
+fi
+
+AC_ARG_WITH(apxs,
+[  --with-apxs=PATH    /path/to/apxs],
+[ case "$withval" in
+   no)
+      OLDPATH=$PATH
+      PATH="/usr/local/apache/bin:/usr/www/bin:$PATH"
+      AC_PATH_PROG(APXS, apxs)
+      PATH=$OLDPATH
+      ;;
+    *)
+      OLDPATH=$PATH
+      PATH="$withval:$PATH"
+      AC_PATH_PROG(APXS, apxs)
+      PATH=$OLDPATH
+      ;;
+  esac ])
 
 # Checks for libraries.
 AC_CHECK_LIB(socket,socket)
@@ -186,5 +207,5 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname getspnam gettimeofday \
                 memset socket strcasecmp strchr strdup strerror strncasecmp \
                 strstr uname strlcpy strlcat])
 
-AC_CONFIG_FILES([Makefile Makefile.settings Makefile.login])
+AC_CONFIG_FILES([Makefile Makefile.settings Makefile.login Makefile.apxs])
 AC_OUTPUT
