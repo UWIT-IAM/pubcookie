@@ -17,22 +17,8 @@ typedef struct {
 	char				*s_keyfile;
 	char				*s_certfile;
 	char				*crypt_keyfile;
-//	md_context_plus		*session_sign_ctx_plus;
-//	md_context_plus		*session_verf_ctx_plus;
-//	md_context_plus		*granting_verf_ctx_plus;
-//	crypt_stuff			*c_stuff;
 	int					serial_s_sent;
 	char				server_hostname[MAX_PATH];
-//	char				NTUserId[SF_MAX_USERNAME];
-//	char				Password[SF_MAX_PASSWORD];
-//	int					inact_exp;
-//	int					hard_exp;
-//	char				force_reauth[4];
-//	char				AuthType;
-//	DWORD				session_reauth;
-//	char				logout_dir[MAX_PATH];
-//	char				logout_redir_dir[MAX_PATH];
-
 } pubcookie_server_rec;
 
 typedef struct {
@@ -61,6 +47,7 @@ typedef struct {
 	char		Error_Page[MAX_PATH];
 	char		Enterprise_Domain[1024];
 	char		Web_Login[1024];
+    pbc_cookie_data *cookie_data;
 
 
 } pubcookie_dir_rec;

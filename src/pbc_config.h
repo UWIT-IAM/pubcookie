@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.63 2002-08-23 04:14:44 ryanc Exp $
+    $Id: pbc_config.h,v 1.64 2002-09-26 23:45:38 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -308,7 +308,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h) \
 		libpbc_get_cookie_with_expire_np(a,b,c,d,e,f,g,h)
 #define libpbc_unbundle_cookie(a,b)    libpbc_unbundle_cookie_np(a,b)
-#define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_np(a,b,c)
+#define libpbc_update_lastts(a,b)      libpbc_update_lastts_np(a,b)
 #define libpbc_pubcookie_init	 	 libpbc_pubcookie_init_np
 #define libpbc_alloc_init(a) 		 libpbc_alloc_init_np(a)
 #define libpbc_gethostip   		 libpbc_gethostip_np

@@ -1209,6 +1209,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			pbc_free(cookie);
 			return OK;
 		}
+		else {
+			dcfg->cookie_data = cookie_data;
+		}
 
 		pbc_free(cookie);
 
@@ -1386,7 +1389,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}
 	}
 
-	pbc_free(cookie_data);
+//	pbc_free(cookie_data);  /*Need this later to reset timestamp*/
 
 	return OK;
 
@@ -1447,22 +1450,24 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 	in the app */
 		if (dcfg->inact_exp > 0 || first_time_in_session) {
 			
-			DebugMsg((DEST,"  Creating Session Cookie:\n    user= %s\n    version= %s\n    appsrvid= %s\n    appid= %s\n    type= %c\n    creds= %c\n    serial= %d\n    create_ts= %d\n    last_ts= %d\n",
-				dcfg->user,PBC_VERSION,scfg.server_hostname,
-				dcfg->appid,PBC_COOKIE_TYPE_S,dcfg->AuthType,
-				(scfg.serial_s_sent+1),0,0));
-			
-			
-			cookie = libpbc_get_cookie((unsigned char *)dcfg->user, 
-					 PBC_COOKIE_TYPE_S,
-					 dcfg->AuthType,
-					 23,
-					 (unsigned char *)scfg.server_hostname, 
-				     (unsigned char *)dcfg->appid,
-					 NULL);
-			
+			if( !first_time_in_session ) {
+				cookie = libpbc_update_lastts(dcfg->cookie_data, NULL);
+				DebugMsg((DEST,"  Setting session cookie last timestamp to: %ld\n",dcfg->cookie_data->broken.last_ts));
+			}
+			else {
+				cookie = libpbc_get_cookie((unsigned char *)dcfg->user, 
+					PBC_COOKIE_TYPE_S,
+					dcfg->AuthType,
+					23,
+					(unsigned char *)scfg.server_hostname, 
+					(unsigned char *)dcfg->appid,
+					NULL);
 
-			
+				DebugMsg((DEST,"  Created new session cookie.\n"));
+			}
+
+
+
 #ifdef COOKIE_PATH
 			if ( strcmp(dcfg->appid,PBC_DEFAULT_APP_NAME) == 0 )
 				sprintf(new_cookie, "Set-Cookie: %s_%s=%s; domain=%s; path=/; secure\r\n", 
@@ -1489,6 +1494,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			
 #endif
 			pbc_free(cookie);
+			pbc_free(dcfg->cookie_data);
 			
 			DebugMsg((DEST,"  AddResponseHeaders1= \n%s",new_cookie));
 			

@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.27 2002-09-18 21:58:07 ryanc Exp $
+    $Id: libpubcookie.h,v 1.28 2002-09-26 23:45:38 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -140,6 +140,8 @@ crypt_stuff *libpbc_init_crypt_np(char *);
 void libpbc_free_md_context_plus_np(md_context_plus *);
 void libpbc_free_crypt_np(crypt_stuff *);
 int libpbc_random_int();
+unsigned char *libpbc_stringify_cookie_data_np(pbc_cookie_data *cookie_data); 
+
 
 
 /**
