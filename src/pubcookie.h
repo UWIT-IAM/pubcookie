@@ -1,5 +1,5 @@
 /*
-    $Id: pubcookie.h,v 1.5 1998-12-18 16:03:49 willey Exp $
+    $Id: pubcookie.h,v 1.6 1999-01-25 04:33:21 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -15,6 +15,11 @@
 #define PBC_4K 4096
 #define PBC_1K 1024
 #define PBC_RAND_MALLOC_BYTES 8
+
+#define PBC_X_STRING "XXXXXXXXXXXXX"
+#define PBC_XS_IN_X_STRING 13
+#define PBC_X_CHAR 'X'
+#define PBC_NO_FORCE_REAUTH "NFR"
 
 /* gotta start somewhere                                                      */
 #define PBC_INIT_IVEC {0x4c,0x43,0x5f,0x98,0xbc,0xab,0xef,0xca}
@@ -49,3 +54,4 @@ typedef struct {
 } crypt_stuff;
 
 #endif /* !PUBCOOKIE_MAIN */
+
