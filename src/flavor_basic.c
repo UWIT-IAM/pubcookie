@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.34 2003-04-14 13:30:51 jteaton Exp $
+    $Id: flavor_basic.c,v 1.35 2003-05-06 22:54:00 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -85,6 +85,7 @@ extern int debug;
 #define FLB_REAUTH            2
 #define FLB_LCOOKIE_ERROR     3
 #define FLB_CACHE_CREDS_WRONG 4
+#define FLB_PINIT             5
 
 /* The beginning size for the hidden fields */
 #define INIT_HIDDEN_SIZE 2048
@@ -240,6 +241,10 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
         case FLB_CACHE_CREDS_WRONG:
             reasonpage = libpbc_config_getstring(p,  "tmpl_login_cache_creds_wrong",
                                                   "login_cache_creds_wrong" );
+            break;
+        case FLB_PINIT:
+            reasonpage = libpbc_config_getstring(p,  "tmpl_login_pinit",
+                                                  "login_pinit" );
             break;
         case FLB_LCOOKIE_ERROR:
         default:
@@ -526,6 +531,15 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
         pbc_log_activity(p, PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
 
         print_login_page(p, l, c, FLB_REAUTH);
+        pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
+                         "process_basic: login in progress, goodbye\n" );
+        return LOGIN_INPROGRESS;
+
+        /* If the pinit flag is set, show is pinit login page */
+    } else if (l->pinit == PBC_TRUE) {
+        pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: pinit");
+
+        print_login_page(p, l, c, FLB_PINIT);
         pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
