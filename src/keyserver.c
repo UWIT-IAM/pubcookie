@@ -17,7 +17,7 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.4 2002-06-07 18:16:05 greenfld Exp $
+    $Id: keyserver.c,v 2.5 2002-06-10 20:05:01 jjminer Exp $
  */
 
 #include <stdio.h>
@@ -26,7 +26,10 @@
 #include <syslog.h>
 
 #ifndef KEYSERVER_CGIC
-#include <getopt.h>
+
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#endif /* HAVE_GETOPT_H */
 
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
@@ -169,77 +172,77 @@ int doit(const char *peer, enum optype op, const char *newkey)
     myprintf("\r\n");
 
     switch (op) {
-    case GENKEY:
-    {
-	/* 'peer' has asked us to generate a new key */
-	assert(newkey == NULL);
-	if (libpbc_generate_crypt_key(peer) < 0) {
-	    myprintf("NO generate_new_key() failed\r\n");
-	    syslog(LOG_ERR, "generate_new_key() failed");
+        case GENKEY:
+            {
+                /* 'peer' has asked us to generate a new key */
+                assert(newkey == NULL);
+                if (libpbc_generate_crypt_key(peer) < 0) {
+                    myprintf("NO generate_new_key() failed\r\n");
+                    syslog(LOG_ERR, "generate_new_key() failed");
 
-	    return(1);
-	}
-	
-	/* push the new key to the other login servers */
-	pushkey(peer);
+                    return(1);
+                }
 
-	break;
-    }
+                /* push the new key to the other login servers */
+                pushkey(peer);
 
-    case SETKEY:
-    {
-	char *thekey, *thepeer;
+                break;
+            }
 
-	/* someone has asked us to set a key */
+        case SETKEY:
+            {
+                char *thekey, *thepeer;
 
-	/* verify that 'peer' is a fellow login server */
-	if (strcasecmp(peer, PBC_LOGIN_HOST)) {
-	    syslog(LOG_ERR, "%s attempted to set a key!\n", peer);
-	    myprintf("NO you are not authorized to set keys\r\n");
-	    return (1);
-	}
+                /* someone has asked us to set a key */
 
-	/* find <peer>;<key> */
-	thepeer = strdup(newkey);
-	thekey = strchr(thepeer, ';');
-	if (!thekey) {
-	    myprintf("NO bad form for new key\r\n");
-	    /* xxx log */
-	    return(1);
-	}
-	*thekey++ = '\0';
-	
-	/* xxx base64 decode thekey */
+                /* verify that 'peer' is a fellow login server */
+                if (strcasecmp(peer, PBC_LOGIN_HOST)) {
+                    syslog(LOG_ERR, "%s attempted to set a key!\n", peer);
+                    myprintf("NO you are not authorized to set keys\r\n");
+                    return (1);
+                }
 
-	/* go ahead and write it to disk */
-	if (libpbc_set_crypt_key(thekey, thepeer) != PBC_OK) {
-	    myprintf("NO couldn't set key\r\n");
-	    /* xxx log */
-	    return(1);
-	}
+                /* find <peer>;<key> */
+                thepeer = strdup(newkey);
+                thekey = strchr(thepeer, ';');
+                if (!thekey) {
+                    myprintf("NO bad form for new key\r\n");
+                    /* xxx log */
+                    return(1);
+                }
+                *thekey++ = '\0';
 
-	myprintf("OK key set\r\n");
-	break;
-    }
+                /* xxx base64 decode thekey */
 
-    case FETCHKEY:
-	/* noop; we always return the new key */
-	assert(newkey == NULL);
-	break;
+                /* go ahead and write it to disk */
+                if (libpbc_set_crypt_key(thekey, thepeer) != PBC_OK) {
+                    myprintf("NO couldn't set key\r\n");
+                    /* xxx log */
+                    return(1);
+                }
+
+                myprintf("OK key set\r\n");
+                break;
+            }
+
+        case FETCHKEY:
+            /* noop; we always return the new key */
+            assert(newkey == NULL);
+            break;
     }
 
     /* return the key */
     if (libpbc_get_crypt_key(&c_stuff, peer) != PBC_OK) {
-	myprintf("NO couldn't retrieve key\r\n");
-	return 1;
+        myprintf("NO couldn't retrieve key\r\n");
+        return 1;
     }
 
     /* now give the key back to the application */
-    libpbc_base64_encode(c_stuff.key_a, buf, PBC_DES_KEY_BUF);
+    libpbc_base64_encode(c_stuff.key_a, (unsigned char *) buf, PBC_DES_KEY_BUF);
 
     myprintf("OK %s\r\n", buf);
     fflush(stdout);
-    
+
     return 0;
 }
 

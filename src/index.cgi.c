@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.55 $
+ * $Revision: 1.56 $
  */
 
 
@@ -922,7 +922,7 @@ char *decode_granting_request(char *in, char **peerp)
     pbc_cookie_data     *cookie_data;
 
     if (debug) {
-	fprintf(stderr, "decode_granting_request: in: %s\n", in);
+        fprintf(stderr, "decode_granting_request: in: %s\n", in);
     }
 
     if (peerp) *peerp = NULL;
@@ -930,35 +930,35 @@ char *decode_granting_request(char *in, char **peerp)
     /* xxx check to see if 'in' is _<peer>_<base64 bundled> or just <base64> */
     /* (bundling currently relies on signing with the login server key */
     if (0 && in[0] == '_') {
-	char *p;
-	int len;
+        char *p;
+        int len;
 
-	in++;
+        in++;
 
-	/* grab peername */
-	for (p = in; *p != '\0' && *p != '_'; p++) {
-	    len++;
-	}
-	if (p == '\0' || p - in > 1024) {
-	    /* xxx error error */
-	    return NULL;
-	}
+        /* grab peername */
+        for (p = in; *p != '\0' && *p != '_'; p++) {
+            len++;
+        }
+        if (p == '\0' || p - in > 1024) {
+            /* xxx error error */
+            return NULL;
+        }
 
-	*p++ = '\0';
-	peer = strdup(in);
+        *p++ = '\0';
+        peer = strdup(in);
 
 #if 0
-	libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff);
+        libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff);
 #endif
 
-	if (peerp) *peerp = peer;
+        if (peerp) *peerp = peer;
     } else {
-	out = strdup(in);    
-	libpbc_base64_decode(in, out);
+        out = strdup(in);    
+        libpbc_base64_decode( (unsigned char *) in, (unsigned char *) out);
     }
 
     if (debug) {
-	fprintf(stderr, "decode_granting_request: out: %s\n", out);
+        fprintf(stderr, "decode_granting_request: out: %s\n", out);
     }
 
     return(out);
@@ -1490,16 +1490,16 @@ int cgiMain()
     l->ride_free_creds = ride_free_zone(l, c);
     
     if (vector_request(l, c) == PBC_OK ) {
-	/* the reward for a hard days work */
-	log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
-		l->first_kiss, 
+        /* the reward for a hard days work */
+        log_message("%s Issuing cookies for user: %s client addr: %s app host: %s appid: %s", 
+                    l->first_kiss, 
                     l->user == NULL ? "(null)" : l->user, 
-		cgiRemoteAddr, 
-		l->host, 
-		l->appid);
+                    cgiRemoteAddr, 
+                    l->host, 
+                    l->appid);
     
-	/* generate the cookies and print the redirect page */
-	print_redirect_page(l, c);
+        /* generate the cookies and print the redirect page */
+        print_redirect_page(l, c);
     }
 
  done:
@@ -1849,7 +1849,6 @@ int cookie_test(login_rec *l, login_rec *c)
     }
     
     return(PBC_OK);
-
 }
 
 /*	################################### The beginning of the table       */

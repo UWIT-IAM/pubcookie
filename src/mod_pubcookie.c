@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.79 2002-06-05 16:52:29 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.80 2002-06-10 20:05:01 jjminer Exp $
  */
 
 /* apache includes */
@@ -1115,12 +1115,11 @@ static void pubcookie_init(server_rec *s, pool *p)
     /* read and init session public key */
 
 #ifdef APACHE1_2
-    fname = server_root_relative (p, 
-	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
+    fname = server_root_relative
 #else
-    fname = ap_server_root_relative (p,
-	(scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
+    fname = ap_server_root_relative
 #endif
+        (p, (char *) (scfg->s_certfile ? scfg->s_certfile : PBC_S_CERTFILE));
 
     scfg->session_verf_ctx_plus = libpbc_verify_init(fname);
     if(scfg->session_verf_ctx_plus==0 ) {
@@ -1131,12 +1130,11 @@ static void pubcookie_init(server_rec *s, pool *p)
     /* read and init session private key */
 
 #ifdef APACHE1_2
-    fname = server_root_relative (p,
-	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
+    fname = server_root_relative
 #else
-    fname = ap_server_root_relative (p,
-	(scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
+    fname = ap_server_root_relative
 #endif
+        (p, (char *) (scfg->s_keyfile ? scfg->s_keyfile : PBC_S_KEYFILE));
 
     scfg->session_sign_ctx_plus = libpbc_sign_init(fname);
     if(scfg->session_sign_ctx_plus==0 ) {
@@ -1147,12 +1145,11 @@ static void pubcookie_init(server_rec *s, pool *p)
     /* read and init granting public key */
 
 #ifdef APACHE1_2
-    fname = server_root_relative (p,
-	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
+    fname = server_root_relative
 #else
-    fname = ap_server_root_relative (p,
-	(scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
+    fname = ap_server_root_relative
 #endif
+        (p, (char *) (scfg->g_certfile ? scfg->g_certfile : PBC_G_CERTFILE));
 
     scfg->granting_verf_ctx_plus = libpbc_verify_init(fname);
     if(scfg->granting_verf_ctx_plus==0 ) {
