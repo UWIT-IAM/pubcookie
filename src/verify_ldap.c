@@ -3,11 +3,12 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.10 2002-07-15 21:32:29 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.11 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDLIB_H

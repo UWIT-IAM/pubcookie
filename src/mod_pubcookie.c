@@ -18,11 +18,12 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.95 2002-08-12 14:22:59 jteaton Exp $
+    $Id: mod_pubcookie.c,v 1.96 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 /* apache includes */

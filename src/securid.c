@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.c,v 1.7 2002-07-05 23:35:48 jjminer Exp $
+/* $Id: securid.c,v 1.8 2002-08-15 22:50:06 jjminer Exp $
 
    function: securid  
    args:     reason - points to a reason string
@@ -26,6 +26,7 @@
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H

@@ -1,11 +1,12 @@
 /*
-    $Id: speed_test.c,v 1.5 2002-08-03 00:48:05 willey Exp $
+    $Id: speed_test.c,v 1.6 2002-08-15 22:50:06 jjminer Exp $
  */
 
 /* Copyright 1999, University of Washington.  All rights reserved. */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H

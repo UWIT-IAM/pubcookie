@@ -16,11 +16,12 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.16 2002-08-06 16:01:46 greenfld Exp $
+    $Id: keyclient.c,v 2.17 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H

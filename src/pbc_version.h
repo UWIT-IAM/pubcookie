@@ -19,14 +19,19 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.38 2002-05-10 00:44:39 willey Exp $
+    $Id: pbc_version.h,v 1.39 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
 #define PUBCOOKIE_VERSION
 
+/* The cookie version */
 #define PBC_VERSION "a5"
+ 
+/* The apache module version */
 #define PBC_PUBID "1.76"
+
+/* The login server version */
 #define PBC_LOGIN_VERSION "1.35"
 
 #endif /* !PUBCOOKIE_VERSION */

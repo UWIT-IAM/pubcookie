@@ -20,11 +20,12 @@
  */
 
 /*
- * $Revision: 1.81 $
+ * $Revision: 1.82 $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 /* LibC */

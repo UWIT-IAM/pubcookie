@@ -1,0 +1,15 @@
+/* 
+ * 
+ * pbc_path.h, The pubcookie path.
+ * 
+ * Copyright (C) 2002 Jonathan J. Miner
+ * 
+ * Jonathan J. Miner <miner@doit.wisc.edu>
+ */
+
+#ifndef PBC_PATH_H
+#define PBC_PATH_H
+
+#define PBC_PATH "@prefix@/"
+
+#endif

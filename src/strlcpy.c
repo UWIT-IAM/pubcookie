@@ -39,11 +39,12 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /*
- * $Id: strlcpy.c,v 2.2 2002-07-05 23:35:48 jjminer Exp $
+ * $Id: strlcpy.c,v 2.3 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H

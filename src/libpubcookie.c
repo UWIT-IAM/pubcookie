@@ -18,11 +18,12 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.37 2002-08-06 22:19:21 jjminer Exp $
+    $Id: libpubcookie.c,v 2.38 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #if defined (APACHE1_3)

@@ -1,0 +1,290 @@
+# -*- make -*-
+#
+# Makefile, overall Makefile for CVS sources.
+#
+# @configure_input@
+# 
+# Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
+#
+# $Id: Makefile.in,v 1.1 2002-08-15 22:50:06 jjminer Exp $
+
+@SET_MAKE@
+
+
+MAKE_LOGIN=@MAKE_LOGIN@$(MAKE)
+MAKE_APACHE=@MAKE_APACHE@$(MAKE)
+
+# Begin Makefile.settings.in
+
+CC=@CC@
+
+prefix=@prefix@
+
+PUBCOOKIE_DIR=$(prefix)
+KEY_DIR=$(PUBCOOKIE_DIR)/keys
+TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
+LOGIN_DIR=$(PUBCOOKIE_DIR)/login
+
+INSTALL=@INSTALL@ -p -b
+INSTALL_BIN=$(INSTALL) -m 755 -o root -g other
+INSTALL_OTHER=$(INSTALL) -m 644 -o root -g other
+INSTALL_DIR=$(INSTALL) -d
+
+RM=@RM@
+FORCE_RM=$(RM) -f
+RECURSIVE_FORCE_RM=$(RM) -rf
+CP=@CP@
+RECURSIVE_CP=$(CP) -r
+MKDIR=@MKDIR@
+MV=@MV@
+AWK=@AWK@
+SED=@SED@
+TAR=@TAR@
+GZIP=@GZIP@
+
+DOCS=doc/README.txt \
+	 doc/CREDITS.txt \
+	 doc/LICENSE.txt \
+	 doc/config.sample
+
+LIBS=@LIBS@
+CPPFLAGS=@CPPFLAGS@ @DEFS@
+CFLAGS=@CFLAGS@ $(CPPFLAGS)
+LDFLAGS=@LDFLAGS@ $(LIBS)
+LOGINLIBS=@LOGINLIBS@
+
+APXS=@APXS@
+
+# End Makefile.settings.in
+
+CONFIGURE_TMP_FILES=config.status config.log src/config.h Makefile src/pbc_path.h
+
+CONFIGURE_FILES=configure configure.ac Makefile.in install-sh
+
+SRC_CONFIGURE_FILES=src/config.h.in src/pbc_path.h.in
+
+TEST_SRC=src/pbc_create.c src/pbc_verify.c src/candv.c src/dtest.c src/make_crypted_blob.c \
+		 src/check_crypted_blob.c
+
+TEST_FILES=pbc_create pbc_verify candv dtest make_crypted_blob check_crypted_blob \
+		   verify what_is_my_ip
+
+UTIL_SRC=src/pbc_key_local.c src/pbc_key_generic.c src/keyserver.c src/keyclient.c
+
+KEY_FILES=keyserver keyclient
+
+VERIFIERS=src/verify_alwaystrue.o \
+		  src/verify_kerberos4.o \
+		  src/verify_kerberos5.o \
+		  src/verify_shadow.o \
+		  src/verify_ldap.o \
+		  src/verify.o
+
+VERIFY_SRC=src/verify.c \
+		   src/verify_alwaystrue.c \
+		   src/verify_kerberos4.c \
+		   src/verify_kerberos5.c \
+		   src/verify_shadow.c \
+		   src/verify_ldap.c
+
+FLAVOR_SRC=src/flavor.c src/flavor_basic.c src/flavor_getcred.c
+
+INDEX_OBJ=src/index.cgi.o src/flavor.o \
+		  src/flavor_basic.o src/flavor_getcred.o \
+		  $(VERIFIERS)
+
+INDEX_FILES=index.cgi
+
+INDEX_SRC=src/index.cgi.c \
+		  $(VERIFY_SRC) \
+		  $(FLAVOR_SRC)
+
+KEYMGT_FILES=keyclient keyserver
+
+KEYMGT_SRC=src/keyclient.c src/keyserver.c
+
+INDEX_HEAD=src/index.cgi.h \
+		   src/flavor.h \
+		   src/verify.h
+
+LIB_HEAD=src/pbc_config.h src/pubcookie.h src/libpubcookie.h src/pbc_version.h \
+		 src/pbc_myconfig.h src/security.h src/pbc_logging.h src/strlcpy.h
+
+LIB_SRC=src/libpubcookie.c src/base64.c src/strlcpy.c src/pbc_myconfig.c \
+		src/security_legacy.c src/pbc_logging.c src/capture_cmd_output.c
+
+LIB_OBJ=src/libpubcookie.o src/base64.o src/strlcpy.o src/pbc_myconfig.o \
+		src/security_legacy.o src/pbc_logging.o src/capture_cmd_output.o
+
+MOD_SRC=src/mod_pubcookie.c
+
+LIB_TESTS=base64 pbc_myconfig myconf
+
+LOGIN_TEMPLATES=src/login_templates.generic/login_part1 \
+			    src/login_templates.generic/login_part2 \
+			    src/login_templates.generic/nonpost_redirect \
+			    src/login_templates.generic/notok_part1 \
+			    src/login_templates.generic/notok_part2 \
+				src/login_templates.generic/logout_postscript_still_weblogin \
+				src/login_templates.generic/logout_still_weblogin \
+				src/login_templates.generic/notok_need_ssl \
+				src/login_templates.generic/status_part1 \
+				src/login_templates.generic/status_part2 \
+				src/login_templates.generic/logout_time_remaining
+
+DOCS=doc/NEW_SITE.txt \
+	 doc/INSTALL.login.txt \
+	 doc/CHANGES.login.txt \
+	 doc/CHANGES.mod_pubcookie.txt
+
+L_VERSION := `$(AWK) '/PBC_LOGIN_VERSION/{print $$3}' src/pbc_version.h | $(SED) 's/"//g'`
+L_BASENAME := pubcookie_login-$(L_VERSION)
+
+.PHONY: all clean install dist login_server apache_module
+
+all: Makefile @login_server@ @apache_module@
+
+Makefile: Makefile.in
+	./config.status
+
+login_server: Makefile l_ver $(INDEX_FILES) $(KEY_FILES)
+
+l_ver:
+	@echo Making $(L_BASENAME);
+
+candv:	src/candv.o $(LIB_OBJ)
+	$(CC) $(CFLAGS) -o $@ src/candv.o $(LIB_OBJ) $(LDFLAGS)
+
+dtest:	src/dtest.o $(LIB_OBJ)
+	$(CC) $(CFLAGS) -o $@ src/dtest.o $(LIB_OBJ) $(LDFLAGS)
+
+vtest: $(VERIFIERS) $(LIB_OBJ)
+	$(CC) ${CFLAGS} -DTEST_VERIFY -o $@ $(VERIFIERS) $(LIB_OBJ) $(LDFLAGS) $(EXTRA_LIBS)
+
+check_crypted_blob:	src/check_crypted_blob.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/check_crypted_blob.o $(LIB_OBJ) $(LDFLAGS)
+
+pbc_create:	src/pbc_create.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/pbc_create.o $(LIB_OBJ) $(LDFLAGS)
+
+pbc_verify:	src/pbc_verify.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/pbc_verify.o $(LIB_OBJ) $(LDFLAGS)
+
+pbc_key_generic: src/pbc_key_generic.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/pbc_key_generic.o $(LIB_OBJ) $(LDFLAGS)
+
+pbc_key_local: src/pbc_key_local.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/pbc_key_local.o $(LIB_OBJ) $(LDFLAGS)
+
+make_crypted_blob: src/make_crypted_blob.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/make_crypted_blob.o $(LIB_OBJ) $(LDFLAGS)
+
+what_is_my_ip: src/what_is_my_ip.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/what_is_my_ip.o $(LIB_OBJ) $(LDFLAGS)
+
+index.cgi: $(LIB_OBJ) $(INDEX_OBJ) $(CGIC_LIB) 
+	$(CC) ${CFLAGS} -o $@ $(INDEX_OBJ) $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS) $(LOGINLIBS)
+
+$(INDEX_OBJ): Makefile $(LIB_HEAD) $(INDEX_HEAD)
+
+keyserver: src/keyserver.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/keyserver.o $(LIB_OBJ) $(CGIC_LIB) $(LDFLAGS) $(LOGINLIBS)
+
+keyclient: src/keyclient.o $(LIB_OBJ)
+	$(CC) ${CFLAGS} -o $@ src/keyclient.o $(LIB_OBJ) $(LDFLAGS) $(LOGINLIBS)
+
+# Installation Targets
+
+install: $(KEY_DIR) @install_login@ @install_apache@
+
+install-login: $(LOGIN_DIR) $(TEMPLATE_DIR) $(LOGIN_TEMPLATES) login_server
+	$(INSTALL_BIN) $(KEY_FILES) $(PUBCOOKIE_DIR)
+	$(INSTALL_BIN) $(INDEX_FILES) $(LOGIN_DIR)
+	$(INSTALL_OTHER) $(LOGIN_TEMPLATES) $(TEMPLATE_DIR)
+
+install-apache: apache_module
+	$(APXS) -i -a -n pubcookie mod_pubcookie.so
+
+$(PUBCOOKIE_DIR):
+	$(INSTALL_DIR) $(PUBCOOKIE_DIR)
+
+$(KEY_DIR): $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(KEY_DIR)
+
+$(LOGIN_DIR): $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(LOGIN_DIR)
+
+$(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(TEMPLATE_DIR)
+
+$(LIB_OBJ): $(LIB_HEAD)
+
+# Test Targets
+
+test:: verify
+	./verify alwaystrue nobody nothing
+
+verify: $(VERIFY_SRC)
+	$(CC) $(CFLAGS) -g -o verify -DTEST_VERIFY $(VERIFY_SRC) $(LDFLAGS) $(LOGINLIBS) $(LIB_OBJ)
+
+tests: $(TEST_FILES)
+
+test:: base64 myconf pbc_myconfig
+	cat base64 | ./base64
+	./pbc_myconfig
+
+myconf:
+	echo "foo: hi hi2" > myconf
+
+base64: src/base64.c
+	$(CC) $(CFLAGS) -o base64 -DTEST_BASE64 src/base64.c $(LDFLAGS) $(LOGINLIBS)
+
+pbc_myconfig: src/pbc_myconfig.c
+	$(CC) $(CFLAGS) -o pbc_myconfig -DTEST_MYCONFIG src/pbc_myconfig.c $(LDFLAGS) $(LOGINLIBS)
+
+# Cleanup targets
+
+clean::
+	-$(FORCE_RM) *.so src/*.so so_locations 
+	-$(FORCE_RM) $(INDEX_FILES) *.o src/*.o $(TEST_FILES) $(KEY_FILES)
+
+distclean:: clean
+	$(FORCE_RM) $(CONFIGURE_TMP_FILES)
+
+# APXS Stuff.
+
+APACHE_DEFINES= -DAPACHE1_3
+
+apache_module: Makefile a_ver mod_pubcookie.so $(KEY_FILES)
+
+A_VERSION :=`$(AWK) '/PBC_PUBID/{print $$3}' src/pbc_version.h | sed 's/"//g'`
+A_BASENAME := mod_pubcookie-$(A_VERSION)
+
+a_ver:
+	@echo Making $(A_BASENAME)
+
+mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD)
+	$(APXS) -c -o mod_pubcookie.so $(CPPFLAGS) $(APACHE_DEFINES) $(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
+
+# Dist stuff
+
+DISTNAME=pubcookie-$(A_VERSION)-$(L_VERSION)
+
+dist: a_ver l_ver
+	$(MKDIR) $(DISTNAME)
+	$(MKDIR) $(DISTNAME)/src
+	$(MKDIR) $(DISTNAME)/doc
+	-$(RECURSIVE_CP) src/contrib $(DISTNAME)
+	$(MKDIR) $(DISTNAME)/src/login_templates.generic
+	$(CP) $(LOGIN_TEMPLATES) $(DISTNAME)/src/login_templates.generic
+	$(CP) $(DOCS) $(DISTNAME)/doc
+	$(CP) $(CONFIGURE_FILES) $(DISTNAME)/
+	$(CP) $(SRC_CONFIGURE_FILES) $(DISTNAME)/src
+	$(CP) $(TEST_SRC) $(UTIL_SRC) $(VERIFY_SRC) $(DISTNAME)/src
+	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(MOD_SRC) $(DISTNAME)/src
+	$(CP) $(INDEX_HEAD) $(LIB_HEAD) $(DISTNAME)/src
+	$(TAR) cf $(DISTNAME).tar $(DISTNAME)/
+	$(GZIP) $(DISTNAME).tar
+	$(RECURSIVE_FORCE_RM) ./$(DISTNAME)/
+
+# vim: set noet:

@@ -42,13 +42,14 @@
  */
 
 /*
- * $Revision: 1.8 $
+ * $Revision: 1.9 $
  */
 
 /* xxx this should almost certainly use the registry on windows */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H

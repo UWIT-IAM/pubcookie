@@ -1,9 +1,9 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.8 $)
+AC_REVISION($Revision: 1.1 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@u.washington.edu)
-AC_CONFIG_SRCDIR([libpubcookie.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_SRCDIR([src/libpubcookie.c])
+AC_CONFIG_HEADER([src/config.h])
 
 # Set default prefix to /usr/local/pubcookie
 AC_PREFIX_DEFAULT(/usr/local/pubcookie)
@@ -21,6 +21,8 @@ AC_ARG_ENABLE(apache,
               [ case "${enableval}" in
                 yes)
                    AC_MSG_RESULT(yes)
+                   AC_SUBST(apache_module, "apache_module")
+                   AC_SUBST(install_apache, "install-apache")
                    ;;
                 *)
                    AC_MSG_RESULT(no)
@@ -41,6 +43,8 @@ AC_ARG_ENABLE(login,
                 yes)
                    AC_MSG_RESULT(yes)
                    enable_login=yes
+                   AC_SUBST(login_server, "login_server")
+                   AC_SUBST(install_login, "install-login")
                    ;;
                 *)
                    AC_MSG_RESULT(no)
@@ -206,9 +210,6 @@ fi
 # Login Server specific stuff.
 
 OLDLIBS=$LIBS
-OLDLDFLAGS=$LDFLAGS
-OLDCPPFLAGS=$CPPFLAGS
-OLDCFLAGS=$CFLAGS
 
 
 if test "$enable_login" = yes; then
@@ -276,19 +277,10 @@ fi
 fi # End of stuff we skip if we're not enabling the login server.
 
 LOGINLIBS=$LIBS
-LOGINLDFLAGS=$LDFLAGS
-LOGINCPPFLAGS=$CPPFLAGS
-LOGINCFLAGS=$CFLAGS
 
 LIBS=$OLDLIBS
-LDFLAGS=$OLDLDFLAGS
-CPPFLAGS=$OLDCPPFLAGS
-CFLAGS=$OLDCFLAGS
 
 AC_SUBST(LOGINLIBS, $LOGINLIBS)
-AC_SUBST(LOGINCPPFLAGS, $LOGINCPPFLAGS)
-AC_SUBST(LOGINCFLAGS, $LOGINCFLAGS)
-AC_SUBST(LOGINLDFLAGS, $LOGINLDFLAGS)
 
 # End of Login-server specific stuff, hopefully.
 
@@ -309,5 +301,5 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname gethostname getspnam gettimeofday \
                 memset socket strcasecmp strchr strdup strerror strncasecmp \
                 strstr uname strlcpy strlcat])
 
-AC_CONFIG_FILES([Makefile Makefile.settings Makefile.login Makefile.apxs])
+AC_CONFIG_FILES([Makefile src/pbc_path.h])
 AC_OUTPUT

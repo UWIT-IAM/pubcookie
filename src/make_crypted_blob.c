@@ -16,11 +16,12 @@
  */
 
 /*
-    $Id: make_crypted_blob.c,v 1.6 2002-07-05 23:35:48 jjminer Exp $
+    $Id: make_crypted_blob.c,v 1.7 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #if !defined(WIN32)

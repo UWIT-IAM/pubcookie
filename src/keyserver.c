@@ -17,11 +17,12 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.21 2002-08-06 16:01:24 greenfld Exp $
+    $Id: keyserver.c,v 2.22 2002-08-15 22:50:06 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H

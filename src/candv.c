@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.19 2002-08-03 00:48:05 willey Exp $
+    $Id: candv.c,v 1.20 2002-08-15 22:50:06 jjminer Exp $
  */
 
 /*                                                                            */
@@ -9,6 +9,7 @@
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# include "pbc_path.h"
 #endif
 
 #ifdef HAVE_STDIO_H
