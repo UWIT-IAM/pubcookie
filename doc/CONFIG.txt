@@ -73,4 +73,6 @@ ldap_uri        list    The LDAP URI in this format:
 
                         x-BindDN and x-Password are the Bind DN and Password,
                         URL encoded (the only thing I've noticed causing
-                        problems so far are spaces, %20.)
+                        problems so far are spaces, %20.)  The x-BindDN and
+                        x-Password may be omitted entirely if the connection is
+                        anonymous.
