@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.59 $
+ * $Revision: 1.60 $
  */
 
 
@@ -494,15 +494,16 @@ int expire_login_cookie(login_rec *l, login_rec *c) {
     }
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=%s%s\n",
+                 PBC_L_COOKIENAME,
+                 l_cookie,
+                 login_host(),
+                 LOGIN_DIR,
 #ifdef PORT80_TEST
-            ""
+                 ""
 #else
-            "; secure"
+                 "; secure"
 #endif
-		PBC_L_COOKIENAME,
-                l_cookie,
-                login_host(),
-                LOGIN_DIR);
+        );
 
     return(PBC_OK);
 
@@ -518,16 +519,17 @@ int clear_login_cookie() {
         log_message("clear_login_cookie: hello");
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\n",
+            PBC_L_COOKIENAME, 
+            PBC_CLEAR_COOKIE,
+            login_host(), 
+            LOGIN_DIR, 
+            EARLIEST_EVER,
 #ifdef PORT80_TEST
             ""
 #else
             "; secure"
 #endif
-            PBC_L_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            login_host(), 
-            LOGIN_DIR, 
-            EARLIEST_EVER);
+                );
 
     return(PBC_OK);
 
@@ -540,15 +542,16 @@ int clear_login_cookie() {
 int clear_greq_cookie() {
 
     print_header("Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
+            PBC_G_REQ_COOKIENAME, 
+            PBC_CLEAR_COOKIE,
+            enterprise_domain(),
+            EARLIEST_EVER,
 #ifdef PORT80_TEST
             ""
 #else
             "; secure"
 #endif
-            PBC_G_REQ_COOKIENAME, 
-            PBC_CLEAR_COOKIE,
-            enterprise_domain(),
-            EARLIEST_EVER);
+                );
 
     return(PBC_OK);
 

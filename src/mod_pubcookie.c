@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.80 2002-06-10 20:05:01 jjminer Exp $
+    $Id: mod_pubcookie.c,v 1.81 2002-06-14 22:10:04 jjminer Exp $
  */
 
 /* apache includes */
@@ -1101,7 +1101,6 @@ static void pubcookie_init(server_rec *s, pool *p)
     scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
                                                    &pubcookie_module);
 #endif
-    libpbc_config_init(NULL, "mod_pubcookie");
     libpbc_pubcookie_init();
     
     /* read and init crypt key */
@@ -1167,6 +1166,8 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
 #else
   scfg = (pubcookie_server_rec *) ap_pcalloc(p, sizeof(pubcookie_server_rec));
 #endif
+
+  libpbc_config_init(NULL, "mod_pubcookie");
 
 #ifdef APACHE1_2
   scfg->login = 
