@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.15 2000-09-11 23:09:35 willey Exp $
+    $Id: index.cgi.c,v 1.16 2000-09-25 17:58:31 willey Exp $
  */
 
 
@@ -192,6 +192,7 @@ login_rec *load_login_rec(login_rec *l)
     l->method 		= get_string_arg(PBC_GETVAR_METHOD, NO_NEWLINES_FUNC);
     l->version 		= get_string_arg(PBC_GETVAR_VERSION, NO_NEWLINES_FUNC);
     l->creds      	= get_int_arg(PBC_GETVAR_CREDS) + 48;
+    l->creds_from_greq  = l->creds;
     l->appid 		= get_string_arg(PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
     l->appsrvid 	= get_string_arg(PBC_GETVAR_APPSRVID, NO_NEWLINES_FUNC);
     l->fr 		= get_string_arg(PBC_GETVAR_FR, NO_NEWLINES_FUNC);
