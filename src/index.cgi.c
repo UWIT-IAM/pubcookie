@@ -15,10 +15,12 @@
 
     this is the pubcookie login cgi, YEAH!
 
+    this uses a modified version of the cgic library
+    functions that are cgiSomething are from that library
  */
 
 /*
-    $Id: index.cgi.c,v 1.3 1999-11-19 18:58:29 willey Exp $
+    $Id: index.cgi.c,v 1.4 2000-01-12 04:17:00 willey Exp $
  */
 
 
@@ -41,13 +43,7 @@
 #include <com_err.h>
 #include <krb5.h>
 /* securid */
-//#include <pwd.h>
-//#include <grp.h>
-//#include <sys/param.h>
-//#include <sys/types.h>
-//#include <sys/time.h>
-//#include <sys/resource.h>
-//#include <netinet/in.h>
+#include "securid_securid.h"
 /* pubcookie things */
 #include "pubcookie.h"
 #include "libpubcookie.h"
@@ -56,6 +52,10 @@
 #include "index.cgi.h"
 /* cgic */
 #include <cgic.h>
+
+// extra debugging
+FILE	*mirror;
+
 
   /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
  /*	general utility thingies                                            */
@@ -85,7 +85,6 @@ int get_cookie(char *name, char *result, int max)
 
     if( !(wkspc=strstr( target, name )) ) {
         log_message("looking for %s cookie, but didn't find it", name);
-        notok(notok_no_g_or_l);
         return(FAIL);
     }
 
@@ -188,6 +187,12 @@ fprintf(stderr, "in load_login_rec\n");
     l->appsrvid 	= get_string_arg("one", NO_NEWLINES_FUNC);
     l->fr 		= get_string_arg("fr", NO_NEWLINES_FUNC);
 
+    l->real_hostname 	= get_string_arg("real_hostname", NO_NEWLINES_FUNC);
+    l->appsrv_err 	= get_string_arg("appsrv_err", NO_NEWLINES_FUNC);
+    l->file 		= get_string_arg("file", NO_NEWLINES_FUNC);
+    l->flag 		= get_string_arg("flag", NO_NEWLINES_FUNC);
+    l->referer 		= get_string_arg("referer", NO_NEWLINES_FUNC);
+
 fprintf(stderr, "finished load_login_rec\n");
 
     return(l);
@@ -270,10 +275,7 @@ void log_message(const char *format, ...)
 void send_pilot_message(char *message) 
 {
 
-//    my $cmd = "$send_pilot_cmd pcookie_login:TRIG:1:pubcookie: $message: this trigger will have to manually cleared";
-//    $cmd =~ s/(['"!])/\\$1/;
-//    log_message("sending message to pilot $cmd");
-//    `$cmd`;
+    /* pilot is no longer supported by ndc-sysmgt, so whatever */
 
 }
 
@@ -301,6 +303,20 @@ void abend(char *message)
 
 }
 
+// this should go away
+void init_mirror_file() 
+{
+    mirror = fopen("/tmp/mirror", "w");
+
+}
+
+// this should go away
+void close_mirror_file() 
+{
+    fclose(mirror);
+
+}
+
 void print_out(char *format,...)
 {
     va_list	args;
@@ -308,6 +324,7 @@ void print_out(char *format,...)
     va_start(args, format);
     vprintf(format, args);
     vfprintf(stderr, format, args);
+    vfprintf(mirror, format, args);
     va_end(args);
 
 }
@@ -349,17 +366,11 @@ int has_login_cookie()
 
 }
 
+/* we've decided not to serialize cookies, but we'll use this field           */
+/* for something else in the future                                           */
 int get_next_serial()
 {
     return(23);
-
-//
-//
-//
-//
-//
-//
-//
 
 }
 
@@ -399,6 +410,9 @@ int cgiMain()
     login_rec	*l;
     char	*res;
     char	message[PBC_4K];
+
+fprintf(stderr, "HELLO\n");
+init_mirror_file();
 
     /* bail if not ssl */
     if( !getenv("HTTPS") || strcmp( getenv("HTTPS"), "on" ) ) { 
@@ -440,18 +454,18 @@ fprintf(stderr, "after user agent get_query\n");
     /* the following text should be updated for support for POST         */
     /*                                                                   */
     /* four cases for the main thingie                                   */
-    /*   - first time or force_reauth:                                   */
+    /*   - first time or creds include securid:                          */
     /*         in: no L cookie, bunch of GET data                        */
-    /*               OR force_reauth info in GET                         */
-    /*         out: the login page (includes data from get)              */
+    /*               OR creds include securid info in g req              */
+    /*         out: the login page (includes data from g req)            */
     /*                                                                   */
     /*   - not first time (have L cookie) but L cookie expired or invalid*/
-    /*         in: expired or invalid L cookie, bunch of GET data        */
-    /*         out: the login page (includes data from get)              */
+    /*         in: expired or invalid L cookie, g req                    */
+    /*         out: the login page (includes data from g req             */
     /*                                                                   */
     /*   - not first time (have L cookie) L cookie not expired and valid */
-    /*         in: valid L cookie, bunch of GET data                     */
-    /*         out: L & G cookies redirect (username comes from cookie)  */
+    /*         in: valid L cookie, g req                                 */
+    /*         out: L & G cookies redirect (username comes from L cookie)*/
     /*                                                                   */
     /*   - POST from login page                                          */
     /*         in: POST data that include creds                          */
@@ -462,6 +476,9 @@ fprintf(stderr, "after user agent get_query\n");
     /*                                                                   */
     /*                                                                   */
     /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ /* */ 
+
+fprintf(stderr, "why don't we see the next line?\n");
+fprintf(stderr, "before main logic loop: creds %c and the target is %c\n", l->creds, PBC_CREDS_UWNETID_SECURID);
 
     /* the main logic */
     if ( l->user ) {                           /* a reply from the login page */
@@ -488,17 +505,12 @@ fprintf(stderr, "wohooo!, an answer from the login page!");
         }
         log_message("Authentication success: %s type: %d", l->user, l->creds);
     }
-    else if( strcmp(l->fr,"NFR") ) {           /* force reauth */
-        log_message("user was forced to reauth by %s at %s", l->host, l->appid);
-        print_login_page(PRINT_LOGIN_PLEASE, "force reauth", l->creds, YES_CLEAR_LOGIN);
+    else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {             /* securid */
+        log_message("securid implies reauth by %s at %s", l->host, l->appid);
+        print_login_page(PRINT_LOGIN_PLEASE, "securid", l->creds, YES_CLEAR_LOGIN);
         exit(0);
     }
     else if ( !has_login_cookie() ) {          /* no l cookie, must login */
-char *s;
-s = malloc(2048);
-fprintf(stderr, "no login cookie, true?\n");
-get_cookie(PBC_L_COOKIENAME, s, 2048);
-fprintf(stderr, "the cookies %s\n", s);
         print_login_page(PRINT_LOGIN_PLEASE, "no L cookie yet", l->creds, NO_CLEAR_LOGIN);
         exit(0);
     }
@@ -515,7 +527,10 @@ fprintf(stderr, "the cookies %s\n", s);
     /* generate the cookies and print the redirect page                       */
     print_redirect_page(l);
 
-    return(1);  
+// extra debugging
+close_mirror_file();
+
+    return(0);  
 }
 
 
@@ -544,7 +559,7 @@ void print_login_page(char *message, char *reason, char creds, int need_clear_lo
         field_label1 = strdup(PROMPT_UWNETID);
         word = strdup("password and SecurID");
         strcpy(input_type1, "TEXT");
-        strcpy(input_type2, "TEXT");
+        strcpy(input_type2, "PASSWORD");
         break;
     default:
         field_label1 = strdup(PROMPT_UWNETID);
@@ -589,6 +604,9 @@ void print_login_page(char *message, char *reason, char creds, int need_clear_lo
 
 char *check_login_uwnetid(char *user, char *pass)
 {
+
+fprintf(stderr, "in check_login_uwnetid\n");
+
     if( auth_kdc(user, pass) == OK )
         return(CHECK_LOGIN_RET_SUCCESS);
     else
@@ -596,9 +614,12 @@ char *check_login_uwnetid(char *user, char *pass)
 
 }
 
-char *check_login_securid(char *user, char *sid)
+char *check_login_securid(char *user, char *sid, login_rec *l)
 {
+    if( auth_securid(user, sid, l) == OK )
         return(CHECK_LOGIN_RET_SUCCESS);
+    else
+        return(CHECK_LOGIN_RET_FAIL);
 
 }
 
@@ -607,17 +628,19 @@ char *check_login(login_rec *l)
 {
     char	*ret;
 
+fprintf(stderr, "in check_login\n");
+
     if( !(ret = malloc(100)) ) {
         abend("out of memory");
     }
 
     strcpy(ret, CHECK_LOGIN_RET_BAD_CREDS);
 
-    if( l->creds == '1' ) {
+    if( l->creds == PBC_CREDS_UWNETID ) {
         strcpy(ret, check_login_uwnetid(l->user, l->pass));
     }
-    else if( l->creds == '3' ) {
-        strcpy(ret, check_login_securid(l->user, l->pass2));
+    else if( l->creds == PBC_CREDS_UWNETID_SECURID ) {
+        strcpy(ret, check_login_securid(l->user, l->pass2, l));
         if( !strcmp(ret, CHECK_LOGIN_RET_SUCCESS) ) {
             strcpy(ret, check_login_uwnetid(l->user, l->pass));
         }
@@ -683,8 +706,8 @@ fprintf(stderr, "in check_l_cookie ready to look at cookie contents %s\n", lc->u
 
 fprintf(stderr, "in check_l_cookie ready to look at cookie creds %c\n", lc->creds);
     if( lc->creds != l->creds ) {
-        if( l->creds == '1' ) {
-            if( lc->creds != '3' ) {
+        if( l->creds == PBC_CREDS_UWNETID ) {
+            if( lc->creds != PBC_CREDS_UWNETID_SECURID ) {
                 log_error("wrong_creds: from login cookie: %s from request: %s",
 			lc->creds, l->creds);
                 return("wrong_creds");
@@ -776,17 +799,6 @@ void notok_generic()
 
 }
 
-/* prints the error pages                                                     */
-//# 1 - no cookies or non-fqdn 
-//#     (http://staff.washington.edu/dors/projects/login/problem1.html)
-//# 2 - backing in or non-fqd
-//#     (http://staff.washington.edu/dors/projects/login/problem2.html)
-//# 3 - no cookies!
-//#     (http://staff.washington.edu/dors/projects/login/problem3.html)
-//# 4 - multipart/form-data
-//#     (http://staff.washington.edu/dors/projects/login/problem4.html)
-//# 5 - not ssl, impossible but we still look for it.
-//#
 void notok ( void (*notok_f)() )
 {
     print_out("Content-Type: text/html\n");
@@ -904,8 +916,6 @@ void print_login_page_part2b()
 
 }
 
-
-
 /*	################################### part 3                            */
 void print_login_page_part3(char *word) 
 {
@@ -951,6 +961,18 @@ void print_login_page_part4(login_rec *l)
 		(l->args ? l->args : "") );
     print_out("<INPUT TYPE=\"hidden\" NAME=\"fr\" VALUE=\"%s\">\n",
 		(l->fr ? l->fr : "") );
+
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"real_hostname\" VALUE=\"%s\">\n",
+		(l->real_hostname ? l->real_hostname : "") );
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"appsrv_err\" VALUE=\"%s\">\n",
+		(l->appsrv_err ? l->appsrv_err : "") );
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"file\" VALUE=\"%s\">\n",
+		(l->file ? l->file : "") );
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"flag\" VALUE=\"%s\">\n",
+		(l->flag ? l->flag : "") );
+    print_out("<INPUT TYPE=\"hidden\" NAME=\"referer\" VALUE=\"%s\">\n",
+		(l->referer ? l->referer : "") );
+
     print_out("<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"%s\">\n",
 		(l->post_stuff ? l->post_stuff : "") );
     print_out("</FORM>\n");
@@ -1041,17 +1063,20 @@ int check_user_agent()
 
 void print_redirect_page(login_rec *l)
 {
-    int		serial = 0;
-    char	*submit_value = NULL;
-    char	*g_cookie;
-    char	*l_cookie;
-    char	*redirect_uri;
-    char	*message;
-    char	*redirect_dest = NULL;
-    char	g_set_cookie[PBC_1K];
-    char	l_set_cookie[PBC_1K];
-    char	clear_g_req_cookie[PBC_1K];
-    int		g_res, l_res;
+    int			serial = 0;
+    char		*g_cookie;
+    char		*l_cookie;
+    char		*redirect_uri;
+    char		*message;
+    char		*redirect_dest = NULL;
+    char		g_set_cookie[PBC_1K];
+    char		l_set_cookie[PBC_1K];
+    char		clear_g_req_cookie[PBC_1K];
+    int			g_res, l_res;
+    int			limitations_mentioned = 0;
+    char		*submit_value = NULL;
+    cgiFormEntry 	*c = cgiFormEntryFirst;
+    cgiFormEntry 	*n;
 
 fprintf(stderr, "in print_redirect_page\n");
 
@@ -1089,6 +1114,7 @@ fprintf(stderr, "in print_redirect_page\n");
 
 fprintf(stderr, "in print_redirect_page got cookies\n");
 
+    /* if we have a problem then bail with a nice message */
     if ( !l_res || !g_res ) {
           sprintf( message, "%s%s%s%s%s%s",
 		PBC_EM1_START,
@@ -1107,6 +1133,7 @@ fprintf(stderr, "in print_redirect_page got cookies\n");
 
 fprintf(stderr, "in print_redirect_page cookies are ok\n");
 
+    /* create the http header line with the cookie */
     snprintf( g_set_cookie, sizeof(g_set_cookie), 
 		"Set-Cookie: %s=%s; domain=.washington.edu; path=/; secure", 
 		PBC_G_COOKIENAME,
@@ -1119,7 +1146,8 @@ fprintf(stderr, "in print_redirect_page cookies are ok\n");
                 LOGIN_DIR);
     snprintf( clear_g_req_cookie, sizeof(g_set_cookie), 
 		"Set-Cookie: %s=done; domain=.washington.edu; path=/; expires=%s",
-		PBC_G_REQ_COOKIENAME);
+		PBC_G_REQ_COOKIENAME,
+		EARLIEST_EVER);
 
 
     /* whip up the url to send the browser back to */
@@ -1132,11 +1160,13 @@ fprintf(stderr, "in print_redirect_page uri is %s\n", redirect_uri);
 
     snprintf(redirect_dest, PBC_4K, "https://%s%s%s", 
 		l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
-
     if( l->args ) {
         char	*args_enc = NULL; 
 
+fprintf(stderr, "about to base64_decode: %s\n", l->args);
+        args_enc = strdup(l->args);    
 	base64_decode(l->args, args_enc);
+fprintf(stderr, "and they are: %s\n", args_enc);
         snprintf( redirect_dest, PBC_4K, "%s?%s", redirect_dest, args_enc );
     }
 
@@ -1148,49 +1178,65 @@ fprintf(stderr, "in print_redirect_page uri is %s\n", redirect_uri);
     print_out("%s\n", l_set_cookie);
     print_out("%s\n", clear_g_req_cookie);
 
+    /* incase we have a post */
     if ( l->post_stuff ) {
-        /* incase we have a post */
-//    my $g_req_args = new CGI;
-//    $g_req_args->import_names('QP');
-//    $post_stuff = $QP::post_stuff;
+        /* cgiParseFormInput will extract the arguments from the post */
+        /* make them available to subsequent cgic calls */
+        if( cgiParseFormInput(l->post_stuff, strlen(l->post_stuff))
+                   != cgiParseSuccess ) {
+            log_error("couldn't parse the decoded granting request cookie");
+            notok(notok_generic);
+            exit(0);
+        }
+
+        print_out("Pragma: No-Cache\n");
+        print_out("Content-Type: text/html\n\n\n");
+	print_out("<HTML>");
+	/* when the page loads click on the last element */
+        /* (which will always be the submit) in the array */
+        /* of elements in the first, and only, form. */
+	print_out("<BODY BGCOLOR=\"white\" onLoad=\"document.forms[0].elements[document.forms[0].elements.length-1].click()\">\n");
+	print_out("<CENTER>");
+        print_table_start();
+	print_out("<TR><TD ALIGN=\"LEFT\">\n");
+
+	print_out("<FORM METHOD=\"POST\" ACTION=\"$redirect_dest\" ");
+        print_out("ENCTYPE=\"application/x-www-form-urlencoded\" ");
+        print_out("NAME=\"query\">\n");
+
+        while (c) {
+            // in the perl version we had to make sure we were getting
+            // rid of this header line
+            //        c->attr =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;
+
+            /* if there is a " in the value string we have to put */
+            /* in a TEXTAREA object that will be visible          */
+            if( strstr(c->value, "\"") ) {
+                if( ! limitations_mentioned ) {
+                    print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
+                    limitations_mentioned++;
+                }
+                print_out("<TEXTAREA COLS=0 ROWS=0 NAME=\"%s\">\n", c->attr);
+                print_out("%s</TEXTAREA>", c->value);
+                print_out("<P>\n");
+            }
+            else {
+                /* we don't want to cover other people's submits */
+                if ( !strcmp(c->attr, "submit") )  {
+                    submit_value = c->value;
+                }
+                else {
+                    print_out("<INPUT TYPE=\"hidden\" ");
+		    print_out("NAME=\"%s\" VALUE='%s'>\n", c->attr, c->value);
+                }
+    	    }
+
+            /* move onto the next attr/value pair */
+            n = c->next;
+            c = n;
+        } /* while c */
 
 
-//#    print_out("Pragma: No-Cache\n");
-//    print_out("Content-Type: text/html\n\n\n");
-//    print_out("<HTML>");
-//    # when the page loads click on the last element (which will always be the 
-//    # submit) in the array of elements in the first, and only, form.
-//    print_out("<BODY BGCOLOR=\"white\" onLoad=\"document.forms[0].elements[document.forms[0].elements.length-1].click()\">\n");
-//    print_out("<CENTER>");
-//    &print_table_start;
-//    print_out("<TR><TD ALIGN=\"LEFT\">\n");
-//    print_out("<FORM METHOD=\"POST\" ACTION=\"$redirect_dest\" ENCTYPE=\"application/x-www-form-urlencoded\" NAME=\"query\">\n");
-//
-//    my $post_args = new CGI($post_stuff);
-//    $post_args->autoEscape(undef);
-//    my $limitations_mentioned;
-//    foreach my $name ( $post_args->param ) {
-//        my $value = $post_args->param($name);
-//        $name =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;
-//        if ( $value =~ /"/ ) {
-//            if ( ! $limitations_mentioned ) {
-//                print_out("Certain limitations require that this be shown, please ignore it<BR>\n");
-//                $limitations_mentioned++;
-//            }
-//            print_out("<TEXTAREA COLS=0 ROWS=0 NAME=\"$name\">\n$value</TEXTAREA>");
-//            print_out("<P>\n");
-//        }
-//        else {
-//            # we don't want to cover other people's submits
-//            if ( $name eq "submit" )  {
-//                $submit_value = $value;
-//            }
-//            else {
-//                print_out("<INPUT TYPE=\"hidden\" NAME=\"$name\" VALUE='$value'>\n");
-//            }
-//        }
-//    }
-//
         print_out("</TD></TR>\n");
         print_uwnetid_logo();
         print_out("<P>");
@@ -1215,12 +1261,13 @@ fprintf(stderr, "in print_redirect_page uri is %s\n", redirect_uri);
         print_out("<BODY BGCOLOR=\"white\">");
         print_out("<!--redirecting to %s-->", redirect_dest);
         print_out("</BODY></HTML>\n");
-    }
+    } /* end if post_stuff */
 
     free(g_cookie);
     free(l_cookie);
     free(message);
     free(redirect_dest);
+fprintf(stderr, "leaving print_redirect_page\n");
 
 }
 
@@ -1375,6 +1422,9 @@ fprintf(stderr, "nice new cookie is: %s\n", cookie);
 
 }
 
+int auth_kdc(char *username, char *passwd)
+{
+
 #define KRB5_DEFAULT_OPTIONS 0
 #define KRB5_DEFAULT_LIFE 60*60*10 /* 10 hours */
 
@@ -1390,27 +1440,19 @@ krb5_data tgtname = {
 /*
  * Try no preauthentication first; then try the encrypted timestamp
  */
-krb5_preauthtype * preauth = NULL;
-krb5_preauthtype preauth_list[2] = { 0, -1 };
 
+krb5_preauthtype * preauth = NULL;
 krb5_context kcontext;
 krb5_deltat lifetime = KRB5_DEFAULT_LIFE;       /* -l option */
-krb5_timestamp starttime = 0;
-krb5_deltat rlife = 0;
 int options = KRB5_DEFAULT_OPTIONS;
-int option;
-int errflg = 0;
 krb5_error_code code;
 krb5_principal me;
-krb5_principal server;
+krb5_principal kserver;
 krb5_creds my_creds;
 krb5_timestamp now;
-krb5_address *null_addr = (krb5_address *)0;
 krb5_address **addrs = (krb5_address **)0;
-char *client_name, prompt[255];
+char *client_name;
 
-int auth_kdc(char *username, char *passwd)
-{
     int		ret = 1;
 
     code = krb5_init_context(&kcontext);
@@ -1444,20 +1486,20 @@ int auth_kdc(char *username, char *passwd)
     /* me is the pricipal */
     my_creds.client = me;
 
-    /* get server name */
-    if((code = krb5_build_principal_ext(kcontext, &server,
-			krb5_princ_realm(kcontext, me)->length,
-			krb5_princ_realm(kcontext, me)->data,
-			tgtname.length, tgtname.data,
-			krb5_princ_realm(kcontext, me)->length,
-			krb5_princ_realm(kcontext, me)->data,
-			0))) {
-	log_error("auth_kdc: %s while building server name\n", 
+    /* get kserver name */
+    if((code = krb5_build_principal_ext(kcontext, &kserver,
+                        krb5_princ_realm(kcontext, me)->length,
+                        krb5_princ_realm(kcontext, me)->data,
+                        tgtname.length, tgtname.data,
+                        krb5_princ_realm(kcontext, me)->length,
+                        krb5_princ_realm(kcontext, me)->data,
+                        0))) {
+	log_error("auth_kdc: %s while building kserver name\n", 
 			error_message(code));
 	return(FAIL);
     }
 	
-    my_creds.server = server;
+    my_creds.server = kserver;
 
     my_creds.times.starttime = 0;	/* start timer when request
 					   gets to KDC */
@@ -1468,6 +1510,7 @@ int auth_kdc(char *username, char *passwd)
     code = krb5_get_in_tkt_with_password(kcontext, options, addrs,
 					      NULL, preauth, passwd, 0,
 					      &my_creds, 0);
+
     memset(passwd, 0, sizeof(passwd));
     
     if (code) {
@@ -1481,21 +1524,28 @@ int auth_kdc(char *username, char *passwd)
     }
 
     /* my_creds is pointing at server */
-    krb5_free_principal(kcontext, server);
+    krb5_free_principal(kcontext, kserver);
 
     krb5_free_context(kcontext);
     
     return(ret);
+
 }
 
 
-#ifdef DEBUG
-# define LOGFLAG  0xff
-#else
-# define LOGFLAG  0x80
-#endif
+/* all of the securid stuff is in files name securid_                         */
+int auth_securid(char *username, char *sid, login_rec *l) 
+{
+    int		ret;
 
-#define TRUE 1
-#define FALSE 0
+    /* securid and next prn */
+    if( (ret=securid(username, sid) == -1) ) {
+         print_login_page("Next SecurID PRN", "next PRN", l->creds, NO_CLEAR_LOGIN);
+    } 
+    else if( ret == 0 ) {
+        return(OK);
+    }
 
-int     test_mode = 0;
+    return(FAIL);
+
+}
