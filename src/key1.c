@@ -9,7 +9,7 @@
 #include "libpubcookie.h"
 #include "pbc_config.h"
 
-void *main() {
+int *main() {
     unsigned char	buf[PBC_4K];
     pid_t               pid;
 

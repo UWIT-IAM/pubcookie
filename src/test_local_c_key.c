@@ -6,7 +6,7 @@
 #include "libpubcookie.h"
 #include "pbc_config.h"
 
-void *main() {
+int *main() {
     crypt_stuff		*c1_stuff;
     unsigned char	in[PBC_1K];
     unsigned char	intermediate[PBC_1K];
