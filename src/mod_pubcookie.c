@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.106 2002-10-25 22:23:05 greenfld Exp $
+    $Id: mod_pubcookie.c,v 1.107 2002-11-07 19:54:27 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -273,14 +273,14 @@ int check_end_session(request_rec *r) {
 		 (word = ap_getword_white(p, &end_session)) ) {
 
         if( strcasecmp(word, PBC_END_SESSION_ARG_REDIR) == 0 ) {
-            ret = ret | PBC_END_SESSION_REDIR_MASK;
+            ret = ret | PBC_END_SESSION_REDIR;
         }
         if( strcasecmp(word, PBC_END_SESSION_ARG_CLEAR_L) == 0 ) {
-            ret = ret | PBC_END_SESSION_CLEAR_L_MASK 
-		      | PBC_END_SESSION_REDIR_MASK;
+            ret = ret | PBC_END_SESSION_CLEAR_L 
+		      | PBC_END_SESSION_REDIR;
         }
         else if( strcasecmp(word, PBC_END_SESSION_ARG_ON) == 0 ) {
-            ret = ret | PBC_END_SESSION_MASK;
+            ret = ret | PBC_END_SESSION_ONLY;
         }
         else if( strcasecmp(word, PBC_END_SESSION_ARG_OFF) == 0 ) {
             /* off means off, nothing else */
@@ -587,7 +587,7 @@ static int do_end_session_redirect_handler(request_rec *r) {
 		PBC_REFRESH_TIME, 
 		scfg->login,
 		PBC_GETVAR_LOGOUT_ACTION,
-                (check_end_session(r) & PBC_END_SESSION_CLEAR_L_MASK ?
+                (check_end_session(r) & PBC_END_SESSION_CLEAR_L ?
 			LOGOUT_ACTION_CLEAR_L : LOGOUT_ACTION_NOTHING),
 		PBC_GETVAR_APPID,
 		appid(r),
@@ -1313,7 +1313,7 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* before we check if they hav a valid S or G cookie see if it's a logout */
-  if( check_end_session(r) & PBC_END_SESSION_MASK ) { 
+  if( check_end_session(r) & PBC_END_SESSION_ANY ) { 
       return OK;
   }
 
@@ -1593,7 +1593,7 @@ int pubcookie_authz(request_rec *r) {
     }
 
     /* if it's a pubcookie logout don't do any authz, skip to pubcookie_typer */
-    if( check_end_session(r) & PBC_END_SESSION_MASK ) { 
+    if( check_end_session(r) & PBC_END_SESSION_ANY ) { 
         ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r, 
       		"pubcookie_authz: is a logout so no authz");
         return OK;
@@ -1650,11 +1650,11 @@ static int pubcookie_typer(request_rec *r) {
     ap_log_rerror(APLOG_MARK, APLOG_NOERRNO|APLOG_DEBUG, r,
       			"pubcookie_typer: no failure");
 
-    if( check_end_session(r) & PBC_END_SESSION_REDIR_MASK ) { 
+    if( check_end_session(r) & PBC_END_SESSION_REDIR ) { 
       r->handler = PBC_END_SESSION_REDIR_HANDLER;
       return OK;
     }
-    else if( check_end_session(r) & PBC_END_SESSION_MASK ) { 
+    else if( check_end_session(r) & PBC_END_SESSION_ANY ) { 
       clear_session_cookie(r);
     }
     else if( cfg->inact_exp > 0 || first_time_in_session ) {

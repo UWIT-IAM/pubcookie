@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.67 2002-10-09 21:24:07 ryanc Exp $
+    $Id: pbc_config.h,v 1.68 2002-11-07 19:54:27 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -134,10 +134,12 @@
 #define PBC_END_SESSION_ARG_ON      "On"
 #define PBC_END_SESSION_ARG_OFF     "Off"
 
-#define PBC_END_SESSION_NOPE          0
-#define PBC_END_SESSION_MASK          1
-#define PBC_END_SESSION_REDIR_MASK    2
-#define PBC_END_SESSION_CLEAR_L_MASK  4
+#define PBC_END_SESSION_NOPE          0    /* no end session */
+#define PBC_END_SESSION_ONLY          1    /* end session only */
+#define PBC_END_SESSION_REDIR         2    /* end session, redirect to WLS */
+#define PBC_END_SESSION_CLEAR_L       4    /* end session, redirect to WLS, 
+                                              clear Login cookie */
+#define PBC_END_SESSION_ANY           127  /* any of the above, except NONE */
 
 #define LOGOUT_ACTION_UNSET          -1
 #define LOGOUT_ACTION_NOTHING        0
