@@ -22,7 +22,7 @@ FILE *debugFile=NULL;
 int Debug_Trace = 0;
 BOOL Open_Debug_Trace ();
 
-void vlog_activity( int logging_level, const char * format, va_list args )
+void pbc_vlog_activity( int logging_level, const char * format, va_list args )
 {
     char      log[4096];
 	HANDLE hEvent;
@@ -51,7 +51,7 @@ extern void syslog(int whichlog, const char *message, ...) {
 
     va_start(args, message);
 
-    vlog_activity( whichlog, message, args );
+    pbc_vlog_activity( whichlog, message, args );
 
     va_end(args);
 
@@ -62,7 +62,7 @@ extern void pbc_log_activity(int logging_level, const char *message,...)
 
     va_start(args, message);
 
-    vlog_activity( logging_level, message, args );
+    pbc_vlog_activity( logging_level, message, args );
 
     va_end(args);
 }
@@ -94,7 +94,6 @@ VOID Close_Debug_Trace ()
 {
 	time_t ltime;
 
-	DebugMsg((DEST,"Close_Debug_Trace\n"));  //debug
 	if ( debugFile ) {
 
 		time(&ltime);

@@ -100,6 +100,10 @@ SOURCE=..\base64.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\debug.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\libpubcookie.c
 # End Source File
 # Begin Source File
@@ -126,6 +130,10 @@ SOURCE=..\strlcpy.c
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=.\debug.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\libpubcookie.h
