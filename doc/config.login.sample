@@ -16,6 +16,9 @@ login_host: login.example.edu
 enterprise_domain: .example.edu
 logout_prog: /logout/index.cgi
 
+# keyserver config
+keyserver_client_list: login.example.edu admin.workstation.example.edu
+
 # site-specific policies
 default_l_expire: 8h
 

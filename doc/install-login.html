@@ -25,7 +25,8 @@ version of this document</a> is always the most up-to-date version.
 <li><a href="#apacheconfig">Apache Configuration</a></li>
 <li><a href="#build">Build &amp; Install the Login Server Components</a></li>
 <li><a href="#config">Setup Run-time Pubcookie Config File</a></li>
-<li><a href="#keymgt">Key Management &amp; Setup</a></li>
+<li><a href="#keypairs">Setup Login Server Key Pairs</a></li>
+<li><a href="#keymgmt">Shared DES Key Management</a></li>
 <li><a href="#keyserver">Keyserver Setup</a></li>
 <li><a href="#keyclient">Run Keyclient For Login Server</a></li>
 <li><a href="#install">Install &amp; Test Login CGI (index.cgi)</a></li>
@@ -280,14 +281,17 @@ variables are:
 <dd> The verifier to use for the "basic" login flavor.</dd>
 
 <dt> keymgt_uri </dt>
-<dd> The location of the "keyserver" CGI.  See the <a href="#keymgt">Key
+<dd> The location of the keyserver.  See the <a href="#keymgt">Key
 Management</a> section.</dd>
+
+<dt> keyserver_client_list </dt>
+<dd> The hosts that are authorized to "permit" new servers.</dd>
 
 </dl>
 
 <p>
 The following configuration variables are crucial, as they determine
-the keypair used to sign and verify "login" cookies and more importantly
+the key pair used to sign and verify "login" cookies and more importantly
 to authenticate your keyserver's identity. In most cases, they should 
 refer to the same files that your web server uses for SSL.</p>
 
@@ -311,83 +315,148 @@ those certificates named via their OpenSSL hashes. At least one of
 
 <dl compact="compact">
 <dt> ssl_ca_file</dt>
-<dd> The location of a single CA.</dd>
+<dd> The location of a file of root CA info.</dd>
 
 <dt> ssl_ca_path</dt>
-<dd> A directory containing files named after their OpenSSL hash.</dd>
+<dd> A directory containing CA files named after their OpenSSL hash.</dd>
 </dl>
 
 <p>Again, see <a href="config.html">config.html</a> for a full list of 
 configuration variables and their descriptions.</p>
 
-<h4><a name="keymgt">Key Management &amp; Setup</a></h4>
+<h4><a name="keypairs">Setup Login Server Key Pairs</a></h4>
 
-<p>
-<tt>{PUBCOOKIE_DIR}/keys</tt> is the location of the keystore used by
-the login cgi.  The login cgi makes use of several different keys.
-</p>
+<p>The login cgi uses a couple of special key pairs to sign and verify
+cookie contents.  These key pairs are in addition to the DES encryption
+keys it shares with application servers. <tt>{PUBCOOKIE_DIR}/keys</tt> is
+the default location for all these keys.</p>
 
-<h5>Reuse SSL keypairs for the "login" cookie and keyserver</h5>
+<h5>Reuse SSL key pairs for the "login" cookie and keyserver</h5>
 
-<p>
-The login cgi uses a keypair to sign and verify the "login" cookie
+<p>The login cgi uses a key pair to sign and verify the "login" cookie
 that maintains a user's single sign-on session with the login server.  
-These files are kept exclusively on the login server and are also
-used by the keyserver. We recommend that you reuse your existing private 
-key and SSL server certificate, rather than generating a new keypair. 
-The login cgi will automatically do so if you set <tt>ssl_cert_file</tt> 
-and <tt>ssl_key_file</tt> correctly. If this works for your keyserver, it 
-is probably the optimal solution.
-</p>
+These files are kept exclusively on the login server and are also used by
+the keyserver. You can reuse your web server's existing SSL private key
+and certificate, rather than generating a new key pair. As long as this
+works for your keyserver, it is probably the optimal solution.  
+Configuration is via the <tt>ssl_cert_file</tt> and <tt>ssl_key_file</tt>
+config file variables.</p>
 
-<h5>Generate granting keypair for authentication assertions</h5>
+<h5>Generate granting key pair for authentication assertions</h5>
 
-<p>
-Next, a "granting" keypair is needed to secure authentication
-assertions sent from login server to application servers, as represented
-by a "granting" cookie.  The key is kept exclusively on the login
-server; the certificate must be distributed to every application server.
-We've historically recommend that you generate a new keypair for this 
-purpose, although you could reuse you SSL keypair here too. 
-</p>
+<p>Next, a "granting" key pair is needed to sign and verify the "granting"
+cookies sent by the login server to application servers as authentication
+assertions. Here the private key is kept exclusively on the login server,
+and the public key certificate is distributed to each application server.
+You can generate a new key pair for this purpose, although you can reuse
+your SSL key pair too. The certificate issuer doesn't matter.</p>
 
 <pre>
 $ openssl req -new -x509 -nodes \
-    -out /usr/local/pubcookie/keys/pubcookie_granting.cert \
+    -out /usr/local/pubcookie/keys/pubcookie_granting.crt \
     -newkey rsa:1024 -keyout /usr/local/pubcookie/keys/pubcookie_granting.key
 </pre>
 
-<p>If you want to place these files in a different location (than
-<tt>{PUBCOOKIE_DIR}/keys/pubcookie_granting.{key,cert}</tt>), you'll
-need to set the <tt>granting_cert_file</tt> and
-<tt>granting_key_file</tt> variables in your config file.</p>
+<p>If you want to name these files differently or place them in another
+location, use the <tt>granting_cert_file</tt> and
+<tt>granting_key_file</tt> config file variables.</p>
+
+<h4><a name="keymgmt">Shared DES Key Management</a></h4>
+
+<p>Each server participating in your Pubcookie authentication
+infrastructure, including all login and applications servers, requires its
+own encryption key. More precisely, a shared 1,024-bit DES encryption key
+that's used to encrypt and decrypt the contents of various cookies. This
+section describes in general terms how encryption keys are created,
+stored, and distributed within Pubcokie. The next section explains how to
+set up your keyserver.</p>
+
+<p>Keys are generated and distrubted by the keyserver component, and a
+master copy of each key is stored on the login server in its keystore,
+<tt>{PUBCOOKIE_DIR}/keys</tt>, where each key is kept in a separate file
+named after the corresponding server.</p>
+
+<p>For example, a site with a login server and three application servers 
+might have a keystore like this:</p>
+
+<pre>
+$ ls -1 /usr/local/pubcookie/keys
+pubcookie_granting.key
+pubcookie_granting.crt
+weblogin.example.edu
+my.example.edu
+mail.example.edu
+appserver.example.edu
+</pre>
+
+<p>New host keys are generated and issued by the keyserver upon request.  
+That is, they are created when a peer server asks for one. This happens
+via a SSL/TLS connection initiated by running the Pubcookie keyclient
+utility on the server that needs a key. As long as there is sufficient
+trust between the keyclient and the keyserver, the keyserver can issue a
+key ... but only if the requesting server is authorized to receive
+one.</p>
+
+<p>New servers are authorized to request keys by their pressence in the
+keystore. That is, the login server's keystore implicitly defines which
+servers can be issued host keys (and therefore which servers can
+participate in a site's Pubcookie infrastructure). The keyserver makes
+authorization decisions based on the presence or absense of host files in
+the keystore. If the keyserver finds a host file in the keystore, then
+that host can request a key. This seems like a catch-22: to create a new
+host key in the keystore, the key must already exist in the keystore.  
+However, there is a solution.</p>
+
+<p>Login server administrators can use the keyclient's "permit" option to
+authorize new servers to request keys. For example, to authorize
+<i>newapp.example.edu</i> an administrator would run this command:</p>
+
+<pre>
+$ keyclient -1 newapp.example.edu
+</pre>
+
+<p>Administrators can authorize new servers manually or automate the
+process via some kind of secure web-based registration service. To control
+which hosts can use the permit option, the keyserver reads the
+<tt>keyserver_client_list</tt> config variable, which lists the hosts the
+administrators use to permit new hosts.  This feature allows
+administrators to authorize new hosts without necessarily having to log in
+to the login server.</p>
+
+<p>Finally, it's worth clarifying that the trust relationship between the
+keyserver and its keyclients requires the lightweight use of Public-Key
+Infrastructure. Namely, to ensure mutual authentication and a secure
+communication channel for transferring shared DES keys, Pubcookie relies
+on SSL certificates and the Certificate Authorities that issue them. The
+keyclient and keyserver both use the <tt>ssl_ca_file</tt> and
+<tt>ssl_ca_path</tt> variables to find your trusted CA root certificates,
+to which you can add your own institutional CA if you have one. This is
+necessary for verifying the certificates presented in the connection. The
+keyclient needs to verify that it's communicating with your keyserver. And
+the keyserver needs to verify a keyclient's certificate, because it's
+going to use the Common Name to create a host key in the keystore.</p>
 
 <h4><a name="keyserver">Keyserver Setup</a></h4>
 
-<p>
-The <tt>keyserver</tt> binary you build earlier is a program that generates 
-and maintains DES keys for participating servers to use to encrypt cookie
-contents. Unfortunately, due to subtleties in the key usage constraints, 
-keyserver is unable to run as a cgi script underneath a login server. Instead, 
-we recommend that keyserver be run from inetd.
-</p>
+<p>To set up your keyserver, first make sure you've configured
+<tt>ssl_key_file</tt>, <tt>ssl_cert_file</tt>,
+<tt>keyserver_client_list</tt>, and either <tt>ssl_ca_file</tt> or
+<tt>ssl_ca_path</tt> depending on how you handle CA information.</p>
 
-<p>
-Add a line like the following to the login server's
-<tt>/etc/inetd.conf</tt>:
-</p>
+<p>Next setup keyserver to run from inetd or xinetd. Unfortunately, due to
+subtleties in the key usage constraints, keyserver cannot run as a cgi
+script underneath a login server.</p>
+
+<p>Add a line like the following to the login server's
+<tt>/etc/inetd.conf</tt>:</p>
 
 <pre>
 2222    stream  tcp     nowait  root    /usr/local/pubcookie/keyserver keyserver
 </pre>
 
-<p>
-where <tt>/usr/local/pubcookie/keyserver</tt> is where the keyserver binary
-is installed.  Make sure that your <tt>pubcookie/config</tt> file is
-correctly configured.</p>
+<p>Adjust the path to the keyserver binary as needed.</p>
 
-<p>
-If you are using xinetd, you should create a file named <tt>keyserver</tt> in
+<p>Or if you are using xinetd, create a file named <tt>keyserver</tt> in
 <tt>/etc/xinetd.d</tt> with the following contents:</p>
 
 <pre>
@@ -406,34 +475,46 @@ service keyserver
 }
 </pre>
 
-<p>After adding this line to inetd.conf (or file to xinetd), restart <tt>inetd</tt>
-(or xinetd).</p>
+<p>After adding the line to inetd.conf, or the file to xinetd, restart
+your inetd or xinetd service.</p>
 
 <h4><a name="keyclient">Run Keyclient for the Login Server</a></h4>
 
-<h5>Generate a DES key for the login server with keyclient</h5>
-
-<p>Now run keyclient to generate a DES key for the login server:</p>
+<p>To generate a host key for your login server, you need to request one
+using the keyclient utility. First, authorize the login server to request
+a key by using the keyclient's "permit" option. For example:</p>
 
 <pre>
-% /usr/local/pubcookie/keyclient
+$ /usr/local/pubcookie/keyclient -1 login.example.edu
 </pre>
 
-<p>This will cause the keyserver program to generate a new DES key for
-the login server to use to provide confidentiality for the login
-cookies.</p>
+<p>Note: the host where you initiate the keyclient "permit" must be
+privileged to do so by configuration of the <tt>keyserver_client_list</tt>
+variable. This is true even though the request is coming from your login
+server.</p>
 
-<p>Hint: look in syslog and refer to the <a href="#debug">debugging</a> 
-section if you run into problems with keyserver.</p>
+<p>Once the keystore has been primed using the "permit" option, run
+the keyclient to generate a new DES key for the login server:</p>
+
+<pre>
+$ /usr/local/pubcookie/keyclient
+</pre>
+
+<p>Keyclient will use your config file to connect to your keyserver and
+negotiate a new host key. If successful, your keystore will now have a
+host key for your login server.</p>
+
+<p>Hint: look in syslog and refer to the <a href="#debug">debugging</a>
+section if you run into problems generating keys with keyserver.</p>
 
 <h5>Generating DES keys for the application servers with keyclient</h5>
 
-<p>When the time comes, generating DES keys for application servers is 
-very similar. You configure the keyclient on the application server
-ahead of time, making sure the keyclient's certicate (probably the
-server's SSL certificate) is signed by the same CA trusted by your 
-keyserer's CA configuration. Refer to the application server documentation
-for specifics.</p>
+<p>When the time comes, generating host keys for application servers is
+very similar. First, someone with rights to use the "permit" option must
+use it to authorize the server to request a key. Then the server can
+request a key, provided that the certicate presented by the keyclient
+(probably the server's SSL certificate) is signed by a CA trusted by your
+keyserver.</p>
 
 <h4><a name="install">Install &amp; Test Login CGI (index.cgi)</a></h4>
 
@@ -801,7 +882,7 @@ As an example you can use these two programs to do things like:</p>
 # echo "willey appsrvid appid 1 2 23 \
     /usr/local/pubcookie/c_key /usr/local/pubcookie/test.key" | \
     ./pbc_create | \
-    ./pbc_verify 1 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.cert
+    ./pbc_verify 1 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.crt
 </pre>
 
 <p>and get something like</p>
@@ -824,7 +905,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.15 2004-01-30 23:33:41 dors Exp $
+$Id: install-login.html,v 1.16 2004-02-05 22:54:24 dors Exp $
 </pre>
 </body>
 
