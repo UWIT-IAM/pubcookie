@@ -1,32 +1,34 @@
    Pubcookie Credits
 
    Pubcookie would not exist without the commitment and support of the
-   following sponsors, developers and contributors, and related software
+   following developers, contributors, sponsors, and related software
    projects.
+
+   Core Developers:
+     * Jim Blankenship    University of Washington
+     * Ryan Campell       University of Washington
+     * Rob Christ         University of Washington (former)
+     * Jeff Eaton         Carnegie Mellon University
+     * Larry Greenfield   Carnegie Mellon University
+     * Jon Miner          University of Wisconsin
+     * Ryan Muldoon       University of Wisconsin
+     * Steve Willey       University of Washington
+
+   Other Contributors:
+     * Nathan Dors        University of Washington
+     * Jim Fox            University of Washington
+     * Frank Fugimoto     University of Washington
+     * Scott Fullerton    University of Wisconsin
+     * Maurizio Marini    Cost Srl, Milan, Italy
+     * RL "Bob" Morgan    University of Washington
+     * Lori Stevens       University of Washington
+     * Russell Tokuyama   University of Hawaii
+     * Pascal Wallenius   University of Washington (former)
 
    Sponsors:
      * The Andrew W. Mellon Foundation
      * Internet2
      * University of Washington
-
-   People:
-     * Jim Blankenship    University of Washington
-     * Ryan Campell       University of Washington
-     * Rob Christ         University of Washington (former)
-     * Nathan Dors        University of Washington
-     * Jeff Eaton         Carnegie Mellon University
-     * Jim Fox            University of Washington
-     * Frank Fugimoto     University of Washington
-     * Scott Fullerton    University of Wisconsin
-     * Larry Greenfield   Carnegie Mellon University
-     * Maurizio Marini    Cost Srl, Milan, Italy
-     * Jon Miner          University of Wisconsin
-     * RL "Bob" Morgan    University of Washington
-     * Ryan Muldoon       University of Wisconsin
-     * Lori Stevens       University of Washington
-     * Russell Tokuyama   University of Hawaii
-     * Pascal Wallenius   University of Washington (former)
-     * Steve Willey       University of Washington
 
    Projects:
      * Apache
@@ -50,3 +52,5 @@
    author of the modifications, and this notice may in no case be
    removed. Modifications may also be submitted to the author for
    inclusion in the main cgic distribution.
+
+
