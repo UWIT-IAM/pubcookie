@@ -8,7 +8,7 @@
  */
 
 /*
- * $Revision: 1.12 $
+ * $Revision: 1.13 $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -165,9 +165,7 @@ static int creds_derive(struct credentials *creds,
     krb5_context context;
     krb5_ccache ccache;
     krb5_ccache ccache_target;
-    krb5_auth_context auth_context;
     krb5_creds request, *newcreds;
-    krb5_data packet;
     int r = -1;
 
     assert(creds != NULL);
@@ -360,8 +358,9 @@ static int k5support_verify_tgt(krb5_context context,
 	goto fini;
     }
 
-    if (k5_retcode = krb5_rd_req(context, auth_context, &packet, 
-		                 server, keytab, NULL, NULL)) {
+    k5_retcode = krb5_rd_req(context, auth_context, &packet, 
+                             server, keytab, NULL, NULL);
+    if (k5_retcode) {
         *errstr = "krb5_rd_req failed";
 	goto fini;
     }
