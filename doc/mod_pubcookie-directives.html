@@ -111,9 +111,11 @@ in pbc_config.h. The minimium is one hour; the maximium is twelve hours.</p>
 "Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
 Apache 1.2 and later.</p>
 
-<p>The name of the application.</p>
+<p>The name of the application. The default is the directory path.</p>
 
-<p>The default is the directory path.</p>
+<p>Use of this directive may require that you set <a
+href="http://httpd.apache.org/docs/mod/core.html#allowoverride">AllowOverride
+All</a> in httpd.conf.</p>
 
 <h3><a name="PubcookieDirDepthforAppID">PubcookieDirDepthforAppID
 directive</a></h3>
