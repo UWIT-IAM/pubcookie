@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.64 2002-09-26 23:45:38 ryanc Exp $
+    $Id: pbc_config.h,v 1.65 2002-09-27 17:45:11 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -224,7 +224,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 /* 
  things that are used both places (module and the library)
  */
-#define PBC_SIG_LEN 128
 #define PBC_CREDS_NONE    '0'
 
 #define PBC_COOKIE_TYPE_NONE  '0'
