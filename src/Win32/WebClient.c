@@ -25,11 +25,7 @@ Abstract:
 #include <wincrypt.h>
 #include <wintrust.h>
 #include <schannel.h>
-
-#define SECURITY_WIN32
-#include <security.h>
 #include <sspi.h>
-
 
 #include "WebClient.h"
 

@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.9 2004-02-17 23:06:38 ryanc Exp $
+  $Id: winkeyclient.c,v 1.10 2004-03-17 02:07:40 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,8 +14,8 @@
 #include <wintrust.h>
 #include <schannel.h>
 
-#define SECURITY_WIN32
-#include <security.h>
+typedef void pool;
+
 #include <sspi.h>
 
 #ifdef HAVE_CONFIG_H
@@ -57,8 +57,6 @@
 #include "../pubcookie.h"
 #include "../pbc_config.h"
 #include "PubCookieFilter.h"
-typedef pubcookie_dir_rec pool;
-
 #include "getopt.h"
 #include "../libpubcookie.h"
 #include "../strlcpy.h"
@@ -90,6 +88,8 @@ int noop = 0;
 int newkeyp = 1;
 pool *p = NULL;
 char *hostname = NULL;
+BOOL silent = FALSE;
+char *gcert = NULL;
 
 int Messagef(const char * format, ...){
     char msg[2048];
@@ -135,7 +135,7 @@ static char *extract_cn(char *s)
  * @param buf a buffer of at least 1024 characters which gets the filename
  * @return always succeeds
  */
-static void make_crypt_keyfile(const char *peername, char *buf)
+static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 {
     strlcpy(buf, PBC_KEY_DIR, 1024);
 
@@ -156,7 +156,7 @@ int set_crypt_key(const char *key, const char *peer)
     char keyfile[1024];
     FILE *f;
 
-    make_crypt_keyfile(peer, keyfile);
+    make_crypt_keyfile(p, peer, keyfile);
     if (!(f = fopen(keyfile, "wb"))) {
 	return PBC_FAIL;
     }
@@ -174,7 +174,7 @@ int get_crypt_key(crypt_stuff *c_stuff, const char *peer)
     char keyfile[1024];
 
 
-    make_crypt_keyfile(peer, keyfile);
+    make_crypt_keyfile(p, peer, keyfile);
 
     key_in = (char *)malloc(PBC_DES_KEY_BUF);
 
@@ -198,8 +198,13 @@ int get_crypt_key(crypt_stuff *c_stuff, const char *peer)
 void ParseCmdLine(LPSTR lpCmdLine) {
 	int c;
 
-    while ((c = getopt(__argc, __argv, "udH:")) != -1) {
+    while ((c = getopt(__argc, __argv, "sudH:G:")) != -1) {
         switch (c) {
+			case 's':
+				/* silent mode */
+				silent = TRUE;
+				break;
+
             case 'd':
                 /* download, don't generate a new key */
                 newkeyp = 0;
@@ -207,6 +212,12 @@ void ParseCmdLine(LPSTR lpCmdLine) {
 
             case 'u':
                 /* upload, don't generate a new key */
+                newkeyp = -1;
+                break;
+
+            case 'G':
+				/* get granting cert, don't generate a new key */
+                gcert = strdup(optarg);
                 newkeyp = -1;
                 break;
 
@@ -229,7 +240,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                      int       nCmdShow)
 {
     char *cp;
-    char buf[2 * PBC_DES_KEY_BUF]; /* plenty of room for base64 encoding */
+	char buf[8 * PBC_DES_KEY_BUF]; /* plenty of room for key or cert */
     unsigned char thekey[PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
 	struct hostent *h;
@@ -249,9 +260,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	CredHandle hClientCreds;
 	char *Reply = NULL;
 	char sztmp[1024];
-
-	p = malloc(sizeof(pool));
-	bzero(p,sizeof(pool));
 
 	if( WSAStartup((WORD)0x0101, &wsaData ) ) 
 	{  
@@ -364,25 +372,37 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 
     /* make the HTTP query */
-    if (newkeyp == -1) {
-        char enckey[PBC_DES_KEY_BUF * 2];
+    /* newkeyp = 1 means generate and get a key 
+       newkeyp = 0 means get a key 
+       newkeyp = -1 means something else
+     */
 
-        if (get_crypt_key(&c_stuff, hostname) != PBC_OK) {
-            Messagef("couldn't retrieve key\r\n");
-            exit(ERROR_INSTALL_FAILURE);
-        }
+	if (newkeyp == -1) {
+		char enckey[PBC_DES_KEY_BUF * 2];
 
-        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+		if (gcert) { /* get the granting cert */
+			snprintf(buf, sizeof(buf),
+				"GET %s?genkey=getgc;\r\n\r\n",
+				keymgturi);
 
-        /* we're uploading! */
-        snprintf(buf, sizeof(buf),
-                 "%s?genkey=put?setkey=%s;%s",
-                 keymgtpath, hostname, enckey);
-    } else {
-        snprintf(buf, sizeof(buf), 
-                 "%s?genkey=%s", keymgtpath,
-                 newkeyp ? "yes" : "no");
-    }
+		} else {   /* set the key */
+			if (get_crypt_key(&c_stuff, hostname) != PBC_OK) {
+				Messagef("couldn't retrieve key\r\n");
+				exit(ERROR_INSTALL_FAILURE);
+			}
+
+			libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+
+			/* we're uploading! */
+			snprintf(buf, sizeof(buf),
+				"%s?genkey=put?setkey=%s;%s",
+				keymgtpath, hostname, enckey);
+		}
+	} else {
+		snprintf(buf, sizeof(buf), 
+			"%s?genkey=%s", keymgtpath,
+			newkeyp ? "yes" : "no");
+	}
 
 
     if (noop && newkeyp) {
@@ -401,90 +421,99 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     }
 
 	cp = Reply;
-    /* look for the 'OK' */
-    while (*cp) {
-        if (cp[0] == '\r' && cp[1] == '\n' &&
-            cp[2] == 'O' && cp[3] == 'K' &&
-            cp[4] == ' ') {
-            cp += 5;
-            /* cp points to a base64 key we should decode */
-            if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
-                Messagef("key too long\n");
-                exit(ERROR_INSTALL_FAILURE);
-            }
+	cp += 5;
 
-            if (newkeyp != -1) {
-                if (strchr(cp, '\r')) {
-                    /* chomp new line */
-                    *(strchr(cp, '\r')) = '\0';
-                }
-                if (strchr(cp, '\n')) {
-                    /* chomp new line */
-                    *(strchr(cp, '\n')) = '\0';
-                }
+	/* look for the 'OK' */
+	while (*cp) {
+		if (cp[0] == '\r' && cp[1] == '\n' &&
+			cp[2] == 'O' && cp[3] == 'K' &&
+			cp[4] == ' ') {
+				char *s;
+				cp += 5;
 
-                if (noop) {
-                    Messagef("would have set key to '%s'\n", cp);
-                } else {
-		    int osize = 0;
-                    int ret;
-                    if (strchr(cp, '\r')) {
-                        /* chomp new line */
-                        *strchr(cp, '\r') = '\0';
-                    }
-                    ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
-		    if (osize != PBC_DES_KEY_BUF) {
-                        Messagef("keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
-                        exit(ERROR_INSTALL_FAILURE);
-                    }
+				if (newkeyp != -1) {
+					/* If getting a key, cp points to a base64 key to decode */
+					if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
+						Messagef("key too long\n");
+						exit(1);
+					}
 
-                    if (! ret) {
-                        Messagef( "Bad base64 decode.\n" );
-                        exit(ERROR_INSTALL_FAILURE);
-                    }
+					if (s=strchr(cp, '\r')) *s = '\0';
+					if (s=strchr(cp, '\n')) *s = '\0';
 
-                    if (set_crypt_key((const char *) thekey, hostname) != PBC_OK) {
-                        Messagef("Cannot store key.  Make sure that key path (%s) exists and can be written to.\n",PBC_KEY_DIR);
-                        exit(ERROR_INSTALL_FAILURE);
-                    }
-                }
-            }
+					if (noop) {
+						printf("would have set key to '%s'\n", cp);
+					} else {
+						int osize = 0;
+						int ret;
+						if (s=strchr(cp, '\r')) *s = '\0';
+						ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
+						if (osize != PBC_DES_KEY_BUF) {
+							Messagef("keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
+							exit(1);
+						}
 
-            done = 1;
-            break;
-        }
-        cp++;
-    }
+						if (! ret) {
+							Messagef("Bad base64 decode.\n" );
+							exit(1);
+						}
 
-    //
-    // Cleanup.
-    //
+						if (set_crypt_key((const char *) thekey, hostname) != PBC_OK) {
+							Messagef("set_crypt_key() failed\n");
+							exit(1);
+						}
+					}
+				} else if (gcert) {
+					/* If getting a cert, cp points to start of PEM cert */
+					FILE *cf = fopen(gcert, "w");
+					if (!cf) {
+						perror("gcert");
+						exit(1);
+					}
+					fputs(cp, cf);
+					fclose(cf);
+					if (!silent) {
+						Messagef("Granting cert saved to %s\n", gcert);
+					}
+				}
 
-    if(DisconnectFromServer(Socket, &hClientCreds, &hContext))
-    {
-        Messagef("Error disconnecting from server\n");
-    }
+				done = 1;
+				goto jump;
+			}
+			cp++;
+	}
+
+	//
+	// Cleanup.
+	//
+jump:
+
+	if(DisconnectFromServer(Socket, &hClientCreds, &hContext))
+	{
+		Messagef("Error disconnecting from server\n");
+	}
 
 
-    // Free SSPI credentials handle.
-    lpSecurityFunc->FreeCredentialsHandle(&hClientCreds);
+	// Free SSPI credentials handle.
+	lpSecurityFunc->FreeCredentialsHandle(&hClientCreds);
 
-    // Close socket.
-    closesocket(Socket);
+	// Close socket.
+	closesocket(Socket);
 
-    // Shutdown WinSock subsystem.
-    WSACleanup();
+	// Shutdown WinSock subsystem.
+	WSACleanup();
 
-    // Close certificate store.
-    CertCloseMyStore();
+	// Close certificate store.
+	CertCloseMyStore();
 
 	if (!done) {
 		Messagef("Operation failed.\nYou will need to sucessfully run keyclient and obtain a key before using the Pubcookie filter.\n\nServer Reply:\n%s", Reply);
 		exit(ERROR_INSTALL_FAILURE);
-    }
-
+	} else if (!silent) {
+		Messagef("Operation succeeded");
+	}
 	// free memory pool
 	free(p);
 
-    return ERROR_SUCCESS;
+	return ERROR_SUCCESS;
 }
