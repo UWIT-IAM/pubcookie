@@ -1,6 +1,6 @@
 #defaults
 #
-# $Id: Makefile,v 1.7 1999-01-09 01:38:46 willey Exp $
+# $Id: Makefile,v 1.8 1999-01-11 21:44:31 willey Exp $
 #
 
 CC=gcc
@@ -40,9 +40,11 @@ test_local_c_key:	test_local_c_key.o libpubcookie.o
 		$(CC) ${CFLAGS} -o $@ test_local_c_key.o libpubcookie.o base64.o $(LDFLAGS)
 
 tar:
+	rm -rf $(NAME); \
 	mkdir $(NAME); \
 	for i in $(SRC) $(GEN_HEAD) $(MISC) ;\
 	do \
+		chmod 664 $$i; \
 		cp $$i $(NAME); \
 	done; \
 	$(TAR) cf $(TARFILE) $(NAME); \
