@@ -7,12 +7,14 @@
  * Manually verify cookies
  *
  * args are:
- *   cookie_type [encryption_key] [cert_file]
+ *   granting_or_no [encryption_key] [cert_file]
  *      if you specify a cert_file you must also specifiy a crypt key
+ *
+ * granting or no is 1 for granting or 0 for no
  *
  * cookie comes in on stdin, contenets are printed to stdout
  *
- * $Id: pbc_verify.c,v 1.18 2004-02-10 00:42:15 willey Exp $
+ * $Id: pbc_verify.c,v 1.19 2004-10-07 08:35:45 willey Exp $
  */
 
 
@@ -39,44 +41,50 @@
 # include <pem.h>
 #endif /* OPENSSL_IN_DIR */
 
+/* An apache "pool" */
+typedef void pool;
+
 #include "pbc_config.h"
 #include "pubcookie.h"
 #include "libpubcookie.h"
+#include "pbc_configure.h"
+#include "pbc_version.h"
+#include "pbc_logging.h"
+
 
 int main(int argc, char **argv) {
     md_context_plus	*ctx_plus;
     crypt_stuff         *c_stuff;
     pbc_cookie_data	*cookie_data;
     char		in[PBC_4K];
-    unsigned char       type;
+    char 		*s;
+    void 		*p = NULL;
+    security_context 	*context = NULL;
+    int			use_granting = 0;
+    
 
     fgets(in, sizeof(in), stdin);
 
+    s = in;
+    while(*s) {
+        if( *s == '\r' || *s == '\n' ) {
+            *s = '\0';
+             break;
+        }
+        s++;
+    }
+/*
     if ( argc < 2 )
 	exit(1);
+ */
 
-    type = argv[1][0];
+    use_granting = argv[1][0];
 
-    /* if we're given a keyfile, use it */
-    if ( argv[2] )
-        c_stuff = libpbc_init_crypt(argv[2]);
-    else
-        c_stuff = libpbc_init_crypt(get_my_hostname());
+    libpbc_config_init(p, NULL, "pbc_verify");
+    pbc_log_init_syslog(p, "pbc_verifyr");
+    libpbc_pubcookie_init(p, &context);
 
-
-    /* if we're given a certfile to use, use it */
-    if ( argv[2] && argv[3] )
-        ctx_plus = libpbc_verify_init(argv[3]);
-    else if ( type == PBC_COOKIE_TYPE_G )
-        ctx_plus = libpbc_verify_init(PBC_G_CERTFILE);
-    else if ( type == PBC_COOKIE_TYPE_L )
-        ctx_plus = libpbc_verify_init(PBC_S_CERTFILE);
-    else if ( type == PBC_COOKIE_TYPE_S )
-        ctx_plus = libpbc_verify_init(PBC_S_CERTFILE);
-    else
-	exit (1);
-
-    if( ! (cookie_data = libpbc_unbundle_cookie(in, ctx_plus, c_stuff)) )
+    if( ! (cookie_data = libpbc_unbundle_cookie(p, context, in, NULL, use_granting)) )
 	exit(1);
 
     printf("user: %s\n", (*cookie_data).broken.user);
