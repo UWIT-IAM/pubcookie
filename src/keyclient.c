@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.4 2002-06-10 20:05:01 jjminer Exp $
+    $Id: keyclient.c,v 2.5 2002-06-13 17:49:07 jteaton Exp $
  */
 
 #include <stdio.h>
@@ -38,6 +38,7 @@
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "libpubcookie.h"
+#include "strlcpy.h"
 
 /* globals */
 int noop = 0;

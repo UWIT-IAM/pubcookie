@@ -17,13 +17,14 @@
     an HTTP server
  */
 /*
-    $Id: keyserver.c,v 2.5 2002-06-10 20:05:01 jjminer Exp $
+    $Id: keyserver.c,v 2.6 2002-06-13 17:49:07 jteaton Exp $
  */
 
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <syslog.h>
+#include <unistd.h>
 
 #ifndef KEYSERVER_CGIC
 
@@ -51,11 +52,11 @@ static SSL *ssl = NULL;
  * log all outstanding errors from OpenSSL, attributing them to 'func'
  * @param func the function to attribute errors to
  */
-static const char *logerrstr(const char *func)
+static void logerrstr(const char *func)
 {
     unsigned long r;
 
-    while (r = ERR_get_error()) {
+    while ((r = ERR_get_error())) {
 	syslog(LOG_ERR, "%s: %s", func, ERR_error_string(r, NULL));
     }
 }
@@ -229,6 +230,10 @@ int doit(const char *peer, enum optype op, const char *newkey)
             /* noop; we always return the new key */
             assert(newkey == NULL);
             break;
+
+        case NOOP:
+           /* noop;  just for completeness */
+           break;
     }
 
     /* return the key */
