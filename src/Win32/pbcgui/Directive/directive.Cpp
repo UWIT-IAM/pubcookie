@@ -21,7 +21,7 @@ void CPBC_PropSheet::GetEffectiveValue(int i) {
 	wstring defined_in_val;
 
 	// First look in default key
-    StringCbCopy (key, BUFFSIZE+MAX_PATH, _T(PBC_FILTER_KEY));
+    StringCbCopy (key, BUFFSIZE+MAX_PATH, PBC_WEB_VAR_LOCATION);
 	StringCbCat  (key, BUFFSIZE+MAX_PATH, L"\\");
 	StringCbCat  (key, BUFFSIZE+MAX_PATH, _T(PBC_DEFAULT_KEY));
 
