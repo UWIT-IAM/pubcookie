@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.130 2004-07-29 06:24:19 willey Exp $
+ * $Id: index.cgi.c,v 1.131 2004-07-31 01:01:24 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1504,6 +1504,7 @@ int logout(pool *p, const security_context *context, login_rec *l, login_rec *c,
                         libpbc_config_getstring(p, 
 				"tmpl_logout_part2",
                                 "logout_part2"),
+			"version", PBC_VERSION_STRING,
                         NULL);
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L ) {
@@ -1545,6 +1546,7 @@ int logout(pool *p, const security_context *context, login_rec *l, login_rec *c,
                         libpbc_config_getstring(p, 
 				"tmpl_logout_part2",
                                 "logout_part2"),
+			"version", PBC_VERSION_STRING,
                         NULL);
     }
     else if( logout_action == LOGOUT_ACTION_CLEAR_L_NO_APP ) {
@@ -1575,6 +1577,7 @@ int logout(pool *p, const security_context *context, login_rec *l, login_rec *c,
                         libpbc_config_getstring(p, 
 				"tmpl_logout_part2",
                                 "logout_part2"),
+			 "version", PBC_VERSION_STRING,
                          NULL);
     }
 
@@ -1691,6 +1694,7 @@ void login_status_page(pool *p, login_rec *c)
                     "refresh", refresh_line != NULL ? refresh_line : "",
                     "contents", (c == NULL || c->user == NULL ? "unknown" : c->user),
                     "remaining", remaining,
+                    "version", PBC_VERSION_STRING,
                     NULL
                    );
     
@@ -2124,6 +2128,7 @@ void notok (pool *p,  void (*notok_f)() )
     ntmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_notok_part2",
                                             "notok_part2"),
+                    "version", PBC_VERSION_STRING,
                     NULL);
 
 }
@@ -2182,12 +2187,12 @@ int pinit_response(pool *p, const security_context *context, login_rec *l, login
     ntmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_logout_time_remaining",
                                             "logout_time_remaining"),
-                    "remaining",
-                    remaining,
+                    "remaining", remaining,
                     NULL);
     ntmpl_print_html(p, TMPL_FNAME,
                     libpbc_config_getstring(p, "tmpl_pinit_response2",
                                             "pinit_response2"),
+		    "version", PBC_VERSION_STRING,
                     NULL);
 
     pbc_free(p, (char *)remaining);

@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.7 2004-06-18 01:53:27 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.8 2004-07-31 01:01:24 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -57,6 +57,7 @@ typedef void pool;
 #include "pbc_config.h"
 #include "pbc_logging.h"
 #include "pbc_configure.h"
+#include "pbc_version.h"
 #include "libpubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
@@ -625,6 +626,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                     "user_field", user_field != NULL ? user_field : "",
                     "pass_field", pass_field != NULL ? pass_field : "",
                     "durationtext", ldurtxt,
+                    "version", PBC_VERSION_STRING,
                     NULL
                    );
 

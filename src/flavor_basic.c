@@ -13,7 +13,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.58 2004-07-27 19:15:43 willey Exp $
+ * $Id: flavor_basic.c,v 1.59 2004-07-31 01:01:24 willey Exp $
  */
 
 
@@ -58,6 +58,7 @@ typedef void pool;
 #include "pbc_config.h"
 #include "pbc_logging.h"
 #include "pbc_configure.h"
+#include "pbc_version.h"
 #include "libpubcookie.h"
 
 #ifdef HAVE_DMALLOC_H
@@ -553,6 +554,7 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
                     "user_field", user_field != NULL ? user_field : "",
                     "getcredhidden", getcred_hidden != NULL ? getcred_hidden : "",
                     "durationtext", ldurtxt,
+                    "version", PBC_VERSION_STRING,
                     NULL
                    );
 
