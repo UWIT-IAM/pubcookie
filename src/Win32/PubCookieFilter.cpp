@@ -725,7 +725,7 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* dcfg)
 			if ( stricmp(authname,PBC_AUTHTYPE1) == 0 ) 
 				dcfg->AuthType = AUTH_NETID;
 			else
-				if ( stricmp(authname,PBC_AUTHTYPE2)== 0 ) 
+				if ( stricmp(authname,PBC_AUTHTYPE3)== 0 ) 
 					dcfg->AuthType = AUTH_SECURID;
 				else
 					if ( stricmp(authname,PBC_AUTHTYPE0) == 0 )

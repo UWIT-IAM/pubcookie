@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.72 2003-03-05 22:38:47 willey Exp $
+    $Id: pbc_config.h,v 1.73 2003-03-07 19:19:17 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -56,9 +56,12 @@
 #endif /* HAVE_DMALLOC_H */
 
 /* names of the login servers */
-#define PBC_LOGIN_HOST (libpbc_config_getstring(p, "login_host", "weblogin.washington.edu"))
-#define PBC_LOGIN_URI (libpbc_config_getstring(p, "login_uri", "https://weblogin.washington.edu/"))
-#define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p, "enterprise_domain", ".washington.edu"))
+#ifndef WIN32
+	#define PBC_LOGIN_HOST (libpbc_config_getstring(p,"login_host", "weblogin.washington.edu"))
+#endif
+#define PBC_LOGIN_URI (libpbc_config_getstring(p,"login_uri", "https://weblogin.washington.edu/"))
+#define PBC_KEYMGT_URI (libpbc_config_getstring(p,"keymgt_uri", "https://weblogin.washington.edu/cgi-bin/keyserver"))
+#define PBC_ENTRPRS_DOMAIN (libpbc_config_getstring(p,"enterprise_domain", ".washington.edu"))
 
 #if defined (WIN32)
 	#define PBC_PUBLIC_NAME (libpbc_config_getstring(p, "PUBLIC_dir_name", "PUBLIC")) 
@@ -72,7 +75,7 @@
 	#define PBC_SYSTEM_ROOT (libpbc_config_getstring(p, "System_Root","")) /*blank for Windows System*/
 	#define PBC_AUTHTYPE0 (libpbc_config_getstring(p, "AuthTypeName0", "NONE")) 
 	#define PBC_AUTHTYPE1 (libpbc_config_getstring(p, "AuthTypeName1", "UWNETID"))
-	#define PBC_AUTHTYPE2 (libpbc_config_getstring(p, "AuthTypeName2", "SECURID"))
+	#define PBC_AUTHTYPE3 (libpbc_config_getstring(p, "AuthTypeName3", "SECURID"))
 	#define PBC_CRYPT_KEYFILE (PBC_PATH "c_key")
 	#define PBC_PUBKEY "System\\CurrentControlSet\\Services\\PubcookieFilter"
 

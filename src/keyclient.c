@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.26 2003-03-05 22:38:47 willey Exp $
+    $Id: keyclient.c,v 2.27 2003-03-07 19:19:17 ryanc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -118,7 +118,7 @@ static void usage(void)
     printf("  -a                 : expect keyfile in ASN.1\n");
     printf("  -p (default)       : expect keyfile in PEM\n");
     printf("  -h <hostname>      : pretend to be <hostname> (dangerous!)\n");
-    printf("  -L <hostname>      : connect to loginhost <hostname>\n");
+    printf("  -K <URI>           : base URL of key management server\n");  
     printf("  -C <cert file>     : CA cert to use for client verification\n");
     printf("  -D <ca dir>        : directory of trusted CAs, hashed OpenSSL-style\n");
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     int sd;
     struct sockaddr_in sa;
     struct hostent *h;
-    char *str, *p;
+    char *str, *cp;
     char buf[2 * PBC_DES_KEY_BUF]; /* plenty of room for base64 encoding */
     unsigned char thekey[PBC_DES_KEY_BUF];
     crypt_stuff c_stuff;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
     char *keyhost = NULL;
     int keyport = 443;
     int r;
-    pool *pp = NULL;
+    pool *p = NULL;
 
 #ifdef WIN32
 	SystemRoot = malloc(MAX_PATH*sizeof(char));
@@ -191,17 +191,17 @@ int main(int argc, char *argv[])
 	}   
 #endif
 
-    libpbc_config_init(pp, NULL, "keyclient");
-    libpbc_pubcookie_init(pp);
-    keyfile = libpbc_config_getstring(pp, "ssl_key_file", "server.pem");
-    certfile = libpbc_config_getstring(pp, "ssl_cert_file", "server.pem");
-    cafile = libpbc_config_getstring(pp, "ssl_ca_file", NULL);
-    cadir = libpbc_config_getstring(pp, "ssl_ca_path", NULL);
+    libpbc_config_init(p, NULL, "keyclient");
+    libpbc_pubcookie_init(p);
+    keyfile = libpbc_config_getstring(p, "ssl_key_file", "server.pem");
+    certfile = libpbc_config_getstring(p, "ssl_cert_file", "server.pem");
+    cafile = libpbc_config_getstring(p, "ssl_ca_file", NULL);
+    cadir = libpbc_config_getstring(p, "ssl_ca_path", NULL);
 
     hostname = NULL;
 
     newkeyp = 1;
-    while ((c = getopt(argc, argv, "apc:k:C:D:nudH:L:")) != -1) {
+    while ((c = getopt(argc, argv, "apc:k:C:D:nudH:L:K:")) != -1) {
         switch (c) {
             case 'a':
                 filetype = SSL_FILETYPE_ASN1;
@@ -251,8 +251,10 @@ int main(int argc, char *argv[])
                 break;
 
             case 'L':
-                /* connect to the specified login server */
-                keyhost = strdup(optarg);
+			case 'K':
+                /* connect to the specified key management server
+				   Overrides PBC_KEYMGT_URI */
+                keymgturi = strdup(optarg);
                 break;
 
             case '?':
@@ -275,7 +277,7 @@ int main(int argc, char *argv[])
         RAND_seed((unsigned char *)&pid, sizeof(pid));
 
 #ifndef WIN32
-        capture_cmd_output(pp, cmd, buf, sizeof(buf));
+        capture_cmd_output(p, cmd, buf, sizeof(buf));
         RAND_seed((unsigned char *)buf, sizeof(buf));
 #endif
     }
@@ -313,27 +315,21 @@ int main(int argc, char *argv[])
     }
 
     /* figure out the key management server */
-    keymgturi = libpbc_config_getstring(p, "keymgt_uri", NULL);
-    if (keymgturi ==  NULL) {
-        keymgturi = malloc(1024);
-        snprintf((char *) keymgturi, 1024, "https://%s/cgi-bin/keyserver", 
-                 PBC_LOGIN_HOST);
-    }
-
-    if (!keyhost) {
-        keyhost = strdup(keymgturi);
-    }
+	if (!keymgturi) {
+		keymgturi = PBC_KEYMGT_URI;
+	}
+    keyhost = strdup(keymgturi);
 
     if (!strncmp(keyhost, "https://", 8)) keyhost += 8;
-    p = strchr(keyhost, '/');
-    if (p) {
-        *p = '\0';
+    cp = strchr(keyhost, '/');
+    if (cp) {
+        *cp = '\0';
     }
 
-    p = strchr(keyhost, ':');
-    if (p) {
-        *p++ = '\0';
-        keyport = atoi(p);
+    cp = strchr(keyhost, ':');
+    if (cp) {
+        *cp++ = '\0';
+        keyport = atoi(cp);
     }
 
     /* connect to the keyserver */
@@ -376,14 +372,14 @@ int main(int argc, char *argv[])
     }
 
     str = X509_NAME_oneline (X509_get_subject_name (server_cert),0,0);
-    p = extract_cn(str);
-    if (p == NULL) {
+    cp = extract_cn(str);
+    if (cp == NULL) {
         fprintf(stderr, "str == NULL???\n");
         exit(1);
     }
-    if (strcasecmp(p, PBC_LOGIN_HOST)) {
-        fprintf(stderr, "certificate presented isn't the login host: %s != %s\n",
-                p, PBC_LOGIN_HOST);
+    if (strcasecmp(cp, keyhost)) {
+        fprintf(stderr, "certificate presented isn't the key server: %s != %s\n",
+                cp, keyhost);
         exit(1);
     }
     free(str);
@@ -421,7 +417,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-        libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
+        libpbc_base64_encode(cp, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
 
         /* we're uploading! */
         snprintf(buf, sizeof(buf),
@@ -445,10 +441,10 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    p = buf;
+    cp = buf;
     for (;;) {
         /* read the response */
-        r = SSL_read(ssl, p, sizeof(buf) - 1 - (p - buf));
+        r = SSL_read(ssl, cp, sizeof(buf) - 1 - (cp - buf));
         if (r < 0) {
             fprintf(stderr, "SSL_read failed:\n");
             ERR_print_errors_fp(stderr);
@@ -457,44 +453,44 @@ int main(int argc, char *argv[])
         if (r == 0) {
             break;
         }
-        p += r;
-        *p = '\0';
+        cp += r;
+        *cp = '\0';
     }
 
-    p = buf;
+    cp = buf;
     /* look for the 'OK' */
-    while (*p) {
-        if (p[0] == '\r' && p[1] == '\n' &&
-            p[2] == 'O' && p[3] == 'K' &&
-            p[4] == ' ') {
-            p += 5;
+    while (*cp) {
+        if (cp[0] == '\r' && cp[1] == '\n' &&
+            cp[2] == 'O' && cp[3] == 'K' &&
+            cp[4] == ' ') {
+            cp += 5;
 
-            /* p points to a base64 key we should decode */
-            if (strlen(p) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
+            /* cp points to a base64 key we should decode */
+            if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
                 fprintf(stderr, "key too long\n");
                 exit(1);
             }
 
             if (newkeyp != -1) {
-                if (strchr(p, '\r')) {
+                if (strchr(cp, '\r')) {
                     /* chomp new line */
-                    *(strchr(p, '\r')) = '\0';
+                    *(strchr(cp, '\r')) = '\0';
                 }
-                if (strchr(p, '\n')) {
+                if (strchr(cp, '\n')) {
                     /* chomp new line */
-                    *(strchr(p, '\n')) = '\0';
+                    *(strchr(cp, '\n')) = '\0';
                 }
 
                 if (noop) {
-                    printf("would have set key to '%s'\n", p);
+                    printf("would have set key to '%s'\n", cp);
                 } else {
 		    int osize = 0;
                     int ret;
-                    if (strchr(p, '\r')) {
+                    if (strchr(cp, '\r')) {
                         /* chomp new line */
-                        *strchr(p, '\r') = '\0';
+                        *strchr(cp, '\r') = '\0';
                     }
-                    ret = libpbc_base64_decode(p, (unsigned char *) p, thekey, &osize);
+                    ret = libpbc_base64_decode(cp, (unsigned char *) cp, thekey, &osize);
 		    if (osize != PBC_DES_KEY_BUF) {
                         fprintf(stderr, "keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
                         exit(1);
@@ -505,7 +501,7 @@ int main(int argc, char *argv[])
                         exit(1);
                     }
 
-                    if (libpbc_set_crypt_key(p, (const char *) thekey, hostname) != PBC_OK) {
+                    if (libpbc_set_crypt_key(cp, (const char *) thekey, hostname) != PBC_OK) {
                         fprintf(stderr, "libpbc_set_crypt_key() failed\n");
                         exit(1);
                     }
@@ -515,7 +511,7 @@ int main(int argc, char *argv[])
             done = 1;
             goto jump;
         }
-        p++;
+        cp++;
     }
 
 jump:

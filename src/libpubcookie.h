@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.31 2003-03-05 22:38:47 willey Exp $
+    $Id: libpubcookie.h,v 1.32 2003-03-07 19:19:17 ryanc Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -150,13 +150,9 @@ int capture_cmd_output(pool *p, char **cmd, char *out, int len);
 #  define strcasecmp(a,b) _stricmp(a,b)
 #  define bcopy(s, d, siz)        memcpy((d), (s), (siz))
 #  define bzero(d, siz)   memset((d), '\0', (siz))
-void syslog(int whichlog, const char *message,...);
-void pbc_log_activity(pool *p, int logging_level, const char *message,...); 
-//int snprintf( char *buffer, size_t count, const char *format, ... ); /* Windows version is broken */
-#define snprintf _snprintf
-#define LOG_ERR 0
-#define LOG_DEBUG 1
-
+#  define snprintf _snprintf
+#  define LOG_ERR 0
+#  define LOG_DEBUG 1
 #endif
 
 
