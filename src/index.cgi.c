@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.30 2001-10-29 23:11:46 willey Exp $
+    $Id: index.cgi.c,v 1.31 2001-10-31 01:18:50 willey Exp $
  */
 
 
@@ -1806,9 +1806,11 @@ void print_redirect_page(login_rec *l, login_rec *c)
         print_out("</BODY></HTML>\n");
     }
     else {
-        /*                                                               */
         /* non-post redirect area                 non-post redirect area */
-        /*                                                               */
+
+        /* the refresh header should go into the template as soon as it's*/
+        /* been tested                                                   */
+        print_out("Refresh: %s\n", redirect_final);
         tmpl_print_out(TMPL_FNAME "nonpost_redirect", redirect_final, REFRESH, redirect_final, redirect_final);
     } /* end if post_stuff */
 
