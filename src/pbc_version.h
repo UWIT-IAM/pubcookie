@@ -19,7 +19,7 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.50 2003-03-06 06:12:50 jjminer Exp $
+    $Id: pbc_version.h,v 1.51 2003-04-19 18:59:40 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
@@ -42,6 +42,8 @@
 /*
  * Please note that if you change the version string here, you should change it
  * in configure.ac and re-run autoconf and autoheader.
+ * This is _exactly_ the same as PACKAGE_VERSION in configure.  At some point
+ * configure should probably set this.
  */
 
 #define PBC_VERSION_STRING "3.0.0 pre-beta4"
