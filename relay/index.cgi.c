@@ -180,7 +180,7 @@ main()
 {
   WebTemplate W = newWebTemplate();
   char *req;
-  char *host, *port, *uri;
+  char *host, *port, *uri, *qs;
   char *uport;
   int ishttps;
 
@@ -201,35 +201,32 @@ main()
 
   relay_domain = WebTemplate_get_arg(W, "domain");
   if (!relay_domain) { 
-	  relay_domain = (char*)PBC_ENTRPRS_DOMAIN;
-#ifdef WIN32
-      relay_domain = strdup(relay_domain);  /* Windows needs a copy since the pbc_myconfig buffer will be reused */
-#endif
+      relay_domain = strdup((char*)PBC_ENTRPRS_DOMAIN);
   }
 
-  login_uri = (char*)PBC_RELAY_LOGIN_URI;
-  if (!*login_uri) login_uri = (char*)PBC_LOGIN_URI;
-#ifdef WIN32
-  login_uri = strdup(login_uri);  /* Windows needs a copy since the pbc_myconfig buffer will be reused */
-#endif
+  uri = (char*)PBC_RELAY_LOGIN_URI;
+  if (!*uri) uri = (char*)PBC_LOGIN_URI;
+  login_uri = strdup(uri);  
+
   /* figure out relay uri */
 
   if (getenv("HTTPS")) ishttps = 1;
   else ishttps = 0;
 
   if (!(host=getenv("HTTP_HOST"))) host = "nohost";
-#ifdef WIN32
   if (!(uri=getenv("SCRIPT_NAME"))) uri = "/";
-#else
-  if (!(uri=getenv("REQUEST_URI"))) uri = "/";
-#endif
+  if (!(qs=getenv("QUERY_STRING"))) qs = "";
+
   if ((port=getenv("SERVER_PORT")) && strcmp(port,ishttps?"443":"80")) {
      uport = (char*) malloc(2+strlen(port));
      sprintf(uport,":%s", port);
   } else uport = strdup("");
   
-  relay_uri = (char*) malloc(16+strlen(host)+strlen(uport)+strlen(uri));
-  sprintf(relay_uri, "http%c://%s%s%s", ishttps?'s':'\0', host, uport, uri);
+  relay_uri = (char*) malloc(24 + strlen(host) + strlen(uport) + 
+                        strlen(uri) + strlen(qs));
+  sprintf(relay_uri, "http%c://%s%s%s%s%s",
+           ishttps?'s':'\0', host, uport, uri,
+           *qs?"?":"", qs);
 
   /* A logout request to the login server will have a
      logout action variable */
