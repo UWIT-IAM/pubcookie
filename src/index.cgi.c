@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.134 2004-08-18 00:53:10 willey Exp $
+ * $Id: index.cgi.c,v 1.135 2004-08-19 21:45:24 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2614,6 +2614,9 @@ void print_redirect_page(pool *p, const security_context *context, login_rec *l,
         pbc_free(p, message);
     if( redirect_final != NULL ) 
         pbc_free(p, redirect_final);
+
+    pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "print_redirect_page: G'bye\n");
+
 
 }
 
