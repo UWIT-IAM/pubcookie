@@ -459,30 +459,41 @@ ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
                           <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
 &lt;IfModule mod_pubcookie.c&gt;
 
-# Pubcookie Configuration
-PubCookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.cert
-PubCookieSessionKeyFile /etc/httpd/conf/ssl.key/appserver.key
-PubCookieSessionCertfile /etc/httpd/conf/ssl.crt/appserver.crt
+#
+# Pubcookie configuration section
+#
+
+PubcookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.cert
+PubcookieSessionKeyFile /etc/httpd/conf/ssl.key/appserver.key
+PubcookieSessionCertfile /etc/httpd/conf/ssl.crt/appserver.crt
 PubcookieLogin https://weblogin.example.edu/
-PubCookieDomain .example.edu
-PubCookieKeyDir /usr/local/pubcookie/keys/
-PubCookieAuthTypeNames EGNetID
+PubcookieDomain .example.edu
+PubcookieKeyDir /usr/local/pubcookie/keys/
+PubcookieAuthTypeNames EGNetID
+
+#
+# Disable inactivity timeout by default in DocumentRoot
+#
+
+&lt;Directory "/var/www/html"&gt;
 PubcookieInactiveExpire -1
+&lt;/Directory&gt;
+
 
 &lt;/IfModule&gt;
 &lt;/IfDefine&gt;</pre></TD>
                         </TR>
                       </TABLE>
                       <p>It is recommended that you define each of these directives even
-                        though they are not all required to start Apache. 
+                        though they are not all required in order to start Apache. 
                       <p>Note: The <a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
                         directive defines the strings that mod_pubcookie enables as additional arguments to 
                         the <a href="mod_pubcookie-directives.html#AuthType">AuthType</a> directive.</p>
                       <p>Note: Turning off the inactivity expiration via the <a 
                         href="mod_pubcookie-directives.html#PubcookieInactiveExpire">PubcookieInactiveExpire</a>
-                        directive provides a modest performance boost, since session cookies then don't
+                        directive provides a modest performance boost, since session cookies don't
                         have to be signed so often. Applications that require an inactivity timeout can 
-                        always override this setting.</p>
+                        always override this default setting.</p>
                       <p><b>Warning</b>: if your LoadModule and AddModule directives are 
                         placed within an &lt;IfDefine HAVE_SSL&gt; block directive, 
                         all Pubcookie run-time directives must also be placed 
@@ -497,20 +508,19 @@ PubcookieInactiveExpire -1
                         configuration directives</a> reference for the various 
                         possibilities.</p>
                     <li> 
-                      <p>It is likely that you will want to permit the use of 
-                        Pubcookie via .htaccess files. To do so, you may need 
-                        to adjust your server's <a 
 
+                      <p>Now enable the use of mod_pubcookie's application-specific
+                        configuration directives inside .htaccess files and
+                        &lt;Directory&gt; and &lt;Location&gt; block directives. To
+                        do so, set your server's <a 
 href="http://httpd.apache.org/docs/mod/core.html#allowoverride">AllowOverride</a> 
-                        setting, e.g.:</p>
+                        setting to <tt>AuthConfig</tt>:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
                           <TD> <pre>AllowOverride AuthConfig</pre></TD>
                         </TR>
                       </TABLE></p>
-                      <p>Note: some run-time directives, such as <a href="mod_pubcookie-directives.html#PubcookieAppID">PubcookieAppID</a>, 
-                        require that this be set to "All".</p>
                       
                     <li> 
                       <p>Save the changes to your httpd.conf file.</p>
@@ -596,10 +606,16 @@ PubcookieEndSession redirect</pre></TD>
                           <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
 &lt;IfModule mod_pubcookie.c&gt;
 
-# Pubcookie Configuration
+#
+# Pubcookie configuration section
+#
+
 ...
 
-# Pubcookie Logout Configuration
+#
+# Pubcookie logout configuration
+#
+
 &lt;LocationMatch .*/LOGOUT-REDIRECT.*&gt;
 AuthType EGNetID
 require valid-user
@@ -671,10 +687,11 @@ require valid-user</pre></TD>
                       </TABLE>
                       <p></p>
                       <p>Substitute the appropriate argument for the AuthType 
-                        directive, based on the string you defined with the AuthTypeNames 
-                        directive in your httpd.conf (see above). Note that using 
-                        these directives in a .htaccess file requires the <tt>AllowOverride 
-                        AuthConfig</tt> configuration (also mentioned above).</p>
+                        directive, based on the string you defined with the 
+                        PubcookieAuthTypeNames directive in your httpd.conf (see above). 
+                        Note that using these directives in the .htaccess file context
+                        requires the <tt>AllowOverride AuthConfig</tt> setting (also 
+                        mentioned above).</p>
                     <li> 
                       <p>Start a Web browser and open the address for the test 
                         directory, e.g.:</p>

@@ -42,8 +42,7 @@ within <tt>&lt;IfDefine HAVE_SSL&gt;</tt>, you will need to put any
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
 "Help"><strong>Syntax:</strong></a> AuthType <em>type</em><br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
 and Apache 1.2 and later.</p>
@@ -66,8 +65,7 @@ directive</a></h3>
 "Help"><strong>Syntax:</strong></a> PubcookieInactiveExpire
 <em>expire-time-in-seconds</em><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
 "Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
 Apache 1.2 and later.</p>
@@ -87,8 +85,7 @@ in pbc_config.h. Minimium inactivity timeout is five minutes.</p>
 "Help"><strong>Syntax:</strong></a> PubcookieHardExpire
 <em>expire-time-in-seconds</em><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
 "Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
 Apache 1.2 and later.</p>
@@ -103,11 +100,9 @@ in pbc_config.h. The minimium is one hour; the maximium is twelve hours.</p>
 <h3><a name="PubcookieAppID">PubcookieAppID directive</a></h3>
 
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieAppID
-<em>application-name</em><br>
+"Help"><strong>Syntax:</strong></a> PubcookieAppID <em>application-name</em><br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
 <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
 "Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
 Apache 1.2 and later.</p>
@@ -277,8 +272,7 @@ PBC_CRYPT_KEYFILE in pbc_config.h.</p>
 "Help"><strong>Syntax:</strong></a> PubcookieEndSession redirect | clearLogin |
 on | off<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 1.69
 and later and Apache 1.3 and later.</p>
@@ -309,8 +303,7 @@ directive</a></h3>
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
 "Help"><strong>Syntax:</strong></a> PubcookieSessionCauseReAuth on|off<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
 and Apache 1.2 and later.</p>
@@ -355,8 +348,7 @@ directive to their server configuration.</p>
 "Help"><strong>Syntax:</strong></a> PubcookieAddlRequest
 <i>opt1</i>=<i>val1</i> [<i>opt2</i>=<i>val2</i>...]<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, 
-directory, .htaccess <br>
+"Help"><strong>Context:</strong></a> directory, .htaccess <br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
 3.0 and higher and Apache 1.3 and later.</p>
@@ -376,8 +368,7 @@ granting response and set as environment variables.</p>
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
 "Help"><strong>Syntax:</strong></a> PubcookieSuperDebug on|off<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
 and Apache 1.2 and later.</p>
