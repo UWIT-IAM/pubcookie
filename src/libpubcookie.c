@@ -1,13 +1,15 @@
 /*
-    $Id: libpubcookie.c,v 1.5 1998-07-17 04:29:16 willey Exp $
+    $Id: libpubcookie.c,v 1.6 1998-07-17 16:32:42 willey Exp $
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include <unistd.h>
+#include <netdb.h>
 /* ssleay lib stuff */
 #include <pem.h>
 #include <des.h>
@@ -47,12 +49,17 @@ void *libpbc_abend(const char *format,...)
     exit (EXIT_FAILURE);
 }
 
-/* get some dubgging into to stdout                                           */
+/*                                                                            */
+/* put some debugging info to stdout                                          */
+/*                                                                            */
+/* perhaps if your server has some other logging method you might want to     */
+/* use it her                                                                 */
+/*                                                                            */
 int libpbc_debug(const char *format,...) 
 {
     time_t      now;
     va_list     args;
-    char        format_w_time[1024];
+    char        format_w_time[PBC_BUF_LEN];
 
     va_start(args, format);
     now = time(NULL);
@@ -69,14 +76,10 @@ void libpbc_augment_rand_state(unsigned char *array, int len)
     struct timeval 	tv; 
     struct timezone 	tz;
     unsigned char	buf[1024];
-    pid_t		pid;
 
     gettimeofday(&tv, &tz);
     memcpy(buf, &tv.tv_usec, sizeof(tv.tv_usec));
     RAND_seed(buf, sizeof(tv.tv_usec));
-    pid = getpid();
-    memcpy(buf, &pid, sizeof(pid_t));
-    RAND_seed(buf, sizeof(pid));
 
 }
 
@@ -93,6 +96,30 @@ void libpbc_rand_malloc()
             num = num + (int)buf[i];	
     }
     pbc_malloc(num);
+
+}
+
+/*                                                                            */
+/* any general startup stuff goes here                                        */
+/*                                                                            */
+void libpbc_pubcookie_init()
+{
+    unsigned char	buf[1024];
+    pid_t		pid;
+
+    pid = getpid();
+    memcpy(buf, &pid, sizeof(pid_t));
+    libpbc_augment_rand_state(buf, sizeof(pid));
+
+}
+
+/*                                                                            */
+/* any general shutdown stuff goes here                                       */
+/*                                                                            */
+/*   since i can't find a hook in apache for this there is nothing here, yet  */
+/*                                                                            */
+void libpbc_pubcookie_exit()
+{
 
 }
 
@@ -214,24 +241,51 @@ md_context_plus *libpbc_init_md_context_plus()
 }
 
 /*                                                                            */
+char *mod_crypt_key(char *in)
+{
+    struct hostent      *h;
+    int			i;
+    char		addr_bytes[sizeof(h->h_addr_list[0])];
+    char                hostname[PBC_BUF_LEN];
+
+    gethostname(hostname, sizeof(hostname));
+    if( (h = gethostbyname(hostname)) == NULL ) {
+        libpbc_abend("%s: host unknown.\n", hostname);
+    }
+    
+    memcpy(addr_bytes, h->h_addr_list[0], sizeof(h->h_addr_list[0]));
+    for( i=0; i<PBC_DES_KEY_BUF; i += sizeof(h->h_addr_list[0]) ) {
+	in[i]   = (int)in[i]   ^ (int)addr_bytes[0];
+	in[i+1] = (int)in[i+1] ^ (int)addr_bytes[0+1];
+	in[i+2] = (int)in[i+2] ^ (int)addr_bytes[0+2];
+	in[i+3] = (int)in[i+3] ^ (int)addr_bytes[0+3];
+    }
+    
+    return in;
+
+}
+
+/*                                                                            */
 void libpbc_get_crypt_key(crypt_stuff *c_stuff)
 {
     FILE 		*fp;
 //    int			start = 0;
-    int			len = 64;
     char		*key_in;
     des_cblock		key;
     int			tries = 5;
 
-    key_in = (char *)libpbc_alloc_init(PBC_BUF_LEN);
+    key_in = (char *)libpbc_alloc_init(PBC_DES_KEY_BUF);
 
     if( ! (fp = pbc_fopen(PBC_CRYPT_KEYFILE, "r")) )
 	libpbc_abend("libpbc_crypt_key: Failed open \n");
     
-    if( ! fgets(key_in, len, fp) )
-	libpbc_abend("libpbc_crypt_key: Failed read \n");
+    if( fread(key_in, sizeof(char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF)
+        libpbc_abend("libpbc_crypt_key: Failed read\n");
     
     fclose(fp);
+
+    key_in = mod_crypt_key(key_in);
+
     des_string_to_key(key_in, &key);
     memset(key_in, 0, PBC_BUF_LEN);
 
