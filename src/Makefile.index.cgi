@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.3 2001-04-27 22:02:45 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.4 2001-05-15 01:22:00 willey Exp $
 #
 
 # your compiler here
@@ -28,8 +28,9 @@ CC=gcc
 CFLAGS=-O3 -Wall -I. -I/usr/local/ssl/include/openssl -I/usr/local/ssl/include -I/usr/local/include
 
 # order is important here
-#LDFLAGS=-L/usr/local/ssl/lib/ -L./rsaref -lssl -lcrypto -lkrb5 -lmgoapi -L/opt/nfast/gcc/lib -lnfstub
-LDFLAGS=-L/usr/local/ssl/lib/ -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref -lkrb5 -lmgoapi -L/opt/nfast/gcc/lib -lnfstub
+# a blast from the past:
+#LDFLAGS=-L/usr/local/ssl/lib/ -L./rsaref -lssl -lcrypto -lRSAglue -lrsaref -lkrb5 -lmgoapi -L/opt/nfast/gcc/lib -lnfstub -ldl
+LDFLAGS=-L/usr/local/ssl/lib/ -lssl -lcrypto -lkrb5 -lmgoapi -L/opt/nfast/gcc/lib -lnfstub -ldl
 
 # hopefully you don't have to change anything below here
 ################################################################################
