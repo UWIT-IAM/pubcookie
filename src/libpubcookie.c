@@ -4,7 +4,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.53 2003-05-06 23:51:19 willey Exp $
+    $Id: libpubcookie.c,v 2.54 2003-05-29 22:02:10 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -208,7 +208,7 @@ void *libpbc_abend(pool *p, const char *format,...)
 void libpbc_void(pool *p, void *thing) {
 }
 
-void *malloc_debug(pool *p, size_t x) {
+void *libpbc_malloc_debug(pool *p, size_t x) {
     void *ptr;
     ptr = pbc_malloc (p, x);
     pbc_log_activity(p, PBC_LOG_ERROR, "  pbc_malloc(p, %d)= x%X\n",x,ptr);

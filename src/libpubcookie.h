@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.34 2003-05-06 23:51:19 willey Exp $
+    $Id: libpubcookie.h,v 1.35 2003-05-29 22:02:10 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -88,7 +88,7 @@ int libpbc_set_crypt_key(pool *p, const char *key, const char *peer);
 char *libpbc_time_string(pool *p, time_t);
 void *libpbc_abend(pool *p, const char *,...);
 int libpbc_debug(pool *p, const char *,...);
-void *malloc_debug(pool *p, size_t x);
+void *libpbc_malloc_debug(pool *p, size_t x);
 void free_debug(pool *p, void *ptr);
 void libpbc_augment_rand_state(pool *p, unsigned char *, int);
 char *libpbc_mod_crypt_key(pool *p, char *, unsigned char *);
