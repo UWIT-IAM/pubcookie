@@ -12,7 +12,7 @@ a5 1.63 17Oct2001 rcs references: m1.63
 M  - added JimFox's no blank cookie code
 
 a5 1.62 17Oct2001 rcs references: m1.62
-M  - added support for end_session, which clears the session cookie
+M  - added support for PubcookieEndSession, which clears the session cookie
 
 a5 1.61 11Oct2001 rcs references: m1.61
 M  - changed PubcookieSuperDebug to toggle with On/Off instead of True/False
