@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.44 2001-12-13 23:32:15 willey Exp $
+#   $Id: Makefile,v 1.45 2001-12-14 00:28:36 willey Exp $
 #
 
 # your compiler here
@@ -54,7 +54,6 @@ LOGINSRC=index.cgi.c \
          login_templates/notok_part2 \
 	 make_crypted_blob.c \
 	 pbc_key_generic.c \
-	 pbc_key_local.txt \
 	 pbc_key_local.c
 TESTSRC=dtest.c \
         pbc_create.c \
