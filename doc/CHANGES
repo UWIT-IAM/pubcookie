@@ -17,5 +17,9 @@ a4: release date: 1999Mar4 willey
  - made default login server weblogin.washington.edu
  - some code clean-up and renaming
 
+a4m1.22:
+  - fixed ordering of version numbers in logged error message for minor version
+  mismatch.
+
 
 
