@@ -6,7 +6,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.132 2004-08-11 00:41:00 willey Exp $
+ * $Id: index.cgi.c,v 1.133 2004-08-18 00:46:26 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1710,6 +1710,7 @@ int pinit(pool *p, const security_context *context, login_rec *l, login_rec *c)
 	l->host = strdup((char *)login_host(p));
 	l->appsrvid = strdup(l->host);
 	l->appid = strdup("pinit");
+	l->version = strdup(PBC_VERSION);
 	l->uri = strdup(cgiScriptName);
 	pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE,
 			     "pinit: ready to print login page");
@@ -1985,8 +1986,6 @@ done:
 char *check_l_cookie(pool *p, const security_context *context, login_rec *l, login_rec *c)
 {
     time_t	t;
-    char	*g_version;
-    char	*l_version;
 
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, "check_l_cookie: hello\n");
 
@@ -2029,15 +2028,10 @@ char *check_l_cookie(pool *p, const security_context *context, login_rec *l, log
     pbc_log_activity(p, PBC_LOG_DEBUG_VERBOSE, 
 		     "check_l_cookie: done dorking with creds\n");
 
-    l_version = c->version; g_version = l->version;
-    if (*l_version != *g_version ) {
+    if ( !c->version || !l->version || strcmp(l->version, c->version) ) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
-			 "wrong major version: from L cookie %s, from g_req %s for host %s", l_version, g_version, l->host);
-        return("wrong major version");
-    }
-    if (*(l_version+1) != *(g_version+1) ) {
-        pbc_log_activity(p, PBC_LOG_DEBUG_LOW,
-			 "%s warn: wrong minor version: from l cookie %s, from g_req %s for host %s", l->first_kiss, l_version, g_version, l->host);
+		"wrong protocol version: from L cookie %s, from g_req %s for host %s", c->version, l->version, l->host);
+        return("wrong protocol version");
     }
 
     pbc_log_activity(p, PBC_LOG_DEBUG_LOW, 

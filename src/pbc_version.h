@@ -4,13 +4,17 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.61 2004-07-29 23:40:21 dors Exp $
+    $Id: pbc_version.h,v 1.62 2004-08-18 00:46:27 willey Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
 #define PUBCOOKIE_VERSION
 
-/* The cookie version - Needs to stick around a while */
+/* The cookie version - Needs to stick around a while
+   we can call this the protocol version.  it's what goes into the 
+   current cookie or post messages.  might use the PBC_VERSION_MAJOR
+   someday but this works for now.
+ */
 #define PBC_VERSION "a5"
 
 /*
