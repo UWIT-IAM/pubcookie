@@ -28,12 +28,15 @@ verifier *get_verifier(const char *name)
 	v++;
     }
 
-    return (*v);
+    if ((*v)->v) return (*v);
+    else return NULL;
 }
 
 #ifdef TEST_VERIFY
 
 #include <ctype.h>
+
+int debug = 1; /* in case one of the verifiers wants it */
 
 int main(int argc, char *argv[])
 {
