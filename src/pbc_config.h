@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.57 2002-06-26 20:59:23 willey Exp $
+    $Id: pbc_config.h,v 1.58 2002-06-28 20:02:09 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -274,11 +274,11 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #if defined (APACHE1_3)
 #define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) \
 		libpbc_gen_granting_req_p(p, a,b,c,d,e,f,g,h,i,j,k,l)
-#define libpbc_get_cookie(a,b,c,d,e,f,g,h) \
-		libpbc_get_cookie_p(p, a,b,c,d,e,f,g,h)
-#define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h,i) \
-		libpbc_get_cookie_with_expire_p(p, a,b,c,d,e,f,g,h,i)
-#define libpbc_unbundle_cookie(a,b,c)      libpbc_unbundle_cookie_p(p, a,b,c)
+#define libpbc_get_cookie(a,b,c,d,e,f,g) \
+		libpbc_get_cookie_p(p, a,b,c,d,e,f,g)
+#define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h) \
+		libpbc_get_cookie_with_expire_p(p, a,b,c,d,e,f,g,h)
+#define libpbc_unbundle_cookie(a,b)        libpbc_unbundle_cookie_p(p, a,b)
 #define libpbc_update_lastts(a,b,c)        libpbc_update_lastts_p(p, a,b,c)
 #define libpbc_sign_init(a) 		   libpbc_sign_init_p(p, a)
 #define libpbc_verify_init(a) 	   	   libpbc_verify_init_p(p, a)
@@ -293,7 +293,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_init_md_context_plus() 	   libpbc_init_md_context_plus_p(p)
 #define libpbc_get_crypt_key(a,b) 	   libpbc_get_crypt_key_p(p, a,b)
 #define libpbc_sign_cookie(a,b) 	   libpbc_sign_cookie_p(p, a,b)
-#define libpbc_sign_bundle_cookie(a,b,c)   libpbc_sign_bundle_cookie_p(p, a,b,c)
+#define libpbc_sign_bundle_cookie(a,b)   libpbc_sign_bundle_cookie_p(p, a,b)
 #define libpbc_stringify_cookie_data(a)    libpbc_stringify_cookie_data_p(p, a)
 #define libpbc_free_md_context_plus(a)     libpbc_free_md_context_plus_p(p, a)
 #define libpbc_free_crypt(a)               libpbc_free_crypt_p(p, a)
@@ -304,11 +304,11 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 #define libpbc_gen_granting_req(a,b,c,d,e,f,g,h,i,j,k) \
 		libpbc_gen_granting_req_np(a,b,c,d,e,f,g,h,i,j,k)
-#define libpbc_get_cookie(a,b,c,d,e,f,g,h) \
-		libpbc_get_cookie_np(a,b,c,d,e,f,g,h)
-#define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h,i) \
-		libpbc_get_cookie_with_expire_np(a,b,c,d,e,f,g,h,i)
-#define libpbc_unbundle_cookie(a,b,c)    libpbc_unbundle_cookie_np(a,b,c)
+#define libpbc_get_cookie(a,b,c,d,e,f,g) \
+		libpbc_get_cookie_np(a,b,c,d,e,f,g)
+#define libpbc_get_cookie_with_expire(a,b,c,d,e,f,g,h) \
+		libpbc_get_cookie_with_expire_np(a,b,c,d,e,f,g,h)
+#define libpbc_unbundle_cookie(a,b)    libpbc_unbundle_cookie_np(a,b)
 #define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_np(a,b,c)
 #define libpbc_sign_init(a) 		 libpbc_sign_init_np(a)
 #define libpbc_verify_init(a) 	   	 libpbc_verify_init_np(a)
@@ -323,7 +323,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define libpbc_init_md_context_plus 	 libpbc_init_md_context_plus_np
 #define libpbc_get_crypt_key(a,b) 	 libpbc_get_crypt_key_np(a,b)
 #define libpbc_sign_cookie(a,b) 	 libpbc_sign_cookie_np(a,b)
-#define libpbc_sign_bundle_cookie(a,b,c) libpbc_sign_bundle_cookie_np(a,b,c)
+#define libpbc_sign_bundle_cookie(a,b) libpbc_sign_bundle_cookie_np(a,b)
 #define libpbc_stringify_cookie_data(a)  libpbc_stringify_cookie_data_np(a)
 #define libpbc_free_md_context_plus(a)   libpbc_free_md_context_plus_np(a)
 #define libpbc_free_crypt(a)             libpbc_free_crypt_np(a)
