@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.35 2001-08-22 23:07:00 willey Exp $
+    $Id: pbc_config.h,v 1.36 2001-09-10 21:10:02 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -44,6 +44,7 @@
 #define PBC_LOGIN_URI ""
 #define PBC_LOGIN_PAGE "https://" PBC_LOGIN_HOST "/" PBC_LOGIN_URI
 #define PBC_LOGIN_TEST_HOST "weblogintest.cac.washington.edu"
+#define PBC_LOGIN_PROD_TEST_HOST "webloginprodtest.cac.washington.edu"
 #define PBC_LOGIN_TEST_PAGE "https://" PBC_LOGIN_TEST_HOST "/" PBC_LOGIN_URI
 #define PBC_ENTRPRS_DOMAIN ".washington.edu"
 
@@ -115,7 +116,7 @@
 
 /* why is this user being sent back, well the redirect reason will tell ya */
 static const char *redirect_reason[] = {
-                "Force Reauth",			/* 0 */
+                "NONE",        			/* 0 */
 		"No G or S cookie",		/* 1 */
 		"Can't unbundle S cookie",	/* 2 */
 		"S cookie hard expired",	/* 3 */
@@ -142,6 +143,8 @@ static const char *redirect_reason[] = {
 #define PBC_RR_WRONGVER_CODE        10
 #define PBC_RR_WRONGCREDS_CODE      11
 
+#define PBC_SESSION_REAUTH 1
+#define PBC_SUPER_DEBUG 1
 #define PBC_CLEAR_COOKIE "clear"
 
 /* this is the content of the redirect page's body if there is a POST */
@@ -192,6 +195,8 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_FLAG "flag"        /* not currently used            */
 #define PBC_GETVAR_REFERER "referer"  /* to knit together the referer  */
 #define PBC_GETVAR_POST_STUFF "post_stuff"  /* post args               */
+/* new in Aug 2001 */
+#define PBC_GETVAR_SESSION_REAUTH "sess_re" /* session delta force reauth */
 
 /* 
  things that are used both places (module and the library)
