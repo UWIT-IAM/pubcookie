@@ -11,7 +11,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.6 2004-06-17 21:07:45 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.7 2004-06-18 01:53:27 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -664,8 +664,9 @@ static void print_login_page(pool *p, login_rec *l, login_rec *c, int reason)
    if authentication has succeeded, no output is generated and it returns
    LOGIN_OK.
  */
-static login_result process_uwsecurid(pool *p, login_rec *l, login_rec *c,
-				  const char **errstr)
+static login_result process_uwsecurid(pool *p, const security_context *context,
+				login_rec *l, login_rec *c,
+				const char **errstr)
 {
     int result1, result2;
 
