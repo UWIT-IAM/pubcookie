@@ -1,5 +1,5 @@
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 beta 2b"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.0 beta3"
 
 
 typedef struct {
