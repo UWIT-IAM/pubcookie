@@ -27,9 +27,11 @@
 
 #include "flavor.h"
 #include "verify.h"
+#include "security.h"
 
 #include "pbc_config.h"
 #include "pbc_logging.h"
+#include "libpubcookie.h"
 
 static verifier *v = NULL;
 extern int debug;
@@ -98,7 +100,8 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
     tmpl_print_html(TMPL_FNAME "login_part1", 
 		    "", "this reason not implemented", 
 		    PBC_LOGIN_URI,
-		    message_out);
+		    message_out,
+                    l->user ? l->user : "");
 
     /* keep all of the state around we need */
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n", 
