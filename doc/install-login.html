@@ -69,8 +69,8 @@ and customization is covered below.</p>
 
 <p>Application server administrators should refer to the 
 <a href="install-mod_pubcookie.html">Pubcookie Apache module guide</a>
-or <a href="">ISAPI filter guide</a> for instructions on deploying 
-a Pubcookie application server which authenticates using your
+or <a href="install-filter.html">ISAPI filter guide</a> for instructions on 
+deploying a Pubcookie application server which authenticates using your
 local login server.</p>
 
 <h4><a name="components">Components</a></h4>
@@ -254,7 +254,7 @@ for signing and verifying "login" cookies.</p>
 <p>Note: the login cgi and keyserver cannot read encrypted RSA private
 keys because they can't prompt for the passphrase. To reuse an 
 encrypted SSL key, you'll first have to remove the passphrase. Refer to <a
-href="appendixc">Appendix C: OpenSSL Commands</a> for help.</p>
+href="#openssl">Appendix C: OpenSSL Commands</a> for help.</p>
 
 <p>The <tt>ssl_key_file</tt> and <tt>ssl_cert_file</tt> config file 
 variables will point to these keys.</p>
@@ -265,7 +265,7 @@ the authentication assertions generated and signed by the login cgi
 and verified by application servers. Here the certificate issuer 
 isn't important, but the SSL public key certificate must be 
 distributed to other servers. Therefore, a separate "granting" key
-pair is often used. Refer to <a href="appendixc">Appendix C: OpenSSL
+pair is often used. Refer to <a href="#openssl">Appendix C: OpenSSL
 Commands</a> if you need help generating this key pair.</p>
 
 <p>The <tt>granting_cert_file</tt> and <tt>granting_key_file</tt> 
@@ -333,7 +333,7 @@ located in <tt>server.key</tt> and <tt>server.crt</tt>.</p>
 
 <li>
 <p>The example login server has a separate "granting" key pair.  Refer to
-<a href="appendixc">Appendix C: OpenSSL Commands</a> if you need help
+<a href="#openssl">Appendix C: OpenSSL Commands</a> if you need help
 generating this key pair.</p>
 
 <li>
@@ -493,11 +493,12 @@ try it now.</i> The login page you see comes from
 <tt>PREFIX/login_templates/login_pinit</tt>.</p>
 
 <p>If authentication succeeds, congratulations, you now can deploy an
-application server using the <a href="">Pubcookie Apache module</a> or <a
-href="">Pubcookie ISAPI Filter</a> to test the components together. Then
-you can go on to build and configure another verifier that goes against 
-your authentication service and customize the <a href="#templates">login
-cgi templates</a> for your site.</p>
+application server using the <a
+href="install-mod_pubcookie.html">Pubcookie Apache module</a> or <a
+href="install-filter.html">Pubcookie ISAPI Filter</a> to test the
+components together. Then you can go on to build and configure another
+verifier that goes against your authentication service and customize the
+<a href="#templates">login cgi templates</a> for your site.</p>
 
 <p>If authentication fails, don't panic, look in your syslog for error
 messages from the login cgi and refer to the <a href="#debug">Logging &
@@ -646,7 +647,8 @@ customized user-agent string such as:</p>
 <pre>User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; ExampleKiosk; Windows NT 5.0)</pre>
 
 <p>How to customize user-agent strings is beyond the scope of this guide,
-but resources and tools, such as the <a href="http://www.microsoft.com/windows/ieak/default.asp">Internet 
+but resources and tools, such as the <a
+href="http://www.microsoft.com/windows/ieak/default.mspx">Internet
 Explorer Administration Kit</a>, do exist to help with this task.</p>
 
 <h4><a name="policy">Site Policy Configuration</a></h4>
@@ -903,7 +905,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.25 2004-05-16 03:19:28 dors Exp $
+$Id: install-login.html,v 1.26 2004-07-23 14:01:13 dors Exp $
 </pre>
 </body>
 
