@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.60 $
+ * $Revision: 1.61 $
  */
 
 
@@ -1543,7 +1543,7 @@ char ride_free_zone(login_rec *l, login_rec *c)
     }
 
     if (init_crypt(NULL) == PBC_FAIL) {
-        log_message("ride_free_zone: can't initialize crypt key")
+        log_message("ride_free_zone: can't initialize crypt key");
         return(PBC_CREDS_NONE);
     }
 
@@ -2007,14 +2007,15 @@ void print_redirect_page(login_rec *l, login_rec *c)
     serial = get_next_serial();
 
     if (init_crypt(NULL) == PBC_FAIL) {
-        log_message(
+
         sprintf( message, "%s%s%s%s%s%s",
-		PBC_EM1_START,
-		TROUBLE_CREATING_COOKIE,
-		PBC_EM1_END,
-      		PBC_EM2_START,
-		PROBLEMS_PERSIST,
-         	PBC_EM2_END);
+                 PBC_EM1_START,
+                 TROUBLE_CREATING_COOKIE,
+                 PBC_EM1_END,
+                 PBC_EM2_START,
+                 PROBLEMS_PERSIST,
+                 PBC_EM2_END);
+        log_message( message );
 	/* xxx it's kinda hard to jump to print_login_page, because
 	   what flavor should we be printing here? */
 #if 0
@@ -2049,7 +2050,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
         PBC_4K);
 
     if (init_crypt(l->host) == PBC_FAIL) {
-        log_message("print_redirect_page: can't initialize crypt key for %s"
+        log_message("print_redirect_page: can't initialize crypt key for %s",
                     l->host);
     }
     g_res = create_cookie(url_encode(l->user),
