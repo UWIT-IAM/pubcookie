@@ -6,7 +6,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.27 2004-04-07 04:59:38 jteaton Exp $
+ * $Id: flavor_getcred.c,v 1.28 2004-04-07 15:27:17 jteaton Exp $
  */
 
 
@@ -257,6 +257,7 @@ static login_result process_getcred(pool *p, const security_context *context,
     } else {
 	/* these better be available in cookie form */
 	char cookie[4096];
+        char cookiestr[4096];
 	char *plain;
 	int plainlen;
 
@@ -338,7 +339,6 @@ static login_result process_getcred(pool *p, const security_context *context,
        some number of browsers limit cookies to 4000 bytes instead of 
        4096 bytes, so we err on the safe side.  yay standards. */
 
-    char cookiestr[4096];
     for (i = 0, j = 0;
          i < strlen(out64) && j < PBC_TRANSCRED_MAX_COOKIES;
          i += PBC_TRANSCRED_MAX_COOKIE_LENGTH, j++) {
