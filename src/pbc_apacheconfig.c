@@ -21,7 +21,7 @@
  */
 
 /*
-    $Id: pbc_apacheconfig.c,v 2.1 2003-04-14 13:30:51 jteaton Exp $
+    $Id: pbc_apacheconfig.c,v 2.2 2003-04-15 17:26:09 jjminer Exp $
  */
 
 
@@ -74,6 +74,10 @@ typedef void pool;
 # include <unistd.h>
 #endif
 
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif /* HAVE_ERRNO_H */
+
 #include "pbc_config.h"
 #include "pbc_myconfig.h"
 #include "snprintf.h"
@@ -86,8 +90,6 @@ typedef void pool;
 #  include <dmalloc.h>
 # endif /* ! APACHE */
 #endif /* HAVE_DMALLOC_H */
-
-extern int errno;
 
 pubcookie_server_rec * globalsr;
 

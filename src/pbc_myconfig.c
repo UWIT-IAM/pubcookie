@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: pbc_myconfig.c,v 1.25 2003-04-14 23:54:51 ryanc Exp $
+    $Id: pbc_myconfig.c,v 1.26 2003-04-15 17:26:09 jjminer Exp $
  */
 
 
@@ -72,6 +72,10 @@ typedef void pool;
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif /* HAVE_ERRNO_H */
 
 #include "pbc_config.h"
 #include "pbc_myconfig.h"

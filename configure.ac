@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.29 $)
+AC_REVISION($Revision: 1.30 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -152,7 +152,8 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h shadow.h stdlib.h \
                   string.h strings.h sys/param.h sys/socket.h sys/time.h \
                   unistd.h getopt.h ctype.h stdarg.h stdio.h varargs.h\
                   sys/utsname.h time.h pwd.h sys/types.h assert.h sys/stat.h \
-                  sysexits.h mgoapi.h securid.h sys/resource.h fnmatch.h])
+                  sysexits.h mgoapi.h securid.h sys/resource.h fnmatch.h \
+                  errno.h ])
 
 AC_CHECK_HEADER([syslog.h], 
     AC_DEFINE(HAVE_SYSLOG_H, 1,
