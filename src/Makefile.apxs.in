@@ -1,6 +1,6 @@
 # -*- make -*-
 #
-#  $Id: Makefile.apxs.in,v 2.1 2002-07-09 01:17:02 jjminer Exp $
+#  $Id: Makefile.apxs.in,v 2.2 2002-07-09 16:42:28 jjminer Exp $
 
 include Makefile.settings
 
@@ -43,7 +43,7 @@ DOCS=$(GENERAL_DOCS) \
 	 ../doc/CHANGES.mod_pubcookie.txt
 
 mod_pubcookie.so: $(MOD_SRC) $(LIB_SRC) $(LIB_HEAD) ${MAKEFILES}
-	$(APXS) -c $(CPPFLAGS) $(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
+	$(APXS) -c $(CPPFLAGS) $(DEFINES) $(LDFLAGS) $(MOD_SRC) $(LIB_SRC)
 
 install:: all
 	$(APXS) -i -a -n pubcookie mod_pubcookie.so
