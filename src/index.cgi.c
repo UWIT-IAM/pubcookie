@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.19 2001-04-16 19:34:00 willey Exp $
+    $Id: index.cgi.c,v 1.20 2001-04-24 01:22:20 willey Exp $
  */
 
 
@@ -1319,7 +1319,7 @@ void print_redirect_page(login_rec *l)
                           url_encode(l->appsrvid),
                           url_encode(l->appid),
                           PBC_COOKIE_TYPE_G,
-                          l->creds,
+                          l->creds_from_greq,
                           serial,
                           g_cookie,
                           PBC_4K);
@@ -1525,7 +1525,7 @@ login_rec *get_query()
     /* cgiParseFormInput will extract the arguments from the granting         */
     /* cookie string and make them available to subsequent cgic calls         */
 
-    /* if there is a user field there it is a submit from a login */
+    /* if there is no user field then this must not be a submit from a login */
     if( !l->user ) {
         if( !(g_req = get_granting_request()) ) {
             log_message("No granting request cookie.  remote addr %s", getenv("REMOTE_ADDR"));
@@ -1543,6 +1543,10 @@ login_rec *get_query()
             return(NULL);
         }
         l = load_login_rec(l);
+
+        /* capture the cred that the app asked for */
+        l->creds_from_greq  = l->creds;
+
         free( g_req );
         free( g_req_clear );
     }
