@@ -7,6 +7,9 @@ L - library changes
 H - only .h files changed
 O - other (Makefile, Makefile.apxs, etc.)
 
+a5 1.77.2.3 20Jun2002 rcs references: module 1.77.2.3
+M  - made PubcookieAuthTypeNames be required.
+
 a5 1.77.2.2 6Jun2002 rcs references: module 1.77.2.2
 M  - added expire times to granting requests and pre-session cookies
 M  - Started removal of Apache1.2 code
