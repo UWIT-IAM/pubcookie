@@ -4,7 +4,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.9 2004-07-15 23:00:05 willey Exp $
+    $Id: mod_pubcookie.h,v 2.10 2004-07-15 23:05:55 willey Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -45,6 +45,7 @@
 #include "libpubcookie.h"
 #include "pbc_config.h"
 #include "pbc_version.h"
+#include "security.h"
 
 /* system stuff */
 #ifdef HAVE_TIME_H
