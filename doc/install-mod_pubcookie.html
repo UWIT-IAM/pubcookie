@@ -811,7 +811,8 @@ PubcookieEndSession clearLogin
 
 <p>Pubcookie 3.1.0 adds the ability to authenticate across DNS domains
 using a separate, standalone <i>relay cgi</i> that you install on your
-application server.</p>
+application server. Note: This feature requires a version 3.1.0 or later
+Pubcookie login server.</p>
 
 <p>The relay cgi uses HTTP <tt>POST</tt> to transfer the 
 Pubcookie authentication request and assertion to and from the remote
@@ -821,12 +822,13 @@ of the remote login server. Here are the steps:</p>
 
 <ol>
 
-<li><p>Build and install the module as you would normally, 
-stopping short of the usual configuration stage. The relay cgi
-relies on the module having already been built.</p></li>
+<li><p>The relay cgi relies on the module having already been built
+so build and install the module as you would normally, but stop short 
+of the usual configuration stage.</p></li>
 
 <li><p>Change to the <tt>relay</tt> subdirectory and build 
-and install the <tt>webtpl</tt> library in its subdirectory:</p></li>
+and install the <a href="http://staff.washington.edu/fox/webtpl/"><tt>WebTemplate</tt></a>
+C library in its subdirectory:</p></li>
 
 <p> 
 <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
