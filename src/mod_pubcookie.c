@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.32 1999-08-04 23:48:29 willey Exp $
+    $Id: mod_pubcookie.c,v 1.33 1999-08-06 18:38:56 willey Exp $
  */
 
 /* apache includes */
@@ -802,9 +802,12 @@ static int pubcookie_user(request_rec *r) {
         cfg->failed = PBC_BAD_AUTH;
         return OK;
       }
+      /* we tell everyone what authentication check we did */
 #ifdef APACHE1_2
+      r->connection->auth_type = pstrdup(r->pool, auth_type(r));
       r->connection->user = pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 #else
+      r->connection->ap_auth_type = ap_pstrdup(r->pool, ap_auth_type(r));
       r->connection->user = ap_pstrdup(r->pool, (char *) (*cookie_data).broken.user);
 #endif
 
