@@ -8,8 +8,11 @@ basic_verifier: alwaystrue
 ssl_key_file: /etc/httpd/conf/ssl.key/server.key
 ssl_cert_file: /etc/httpd/conf/ssl.crt/server.crt
 
-# other site-specific config
+# granting keypair 
+granting_key_file: /usr/local/pubcookie/keys/pubcookie_granting.key
 granting_cert_file: /usr/local/pubcookie/keys/pubcookie_granting.cert 
+
+# login server config
 login_uri: https://login.example.edu/
 login_host: login.example.edu
 enterprise_domain: .example.edu
@@ -17,7 +20,7 @@ logout_prog: /logout/index.cgi
 
 # keyserver config
 keymgt_uri: https://login.example.edu:2222
-keyserver_client_list: login.example.edu admin.workstation.example.edu
+keyserver_client_list: login.example.edu trusted.example.edu
 ssl_ca_file: /etc/httpd/conf/ssl.crt/ca-bundle.crt
 
 # site-specific policies
