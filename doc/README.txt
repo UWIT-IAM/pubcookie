@@ -44,6 +44,7 @@ The pubcookie login server distribution contains the following files:
 	README.txt - this file
        	LICENSE.txt - you hav the right ...
 	base64.c
+        dtest.c
 	index.cgi.c
 	index.cgi.h
 	index.cgi_krb.c
@@ -52,13 +53,14 @@ The pubcookie login server distribution contains the following files:
 	libpubcookie.h
 	securid.c
 	securid.h
+	pbc_config.h
 	pbc_key_generic.c
 	pbc_key_local.c
 	pbc_key_local.txt
-	pbc_config.h
+	pbc_myconfig.h
+	pbc_myconfig.c
 	pbc_version.h
 	pubcookie.h
-        dtest.c
         what_is_my_ip.c
         pbc_create.c
         pbc_verify.c
@@ -73,5 +75,5 @@ The pubcookie login server distribution contains the following files:
 	contrib/*   
 
 
-$Id: README.txt,v 1.13 2002-01-11 23:44:10 willey Exp $
+$Id: README.txt,v 1.14 2002-03-06 23:54:02 willey Exp $
 
