@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_basic.c,v 1.35 2003-05-06 22:54:00 willey Exp $
+    $Id: flavor_basic.c,v 1.36 2003-05-06 22:56:51 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -535,7 +535,7 @@ static login_result process_basic(pool *p, login_rec *l, login_rec *c,
                          "process_basic: login in progress, goodbye\n" );
         return LOGIN_INPROGRESS;
 
-        /* If the pinit flag is set, show is pinit login page */
+        /* If the pinit flag is set, show a pinit login page */
     } else if (l->pinit == PBC_TRUE) {
         pbc_log_activity(p, PBC_LOG_ERROR, "flavor_basic: pinit");
 
