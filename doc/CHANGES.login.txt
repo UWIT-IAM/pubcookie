@@ -4,10 +4,10 @@ This is where changes to the pubcookie login software is recorded
 (changes prior to 1.20 are straight out of the rcs logs, including crappy
 cryptic messages)
 
-a5 1.32 8Nov2001
+a5 1.33 8Nov2001
 - fixed form focus to now work with the new wacky prefilled fields
 - turned off ride-free zone for uwnetid
-- added Redirect header for non-post redirect.  now redirect will be set in
+- added Location header for non-post redirect.  now redirect will be set in
   in both the header and the body
 
 a5 1.30 29Oct2001
