@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.8 1998-07-28 09:14:03 willey Exp $
+    $Id: mod_pubcookie.c,v 1.9 1998-07-31 21:08:13 willey Exp $
  */
 
 #include "httpd.h"
@@ -77,7 +77,7 @@ static int auth_failed(request_rec *r) {
   ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s?appsrvid=%s&appid=%s&creds=%c&version=%s&method=%s&host=%s&uri=%s", PBC_REFRESH_TIME, PBC_LOGIN_PAGE, appsrvid_e, appid_e, creds, version_e, r->method, r->server->server_hostname, uri_e);
   table_add(r->headers_out, "Refresh", refresh);
   send_http_header(r);
-  rprintf(r, "<html></html>\n");
+  rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
   return OK;
 }
 
@@ -155,7 +155,11 @@ char *get_cookie(request_rec *r, char *name) {
   if(!(cookie_header = strstr(cookie_header, name)))
     return NULL;
 
-  cookie_header += strlen(name) + 1;
+  cookie_header += strlen(name);
+
+  /* we can't assume empty cookies are 'NAME=' b/c of ie4.x */
+  if ( cookie_header[0] == '=' )
+      ++cookie_header;
 
   cookie = pstrdup(r->pool, cookie_header);
 
@@ -184,6 +188,7 @@ static void *pubcookie_server_create(pool *p, server_rec *s) {
   cfg = (pubcookie_server_rec *) pcalloc(p, sizeof(pubcookie_server_rec));
 
   cfg->appsrv_id = libpbc_alloc_init(PBC_APPSRV_ID_LEN);
+//  strcpy(cfg->appsrv_id, s->server_hostname);
   strcpy(cfg->appsrv_id, get_local_host(p));
 
   cfg->c_stuff = libpbc_init_crypt(cfg->crypt_keyfile ? cfg->crypt_keyfile : PBC_CRYPT_KEYFILE);
@@ -254,31 +259,53 @@ static int pubcookie_user(request_rec *r) {
   scfg = (pubcookie_server_rec *) get_module_config(r->server->module_config,
 	                                    &pubcookie_module);
 
-  if(!(cookie = get_cookie(r, PBC_S_COOKIENAME))) {
-    if(!(cookie = get_cookie(r, PBC_G_COOKIENAME))) {
+  if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 ) {
+
+    if( !(cookie = get_cookie(r, PBC_S_COOKIENAME)) || strcmp(cookie,"") == 0 ){
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
     else {
-      cfg->has_granting = 1;
-
-      if( ! (cookie_data = libpbc_unbundle_cookie(cookie, scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
+      if( ! (cookie_data = libpbc_unbundle_cookie(cookie, scfg->session_verf_ctx_plus, scfg->c_stuff)) ) {
         cfg->failed = PBC_BAD_AUTH;
         return OK;
       }
 
-      if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE, PBC_GRANTING_EXPIRE) ) {
-        libpbc_debug("granting cookie expired for user: %s\n", (*cookie_data).broken.user);
+      if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, 
+	      cfg->hard_exp, PBC_DEFAULT_HARD_EXPIRE) ) {
+        libpbc_debug("session cookie hard expired for user: %s cookie timestamp %d timeout: %d now: %d\n", (*cookie_data).broken.user, (*cookie_data).broken.create_ts, PBC_DEFAULT_HARD_EXPIRE);
         cfg->failed = PBC_BAD_AUTH;
         return OK;
       }
-    }
+
+      if( cfg->inact_exp != -1 && 
+	      ! pubcookie_check_exp((*cookie_data).broken.last_ts, 
+              cfg->inact_exp, PBC_DEFAULT_INACT_EXPIRE) ) {
+        libpbc_debug("session cookie inact expired for user: %s cookie timestamp %d timeout: %d now: %d\n", (*cookie_data).broken.user, (*cookie_data).broken.create_ts, PBC_DEFAULT_INACT_EXPIRE);
+        cfg->failed = PBC_BAD_AUTH;
+        return OK;
+      }
+
+    } /* end if session cookie */
+
   }
-  else {  /* we already have a session cookie */
-    if( ! (cookie_data = libpbc_unbundle_cookie(cookie, scfg->session_verf_ctx_plus, scfg->c_stuff)) ) {
+  else { 
+
+    cfg->has_granting = 1;
+
+    if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
+	      scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
+
+    if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, 
+	      PBC_GRANTING_EXPIRE, PBC_GRANTING_EXPIRE) ) {
+      libpbc_debug("granting cookie expired for user: %s\n", (*cookie_data).broken.user);
+      cfg->failed = PBC_BAD_AUTH;
+      return OK;
+    }
+
   }
 
   r->connection->user = pstrdup(r->pool, (*cookie_data).broken.user);
@@ -314,14 +341,7 @@ static int pubcookie_user(request_rec *r) {
     }
   }
 
-  if( pubcookie_check_exp((*cookie_data).broken.create_ts, cfg->hard_exp, PBC_DEFAULT_HARD_EXPIRE) &&
-      ( cfg->inact_exp == -1 || pubcookie_check_exp((*cookie_data).broken.last_ts, cfg->inact_exp, PBC_DEFAULT_INACT_EXPIRE) ) ) {
-    return OK;
-  }
-  else {
-    cfg->failed = PBC_BAD_AUTH;
-    return OK;
-  }
+  return OK;
 
 }
 
