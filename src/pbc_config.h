@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.36 2001-09-10 21:10:02 willey Exp $
+    $Id: pbc_config.h,v 1.37 2001-09-28 17:29:03 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -81,8 +81,9 @@
 #define PBC_G_KEYFILE "/usr/local/pubcookie/pubcookie_granting.key"
 #endif
 
-#define PBC_UWNETID_AUTHTYPE "uwnetid"
-#define PBC_SECURID_AUTHTYPE "securid"
+#define PBC_CRED1_AUTHTYPE "uwnetid"
+#define PBC_CRED2_AUTHTYPE "-"
+#define PBC_CRED3_AUTHTYPE "securid"
 #define PBC_REFRESH_TIME 0
 #define PBC_MIN_INACT_EXPIRE 	      ( 5 * 60 )
 #define PBC_DEFAULT_INACT_EXPIRE     ( 30 * 60 )
@@ -173,7 +174,7 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 
 #define PBC_HTML_COPYRIGHT "<P><address>&#169; 1999 University of Washington</address><P>\n" 
 #define PBC_POST_NO_JS_BUTTON "Click here to continue"
-#define PBC_UWNETID_LOGO "images/login.gif"
+#define PBC_WEBISO_LOGO "images/login.gif"
 
 /* 
  for the GET line to the login server
@@ -197,15 +198,16 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_GETVAR_POST_STUFF "post_stuff"  /* post args               */
 /* new in Aug 2001 */
 #define PBC_GETVAR_SESSION_REAUTH "sess_re" /* session delta force reauth */
+#define PBC_GETVAR_REPLY "reply"            /* tags a reply from the form */
 
 /* 
  things that are used both places (module and the library)
  */
 #define PBC_SIG_LEN 128
 #define PBC_CREDS_NONE    '0'
-#define PBC_CREDS_UWNETID '1'
-#define PBC_CREDS_SECURID '2'
-#define PBC_CREDS_UWNETID_SECURID '3'
+#define PBC_CREDS_CRED1 '1'
+#define PBC_CREDS_CRED2 '2'
+#define PBC_CREDS_CRED3 '3'
 
 #define PBC_COOKIE_TYPE_NONE  '0'
 #define PBC_COOKIE_TYPE_G     '1'
