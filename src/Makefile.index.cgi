@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile.index.cgi,v 1.1 2000-01-12 04:27:24 willey Exp $
+#   $Id: Makefile.index.cgi,v 1.2 2000-03-03 01:52:24 willey Exp $
 #
 
 # your compiler here
@@ -60,6 +60,9 @@ all:	index.cgi
 index.cgi:	index.cgi.o  securid_ping.o securid_securid.o securid_server.o libpubcookie.o base64.o
 		$(CC) ${CFLAGS} -o $@ index.cgi.o libpubcookie.o base64.o securid_ping.o securid_securid.o securid_server.o /usr/local/lib/libcgic.a $(LDFLAGS)
 
+uwnetid_stub:	uwnetid_stub.o  uwnetid_stub.o libpubcookie.o base64.o
+		$(CC) ${CFLAGS} -o $@ uwnetid_stub.o libpubcookie.o base64.o $(LDFLAGS)
+
 securid_stub:	securid_stub.o  securid_ping.o securid_securid.o securid_server.o libpubcookie.o base64.o
 		$(CC) ${CFLAGS} -o $@ securid_stub.o libpubcookie.o base64.o securid_ping.o securid_securid.o securid_server.o $(LDFLAGS)
 
@@ -82,7 +85,7 @@ securid_securid.o: securid_securid.c securid_securid.h ${GEN_HEAD} ${MAKEFILE}
 securid_server.o: securid_server.c securid_securid.h ${GEN_HEAD} ${MAKEFILE}
 
 clean: 
-	$(RM) -f index.cgi.o securid_*.o core index.cgi libpubcookie.o 
+	$(RM) -f index.cgi.o securid_*.o core index.cgi libpubcookie.o uwnetid_stub securid_stub
 
 # to purify candv (then run a.out)
 #purify gcc ./candv.o libpubcookie.o base64.o -L./ssleay -lRSAglue -lcrypto ./rsaref/build/rsaref.a
