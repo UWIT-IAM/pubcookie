@@ -142,9 +142,12 @@ static void print_login_page(login_rec *l, login_rec *c, const char **errstr)
 		PBC_GETVAR_PRE_SESS_TOK, l->pre_sess_tok);
     print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
 		"first_kiss", (l->first_kiss ? l->first_kiss : "") );
+
+    /* xxx save add'l requests */
     {
 	/* xxx sigh, i have to explicitly save this */
-	char *target = get_string_arg(PBC_GETVAR_CRED_TARGET, NO_NEWLINES_FUNC);
+	char *target = get_string_arg(PBC_GETVAR_CRED_TARGET,
+                                      NO_NEWLINES_FUNC);
 	if (target) {
 	    print_html("<input type=\"hidden\" name=\"%s\" value=\"%s\">\n",
 		       PBC_GETVAR_CRED_TARGET, target);
@@ -180,6 +183,7 @@ static login_result process_basic(login_rec *l, login_rec *c,
 				  const char **errstr)
 {
     struct credentials *creds = NULL;
+    struct credentials **credsp = NULL;
 
     /* make sure we're initialized */
     assert(v != NULL);
@@ -218,8 +222,13 @@ static login_result process_basic(login_rec *l, login_rec *c,
      */
 
     if (l->reply == FORM_REPLY) {
-        if (v->v(l->user, l->pass, NULL, l->realm, &creds, errstr) == 0) {
+        if (libpbc_config_getswitch("save_credentials", 0)) {
+            credsp = &creds;
+        }
+
+        if (v->v(l->user, l->pass, NULL, l->realm, credsp, errstr) == 0) {
             if (debug) {
+                /* xxx log realm */
                 pbc_log_activity( PBC_LOG_AUDIT,
                                   "authentication successful for %s\n", l->user );
             }
