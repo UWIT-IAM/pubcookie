@@ -52,7 +52,7 @@
 
                   Apache Module</span><!-- #EndEditable --><br>
                   <!-- #BeginEditable "headlineMain" --><span class="headlineMain">Installation 
-                  Guide 3.0b1</span><!-- #EndEditable --></td>
+                  Guide 3.0.0-beta1</span><!-- #EndEditable --></td>
 
               </tr>
 
@@ -69,7 +69,7 @@
                 <td align="right" class="docsMetainfoLegend">Component:&nbsp;</td>
 
                 <td class="docsMetainfo"><!-- #BeginEditable "component" -->mod_pubcookie 
-                  3.0b1 <!-- #EndEditable --></td>
+                  3.0.0b1 <!-- #EndEditable --></td>
 
               </tr>
 
@@ -124,8 +124,8 @@
                   <p>This guide helps you install the Pubcookie application server 
                     software on Apache. Objectives include:</p>
                   <ul>
-                    <li> how to build and install mod_pubcookie 3.0b1 on an Apache 
-                      web server</li>
+                    <li> how to build and install mod_pubcookie 3.0.0-beta1 on 
+                      an Apache web server</li>
                     <li>how to use the Pubcookie keyclient to obtain an encryption 
                       key </li>
                     <li> how to configure Apache as a Pubcookie application server 
@@ -233,17 +233,17 @@
                   <p><b>To build mod_pubcookie as a DSO using apxs:</b></p>
                   <ol>
                     <li> 
-                      <p><a href="../downloads.html">Download</a> the mod_pubcookie 
-                        distribution.</p>
+                      <p><a href="../downloads.html">Download</a> the Pubcookie 
+                        3.0.0-beta1 distribution.</p>
                     <li> 
-                      <p>Unzip and untar the distribution.</p>
+                      <p>Untar a copy of the source, e.g.:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% gunzip -cd pubcookie-3.0b1.tar.gz | tar xvf -</pre></TD>
+                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0-beta1.tar.gz | tar xf -</pre></TD>
                         </TR>
-                      </TABLE>
-                      <p></p>
+                      </TABLE></p>
+                   
                     <li> 
                       <p>Run the autoconf configure script.</p>
                       <p> 
@@ -251,17 +251,23 @@
                         <TR> 
                           <TD> <pre>% ./configure</pre></TD>
                         </TR>
-                      </TABLE>
-                      <p></p>
+                      </TABLE></p>
+                      <p>
+                      By default, it creates a Makefile that builds mod_pubcookie.so 
+                      and the keyclient utility.</p>
                     <li> 
-                      <p>Build the DSO module using Makefile.apxs.</p>
+                      <p>Do a make:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% make mod_pubcookie.so</pre></TD>
+                          <TD> <pre>% make</pre></TD>
                         </TR>
-                      </TABLE>
-                      <p></p>
+                      </TABLE></p>
+                      <p>
+                      This will build the DSO module and a keyclient binary. Note: 
+                      if you're brave, you can do a &quot;make install&quot; now 
+                      to avoid steps 5 and 6. The pubcookie team would be interested 
+                      to know if it guesses right.</p>
                     <li> 
                       <p>Copy the module to your module library directory. For 
                         example:</p>
@@ -294,7 +300,8 @@ AddModule mod_ssl.c
                         </TR>
                       </TABLE>
                       <p></p>
-                      <p>Again, this is just an example. Your httpd.conf may differ.</p>
+                      <p>Again, this is just an example. Your httpd.conf may differ. 
+                      </p>
                   </ol>
                   <p><b>To build mod_pubcookie as a built-in (statically linked) 
                     module:</b></p>
@@ -303,12 +310,12 @@ AddModule mod_ssl.c
                       <p><a href="../downloads.html">Download</a> the mod_pubcookie 
                         distribution.</p>
                     <li> 
-                      <p>Unzip and untar the Pubcookie distribution files where 
-                        you would put other modules, e.g.:</p>
+                      <p>Untar a copy of the Pubcookie source code, placing it 
+                        where you would put other modules, e.g.:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/mod_pubcookie-3.0b1.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0-beta1.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE>
                       <p></p>
@@ -320,7 +327,7 @@ AddModule mod_ssl.c
 
 CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>--activate-module=src/modules/pubcookie/mod_pubcookie.a
+                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0-beta1/src/mod_pubcookie.a
 </pre></TD>
                         </TR>
                       </TABLE>
@@ -471,7 +478,7 @@ logout_prog: /logout/index.cgi</pre></td>
                     </table>
                     <p>Obtain the additional login server information from the 
                       people who deployed your Pubcookie login server.</p>
-                    <li>
+                    <li> 
                       <p>Save your new config file.</p>
                     </li>
                   </ol>
