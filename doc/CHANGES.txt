@@ -1,3 +1,36 @@
+Changes with 3.1.1:
+
+*) Added relay_login_uri variable to allow relay to work on same system as
+   login server. If it's missing the relay will fall back to the login_uri
+   as before. 
+
+*) Added "domain" parameter to the relay uri to allow multiple domain
+   relays to coexist on same system. 
+
+*) Modified relay to use its URI as requested rather than relay_uri, 
+   which is no longer used.
+
+*) Added workaround to MMC extension for Clipboard format bug found in
+   Windows XP Pro.
+
+*) Improved build process on Mac OS X 10.3.4.
+
+*) Fixed MMC extension to handle Pubcookie directives that are also 
+   server values, e.g. Login_URI. Default directives are now only
+   read, written, and deleted from "/default" instead of both from
+   "/default" and "/". This mirrors what the ISAPI filter reads. 
+
+*) Added Pubcookie relay to Pubcookie.msi installer.
+
+*) Updated OpenSSL build to 0.9.7d for Win32.
+
+*) Fixed keyclient to verify the keyserver's certificate.
+
+*) Minor updates to relay documentation.
+
+*) Removed special characters from pathname AppID string to fix bug
+   reported by Rand in 3.1.0 release.
+
 Changes with 3.1.0:
 
 *) Added code to detect AIX and module upgrades and set a conditional 
