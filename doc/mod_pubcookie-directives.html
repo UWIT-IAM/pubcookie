@@ -23,6 +23,7 @@ within <tt>&lt;IfDefine HAVE_SSL&gt;</tt>, you will need to put any
 <li><a href="#PubcookieDirDepthforAppID">PubcookieDirDepthforAppID</a></li>
 <li><a href="#PubcookieAppSrvID">PubcookieAppSrvID</a></li>
 <li><a href="#PubcookieLogin">PubcookieLogin</a></li>
+<li><a href="#PubcookieDomain">PubcookieDomain</a></li>
 <li><a href="#PubcookieGrantingCertfile">PubcookieGrantingCertfile</a></li>
 <li><a href="#PubcookieSessionKeyfile">PubcookieSessionKeyfile</a></li>
 <li><a href="#PubcookieSessionCertfile">PubcookieSessionCertfile</a></li>
@@ -185,6 +186,21 @@ Apache 1.2 and later.</p>
 <p>The default is <a href=
 "https://weblogin.washington.edu/">https://weblogin.washington.edu/</a> which
 is defined as PBC_LOGIN_URI in pbc_config.h.</p>
+
+<h3><a name="PubcookieDomain">PubcookieDomain directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieDomain <em>domain</em><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 3.0.0 and
+higher and Apache 1.2 and later.</p>
+
+<p>The DNS domain under which all hosts will live. It must be at                        
+least a second level domain (e.g. example.edu); used to scope                    
+"granting" cookies for communication between the login server and 
+application servers.</p>
 
 <h3><a name="PubcookieGrantingCertfile">PubcookieGrantingCertfile
 directive</a></h3>
