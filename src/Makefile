@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.42 2001-12-09 09:10:06 willey Exp $
+#   $Id: Makefile,v 1.43 2001-12-13 19:56:53 willey Exp $
 #
 
 # your compiler here
@@ -84,9 +84,9 @@ GZIP=gzip
 
 default:	all
 
-test_apps:	candv dtest speed_test pbc_create pbc_verify check_crypted_blob
+test_apps:	candv dtest speed_test pbc_create pbc_verify check_crypted_blob what_is_my_ip
 
-all:	candv dtest pbc_key_generic pbc_key_local make_crypted_blob candv dtest pbc_create pbc_verify check_crypted_blob
+all:	candv dtest pbc_key_generic pbc_key_local make_crypted_blob pbc_create pbc_verify check_crypted_blob what_is_my_ip
 
 
 speed_test:	speed_test.o libpubcookie.o base64.o
