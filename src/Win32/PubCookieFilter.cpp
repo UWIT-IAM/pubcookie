@@ -1005,9 +1005,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	// strcpy(dcfg->path_id,dcfg->appid);
 
 	// Convert appid to lower case
-
+#ifndef COOKIE_PATH
 	strlwr(dcfg->appid);
-
+#endif
 	// Get userid, timeouts, AuthType, etc for this app.  Could change appid.
 	Get_Effective_Values(pFC,pHeaderInfo,ptr);
 
