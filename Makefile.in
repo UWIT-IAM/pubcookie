@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.55 2004-05-15 22:48:08 ryanc Exp $
+# $Id: Makefile.in,v 1.56 2004-05-16 19:43:14 dors Exp $
 
 @SET_MAKE@
 
@@ -235,6 +235,7 @@ LOGIN_IMAGES=$(srcdir)/src/login_templates.generic/images/check.gif \
 
 DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/CREDITS.txt \
+	 $(srcdir)/doc/CHANGES.txt \
 	 $(srcdir)/doc/LICENSE.txt \
 	 $(srcdir)/doc/starter.key \
 	 $(srcdir)/doc/config.sample \
