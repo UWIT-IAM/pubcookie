@@ -1,5 +1,5 @@
 /*
-    $Id: candv.c,v 1.5 1998-12-18 16:03:49 willey Exp $
+    $Id: candv.c,v 1.6 1999-01-04 22:05:04 willey Exp $
  */
 
 #include <stdio.h>
@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
     unsigned char       *cookie;
     unsigned char       *updated_cookie;
     pbc_cookie_data	*cookie_data;
-    pbc_cookie_data	*cookie_datax;
     pbc_cookie_data	*cookie_data2;
 
     md_context_plus 	*s_ctx_plus;
@@ -45,10 +44,12 @@ int main(int argc, char **argv) {
     printf("please wait while take a quick nap\n");
     sleep(2);
 
-    cookie_data = libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff);
+    if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
+        printf("test failed: cookie couldn't be unbundled\n");
+	exit (1);
+    }
     updated_cookie = libpbc_update_lastts(cookie_data, s_ctx_plus, c_stuff);
 
-    cookie_datax = libpbc_unbundle_cookie(updated_cookie, v_ctx_plus, c_stuff);
     cookie_data2 = libpbc_unbundle_cookie(updated_cookie, v_ctx_plus, c_stuff);
     if( cookie_data2 ) {
 	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
@@ -70,7 +71,10 @@ int main(int argc, char **argv) {
     printf("please wait while take a quick nap\n");
     sleep(2);
 
-    cookie_data = libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff);
+    if ( ! (cookie_data=libpbc_unbundle_cookie(cookie, v_ctx_plus, c_stuff)) ) {
+	printf("test failed: cookie couldn't be unbundled\n");
+        exit (1);
+    }
 
     if( cookie_data ) {
 	printf("loser is:\t>%s<\n", (*cookie_data2).broken.user);
