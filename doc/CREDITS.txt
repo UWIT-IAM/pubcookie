@@ -45,6 +45,7 @@
      * Microsoft IIS
      * mod_ssl
      * OpenLDAP
+     * Sun ONE Directory SDK
      * OpenSSL
      * ViewCVS
 
