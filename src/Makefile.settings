@@ -4,7 +4,7 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.settings,v 1.5 2002-06-10 20:12:19 jjminer Exp $
+# $Id: Makefile.settings,v 1.6 2002-06-12 20:12:08 jjminer Exp $
 
 CC=cc
 
@@ -22,6 +22,7 @@ DEFINES += -DHAVE_GETOPT_H
 PUBCOOKIE_DIR=/usr/local/pubcookie
 KEY_DIR=$(PUBCOOKIE_DIR)/keys
 TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
+LOGIN_DIR=$(PUBCOOKIE_DIR)/login
 
 INSTALL=install -p -b
 INSTALL_BIN=$(INSTALL) -m 755 -o root -g other
