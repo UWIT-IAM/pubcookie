@@ -7,8 +7,8 @@ Name            Type    Description
 debug           int     Non-zero value enables debug logging. The higher the
                         number, the more debugging output that is generated.
 mirrorfile      string  full path to a file to keep a mirrored copy of all
-                        output sent to the client by the most recent call to the
-                        login cgi
+                        output sent to the client by the most recent
+                        call to the login cgi
 
 login_host      string  The hostname of login server
 login_uri       string  The complete URI of the login cgi
@@ -76,3 +76,15 @@ ldap_uri        list    The LDAP URI in this format:
                         problems so far are spaces, %20.)  The x-BindDN and
                         x-Password may be omitted entirely if the connection is
                         anonymous.
+
+-------------------------------------------------------------------------------
+Unsupported options:
+
+save_credentials  
+                switch  Controls whether flavor_basic saves a copy
+                        of the user's master credentials for later use
+                        by flavor_getcred
+
+getcred_authz_file
+                string  flavor_getcred uses this file to determine who
+                        is authorized to request what credentials
