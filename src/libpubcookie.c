@@ -18,7 +18,7 @@
  */
 
 /* 
-    $Id: libpubcookie.c,v 2.11 2000-04-07 17:37:00 willey Exp $
+    $Id: libpubcookie.c,v 2.12 2000-08-16 19:27:18 willey Exp $
  */
 
 #if defined (APACHE1_2) || defined (APACHE1_3)
@@ -105,7 +105,7 @@ void *libpbc_abend(const char *format,...)
 #if defined (WIN32)
     return NULL;
 #else
-    exit (EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 #endif
 }
 
@@ -127,7 +127,7 @@ int libpbc_debug(const char *format,...)
     va_start(args, format);
     now = time(NULL);
 #if defined (_GNU_SOURCE)
-    snprintf(format_w_time, sizeof(format_w_time), "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
+    snprintf(format_w_time, sizeof(format_w_time)-1, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
 #else
     sprintf(format_w_time, "%s: PUBCOOKIE_DEBUG: %s", libpbc_time_string(now), format);
 #endif
@@ -221,20 +221,6 @@ void libpbc_pubcookie_init_np()
     pid = getpid();
     memcpy(buf, &pid, sizeof(pid_t));
     libpbc_augment_rand_state(buf, sizeof(pid));
-
-}
-
-/*                                                                            */
-/* any general shutdown stuff goes here                                       */
-/*                                                                            */
-/*   since i can't find a hook in apache for this there is nothing here, yet  */
-/*                                                                            */
-#ifdef APACHE
-void libpbc_pubcookie_exit_p(pool *p)
-#else
-void libpbc_pubcookie_exit_np()
-#endif
-{
 
 }
 
