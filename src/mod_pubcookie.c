@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.15 1999-01-11 21:37:53 willey Exp $
+    $Id: mod_pubcookie.c,v 1.16 1999-01-25 04:31:00 willey Exp $
  */
 
 #include "httpd.h"
@@ -12,6 +12,7 @@
 
 #include <pem.h>
 #include <time.h>
+#include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,7 +47,7 @@ typedef struct {
   char *desc;      /* currently unused, could support different login servers */
   unsigned char *app_id;
   char creds;
-  int	force_reauth;
+  char *force_reauth;
 } pubcookie_rec;
 
 /*                                                                            */
@@ -112,7 +113,7 @@ static int auth_failed(request_rec *r) {
 
   r->content_type = "text/html";
   ap_snprintf(refresh, PBC_1K-1, 
-	  "%d;URL=%s?one=%s&two=%s&three=%c&four=%s&five=%s&six=%s&seven=%s", 
+	  "%d;URL=%s?one=%s&two=%s&three=%c&four=%s&five=%s&six=%s&seven=%s&fr=%s", 
 	  PBC_REFRESH_TIME, 
 	  PBC_LOGIN_PAGE, 
 	  (scfg->appsrv_id ? scfg->appsrv_id : (unsigned char *) r->server->server_hostname),
@@ -121,7 +122,12 @@ static int auth_failed(request_rec *r) {
 	  PBC_VERSION, 
 	  r->method, 
 	  r->server->server_hostname, 
-	  r->uri);
+	  r->uri,
+	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
+
+  if ( cfg->force_reauth )
+      cfg->force_reauth = NULL;
+
 #ifdef APACHE1_2
   refresh_e = os_escape_path(r->pool, refresh, 0);
   table_add(r->headers_out, "Refresh", refresh);
@@ -401,6 +407,13 @@ static int pubcookie_user(request_rec *r) {
 
     cfg->has_granting = 1;
 
+    /* the granting cookie gets blanked to early and another login */
+    /* serer loop is required, this just speeds up that loop */
+    if( strncmp(cookie, PBC_X_STRING, PBC_XS_IN_X_STRING) == 0 ) {
+      cfg->failed = PBC_BAD_AUTH;
+      return OK;
+    }
+
     if( ! (cookie_data = libpbc_unbundle_cookie(cookie, 
 	      scfg->granting_verf_ctx_plus, scfg->c_stuff)) ) {
       libpbc_debug("pubcookie_user: can't unbundle granting cookie %s\n", r->uri);
@@ -417,7 +430,7 @@ static int pubcookie_user(request_rec *r) {
 
     if( ! pubcookie_check_exp((*cookie_data).broken.create_ts, 
 	      PBC_GRANTING_EXPIRE, PBC_GRANTING_EXPIRE) ) {
-      libpbc_debug("granting cookie expired for user: %s\n", (*cookie_data).broken.user);
+      libpbc_debug("granting cookie expired for user: %s create is: %ld\n", (*cookie_data).broken.user, (*cookie_data).broken.create_ts);
       cfg->failed = PBC_BAD_AUTH;
       return OK;
     }
@@ -559,6 +572,53 @@ static int pubcookie_typer(request_rec *r) {
   }
 }
 
+int blank_cookie(request_rec *r, char *name) {
+  const char *cookie_header; 
+  char *cookie;
+  char *ptr;
+
+#ifdef APACHE1_2
+  if(!(cookie_header = table_get(r->headers_in, "Cookie")))
+#else
+  if(!(cookie_header = ap_table_get(r->headers_in, "Cookie")))
+#endif
+    return 0;
+
+  if(!(cookie = strstr(cookie_header, name)))
+    return 0;
+
+  cookie += strlen(name);
+
+  if ( cookie[0] == '=' )
+      ++cookie;
+
+  ptr = cookie;
+  while(*ptr) {
+    if(*ptr == ';')
+      break;
+    *ptr = PBC_X_CHAR;
+    ptr++;
+  }
+
+#ifdef APACHE1_2
+  table_set(r->headers_in, "Cookie", cookie_header);
+#else
+  ap_table_set(r->headers_in, "Cookie", cookie_header);
+#endif
+
+  return (int)ptr;
+}
+
+/*                                                                            */
+static int pubcookie_fixups(request_rec *r)
+{
+    blank_cookie(r, PBC_S_COOKIENAME);
+    blank_cookie(r, PBC_G_COOKIENAME);
+    blank_cookie(r, PBC_L_COOKIENAME);
+
+    return OK;
+}
+
 /*                                                                            */
 const char *pubcookie_set_inact_exp(cmd_parms *cmd, void *mconfig, char *v) {
   pubcookie_rec *cfg = (pubcookie_rec *) mconfig;
@@ -586,7 +646,12 @@ const char *pubcookie_set_hard_exp(cmd_parms *cmd, void *mconfig, char *v) {
 const char *pubcookie_set_login(cmd_parms *cmd, void *mconfig, char *v) {
   pubcookie_rec *cfg = (pubcookie_rec *) mconfig;
 
-  cfg->login = v;
+#ifdef APACHE1_2
+  cfg->login = pstrdup(cmd->pool, v);
+#else
+  cfg->login = ap_pstrdup(cmd->pool, v);
+#endif
+
   return NULL;
 }
 
@@ -594,7 +659,12 @@ const char *pubcookie_set_login(cmd_parms *cmd, void *mconfig, char *v) {
 const char *pubcookie_set_desc(cmd_parms *cmd, void *mconfig, char *v) {
   pubcookie_rec *cfg = (pubcookie_rec *) mconfig;
 
-  cfg->desc = v;
+#ifdef APACHE1_2
+  cfg->desc = pstrdup(cmd->pool, v);
+#else
+  cfg->desc = ap_pstrdup(cmd->pool, v);
+#endif
+
   return NULL;
 }
 
@@ -709,7 +779,12 @@ const char *pubcookie_set_crypt_keyf(cmd_parms *cmd, void *mconfig, char *v) {
 const char *pubcookie_force_reauth(cmd_parms *cmd, void *mconfig, char *v) {
   pubcookie_rec *cfg = (pubcookie_rec *) mconfig;
 
-  cfg->force_reauth = 1;
+#ifdef APACHE1_2
+  cfg->force_reauth = pstrdup(cmd->pool, v);
+#else
+  cfg->force_reauth = ap_pstrdup(cmd->pool, v);
+#endif
+
   return NULL;
 }
 
@@ -760,8 +835,8 @@ module pubcookie_module = {
    pubcookie_auth,	   	/* check auth */
    NULL,                        /* check access */
    pubcookie_typer,             /* type_checker */
-   NULL,                        /* fixups */
-   NULL,                        /* logger */
+   pubcookie_fixups,	        /* fixups */
+   NULL,		        /* logger */
    NULL                         /* header parser */
 };
 
