@@ -20,7 +20,7 @@
  */
 
 /*
-    $Id: index.cgi.c,v 1.35 2001-11-13 23:31:28 willey Exp $
+    $Id: index.cgi.c,v 1.36 2001-11-15 01:54:15 willey Exp $
  */
 
 
@@ -62,6 +62,18 @@
 #include "index.cgi.h"
 /* cgic */
 #include <cgic.h>
+
+/* NULL terminated list of hosts acting as PBC_LOGIN_TEST_HOST */
+char *test_hosts[] = {"weblogintest1.cac.washington.edu",
+        "weblogintest.cac.washington.edu",
+        "weblogintest",
+        "weblogintest1",
+        NULL};
+/* NULL terminated list of hosts acting as PBC_LOGIN_PROD_TEST_HOST */
+char *prodtest_hosts[] = {"webloginprodtest.cac.washington.edu",
+        "weblogintest",
+        NULL};
+/* any other host will be acting as PBC_LOGIN_HOST */
 
 #ifdef MAKE_MIRROR
 /* the mirror file is a mirror of what gets written out of the cgi */
@@ -609,20 +621,73 @@ char *get_my_hostname()
 
 char *get_domain_hostname() 
 {
-    char	host[PBC_1K];
+    char	*host;
+    int		i;
 
-    strncpy(host, getenv ("HTTP_HOST"), strlen(host));
+    if( (host=strdup(get_my_hostname())) == NULL )
+        abend("out of memory");
 
-    if( !host )
-        return (PBC_LOGIN_HOST);
+    for(i=0; test_hosts[i] != NULL; i++)
+        if( strcmp(test_hosts[i],host) == 0 ) 
+            return (PBC_LOGIN_TEST_HOST);
 
-    /* if this is a test server use the test name */
-    if ( !strncmp(host,"weblogintest",12) )
-        return (PBC_LOGIN_TEST_HOST);
-    else if ( !strncmp(host,"webloginprodtest",16) )
-        return (PBC_LOGIN_PROD_TEST_HOST);
-    else
-        return (PBC_LOGIN_HOST);
+    for(i=0; prodtest_hosts[i] != NULL; i++)
+        if( strcmp(prodtest_hosts[i],host) == 0 ) 
+            return (PBC_LOGIN_PROD_TEST_HOST);
+
+    return (PBC_LOGIN_HOST);
+
+}
+
+char *keyfile(char *prefix)
+{
+    char	*file;
+    char	*host;
+
+#ifdef NO_HOST_BASED_KEY_FILENAMES
+    if( strdup(file, prefix) == NULL )
+        abend("out of memory");
+#else
+    /* plus one for \0 and plus one for the '.' in the format */
+    file = calloc(strlen(PBC_KEY_DIR) +
+                  strlen(prefix) +
+                  strlen(host=get_my_hostname()) + 1 + 1, sizeof(char));
+    if( file == NULL ) 
+        abend("out of memory");
+    sprintf(file, "%s%s.%s", PBC_KEY_DIR, prefix, host);
+#endif
+
+    return(file);
+
+}
+
+char *login_private_keyfile()
+{
+#ifdef NO_HOST_BASED_KEY_FILENAMES
+    return(keyfile(PBC_L_KEYFILE));
+#else
+    return(keyfile(PBC_L_PRIVKEY_FILE_PREFIX));
+#endif
+
+}
+
+char *login_public_keyfile()
+{
+#ifdef NO_HOST_BASED_KEY_FILENAMES
+    return(keyfile(PBC_L_CERTFILE));
+#else
+    return(keyfile(PBC_L_PUBKEY_FILE_PREFIX));
+#endif
+
+}
+
+char *granting_private_keyfile()
+{
+#ifdef NO_HOST_BASED_KEY_FILENAMES
+    return(keyfile(PBC_G_KEYFILE));
+#else
+    return(keyfile(PBC_G_PRIVKEY_FILE_PREFIX));
+#endif
 
 }
 
@@ -635,7 +700,7 @@ int init_crypt()
         return(PBC_OK);
 
     snprintf(crypt_keyfile, sizeof(crypt_keyfile)-1, "%s%s.%s", 
-			KEY_DIR, CRYPT_KEY_FILE, get_my_hostname()); 
+			PBC_KEY_DIR, PBC_CRYPT_KEY_PREFIX, get_my_hostname()); 
     if( (c_stuff = libpbc_init_crypt(crypt_keyfile)) == NULL )
 	return(PBC_FAIL);
     else 
@@ -1634,6 +1699,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
                           l->creds,
                           serial,
                           l_cookie,
+                          login_private_keyfile(),
                           PBC_4K);
     g_res = create_cookie(url_encode(l->user),
                           url_encode(l->appsrvid),
@@ -1642,6 +1708,7 @@ void print_redirect_page(login_rec *l, login_rec *c)
                           l->creds_from_greq,
                           serial,
                           g_cookie,
+                          granting_private_keyfile(),
                           PBC_4K);
 
     /* if we have a problem then bail with a nice message */
@@ -1932,7 +1999,6 @@ login_rec *verify_unload_login_cookie (login_rec *l)
 {
     md_context_plus     *ctx_plus;
     pbc_cookie_data     *cookie_data;
-    char		sign_keyfile[PBC_4K];
     char		*cookie = NULL;
     login_rec		*new = NULL;
     time_t		t;
@@ -1941,9 +2007,8 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     fprintf(stderr, "verify_unload_login_cookie: hello\n");
 #endif
 
-    if( !(cookie = malloc(PBC_4K)) ) {
+    if( !(cookie = malloc(PBC_4K)) )
         abend("out of memory");
-    }
 
     /* get the login cookie */
     if( (get_cookie(PBC_L_COOKIENAME, cookie, PBC_4K-1)) == PBC_FAIL )
@@ -1952,15 +2017,13 @@ login_rec *verify_unload_login_cookie (login_rec *l)
     new = malloc(sizeof(new));
     init_login_rec(new);
 
-    snprintf(sign_keyfile, sizeof(sign_keyfile)-1, "%s%s", 
-			KEY_DIR, CERT_FILE); 
-    ctx_plus = libpbc_verify_init(sign_keyfile);
+    if( (ctx_plus = libpbc_verify_init(login_public_keyfile())) == NULL )
+        abend("Couldn't load public login key");
 
-    if (init_crypt() == PBC_FAIL) {
+    if (init_crypt() == PBC_FAIL) 
         return((login_rec *)NULL);
-    }
 
-    if( (cookie_data = libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff)) == NULL)
+    if( (cookie_data=libpbc_unbundle_cookie(cookie, ctx_plus, c_stuff)) == NULL)
         return((login_rec *)NULL);
 
     new->user = (*cookie_data).broken.user;
@@ -1991,11 +2054,11 @@ int create_cookie(char *user_buf,
                   char creds,
                   int serial,
                   char *cookie,
+                  char *priv_key_file,
  	          int max)
 {
     /* special data structs for the crypt stuff */
     md_context_plus 	*ctx_plus;
-    unsigned char	cert_keyfile[PBC_1K];
 
     /* measured quantities */
     unsigned char 	user[PBC_USER_LEN];
@@ -2013,10 +2076,9 @@ int create_cookie(char *user_buf,
     strncpy(appid, appid_buf, sizeof(appid));
     appsrvid[sizeof(appid)-1] = '\0';
 
-    /* load up the certificate context */
-    snprintf(cert_keyfile, sizeof(cert_keyfile)-1, "%s%s", 
-			KEY_DIR, CERT_KEY_FILE); 
-    ctx_plus = libpbc_sign_init(cert_keyfile);
+    if( (ctx_plus = libpbc_sign_init(priv_key_file)) == NULL ) {
+        abend("Cound not load private key file");
+    }
 
     /* go get the cookie */
     cookie_local = libpbc_get_cookie(user, type, creds, serial, appsrvid, appid, ctx_plus, c_stuff);
