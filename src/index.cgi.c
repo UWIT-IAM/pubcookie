@@ -20,7 +20,7 @@
  */
 
 /*
- * $Revision: 1.54 $
+ * $Revision: 1.55 $
  */
 
 
@@ -2408,7 +2408,7 @@ int create_cookie(char *user_buf,
     unsigned char 	appsrvid[PBC_APPSRV_ID_LEN];
     unsigned char 	appid[PBC_APP_ID_LEN];
     /* local junk */
-    char		*cookie_local;
+    char		*cookie_local = NULL;
 
     if(debug) {
         fprintf(stderr, "create_cookie: hello\n"); 
@@ -2441,6 +2441,10 @@ int create_cookie(char *user_buf,
 
     /* free ctx_plus */
     libpbc_free_md_context_plus(ctx_plus);
+    if (cookie_local) {
+	/* dynamically allocated by libpbc_get_cookie_with_expire() */
+	free(cookie_local);
+    }
 
     return (PBC_OK);
 }
