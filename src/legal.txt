@@ -1,0 +1,12 @@
+The University of Washington's Web Authentication Service software, is
+provided "as is".  You have our permission to install, copy, and modify
+this software for your internal, non-profit use at the University of
+Wisconsin/Madison, provided you accept all risk for your use of the
+software.  Contact us if you have questions or anticipate uses that
+would fall outside of this simple permissions statement.
+
+University of Washington
+4545 15th Ave NE
+Seattle, WA 98105
+pubcookie@washington.edu
+
