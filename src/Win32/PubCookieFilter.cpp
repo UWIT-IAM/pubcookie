@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.44 2005-03-08 05:04:27 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.45 2005-03-24 00:40:54 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -475,7 +475,7 @@ void Add_No_Cache(HTTP_FILTER_CONTEXT* pFC)
 	char			szHeaders[PBC_1K];
 
 	sprintf(szHeaders, 
-			"Cache-Control: no-cache\r\n"
+			"Cache-Control: no-store, no-cache, must-revalidate\r\n"
 			"Pragma: no-cache\r\n"
 			"Expires: %s\r\n", EARLIEST_EVER);
 			
