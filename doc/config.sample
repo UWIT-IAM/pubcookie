@@ -9,3 +9,7 @@ keymgt_uri: https://login.example.edu:2222
 
 # this allows any username/password combination to successfully authenticate
 basic_verifier: alwaystrue
+
+# location of the SSL keypair
+ssl_key_file: /usr/www/conf/ssl.key/server.key
+ssl_cert_file: /usr/www/conf/ssl.crt/server.crt

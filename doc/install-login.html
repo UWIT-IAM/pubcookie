@@ -1,0 +1,516 @@
+<html>
+
+<head>
+<title>Pubcookie login cgi</title>
+<link rel="stylesheet" href="pubcookie.css" type="text/css">
+</head>
+
+<body>
+
+<h1>Pubcookie login cgi</h1>
+
+
+<h2>Introduction</h2>
+
+<p>
+The Pubcookie login server has two primary functions: to authenticate
+users and to issue authentication tokens (granting cookies) consumed by
+Pubcookie-enabled target application servers.  Authentication occurs
+either by checking user-provided credentials via a backend authentication
+service (Kerberos, SecurID, ...) or by verifying a token that was created
+on a previous visit to the login server.  Example code to interface to an
+authentication system is provided.
+</p>
+
+<h2>Implementation</h2>
+
+<p>
+The Pubcookie login server uses a CGI program to handle all HTTP
+requests.  This CGI program, hereafter referred to as "the login cgi"
+or <tt>index.cgi</tt>, is compiled from C and is the central Pubcookie
+component.  The login cgi displays the web page where users are asked
+to enter authentication credentials as well as other web pages that
+display error messages.
+</p>
+
+<p>
+Due to the important nature of the Pubcookie login server, the only other
+services that should be run on the same system are those which receive an
+equally high level of scrutiny for security.  As deployed at the
+University of Washington, the Pubcookie login server is powered by the
+Apache web server software. Other web server software which supports CGI
+and SSL should also work, but this supposition has not been tested.
+</p>
+
+<h2>Authentication services</h2>
+
+<p>
+The login cgi has a very simple interface for talking to backend
+authentication services. 
+</p>
+
+<p>
+Most sites will want to use the "basic" login flavor, which supports
+username/paassword single-sign-on authentication.  (Currently no other
+flavors exist!)
+</p>
+
+<p>
+The basic login flavor supports many different verifiers.  Some of the
+ones shipped with pubcookie as of this writing are:
+</p>
+
+<ul>
+<li> "kerberos_v5": check username/password against a Kerberos 5 KDC. </li>
+<li> "ldap": check username/password against an LDAP server. </li>
+<li> "shadow": check username/password against <tt>/etc/shadow</tt> </li>
+<li> "alwaystrue": allow any username/password combination to
+authenticate. </li>
+</ul>
+
+<p>
+You can set which verifier to be used with the "basic_verifier"
+configuration parameter (see <a href="#runtime">Run-time
+configuration</a>).  Some verifiers will allow or require further
+customization; see the section referring to that verifier.
+</p>
+
+<h2>Apache Configuration</h2>
+
+<h3>Choosing the location of your login page</h3>
+
+<p>
+Depending on your installation environment you may choose to install the
+login server in a number of configurations.  Two general models are
+presented here with any necessary Apache configuration directives.
+</p>
+
+<h4>Specifying the login URL as a directory</h4>
+
+<p>
+For a clean looking login URL you can install the login server to be the
+default file in a directory.  The default filename, index.cgi, is a common
+name for a cgi file that would be executed when only directory URL is
+specified.
+</p>
+
+<p>
+The University of Washington uses <a
+href="https://weblogin.washington.edu/">https://weblogin.washington.edu/</a>
+as the login server URL; it's very simple for users to identify in the 
+browser's URL field.  </p>
+
+<p>
+The Apache config directive 'DirectoryIndex' tells Apache it how to
+handle requests for directories.  See <a
+href="http://httpd.apache.org/docs/mod/mod_dir.html#directoryindex">the
+mod_dir documentation</a> for more information.  When a request is
+made for a directory Apache will choose the first file it finds in the
+DirectoryIndex list.</p>
+
+<p>
+Our DirectoryIndex line looks something like:
+
+<pre>
+DirectoryIndex index.html index.cgi
+</pre>
+
+If this is the configuration you choose, make sure there isn't an
+index.html file in the same directory as the index.cgi binary.</p>
+
+<h4>Explicit specification of login CGI</h4>
+
+<p>
+The login CGI is not name dependant and can be deployed as index.cgi,
+login.cgi, or some other CGI file if you like.  In can also be put in any
+subdirectory you wish.</p>
+
+<p>
+Your login server's URL could be something like
+<tt>https://www.example.edu/cgi-bin/login.cgi</tt>.
+Some sites may do this avoid the confusion with the default index page.</p>
+
+<p>
+Depending how you want to configure things with Apache or which ever Web
+server you want to use for the login server, your login server URL could
+be something like <tt>https://www.myuniversity.edu/login</tt>
+where /login is mapped to the CGI program (index.cgi or whatever you
+rename it to).</p>
+
+<p>
+The default login server and login URI are specified as "login_host"
+and "login_uri" in pubcookie configuration file.  (Individual
+applications may override what login server they refer to with the
+PubCookieLogin directive in their apache configuration file, but this
+isn't recommended.)</p>
+
+<h3>Apache configuration directive you might have to tweak</h3>
+
+<p>
+Apache needs to know how to identify and handle cgi scripts.  Some
+distributions of Apache will hav the cgi handler disabled, you will
+want to make sure the following line is in your httpd.conf and not 
+commented out.</p>
+
+<pre>
+AddHandler cgi-script .cgi
+</pre>
+
+<h2>Build the Pubcookie login server</h2>
+
+<p>
+This has been made easier with autoconf. (Thanks Jon Miner, University 
+of Wisconsin!) To build a barebones login server, run:</p>
+
+<pre>
+$ ./configure --enable-login --disable-apache
+$ make
+$ make install
+</pre>
+
+<p>
+This sequence will build and install the <tt>index.cgi</tt>,
+<tt>keyserver</tt>, and keyclient binaries, using the default
+directory prefix (<tt>/usr/local/pubcookie</tt>, henceforth called
+<tt>{PUBCOOKIE_DIR}</tt>) and "alwaystrue" verifier.</p>
+
+<p>
+To build the login server with other verifiers enabled
+(e.g. "kerberos_v5", "ldap", or "shadow") look at the configure
+options and adjust accordingly:
+</p>
+
+<pre>
+$ ./configure --help
+</pre>
+
+<a name="runtime"><h2>Run-time configuration</h2></a>
+
+<p>
+Most configuration of the login server can be done at run-time via
+Pubcookie's <tt>config</tt> file. It is located at
+<tt>{PUBCOOKIE_DIR}/config</tt> and has "attr: value" lines
+throughout.  A sample configuration file is included as <a
+href="config.sample"><tt>config.sample</tt></a>. A complete
+explanation of all available options is available <a
+href="config.html">in the config documentation</a>.
+</p>
+
+<p>
+Some of the more notable variables are:
+</p>
+
+<dl compact="compact">
+<dt> debug </dt> 
+<dd> An integer. A non-zero value enables debug logging.  The higher
+  the number, the more debugging output that is generated.</dd>
+
+<dt> login_host </dt>
+<dd> the hostname of login server </dd>
+
+<dt> login_uri </dt>
+<dd> the complete URI of the login cgi </dd>
+
+<dt> enterprise_domain </dt>
+<dd> the domain under which all hosts will live.  must be at least a
+ second level domain (e.g. <tt>example.edu</tt>) </dd>
+
+<dt> basic_verifier </dt>
+<dd> the verifier to use for the "basic" flavor </dd>
+
+<dt> keymgt_uri </dt>
+<dd> the location of the "keyserver" CGI.  See the <a href="#keymgt">Key
+Management</a> section.</dd>
+
+</dl>
+
+<p>
+The following options should refer to the same files that your web
+server uses for SSL.    </p>
+
+<dl compact="compact">
+<dt> ssl_key_file </dt>
+<dd> the location of the SSL key</dd>
+
+<dt>ssl_cert_file </dt>
+<dd>the location of the SSL certificate </dd>
+</dl>
+
+<p>
+If your institution uses a single CA without any intermediate
+certificates, set <tt>ssl_ca_file</tt> to the path of the CA's
+certificate. If your institution uses multiple CAs or intermediate
+certificates, you'll need a directory (<tt>ssl_ca_path</tt>) contain
+those certificates named via their OpenSSL hashes. At least one of
+<tt>ssl_ca_file</tt> and <tt>ssl_ca_path</tt> should be specified.</p>
+
+<dl compact="compact">
+<dt>ssl_ca_file</dt>
+<dd>the location of a single CA</dd>
+
+<dt>ssl_ca_path</dt>
+<dd>a directory containing files named after their OpenSSL hash</dd>
+</dl>
+
+<p>See <a href="config.html">config.html</a> for a full list of attributes.</p>
+
+<h2>Localization</h2>
+
+<p>
+The design of the login cgi preceded consideration of external use of
+Pubcookie, so there is much work to be done to improve flexibility and
+make it less specific to the University of Washington.
+</p>
+
+<p>
+However, preliminary work has been done with login templates
+(specifying the look of each page the login CGI serves up) and the
+run-time configuration file.  These pages should live in
+<tt>{PUBCOOKIE_DIR}/login_templates</tt>.  We recommend you start with
+the files in <tt>src/login_templates.generic/</tt> and customize them
+as you see fit. The Washington and CMU files (or an older version of
+them) is supplied for your amusement in
+<tt>src/login_templates.uw</tt> and <tt>src/login_templates.cmu</tt>
+respectively.
+</p>
+
+<h2>More configuration: User agent blocking via ok_browsers file</h2>
+
+<p>
+The <tt>{PUBCOOKIE_DIR}/ok_browsers</tt> file contains a list of acceptable
+browsers.  The idea behind ok_browsers is to block browsers that
+either have a known security flaw (i.e. don't forget cookies when they
+should) or don't work with Pubcookie (i.e. Opera which doesn't do
+domain level cookie scoping correctly).  IE and Netscape are the only
+two browser families that are known to work with Pubcookie.
+</p>
+
+<p>
+So far we've been too chicken to really use the 'ok_browsers'
+functionality to block browsers that we know don't work.  For now our
+ok_browsers has a single line: "Mozilla". Since both Netscape and IE
+claim to be Mozilla that covers the only two browsers known to work
+with Pubcookie. Proceed according to your own policy.
+</p>
+
+<a name="keymgt"><h2>Key management</h2></a>
+
+<p>
+<tt>{PUBCOOKIE_DIR}/keys</tt> is the location of the keystore that the login
+cgi uses.  The login cgi makes use of several different keys.
+</p>
+
+<h3>Generate or reuse keypairs for the login server</h3>
+
+<p>
+The pubcookie_login key and certificate are used to secure the "login
+cookie" that maintains the single sign-on session with the login server.  
+These files are kept exclusively on the login server. We recommend
+that you reuse your existing private key and SSL server certificate
+rather than generating a new keypair. The login cgi will automatically
+do so if you set <tt>ssl_cert_file</tt> and <tt>ssl_key_file</tt>
+correctly.</p>
+
+<h3>Generate granting keypair for authentication assertions</h3>
+
+<p>
+Next, the pubcookie_granting keypair is needed to secure authentication
+assertions sent from login server to application servers, as represented
+by the "granting cookie".  The key is kept exclusively on the login
+server; the certificate must be distributed to every application server.
+</p>
+
+<pre>
+$ openssl req -new -x509 -nodes -out /usr/local/pubcookie/keys/pubcookie_granting.cert -newkey rsa:1024 -keyout /usr/local/pubcookie/keys/pubcookie_granting.key
+</pre>
+
+<p>If you want to place these files in a different location (than
+<tt>{PUBCOOKIE_DIR}/keys/pubcookie_granting.{key,cert}</tt>), you'll
+need to set the <tt>granting_cert_file</tt> and
+<tt>granting_key_file</tt> attributes.</p>
+
+<h3>Configure keyserver on the login server</h3>
+
+<p>
+<tt>keyserver</tt> is a program that maintains DES keys.
+Unfortunately, due to subtleties in the key usage constraints, it is
+unable to run as a CGI underneath a login server.  Instead, we
+recommend that it be run from inetd.
+</p>
+
+<p>
+Add a line like the following to the login server's <tt>/etc/inetd.conf</tt>:
+
+<pre>
+2222    stream  tcp     nowait  root    /usr/local/pubcookie/bin/keyserver keyserver
+</pre>
+
+where <tt>/usr/local/pubcookie/bin/keyserver</tt> is where the keyserver binary
+is installed.  Make sure that your <tt>pubcookie/config</tt> file is
+correctly configured.</p>
+
+<p>
+If you are using xinetd, you should create a file named <tt>keyserver</tt> in
+<tt>/etc/xinetd.d</tt> with the following contents:
+
+<pre>
+# description: pubcookie keyserver
+service keyserver
+{
+	type			= UNLISTED
+	protocol		= tcp
+	port			= 2222
+	disable			= no
+	socket_type		= stream
+	wait			= no
+	user			= root
+	group			= tty
+	server			= /usr/local/pubcookie/bin/keyserver
+}
+</pre>
+
+After adding this line (or file), restart <tt>inetd</tt>.</p>
+
+<h3>Generate a DES key for the login server with keyclient</h3>
+
+<p>
+Now run keyclient to generate a DES key for the login server:
+
+<pre>
+% /usr/local/pubcookie/bin/keyclient
+</pre>
+
+This will cause the keyserver program to generate a new DES key for
+the login server to use to provide confidentiality for the login
+cookies.</p>
+
+<h3>Generating DES keys for the application servers with keyclient</h3>
+
+<p>
+Generating DES keys for the application servers is just as easy as
+above---in fact, the exact same command works.</p>
+
+<p>
+It is important that the application server's SSL certicate is signed
+by the same certificate authority as is configured in the login
+server's config file.</p>
+
+<p>
+Remember that the application server will also need a correct 'config'
+file.</p>
+
+<h2>Upgrading</h2>
+
+<h3>Upgrading from pre-3.0 pubcookie</h3>
+
+<ul>
+<li>Maintaining DES key compatibility from hashed IP addresses
+
+<p>
+If you have an exisiting pubcookie installation using a shared DES key
+with hashed IP addresses, you can upgrade your login server without 
+generating new keys on every application server.
+</p>
+
+<p>
+On the login server, in the .../pubcookie/keys/ directory, make a copy of
+the master DES key (before hashing it to any IP address) for each application
+server, named with the full hostname of the server.</p>
+
+<p>
+For example, create <tt>.../pubcookie/keys/oldappserver.example.edu</tt>
+containing the original DES keyfile.</p>
+
+<p>
+The login server will use this key to encrypt data going to that application
+server, and the application server can continue to use it's key (XOR'd with
+it's IP address) to decrypt the data.</p>
+
+<p>
+During the application server's next scheduled downtime, you can
+create a new unique DES key for that application, as in the <a
+href="#keymgt">Key management</a> section above.</p></li>
+
+</ul>
+
+<h2>Advanced configuration</h2>
+
+<h3>Redundant login servers</h3>
+
+
+<h3>Redundant application hosts</h3>
+
+<h2>Security considerations</h2>
+
+<h3>Login server security</h3>
+
+don't run anything else on it: anyone who can add content
+to the login server can steal all cookies
+
+<h3>Application server security</h3>
+
+
+<h3>Handling secrets</h3>
+
+<h2>Other stuff</h2>
+
+<h3>Old Tools That Might Be Handy for Debugging</h3>
+
+<p>
+<tt>pbc_create</tt> creates a pubcookie cookie, convenient for
+creating cookies ad hoc.  Arguments come in via stdin and the cookie
+is put out on stdout.  Args are space delimited, and in order: user
+appsrvid appid type creds serial crypt_file cert_key_file.  Anything
+too big is just truncated, no support for defaults or anything like
+that.  See src for details.</p>
+
+<p>
+<tt>pbc_verify</tt> decrypts/verifies/displays pubcookie cookies,
+convenient for 'unbundling' a cookie and seeing what's inside.  The
+arguments come in on the command line, the cookie comes in on stdid,
+and the contents are dumped to stdout.  The required argument is
+cookie_type and the optional arguments are encryption_key and
+cert_file.</p>
+
+<p>
+As an example you can use these two programs to do things like:
+
+<pre>
+# echo "willey appsrvid appid 1 2 23 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.key" | ./pbc_create | ./pbc_verify 1 /usr/local/pubcookie/c_key /usr/local/pubcookie/test.cert
+</pre>
+
+and get something like
+
+<pre>
+user: willey
+version: a5
+type: 1
+creds: 2
+serial: 23
+appsrvid: appsrvid
+appid: appid
+create_ts: 1006986719
+last_ts: 1006986719
+</pre>
+</p>
+
+
+<h2>Copyright information</h2>
+
+<pre>
+    Copyright 1999-2002, University of Washington.  All rights reserved.
+     ____        _                     _    _
+    |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
+    | |_) | | | | '_ \ / __/ _ \ / _ \| |/ / |/ _ \
+    |  __/| |_| | |_) | (_| (_) | (_) |   <| |  __/
+    |_|    \__,_|_.__/ \___\___/ \___/|_|\_\_|\___|
+
+    Created by the Pubcookie Team
+
+    Comments and suggestions: pubcookie-dev@u.washington.edu
+    Pubcookie on the Web: http://www.pubcookie.org/
+
+    this is installation documentation for the login sever
+
+    $Id: install-login.html,v 1.1 2002-08-22 19:59:31 greenfld Exp $
+</pre>
