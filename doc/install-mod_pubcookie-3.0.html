@@ -1,13 +1,13 @@
 <html>
 
 <head>
-<title>Pubcookie Apache Module - Install Guide 3.0b1</title>
+<title>Pubcookie Apache Module - Install Guide 3.0.0-beta2</title>
 <link rel="stylesheet" href="pubcookie.css" type="text/css">
 </head>
 
 <body>
 
-<h1>Pubcookie Apache Module - Install Guide 3.0b1</h1>
+<h1>Pubcookie Apache Module - Install Guide 3.0.0-beta2</h1>
 
 <p><i>Included on this page:</i></p>
 
@@ -28,7 +28,7 @@
                   <p>This guide helps you install the Pubcookie application server 
                     software on Apache. Objectives include:</p>
                   <ul>
-                    <li> how to build and install mod_pubcookie 3.0.0-beta1 on 
+                    <li> how to build and install mod_pubcookie 3.0.0-beta2 on 
                       an Apache web server</li>
                     <li>how to use the Pubcookie keyclient to obtain an encryption 
                       key </li>
@@ -138,13 +138,13 @@
                   <ol>
                     <li> 
                       <p><a href="../downloads.html">Download</a> the Pubcookie 
-                        3.0.0-beta1 distribution.</p>
+                        3.0.0-beta2 distribution.</p>
                     <li> 
                       <p>Untar a copy of the source, e.g.:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0-beta1.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>zcat (download_dir)/pubcookie-3.0.0-beta2.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE></p>
                    
@@ -185,21 +185,20 @@
                     <li> 
                       <p>Edit your Apache server configuration file (httpd.conf), 
                         adding new LoadModule and AddModule directives to the 
-                        appropriate sections. These directives often go right 
-                        before SSL. For example:</p>
+                        appropriate sections. For example:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
                           <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
-LoadModule pubcookie_module   modules/mod_pubcookie.so
 LoadModule ssl_module         modules/libssl.so
+LoadModule pubcookie_module   modules/mod_pubcookie.so
 &lt;/IfDefine&gt;
 
 ...
 
 &lt;IfDefine HAVE_SSL&gt;
-AddModule mod_pubcookie.c
 AddModule mod_ssl.c
+AddModule mod_pubcookie.c
 &lt;/IfDefine&gt;</pre></TD>
                         </TR>
                       </TABLE>
@@ -219,7 +218,7 @@ AddModule mod_ssl.c
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0-beta1.tar.gz | tar xf -</pre></TD>
+                          <TD> <pre>% cd /usr/local/src/apache_1.3.xx/src/modules<br>% zcat (download_dir)/pubcookie-3.0.0-beta2.tar.gz | tar xf -</pre></TD>
                         </TR>
                       </TABLE>
                       <p></p>
@@ -227,11 +226,9 @@ AddModule mod_ssl.c
                       <p>If you use the top level Apache Configure script, you 
                         will need to add the following option to configure it:</p>
                       <p> 
-                      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0"
-
-CELLPADDING="5">
+                      <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0-beta1/src/mod_pubcookie.a
+                          <TD> <pre>--activate-module=src/modules/pubcookie-3.0.0-beta2/src/mod_pubcookie.a
 </pre></TD>
                         </TR>
                       </TABLE>
