@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.28 $)
+AC_REVISION($Revision: 1.29 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -287,8 +287,10 @@ if test "x$ssl_lib_path" != "x"; then
     LDFLAGS="$LDFLAGS $ssl_lib_path"
 fi
   
-AC_CHECK_LIB(crypto,ERR_load_ASN1_strings)
-AC_CHECK_LIB(ssl,SSL_library_init)
+AC_CHECK_LIB(crypto,ERR_load_ASN1_strings,,
+             AC_MSG_ERROR([libcrypto is required.]))
+AC_CHECK_LIB(ssl,SSL_library_init,,
+             AC_MSG_ERROR([libssl is required.]))
 AC_CHECK_HEADERS([openssl/ssl.h])
 
 if test "$ac_cv_header_openssl_ssl_h" = "yes"; then
