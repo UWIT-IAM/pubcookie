@@ -1,5 +1,5 @@
 /*
-    $Id: libpubcookie.c,v 1.9 1998-07-28 23:03:57 willey Exp $
+    $Id: libpubcookie.c,v 1.10 1998-07-31 21:08:13 willey Exp $
  */
 
 #ifdef APACHE1_2  /* i'm not sure which of these are needed */
@@ -688,13 +688,17 @@ pbc_cookie_data *libpbc_unbundle_cookie_np(char *in, md_context_plus *ctx_plus, 
     memcpy((*cookie_data).string, buf2+PBC_SIG_LEN, sizeof(pbc_cookie_data));
 
 
-//    if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
+#ifndef PBC_VERIFY_OFF
+    if( (libpbc_verify_sig(sig, (*cookie_data).string, ctx_plus)) ) {
+#endif
         cookie_data = libpbc_destringify_cookie_data(cookie_data);
         return cookie_data;
-//    }
-//    else {
-//        return NULL;
-//    }
+#ifndef PBC_VERIFY_OFF
+    }
+    else {
+        return NULL;
+    }
+#endif
 }
     
 /*                                                                            */
