@@ -333,21 +333,6 @@ directive to their server configuration.</p>
 
 <h3><a name="PubcookieAddlRequest">PubcookieAddlRequest directive</a></h3>
 
-<h3><a name="PubcookieSuperDebug">PubcookieSuperDebug directive</a></h3>
-
-<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieSuperDebug on|off<br>
- <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host, directory,
-.htaccess<br>
- <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
-rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
-and Apache 1.2 and later.</p>
-
-<p>Depreciated in version 3.0 beta2.</p>
-
-
-
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
 "Help"><strong>Syntax:</strong></a> PubcookieAddlRequest
 <i>opt1</i>=<i>val1</i> [<i>opt2</i>=<i>val2</i>...]<br>
@@ -367,6 +352,20 @@ responses from the login server and how these responses are
 returned. Eventually, there will be a standardized mechanism for
 returning answers. Likely they will be returned in extensions to the
 granting response and set as environment variables.</p>
+
+<h3><a name="PubcookieSuperDebug">PubcookieSuperDebug directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieSuperDebug on|off<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host, directory,
+.htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie
+and Apache 1.2 and later.</p>
+
+<p>This directive is deprecated in version 3.0.0 and higher. Use the
+<tt>debug</tt> config file variable for debugging.</p>
 
 </body>
 </html>
