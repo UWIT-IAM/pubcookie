@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.51 2004-04-08 21:09:06 fox Exp $
+# $Id: Makefile.in,v 1.52 2004-04-14 18:26:59 fox Exp $
 
 @SET_MAKE@
 
@@ -66,6 +66,10 @@ CONFIGURE_TMP_DIRS=$(srcdir)/autom4te.cache
 CONFIGURE_FILES=$(srcdir)/configure \
 				$(srcdir)/configure.ac \
 				$(srcdir)/Makefile.in \
+				$(srcdir)/Makefile.in.ap1 \
+				$(srcdir)/Makefile.in.ap2 \
+				$(srcdir)/Makefile.tmpl.in \
+				$(srcdir)/modules.mk \
 				$(srcdir)/install-sh \
 				$(srcdir)/config.sub \
 				$(srcdir)/config.guess \
@@ -299,6 +303,9 @@ no_login:
 
 l_ver:
 	@echo Making $(DISTNAME) login server;
+
+a_ver:
+	@echo Making $(DISTNAME) apache module;
 
 candv:	$(builddir)/src/candv.o $(LIB_OBJ)
 	$(CC) $(CFLAGS) -o $@ $(builddir)/src/candv.o $(LIB_OBJ) $(LDFLAGS)
@@ -565,20 +572,21 @@ dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)/src
 	$(MKDIR) $(DISTNAME)/doc
 	$(MKDIR) $(DISTNAME)/cgic
-	-$(RECURSIVE_CP) $(srcdir)/src/contrib $(DISTNAME)
+	$(MKDIR) $(DISTNAME)/relay
+	-$(RECURSIVE_CP) $(srcdir)/src/contrib $(DISTNAME)/src
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic/images
 	$(CP) $(LOGIN_TEMPLATES) $(DISTNAME)/src/login_templates.generic
 	$(CP) $(LOGIN_IMAGES) $(DISTNAME)/src/login_templates.generic/images
 	$(CP) $(DOCS) $(DISTNAME)/doc
-	$(CP) $(CONFIGURE_FILES) $(DISTNAME)/
+	$(CP) $(CONFIGURE_FILES) $(DISTNAME)
 	$(CP) $(SRC_CONFIGURE_FILES) $(DISTNAME)/src
 	$(CP) $(TEST_SRC) $(UTIL_SRC) $(VERIFY_SRC) $(DISTNAME)/src
 	$(CP) $(FLAVOR_SRC) $(INDEX_SRC) $(KEYMGT_SRC) $(LIB_SRC) $(DISTNAME)/src
 	$(CP) $(MOD_SRC) $(MOD_HEAD) $(DISTNAME)/src
 	$(CP) $(INDEX_HEAD) $(LIB_HEAD) $(DISTNAME)/src
 	$(CP) $(CGIC_FILES) $(DISTNAME)/cgic
-	$(CP) $(srcdir)/src/Makefile.tmpl $(DISTNAME)/src
+	-$(RECURSIVE_CP) $(srcdir)/relay $(DISTNAME)
 	$(CP) $(srcdir)/src/snprintf.c $(DISTNAME)/src
 	$(CP) $(srcdir)/mod_pubcookie.exp $(DISTNAME)
 	$(MKDIR) $(DISTNAME)/src/Win32
