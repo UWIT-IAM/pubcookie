@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.23 $)
+AC_REVISION($Revision: 1.24 $)
 AC_INIT(Pubcookie, [3.0.0 pre-beta4], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -357,6 +357,19 @@ AC_ARG_WITH(ldap-lib-dir,
     AC_CHECK_HEADERS([ldap.h])
     AC_CHECK_LIB(lber, ber_init)
     AC_CHECK_LIB(ldap, ldap_init)
+
+    # For now, Blow up if we aren't using OpenLDAP.
+
+    AC_TRY_RUN( [ 
+    #include <ldap.h>
+
+    int main() {
+        exit( strcmp(LDAP_VENDOR_NAME, "OpenLDAP") );
+    }
+                ],
+                [],
+                AC_MSG_ERROR( "LDAP API must be OpenLDAP!" ),
+                AC_MSG_WARN( "Cross-Compiling not supported."  ) )
 fi
 
 AC_ARG_ENABLE(shadow,
