@@ -3,7 +3,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.9 2002-07-12 00:00:02 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.10 2002-07-15 21:32:29 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -91,7 +91,7 @@ static int do_bind( LDAP *ld, char * user, const char * password, const char ** 
     int rc;
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "do_bind: hello\n" );
-
+    
     rc = ldap_simple_bind_s (ld, user, password );
 
     if ( rc != LDAP_SUCCESS) {
@@ -112,33 +112,75 @@ static int do_bind( LDAP *ld, char * user, const char * password, const char ** 
  * Connects to an LDAP Server
  * @param ld LDAP **
  * @param ldap_port int
- * @param dn char *
- * @param pwd char *
  * @param errstr const char **
  * @retval 0 for sucess, nonzero on failure.
  */
 static int ldap_connect( LDAP ** ld, 
 			 char * ldap_uri, 
-			 char * dn, 
-			 char * pwd,
 			 const char ** errstr ) 
 {
     int rc;
     char *tmp_uri, *p;
+    int tmplen;
+
+    char *dn = NULL;
+    char *pwd = NULL;
+
+    LDAPURLDesc *ludp;
+    char **exts;
 
     pbc_log_activity(PBC_LOG_DEBUG_VERBOSE, "ldap_connect: hello\n" );
+
+    if ( ldap_url_parse( ldap_uri, &ludp ) ) {
+        pbc_log_activity(PBC_LOG_ERROR, "Cannot parse \"%s\"\n", ldap_uri  );
+        *errstr = "System Error.  Contact your system administrator.";
+        return -1;
+    }
+
+    if ( (exts = ludp->lud_exts) != NULL ) {
+
+        while( *exts != NULL ) {
+            char *val = strchr(*exts, '=');
+
+            if ( val != NULL ) {
+
+                *val = '\0';
+                val++;
+
+                if ( strcasecmp( *exts, "x-BindDN" ) == 0 ) {
+                    dn = strdup( val );
+                } else if ( strcasecmp( *exts, "x-Password" ) == 0 ) {
+                    pwd = strdup( val );
+                } else {
+                    pbc_log_activity( PBC_LOG_ERROR, 
+                                      "ldap_connect: unknown extension %s=%s\n",
+                                      *exts, val );
+                }
+            } else {
+                pbc_log_activity( PBC_LOG_ERROR,
+                                  "ldap_connect: extension error parsing \"%s\"\n",
+                                  *exts );
+            }
+
+            exts++;
+        }
+    }
 
     /*
      * Work around a bug in the OpenLDAP stuff that causes the init to fail when
      * there are things other than the server name in the URI.
      */
-    
-    tmp_uri = strdup( ldap_uri );
-    p = strstr( tmp_uri, "//" );
-    p += 2;
-    p = strchr( p, '/' );
-    p++;
-    *p = '\0';
+
+    /* The magic number 6 here is the most number of digits a port number can
+     * have, i.e. 65535, plus one for the \0. */
+
+    tmplen = strlen(ludp->lud_scheme) + strlen(ludp->lud_host) + 6 + 
+             strlen( "://:/" );
+
+    tmp_uri = malloc( tmplen );
+
+    snprintf( tmp_uri, tmplen, "%s://%s:%d/", 
+              ludp->lud_scheme, ludp->lud_host, ludp->lud_port );
 
     /* lookup DN for username using an anonymous bind */
     rc = ldap_initialize(ld, tmp_uri);
@@ -153,6 +195,14 @@ static int ldap_connect( LDAP ** ld,
     }
 
     rc = do_bind( *ld, dn, pwd, errstr );
+
+    /* OK, We're bound, so we don't need the dn/pwd strings anymore.. */
+
+    if ( dn != NULL )
+        free(dn);
+
+    if ( pwd != NULL )
+        free(pwd);
 
     if( rc == -1 ) {
         /* Here a bind failing isn't catastrophic..  */
@@ -309,6 +359,7 @@ static int ldap_v( const char *userid,
 
         LDAP *ld = NULL;
         char  *user_dn = NULL;
+        char *p;
 
         if ( strstr( ldap_uri_in, "%s" ) == NULL ) {
             /* The LDAP URI must contain a %s to hold the user name! */
@@ -326,12 +377,31 @@ static int ldap_v( const char *userid,
             return -1;
         }
 
+        /* Before we go smacking this thing through sprintf, change
+         * the other %'s in the file to something that won't screw sprintf up.
+         * char(013), a vertical tab should do it.
+         */
+
+        p = strstr( ldap_uri_in, "%s" ) + 2;
+
+        while( ( p = strchr(p, '%') ) != NULL ) {
+            *p = '\013';
+        }
+
         num = snprintf( ldap_uri, len, ldap_uri_in, userid );
 
         if ( num >= len ) {
             /* Uhm, nearly overflowed the buffer.  We should freak. */
             *errstr = "System Error.  Contact your system administrator.";
             return -1;
+        }
+
+        /* Make all the VT's back in to %'s. */
+
+        p = ldap_uri;
+
+        while( ( p = strchr(p, '\013') ) != NULL ) {
+            *p = '%';
         }
 
         pbc_log_activity( PBC_LOG_DEBUG_VERBOSE,
@@ -346,20 +416,45 @@ static int ldap_v( const char *userid,
          * The definately needs to be changed.  There will need to be a
          * "searching" login that we use to find the Dn.
          */
-        got_error = ldap_connect( &ld, ldap_uri, NULL, NULL, errstr );
+        got_error = ldap_connect( &ld, ldap_uri, errstr );
         if( got_error == 0 ) {
 
             got_error = get_dn( ld, ldap_uri, &user_dn, errstr );
 
             if( got_error == 0 && strlen(user_dn) ) {
+                LDAPURLDesc *ludp;
+                int err;
 
-                got_error = do_bind( ld, user_dn, passwd, errstr );
+                if (ldap_url_parse( ldap_uri, &ludp )) {
+                    /* For some reason we can't parse the URL. Eeek. */
+                    got_error = -2;
+                } else {
 
-                if (got_error != 0)
-                    *errstr = "couldn't bind as user -- auth failed";
+                    got_error = do_bind( ld, user_dn, passwd, errstr );
 
-                free(user_dn);
+                    if (got_error != 0)
+                        *errstr = "couldn't bind as user -- auth failed";
+
+                    if ( got_error == 0 ) {
+                        pbc_log_activity( PBC_LOG_AUDIT,
+                                          "%s succesfully bound to %s:%d\n",
+                                          userid, ludp->lud_host, ludp->lud_port );
+                    } else if ( got_error == -1 ) {
+                        pbc_log_activity( PBC_LOG_AUDIT,
+                                          "%s fatal error binding to %s:%d\n",
+                                          userid, ludp->lud_host, ludp->lud_port );
+                    } else if ( got_error == -2 ) {
+                        pbc_log_activity( PBC_LOG_AUDIT,
+                                          "%s error binding to %s:%d.  Continuing\n",
+                                          userid, ludp->lud_host, ludp->lud_port );
+                    }
+                }
+
             }
+
+            if (user_dn != NULL)
+                free(user_dn);
+
             /* close ldap connection */
             ldap_unbind(ld);
         }

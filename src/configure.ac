@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.3 $)
+AC_REVISION($Revision: 2.4 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@blah)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
@@ -56,7 +56,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h shadow.h stdlib.h \
                   string.h strings.h sys/param.h sys/socket.h sys/time.h \
                   syslog.h unistd.h getopt.h ctype.h stdarg.h stdio.h \
                   sys/utsname.h time.h pwd.h sys/types.h assert.h sys/stat.h \
-                  sysexits.h mgoapi.h securid.h sys/resource.h])
+                  sysexits.h mgoapi.h securid.h sys/resource.h fnmatch.h])
 
 # OpenSSL Fun
 

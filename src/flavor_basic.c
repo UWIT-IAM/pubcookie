@@ -187,9 +187,9 @@ static login_result process_basic(login_rec *l, login_rec *c,
     *errstr = NULL;
 
     if (!v) {
-	pbc_log_activity(PBC_LOG_ERROR,
-			 "flavor_basic: flavor not correctly configured");
-	return LOGIN_ERR;
+        pbc_log_activity(PBC_LOG_ERROR,
+                         "flavor_basic: flavor not correctly configured");
+        return LOGIN_ERR;
     }
 
     /* choices, choices */
@@ -200,125 +200,125 @@ static login_result process_basic(login_rec *l, login_rec *c,
 
        so, some possibilities:
        . reply from login page
-           'l' is unauthed but has a username/pass that i should
-           verify.  if yes, modify login cookie accordingly and return
-           LOGIN_OK.  if no, print out the page and return
-           LOGIN_INPROGRESS.
+       'l' is unauthed but has a username/pass that i should
+       verify.  if yes, modify login cookie accordingly and return
+       LOGIN_OK.  if no, print out the page and return
+       LOGIN_INPROGRESS.
 
        . expired login cookie
-           i should print out the page and return LOGIN_INPROGRESS.
+       i should print out the page and return LOGIN_INPROGRESS.
 
        . valid login cookie
-           i should return LOGIN_OK.
-    */
+       i should return LOGIN_OK.
+     */
 
     if (l->reply == FORM_REPLY) {
         if (v->v(l->user, l->pass, NULL, l->realm, &creds, errstr) == 0) {
             if (debug) {
-               pbc_log_activity( PBC_LOG_AUDIT,
-                                 "authentication successful for %s\n", l->user );
+                pbc_log_activity( PBC_LOG_AUDIT,
+                                  "authentication successful for %s\n", l->user );
             }
 
-	    /* authn succeeded! */
-	    
-	    /* xxx modify 'l' accordingly ? */
+            /* authn succeeded! */
+
+            /* xxx modify 'l' accordingly ? */
 
             /* optionally stick @REALM into the username */
             if (l->user && l->realm &&
                 libpbc_config_getswitch("append_realm", 0)) {
-               /* append @REALM onto the username */
-               char * tmp;
-               tmp = calloc(strlen(l->user)+strlen(l->realm)+1, 1);
-               if (tmp) {
-                  strncat(tmp, l->user, strlen(l->user));
-                  strncat(tmp, "@", 1);
-                  strncat(tmp, l->realm, strlen(l->realm));
-                  free (l->user);
-                  l->user = tmp;
-               }
+                /* append @REALM onto the username */
+                char * tmp;
+                tmp = calloc(strlen(l->user)+strlen(l->realm)+1, 1);
+                if (tmp) {
+                    strncat(tmp, l->user, strlen(l->user));
+                    strncat(tmp, "@", 1);
+                    strncat(tmp, l->realm, strlen(l->realm));
+                    free (l->user);
+                    l->user = tmp;
+                }
             }
 
-	    /* if we got some long-term credentials, save 'em for later */
-	    if (creds != NULL) {
-	        char *outbuf;
-		int outlen;
-		char *out64;
+            /* if we got some long-term credentials, save 'em for later */
+            if (creds != NULL) {
+                char *outbuf;
+                int outlen;
+                char *out64;
 
-		if (!libpbc_mk_priv(NULL, creds->str, creds->sz,
-				    &outbuf, &outlen)) {
-		    /* save for later */
-		    out64 = malloc(outlen * 4 / 3 + 20);
-		    libpbc_base64_encode(outbuf, out64, outlen);
+                if (!libpbc_mk_priv(NULL, creds->str, creds->sz,
+                                    &outbuf, &outlen)) {
+                    /* save for later */
+                    out64 = malloc(outlen * 4 / 3 + 20);
+                    libpbc_base64_encode(outbuf, out64, outlen);
 
-		    print_header("Set-Cookie: %s=%s; domain=%s; secure\n",
-				 PBC_CRED_COOKIENAME, out64, PBC_LOGIN_HOST);
+                    print_header("Set-Cookie: %s=%s; domain=%s; secure\n",
+                                 PBC_CRED_COOKIENAME, out64, PBC_LOGIN_HOST);
 
-		    /* free buffer */
-		    free(outbuf);
-		    free(out64);
-		} else {
-		    pbc_log_activity(PBC_LOG_ERROR, 
-			     "libpbc_mk_priv failed: can't save credentials");
-		}
+                    /* free buffer */
+                    free(outbuf);
+                    free(out64);
+                } else {
+                    pbc_log_activity(PBC_LOG_ERROR, 
+                                     "libpbc_mk_priv failed: can't save credentials");
+                }
 
-		/* xxx save creds for later just in case we're
-		   really flavor_getcred. this leaks. */
-		l->flavor_extension = creds;
+                /* xxx save creds for later just in case we're
+                   really flavor_getcred. this leaks. */
+                l->flavor_extension = creds;
 
-		creds = NULL;
-	    }
+                creds = NULL;
+            }
 
-	    return LOGIN_OK;
-	} else {
-	    /* authn failed! */
-	    if (!*errstr) {
-		*errstr = "authentication failed";
-	    }
-	    pbc_log_activity(PBC_LOG_AUDIT,
-			     "flavor_basic: login failed: %s", *errstr);
+            return LOGIN_OK;
+        } else {
+            /* authn failed! */
+            if (!*errstr) {
+                *errstr = "authentication failed";
+            }
+            pbc_log_activity(PBC_LOG_AUDIT,
+                             "flavor_basic: login failed for %s: %s", l->user,
+                             *errstr);
 
-	    /* make sure 'l' reflects that */
-	    l->user = NULL;	/* in case wrong username */
-	    print_login_page(l, c, errstr);
-	    return LOGIN_INPROGRESS;
-	}
+            /* make sure 'l' reflects that */
+            l->user = NULL;	/* in case wrong username */
+            print_login_page(l, c, errstr);
+            return LOGIN_INPROGRESS;
+        }
     } else if (l->session_reauth) {
-	*errstr = "reauthentication required";
-	pbc_log_activity(PBC_LOG_AUDIT,
-			 "flavor_basic: %s: %s", l->user, *errstr);
+        *errstr = "reauthentication required";
+        pbc_log_activity(PBC_LOG_AUDIT, "flavor_basic: %s: %s", l->user, *errstr);
 
-	print_login_page(l, c, errstr);
-	return LOGIN_INPROGRESS;
+        print_login_page(l, c, errstr);
+        return LOGIN_INPROGRESS;
 
-    /* l->check_error will be set whenever we couldn't decode the
-       login cookie, including (for example) when the login cookie
-       has expired. */
+        /* l->check_error will be set whenever we couldn't decode the
+           login cookie, including (for example) when the login cookie
+           has expired. */
     } else if (l->check_error) {
-	*errstr = l->check_error;
-	pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
+        *errstr = l->check_error;
+        pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
-	print_login_page(l, c, errstr);
-	return LOGIN_INPROGRESS;
+        print_login_page(l, c, errstr);
+        return LOGIN_INPROGRESS;
 
-    /* if l->check_error is NULL, then 'c' must be set and must
-       contain the login cookie information */
+        /* if l->check_error is NULL, then 'c' must be set and must
+           contain the login cookie information */
     } else if (!c) {
-	pbc_log_activity(PBC_LOG_ERROR,
-			 "flavor_basic: check_error/c invariant violated");
-	abort();
+        pbc_log_activity(PBC_LOG_ERROR,
+                         "flavor_basic: check_error/c invariant violated");
+        abort();
 
-    /* make sure the login cookie represents credentials for this flavor */
+        /* make sure the login cookie represents credentials for this flavor */
     } else if (c->creds != PBC_BASIC_CRED_ID) {
-	*errstr = "cached credentials wrong flavor";
-	pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
+        *errstr = "cached credentials wrong flavor";
+        pbc_log_activity(PBC_LOG_ERROR, "flavor_basic: %s", *errstr);
 
-	print_login_page(l, c, errstr);
-	return LOGIN_INPROGRESS;
+        print_login_page(l, c, errstr);
+        return LOGIN_INPROGRESS;
 
     } else { /* valid login cookie */
-	pbc_log_activity(PBC_LOG_AUDIT,
-			 "flavor_basic: free ride", l->user);
-	return LOGIN_OK;
+        pbc_log_activity(PBC_LOG_AUDIT,
+                         "flavor_basic: free ride", l->user);
+        return LOGIN_OK;
     }
 }
 

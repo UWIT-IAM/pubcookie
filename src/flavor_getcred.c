@@ -11,8 +11,13 @@
 # include <assert.h>
 #endif /* HAVE_ASSERT_H */
 
-#include <fnmatch.h>
-#include <string.h>
+#ifdef HAVE_FNMATCH_H
+# include <fnmatch.h>
+#endif /* HAVE_FNMATCH_H */
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
 
 #include "pbc_config.h"
 #include "index.cgi.h"

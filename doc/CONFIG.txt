@@ -62,9 +62,15 @@ kerberos5_keytab    string  full path to the K5 keytab file
 -------------------------------------------------------------------------------
 The LDAP verifier uses:
 ldap_uri        list    The LDAP URI in this format:
-                        ldaps://host/o=searchbase???(uid=%s)
-                        ldap://host/o=searchbase???(uid=%s)
+            
+    ldaps://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
+    ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
 
                         (uid=%s) is the search filter for finding an account
                         by netid.  The %s will be replaced with the netid.
                         The host string can optionally contain a port number.
+                        The filter can only contain one %s at this time.
+
+                        x-BindDN and x-Password are the Bind DN and Password,
+                        URL encoded (the only thing I've noticed causing
+                        problems so far are spaces, %20.)
