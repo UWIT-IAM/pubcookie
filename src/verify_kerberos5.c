@@ -8,12 +8,13 @@
  */
 
 /*
- * $Revision: 1.10 $
+ * $Revision: 1.11 $
  */
 
 /* login cgi includes */
 #include "index.cgi.h"
 #include "verify.h"
+#include "pbc_config.h"
 #include "pbc_myconfig.h"
 
 #ifdef HAVE_KRB5
@@ -33,7 +34,7 @@
 #include <krb5.h>
 
 #define KRB5_DEFAULT_OPTIONS 0
-#define KRB5_DEFAULT_LIFE 60*15 /* xxx 15 minutes */
+#define KRB5_DEFAULT_LIFE (PBC_DEFAULT_EXPIRE_LOGIN)
 
 static char thishost[BUFSIZ];
 
@@ -232,12 +233,14 @@ static int creds_derive(struct credentials *creds,
 	syslog(LOG_ERR, 
 	       "verify_kerberos5: creds_derive %s: krb5_cc_store_cred failed",
 	       target);
+	krb5_cc_destroy(context, ccache_target);
 	goto cleanup;
     }
 
     /* bundle up the new ticket */
     if (save_tf(tfname_target, outcredsp) < 0) {
 	syslog(LOG_ERR, "verify_kerberos5: save_tf failed");
+	krb5_cc_destroy(context, ccache_target);
 	goto cleanup;
     }
 
@@ -249,7 +252,6 @@ static int creds_derive(struct credentials *creds,
     if (request.client) krb5_free_principal(context, request.client);
     if (request.server) krb5_free_principal(context, request.server);
     krb5_cc_destroy(context, ccache);
-    krb5_cc_destroy(context, ccache_target);
     unlink(tfname);
     unlink(tfname_target);
     krb5_free_context(context);
