@@ -4,10 +4,10 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.36 2004-06-03 19:24:09 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.37 2004-07-29 23:40:21 dors Exp $
 //
 
-#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.1.1"
+#define Pubcookie_Version "Pubcookie ISAPI Filter, 3.1.2 pre-beta1"
 
 #define MAX_INSTANCE_ID 25
 #define MAX_REG_BUFF 2048 /* Using a fixed size saves a registy lookup 
