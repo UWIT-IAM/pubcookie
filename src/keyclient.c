@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: keyclient.c,v 2.1 2002-06-05 16:52:29 greenfld Exp $
+    $Id: keyclient.c,v 2.2 2002-06-07 17:59:51 greenfld Exp $
  */
 
 #include <stdio.h>
@@ -45,7 +45,8 @@ int noop = 0;
 static void usage(void)
 {
     printf("usage: keyclient [options]\n");
-    printf("  -c <key/cert file> : key to use for TLS authentication\n");
+    printf("  -c <cert file>     : cert to use for TLS authentication\n");
+    printf("  -k <key file>      : key to use for TLS authentication\n");
     printf("  -n                 : just show what would be done\n");
     printf("  -d                 : don't generate a new key, just download\n");
     printf("                       the existing one\n");
@@ -74,7 +75,10 @@ int main(int argc, char *argv[])
     int newkeyp;
     SSL_METHOD *meth;
     X509 *server_cert;
-    const char *keyfile = "server.pem";
+    const char *keyfile;
+    const char *certfile;
+    const char *cafile = NULL;
+    const char *cadir = NULL;
     int done = 0;
     int c;
     int filetype = SSL_FILETYPE_PEM;
@@ -84,6 +88,8 @@ int main(int argc, char *argv[])
     int r;
 
     libpbc_config_init(NULL, "keyclient");
+    keyfile = libpbc_config_getstring("ssl_key_file", "server.pem");
+    certfile = libpbc_config_getstring("ssl_cert_file", "server.pem");
 
     if (gethostname(hostname, sizeof(hostname)) < 0) {
 	perror("gethostname");
@@ -102,8 +108,23 @@ int main(int argc, char *argv[])
 	    break;
 
 	case 'c':
-	    /* 'optarg' is the key/certificate file */
+	    /* 'optarg' is the certificate file */
+	    certfile = strdup(optarg);
+	    break;
+
+	case 'k':
+	    /* 'optarg' is the key file */
 	    keyfile = strdup(optarg);
+	    break;
+
+	case 'C':
+	    /* 'optarg' is the CA we accept */
+	    cafile = strdup(optarg);
+	    break;
+
+	case 'D':
+	    /* 'optarg' is a directory of CAs */
+	    cadir = strdup(optarg);
 	    break;
 
 	case 'n':
@@ -143,10 +164,26 @@ int main(int argc, char *argv[])
     ctx = SSL_CTX_new(TLSv1_client_method());
 
     /* setup the correct certificate */
-    SSL_CTX_use_certificate_file(ctx, keyfile, filetype);
-    SSL_CTX_use_PrivateKey_file(ctx, keyfile, filetype);
+    if (!SSL_CTX_use_certificate_file(ctx, certfile, filetype)) {
+	fprintf(stderr, "SSL_CTX_use_certificate_file:\n");
+	ERR_print_errors_fp(stderr);
+	exit(1);
+    }
+    if (!SSL_CTX_use_PrivateKey_file(ctx, keyfile, filetype)) {
+	fprintf(stderr, "SSL_CTX_use_PrivateKey_file:\n");
+	ERR_print_errors_fp(stderr);
+	exit(1);
+    }
+    if (!SSL_CTX_load_verify_locations(ctx, cafile, cadir)) {
+	fprintf(stderr, "SSL_CTX_load_verify_locations:\n");
+	ERR_print_errors_fp(stderr);
+	exit(1);
+    }
 
     ssl = SSL_new(ctx);
+    if (!ssl) {
+	ERR_print_errors_fp(stderr);
+    }
 
     /* figure out the key management server */
     keymgturi = libpbc_config_getstring("keymgt_uri", NULL);
@@ -246,7 +283,8 @@ int main(int argc, char *argv[])
     }
 
     if (SSL_write(ssl, buf, strlen(buf)) < 0) {
-	fprintf(stderr, "SSL_write failed\n");
+	fprintf(stderr, "SSL_write failed:\n");
+	ERR_print_errors_fp(stderr);
 	exit(1);
     }
 
@@ -255,7 +293,8 @@ int main(int argc, char *argv[])
 	/* read the response */
 	r = SSL_read(ssl, p, sizeof(buf) - 1 - (p - buf));
 	if (r < 0) {
-	    fprintf(stderr, "SSL_read failed\n");
+	    fprintf(stderr, "SSL_read failed:\n");
+	    ERR_print_errors_fp(stderr);
 	    exit(1);
 	}
 	if (r == 0) {
