@@ -124,7 +124,8 @@ login cgi:</p>
      verifier when none is submitted via the form</dd>
 
 <dt> <a name="default_l_expire">default_l_expire</a> <i>time</i></dt>
-<dd> Defines the default duration of a single sign-on session (login cookie expiry). Default: 8 hours.</dd>
+<dd> Defines the default duration of a single sign-on session (login cookie expiry).</dd>
+<dd> Default: 8 hours.</dd>
 
 <dt> <a name="egd_socket">egd_socket</a> <i>socket-locatin</i></dt>
 <dd> Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</dd>
@@ -136,6 +137,12 @@ login cgi:</p>
      use the Pubcookie relay cgi to authenticate users.</dd> 
 <dd> Example: <i>example.edu</i> or <i></i></dd>
 
+<dt> <a name="form_expire_time">form_expire_time</a> <i>time</i></dt>
+<dd> Defines how long someone can take to log in before the login form
+     expires. This provides some protection against replaying the login
+     form later. The value is in seconds.</dd> 
+<dd> Default: 30 seconds.</dd>
+
 <dt> <a name="kiosk">kiosk</a> <i>special</i></dt>
 <dd> Kiosk policy configuration for reduced SSO duration; matches by
      user-agent string, remote IP addresses, or IP address ranges.</dd>
@@ -145,7 +152,7 @@ login cgi:</p>
 <dd> The minimum countdown for automatically reloading the status page.</dd>
 
 <dt> <a name="mirrorfile">mirrorfile</a> <i>string</i></dt>
-<dd> full path to a file to keep a mirrored copy of all output sent 
+<dd> Full path to a file to keep a mirrored copy of all output sent 
      to the client by the most recent call to the login cgi</dd>
                         
 <dt> <a name="retain_username_on_failed_authn">retain_username_on_failed_authn</a> <i>int</i></dt>

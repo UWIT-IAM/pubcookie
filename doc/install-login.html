@@ -666,6 +666,11 @@ occurs when user-provided credentials are verified directly. Subsequent
 authentication is based on checking the "login" cookie. This setting 
 defines how long this cookie is valid.</p></li>
 
+<li><p>Use <a href="config.html#form_expire_time"><tt>form_expire_time</tt></a> 
+to define how long users have to log in. Taking too long will result in a 
+new login form (with the <tt>form_expired</tt> template message included). 
+The default expiration is 30 seconds.</p></li>
+
 <li><p>Use <a href="config.html#static_user_field"><tt>static_user_field</tt></a>
 to define the editability of the userid field during a single browsing 
 session. You may want to allow some flexibility or force users to close 
@@ -905,7 +910,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.26 2004-07-23 14:01:13 dors Exp $
+$Id: install-login.html,v 1.27 2004-07-27 21:51:52 dors Exp $
 </pre>
 </body>
 
