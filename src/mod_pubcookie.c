@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.13 1999-01-09 01:08:40 willey Exp $
+    $Id: mod_pubcookie.c,v 1.14 1999-01-11 17:21:07 willey Exp $
  */
 
 #include "httpd.h"
@@ -79,8 +79,6 @@ unsigned char *get_app_path(pool *p, const char *path_in) {
 #else
     return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
 #endif
-    
-  /*return path; */
 }
 
 /*                                                                            */
@@ -425,14 +423,14 @@ static int pubcookie_user(request_rec *r) {
 
   /* check app_id */
   current_app_id = cfg->app_id ? cfg->app_id : get_app_path(p, r->filename);
-  if( strcasecmp(current_app_id, (*cookie_data).broken.app_id, sizeof((*cookie_data).broken.app_id)-1) != 0 ) {
+  if( strncasecmp(current_app_id, (*cookie_data).broken.app_id, sizeof((*cookie_data).broken.app_id)-1) != 0 ) {
     cfg->failed = PBC_BAD_AUTH;
     libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s\n", current_app_id, (*cookie_data).broken.app_id);
     return OK;
   }
 
   /* make sure this cookie is for this server */
-  if( strcasecmp(scfg->appsrv_id, (*cookie_data).broken.appsrv_id, sizeof((*cookie_data).broken.appsrv_id)-1) != 0 ) {
+  if( strncasecmp(scfg->appsrv_id, (*cookie_data).broken.appsrv_id, sizeof((*cookie_data).broken.appsrv_id)-1) != 0 ) {
     cfg->failed = PBC_BAD_AUTH;
     libpbc_debug("pubcookie_user: wrong app server id; directory: %s cookie: %s\n", scfg->appsrv_id, (*cookie_data).broken.appsrv_id);
     return OK;
@@ -468,15 +466,6 @@ static int pubcookie_user(request_rec *r) {
 /*                                                                            */
 int pubcookie_auth (request_rec *r) {
   pubcookie_rec *cfg;
-#ifdef APACHE1_2
-  const array_header *requires_struct = requires(r);
-#else
-  const array_header *requires_struct = ap_requires(r);
-#endif
-  require_line *requires_lines;
-  table *grpstatus = NULL;
-  int x;
-  const char *line_ptr, *word_ptr;
 
 #ifdef APACHE1_2
   cfg = (pubcookie_rec *)get_module_config(r->per_dir_config,
