@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386 /IGNORE:4089"
-				AdditionalDependencies="libeay32.lib odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="libeay32.lib odbc32.lib odbccp32.lib wsock32.lib "
 				OutputFile=".\Release/PubCookieFilter.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=".\lib"
@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="libeay32.lib odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="libeay32.lib odbc32.lib odbccp32.lib wsock32.lib "
 				OutputFile=".\Debug/PubCookieFilter.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=".\lib"
@@ -159,6 +159,12 @@
 				RelativePath=".\debug.c">
 			</File>
 			<File
+				RelativePath=".\html.cpp">
+			</File>
+			<File
+				RelativePath=".\keys.cpp">
+			</File>
+			<File
 				RelativePath="..\libpubcookie.c">
 			</File>
 			<File
@@ -185,6 +191,12 @@
 			Filter="h;hpp;hxx;hm;inl">
 			<File
 				RelativePath=".\debug.h">
+			</File>
+			<File
+				RelativePath=".\html.h">
+			</File>
+			<File
+				RelativePath=".\keys.h">
 			</File>
 			<File
 				RelativePath="..\libpubcookie.h">

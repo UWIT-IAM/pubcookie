@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.38 2004-08-10 22:07:21 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.39 2004-09-01 21:53:34 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.1.2 pre-beta1"
@@ -39,6 +39,7 @@ typedef struct {
 	char			Error_Page[MAX_PATH];
 	char			Enterprise_Domain[1024];
 	char			Login_URI[1024];
+	char            *Relay_URI;
     pbc_cookie_data *cookie_data;
 	DWORD			Set_Server_Values;
 	DWORD			legacy;
