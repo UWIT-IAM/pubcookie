@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------- */
-/* $Id: securid.h,v 1.1 2000-09-08 19:23:58 willey Exp $         */
+/* $Id: securid.h,v 1.2 2000-09-30 16:43:14 willey Exp $         */
 /* -------------------------------------------------------------------- */
 
 #define SECURID_DO_SID    1
@@ -12,5 +12,7 @@
 #define SECURID_WANTNEXT  2
 #define SECURID_PROB      3
 #define SECURID_BAILOUT   4
+
+#define BIGS 1024
 
 int securid (char *, char *, char *, char *, int, int, int);
