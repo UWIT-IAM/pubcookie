@@ -4,7 +4,7 @@
  */
 
 /*
-  $Id: winkeyclient.c,v 1.11 2004-05-13 22:53:22 ryanc Exp $
+  $Id: winkeyclient.c,v 1.12 2004-05-15 21:37:08 ryanc Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,20 +92,82 @@ char *hostname = NULL;
 BOOL silent = FALSE;
 char *gcert = NULL;
 
+WSADATA wsaData;
+SOCKET  Socket;
+CtxtHandle hContext;
+SecBuffer  ExtraData;
+SECURITY_STATUS Status;
+SecurityFunctionTable *lpSecurityFunc = NULL;
+PCCERT_CONTEXT pRemoteCertContext = NULL;
+CredHandle hClientCreds;
+
+
 int Messagef(const char * format, ...){
     char msg[2048];
 
+	if (!silent) {
+
+		va_list   args;
+
+		va_start(args, format);
+
+		_vsnprintf(msg, sizeof(msg)-1, format, args);
+
+		MessageBox(NULL,msg,"Keyclient",MB_ICONINFORMATION);
+
+		va_end(args);
+	}
+    return 1;
+}
+
+void exitf(int return_code, const char * format, ...) {
+	char msg[2048];
+	UINT boxtype;
 	va_list   args;
 
-    va_start(args, format);
+	if (!silent) {
+		if (return_code != ERROR_SUCCESS) {
+			boxtype=MB_ICONWARNING;
+		} 
+		else {
+			boxtype=MB_OK;
+		}
 
-    _vsnprintf(msg, sizeof(msg)-1, format, args);
+		if (strcmp("",format)) {
+			va_start(args, format);
+			_vsnprintf(msg, sizeof(msg)-1, format, args);
+			MessageBox(NULL,msg,"Keyclient",boxtype);
+			va_end(args);
+		}
 
-	MessageBox(NULL,msg,"Keyclient",MB_OK);
+		if (return_code != ERROR_SUCCESS) {
+			if (gcert) {
+				Messagef("Unable to automatically obtain granting certificate.\nYou will need to manually obtain your granting certificate and save it as: %s", gcert );
+			}
+			else {
+				Messagef("You will need to sucessfully run keyclient before using the Pubcookie filter.");
+			}
+		}
+	}
 
-    va_end(args);
+	DisconnectFromServer(Socket, &hClientCreds, &hContext);
 
-    return 1;
+	// Free SSPI credentials handle.
+	lpSecurityFunc->FreeCredentialsHandle(&hClientCreds);
+
+	// Close socket.
+	closesocket(Socket);
+
+	// Shutdown WinSock subsystem.
+	WSACleanup();
+
+	// Close certificate store.
+	CertCloseMyStore();
+
+	// free memory pool
+	free(p);
+
+    exit (return_code);
 }
 
 /* destructively returns the value of the CN */
@@ -251,14 +313,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     char *keyhost = NULL;
 	char *keymgtpath = NULL;
     int keyport = 443;
-	WSADATA wsaData;
-    SOCKET  Socket;
-    CtxtHandle hContext;
-    SecBuffer  ExtraData;
-    SECURITY_STATUS Status;
-    SecurityFunctionTable *lpSecurityFunc = NULL;
-    PCCERT_CONTEXT pRemoteCertContext = NULL;
-	CredHandle hClientCreds;
 	char *Reply = NULL;
 	char sztmp[1024];
 
@@ -336,8 +390,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                               &hContext,
                               &ExtraData))
     {
-        Messagef("Error performing handshake\n");
-        return ERROR_INSTALL_FAILURE;
+        exitf(ERROR_INSTALL_FAILURE,"Could not build a secure connection to keyserver.");
     }
 
 
@@ -351,8 +404,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                                     (PVOID)&pRemoteCertContext);
     if(Status != SEC_E_OK)
     {
-        Messagef("Error 0x%x querying remote certificate\n", Status);
-        return ERROR_INSTALL_FAILURE;
+        exitf(ERROR_INSTALL_FAILURE,"Error 0x%x querying remote certificate\n", Status);
     }
 
     // Display server certificate chain.
@@ -365,9 +417,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 	if(Status)
     {
-        Messagef("Error authenticating server credentials.  Check to make sure that your server has a certificate that is trusted by your machine.\n");
-
-        exit(ERROR_INSTALL_FAILURE);
+        exitf(ERROR_INSTALL_FAILURE,"Error authenticating server credentials.  Check to make sure that your server has a certificate that is trusted by your machine.\n");
     }
 
 
@@ -388,8 +438,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 		} else {   /* set the key */
 			if (get_crypt_key(&c_stuff, hostname) != PBC_OK) {
-				Messagef("couldn't retrieve key\r\n");
-				exit(ERROR_INSTALL_FAILURE);
+				exitf(ERROR_INSTALL_FAILURE,"Couldn't retrieve key");
 			}
 
 			libpbc_base64_encode(p, c_stuff.key_a, (unsigned char *) enckey, PBC_DES_KEY_BUF);
@@ -409,7 +458,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     if (noop && newkeyp) {
         Messagef("-n specified; not performing any writes:\n");
         Messagef("%s", buf);
-        exit(ERROR_INSTALL_FAILURE);
+        exit(ERROR_SUCCESS);
     }
     if(HttpsGetFile(Socket, 
                     &hClientCreds,
@@ -434,8 +483,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 				if (newkeyp != -1) {
 					/* If getting a key, cp points to a base64 key to decode */
 					if (strlen(cp) >= (4 * PBC_DES_KEY_BUF + 100) / 3) {
-						Messagef("key too long\n");
-						exit(1);
+						exitf(ERROR_INSTALL_FAILURE,"key too long\n");
 					}
 
 					if (s=strchr(cp, '\r')) *s = '\0';
@@ -449,19 +497,16 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 						if (s=strchr(cp, '\r')) *s = '\0';
 						ret = libpbc_base64_decode(p, (unsigned char *) cp, thekey, &osize);
 						if (osize != PBC_DES_KEY_BUF) {
-							Messagef("keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
-							exit(1);
+							exitf(ERROR_INSTALL_FAILURE,"keyserver returned wrong key size: expected %d got %d\n", PBC_DES_KEY_BUF, osize);
 						}
 
 						if (! ret) {
-							Messagef("Bad base64 decode.\n" );
-							exit(1);
+							exitf(ERROR_INSTALL_FAILURE,"Bad base64 decode.\n" );
 						}
 
 						if (set_crypt_key((const char *) thekey, hostname) != PBC_OK) {
-							Messagef("Could not set key for %s\nCheck file permissions.\n",hostname);
-							exit(1);
-						} else if (!silent) {
+							exitf(ERROR_INSTALL_FAILURE,"Could not set key for %s\nCheck file permissions.\n",hostname);
+						} else {
 							Messagef("Created and stored encryption key for %s.\n",hostname);
 						}
 
@@ -470,51 +515,24 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 					/* If getting a cert, cp points to start of PEM cert */
 					FILE *cf = fopen(gcert, "w");
 					if (!cf) {
-						perror("gcert");
-						exit(1);
+						exitf(ERROR_INSTALL_FAILURE,"Unable to open granting certificate file for writing.\n File: %s",gcert);
 					}
 					fputs(cp, cf);
 					fclose(cf);
-					if (!silent) {
-						Messagef("Granting cert saved to %s\n", gcert);
-					}
+					
+					Messagef("Granting cert saved to %s\n", gcert);
 				}
 
 				done = 1;
-				goto jump;
+				exitf(ERROR_SUCCESS,"");
 			}
 			cp++;
 	}
 
-	//
-	// Cleanup.
-	//
-jump:
-
-	if(DisconnectFromServer(Socket, &hClientCreds, &hContext))
-	{
-		Messagef("Error disconnecting from server\n");
-	}
-
-
-	// Free SSPI credentials handle.
-	lpSecurityFunc->FreeCredentialsHandle(&hClientCreds);
-
-	// Close socket.
-	closesocket(Socket);
-
-	// Shutdown WinSock subsystem.
-	WSACleanup();
-
-	// Close certificate store.
-	CertCloseMyStore();
-
 	if (!done) {
-		Messagef("Operation failed.\nYou will need to sucessfully run keyclient and obtain a key before using the Pubcookie filter.\n\nServer Reply:\n%s", Reply);
-		exit(ERROR_INSTALL_FAILURE);
+		exitf(ERROR_INSTALL_FAILURE,"Operation failed.\nServer Reply:\n%s", Reply);
 	}
-	// free memory pool
-	free(p);
 
-	return ERROR_SUCCESS;
+	exitf(ERROR_SUCCESS,"");
+	return(0);  //Just here to make the compiler happy.  exitf does not return.
 }
