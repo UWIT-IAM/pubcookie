@@ -1,5 +1,5 @@
 /*
-    $Id: pbc_config.h,v 1.21 1999-06-25 22:18:13 willey Exp $
+    $Id: pbc_config.h,v 1.22 1999-07-08 22:54:21 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -39,7 +39,12 @@
 <TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=520><TR><TD WIDTH=300 VALIGN=\"MIDDLE\"> <IMG SRC=\""
 /* UWnetID logdo url */
 #define PBC_POST_NO_JS_HTML4 "\" ALT=\"UW NetID Login\" HEIGHT=\"64\" WIDTH=\"208\"> \n \
-<P>You do not have Javascript turned on, additional interaction will be required, please click the button to continue<P>\n \
+<SCRIPT LANGUAGE=\"JavaScript\"> \
+document.write(\"<P>Your browser should move to the next page in a few seconds.  If it doesn't, please click the button to continue.<P>\")\n \
+</SCRIPT> \
+<NOSCRIPT> \
+<P>You do not have Javascript turned on, please click the button to continue.<P>\n \
+</NOSCRIPT> \
 </TABLE>\n \
 <INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\""
 /* button text (PBC_POST_NO_JS_BUTTON) */
