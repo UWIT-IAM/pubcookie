@@ -44,6 +44,7 @@ version of this document</a> is always the most up-to-date version.
 
   <li><a href="#debug">Logging &amp; Debugging</a></li>
   <li><a href="#templates">Login CGI Templates</a></li>
+  <li><a href="#loginmsgs">Custom Login Messages</a></li>
   <li><a href="#ok_browsers">Browser Acceptance Configuration</a></li>
   <li><a href="#logout">Logout Configuration</a></li>
   <li><a href="#kiosk">Kiosk Configuration</a></li>
@@ -540,6 +541,38 @@ for variable substitution within the templates has changed over time,
 and therefore the CMU and UWash templates may be slightly
 out-of-date.</p>
 
+<h4><a name="loginmsgs">Custom Login Messages</a></h4>
+
+<p>This is all about branding. Some application owners require branding 
+of the login page with their own login prompt text and icons. The login cgi 
+support this capability through the use of custom login message templates
+(small HTML snippets) configured on the login server. They can't take over
+the entire design of the login page, but it does provide a place for
+friendlier, custom messages.</p>
+
+<p>A custom login message applies to a single application, so the 
+corresponding template is stored in a file according to the server name and 
+application id. The file path is based on the
+<a href="config.html#custom_login_message_dir">custom_login_message_dir</a>
+configuration variable (the directory containing all the custom login message 
+templates, which defaults to the same directory as all the other login
+templates). The filename is based on the
+<a href="config.html#custom_login_file_prefix">custom_login_file_prefix</a>
+configuration variable (the filename prefix for all custom login message templates)
+plus the server name and application id.</p>
+
+<p>For example, to configure a custom login message for an application
+on <i>appserver.example.edu</i> with an application id of <i>testapp</i>, you would
+place the custom message (HTML snippet) in the following file (based
+on default values, of course):</p>
+
+<pre>PREFIX/login_templates/custom_login_msg-appserver.example.ed-testapp</pre>
+
+<p>You can see where custom login messages are positioned relative to
+other elements on the login page by viewing the HTML source of the
+<a href="templates.html#login">login</a> template. They come just before
+the reason the user has to authenticate.</p>
+
 <h4><a name="ok_browsers">Browser Acceptance Configuration </a></h4>
 
 <p>The optional <tt>PREFIX/ok_browsers</tt> file contains a list of
@@ -910,7 +943,7 @@ Copyright 1999-2004, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.28 2004-07-29 18:58:30 dors Exp $
+$Id: install-login.html,v 1.29 2004-12-04 00:41:25 dors Exp $
 </pre>
 </body>
 

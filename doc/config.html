@@ -119,6 +119,16 @@ login cgi:</p>
 <dt> <a name="basic_verifier">basic_verifier</a> <i>string</i></dt>
 <dd> The active verifier used by the basic login flavor.</dd>
 
+<dt> <a name="custom_login_message_dir">custom_login_message_dir</a> <i>string</i></dt>
+<dd> The directory for custom login message templates.</dd>
+<dd> Default: the root directory for login templates (see <a href="#template_root">template_root</a>).</dd>
+
+<dt> <a name="custom_login_file_prefix">custom_login_file_prefix</a> <i>string</i></dt>
+<dd> The filename prefix used for each custom login message template. This prefix helps if
+     custom login messages are stored in the same directory as the other login templates. 
+     The prefix helps you keep them apart.</dd>
+<dd> Default: <tt>custom_login_msg</tt></dd>
+
 <dt> <a name="default_realm">default_realm</a> <i>string</i></dt>
 <dd> optional default authentication realm to pass to the 
      verifier when none is submitted via the form</dd>
