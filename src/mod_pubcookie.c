@@ -1,5 +1,5 @@
 /*
-    $Id: mod_pubcookie.c,v 1.24 1999-04-29 21:17:48 willey Exp $
+    $Id: mod_pubcookie.c,v 1.25 1999-05-26 18:24:25 willey Exp $
  */
 
 /* apache includes */
@@ -10,6 +10,12 @@
 #include "http_main.h"
 #include "http_protocol.h"
 #include "util_script.h"
+
+/* ssleay lib stuff */
+#include <pem.h>
+#include <des.h>
+#include <rand.h>
+#include <err.h>
 
 /* pubcookie stuff */
 #include "pubcookie.h"
@@ -54,11 +60,35 @@ typedef struct {
 } pubcookie_dir_rec;
 
 /*                                                                            */
-int package_post(request_rec *r) {
+int put_out_post(request_rec *r) {
    char argsbuffer[HUGE_STRING_LEN];
    int retval;
 
    /* checkout http_protocols.c for reading the body info */
+#ifdef APACHE1_2
+   if ((retval = setup_client_block(r, REQUEST_CHUNKED_ERROR)))
+        return retval;
+
+   if (should_client_block(r)) {
+        int len_read;
+
+        /* do we need one of these here ? */
+        hard_timeout("copy script args", r);
+
+        while ((len_read =
+                get_client_block(r, argsbuffer, HUGE_STRING_LEN)) > 0) {
+            reset_timeout(r);
+            if (rwrite(argsbuffer, len_read, r) < len_read) {
+                /* something went wrong writing, chew up the rest */
+                while (get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
+                    /* dump it */
+                }
+                break;
+            }
+        }
+
+        kill_timeout(r);
+#else
    if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
         return retval;
 
@@ -71,61 +101,67 @@ int package_post(request_rec *r) {
         while ((len_read =
                 ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN)) > 0) {
             ap_reset_timeout(r);
-/*
-            if (ap_bwrite(script_out, argsbuffer, len_read) < len_read) {
- */
-                /* silly script stopped reading, soak up remaining message */
-/*
+            if (ap_rwrite(argsbuffer, len_read, r) < len_read) {
+                /* something went wrong writing, chew up the rest */
                 while (ap_get_client_block(r, argsbuffer, HUGE_STRING_LEN) > 0) {
- */
                     /* dump it */
-/*
                 }
                 break;
             }
- */
-            
-            libpbc_debug("package_post: is this it? %s\n", argsbuffer);
         }
 
-
         ap_kill_timeout(r);
+#endif
     }
+    return(1);
 
 }
 
 /*                                                                            */
-unsigned char *get_app_path(pool *p, const char *path_in) {
-  char *path;
-  int i;
+unsigned char *get_app_path(pool *p, const char *uri, const char *filename) {
+    char *path;
+    int i;
 
+    /* this is a little screwey because we use uri and filename
+       because we don't want to mess with looking at document root
+       and it's been done for us already
+     */
+  
 #ifdef APACHE1_2
-  path = pstrdup(p, path_in);
+    path = pstrdup(p, uri);
 #else
-  path = ap_pstrdup(p, path_in);
+    path = ap_pstrdup(p, uri);
 #endif
 
 #ifdef APACHE1_2
-  if ( ! is_directory(path) ) {
+    if ( ! is_directory(filename) ) {
 #else
-  if ( ! ap_is_directory(path) ) {
+    if ( ! ap_is_directory(filename) ) {
 #endif
-    for ( i=strlen(path)-1; i >= 0; i-- ) {
-      if ( path[i] == '/' ) {
-	path[++i] = '\0';
-	i=0;
-      }
+        for ( i=strlen(path)-1; i >= 0; i-- ) {
+            if ( path[i] == '/' ) {
+	        path[++i] = '\0';
+	        i=0;
+            }
+        }
     }
-  }
 
-  if ( path[strlen(path)-1] != '/' )
+    if ( path[strlen(path)-1] != '/' )
 #ifdef APACHE1_2
-    return (unsigned char *) pstrcat( p, path, "/", NULL);
+        return (unsigned char *) pstrcat( p, path, "/", NULL);
 #else
-    return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
+        return (unsigned char *) ap_pstrcat( p, path, "/", NULL);
 #endif
   
-  return path;
+    return path;
+
+}
+
+/* figure out the app_id                                                      */
+unsigned char *genr_app_id(request_rec *r, pubcookie_dir_rec *cfg)
+{
+
+    return cfg->app_id ? cfg->app_id : get_app_path(r->pool, r->unparsed_uri, r->filename);
 
 }
 
@@ -160,6 +196,10 @@ int blank_cookie(request_rec *r, char *name) {
       !(cookie_header = ap_table_get(r->headers_in, "Cookie")))
 #endif
     return 0;
+
+  /* if we aint got an authtype they we definately aint pubcookie */
+  if(!ap_auth_type(r))
+    return DECLINED;
 
   /* add an equal on the end */
 #ifdef APACHE1_2
@@ -255,10 +295,6 @@ static int auth_failed(request_rec *r) {
     else
         strcpy(args, "");
 
-    /* maybe deal with post args */
-    if ( r->method_number == M_POST ) 
-        package_post(r);
-
     r->content_type = "text/html";
 
     /* make the granting request */
@@ -267,7 +303,7 @@ static int auth_failed(request_rec *r) {
 	  PBC_GETVAR_APPSRVID,
 	  (scfg->appsrv_id ? scfg->appsrv_id : (unsigned char *) r->server->server_hostname),
 	  PBC_GETVAR_APPID, 
-	  (cfg->app_id ? cfg->app_id : get_app_path(r->pool, r->filename)),
+	  genr_app_id(r, cfg),
 	  PBC_GETVAR_CREDS, 
 	  cfg->creds, 
 	  PBC_GETVAR_VERSION, 
@@ -283,6 +319,18 @@ static int auth_failed(request_rec *r) {
 	  PBC_GETVAR_FR, 
 	  (cfg->force_reauth ? cfg->force_reauth : PBC_NO_FORCE_REAUTH));
 
+    /* the redirect for POSTs is different than GETs */
+    /* for GETs:                                     */
+    /*   granting request is sent in a cookie and    */
+    /*   a simple redirect is used to get the user   */
+    /*   to the login server                         */
+    /* for POSTs:                                    */
+    /*   granting request is still sent in a cookie  */
+    /*   redirect is done with javascript in the     */
+    /*   body or a button if the user has javascript */
+    /*   turned off.  the POST info is in a FORM in  */
+    /*   the body of the redirect                    */
+
     base64_encode(g_req_contents, e_g_req_contents, strlen(g_req_contents));
 
     ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure",
@@ -292,10 +340,6 @@ static int auth_failed(request_rec *r) {
 
     if ( cfg->force_reauth )
         cfg->force_reauth = NULL;
-
-    /* setup the client pull */
-    ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
-	  (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
 
     /* load and send the header */
 #ifdef APACHE1_2
@@ -309,38 +353,101 @@ static int auth_failed(request_rec *r) {
     refresh_e = os_escape_path(r->pool, refresh, 0);
 
 #ifdef REDIRECT_IN_HEADER
-    table_add(r->headers_out, "Refresh", refresh); */
+    if ( r->method_number != M_POST )
+        table_add(r->headers_out, "Refresh", refresh); */
 #endif
     send_http_header(r);
 #else              
     ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
   
     /* we want to make sure agents don't cache the redirect */
-    ap_table_set(r->headers_out, "Expires", libpbc_time_string(time(null)));
+    ap_table_set(r->headers_out, "Expires", libpbc_time_string(time(NULL)));
     ap_table_set(r->headers_out, "Cache-Control", "no-cache");
     ap_table_set(r->headers_out, "Pragma", "no-cache");
 
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
 #ifdef REDIRECT_IN_HEADER
-    ap_table_add(r->headers_out, "Refresh", refresh);
+    if ( r->method_number != M_POST )
+        ap_table_add(r->headers_out, "Refresh", refresh);
 #endif
     ap_send_http_header(r);
 #endif
 
     /* now send a body */
+    if ( r->method_number == M_POST ) {
+
+    /* a bad mix of stuff here and stuff in pbc_config.h */
 #ifdef APACHE1_2
-#ifndef REDIRECT_IN_HEADER
+        rprintf(r, "<HTML><HEAD>\n");
+        rptintf(r, "</HEAD>\n");
+        rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
+        rptintf(r, "<CENTER>\n");
+
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
+        rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
+        rprintf(r, "%s", PBC_UWNETID_LOGO);
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
+
+        rprintf(r, "<FORM METHOD=\"POST\" ACTION=\"%s\" NAME=\"query\">\n", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
+
+        rprintf(r, "<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"");
+        put_out_post(r);
+        rprintf(r, "\">\n");
+        rprintf(r, "<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
+        rprintf(r, "</FORM>\n");
+
+        rprintf(r, "%s", PBC_HTML_COPYRIGHT);
+
+        rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
+        rptintf(r, "</CENTER>\n");
+        rprintf(r, "</BODY></HTML>\n");
+#else
+        ap_rprintf(r, "<HTML><HEAD>\n");
+        ap_rprintf(r, "</HEAD>\n");
+        ap_rprintf(r, "<BODY BGCOLOR=\"white\" onLoad=\"document.query.submit.click()\">\n");
+        ap_rprintf(r, "<CENTER>\n");
+
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML1);
+        ap_rprintf(r, "%s", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
+        ap_rprintf(r, "%s", PBC_UWNETID_LOGO);
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML2);
+
+        ap_rprintf(r, "<FORM METHOD=\"POST\" ACTION=\"%s\" NAME=\"query\">\n", (cfg->login ? cfg->login : PBC_LOGIN_PAGE) );
+        ap_rprintf(r, "<INPUT TYPE=\"hidden\" NAME=\"post_stuff\" VALUE=\"");
+        put_out_post(r);
+        ap_rprintf(r, "\">\n");
+        ap_rprintf(r, "<INPUT TYPE=\"SUBMIT\" NAME=\"submit\" VALUE=\"%s\">\n", PBC_POST_NO_JS_BUTTON);
+        ap_rprintf(r, "</FORM>\n");
+
+        ap_rprintf(r, "%s", PBC_HTML_COPYRIGHT);
+
+        ap_rprintf(r, "%s", PBC_POST_NO_JS_HTML3);
+        ap_rprintf(r, "</CENTER>\n");
+        ap_rprintf(r, "</BODY></HTML>\n");
+#endif
+
+    }
+    else {
+
+    /* setup the client pull */
+    ap_snprintf(refresh, PBC_1K-1, "%d;URL=%s", PBC_REFRESH_TIME, 
+	  (cfg->login ? cfg->login : PBC_LOGIN_PAGE));
+
+#ifdef APACHE1_2
+#ifdef REDIRECT_IN_HEADER
     rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 #else  
     rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
 #endif
 #else
-#ifndef REDIRECT_IN_HEADER
+#ifdef REDIRECT_IN_HEADER
     ap_rprintf(r, "<HTML><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n");
 #else
     ap_rprintf(r, "<HTML><HEAD><meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%s\"></HEAD><BODY BGCOLOR=\"#FFFFFF\"></BODY></HTML>\n", refresh);
 #endif
 #endif
+
+    }
 
     return OK;
 }
@@ -392,6 +499,41 @@ static int pubcookie_check_exp(time_t fromc, int exp) {
   else {
     return 0;
   }
+}
+
+/* figure out the session cookie name                                         */
+char *make_session_cookie_name(pool *p, unsigned char *app_id)
+{
+  /* 
+     we now use JimB style session cookie names
+     session cookie names are PBC_S_COOKIENAME_appid 
+   */
+
+    char *ptr;
+    char *name;
+
+#ifdef APACHE1_2
+#ifdef NO_JIMB_SESSION_NAMES
+    name = pstrdub(p, PBC_S_COOKIENAME);
+#else
+    name = pstrcat(p, PBC_S_COOKIENAME, "_", app_id, NULL);
+#endif
+#else
+#ifdef NO_JIMB_SESSION_NAMES
+    name = ap_pstrdup(p, PBC_S_COOKIENAME);
+#else
+    name = ap_pstrcat(p, PBC_S_COOKIENAME, "_", app_id, NULL);
+#endif
+#endif
+
+    ptr = name;
+    while(*ptr) {
+        if(*ptr == '/')
+            *ptr = '_';
+        ptr++;
+    }
+
+    return name;
 }
 
 /*                                                                            */
@@ -459,6 +601,7 @@ static void pubcookie_init(server_rec *s, pool *p) {
   scfg = (pubcookie_server_rec *) get_module_config(s->module_config, 
 						   &pubcookie_module);
 #else
+  ap_add_version_component(ap_pstrcat(p, "mod_pubcookie/", PBC_VERSION, PBC_TESTID, NULL));
   scfg = (pubcookie_server_rec *) ap_get_module_config(s->module_config, 
 						   &pubcookie_module);
 #endif
@@ -568,9 +711,9 @@ static int pubcookie_user(request_rec *r) {
   pubcookie_server_rec *scfg;
   char *cookie;
   char *at;
-  unsigned char *current_app_id;
   pbc_cookie_data     *cookie_data;
   pool *p;
+  char *sess_cookie_name;
 
   p = r->pool;
 
@@ -616,8 +759,10 @@ static int pubcookie_user(request_rec *r) {
     return OK;
   }
 
+  sess_cookie_name = make_session_cookie_name(p, genr_app_id(r, cfg));
+
   if( !(cookie = get_cookie(r, PBC_G_COOKIENAME)) || strcmp(cookie,"") == 0 ) {
-    if( !(cookie = get_cookie(r, PBC_S_COOKIENAME)) || strcmp(cookie,"") == 0 ){
+    if( !(cookie = get_cookie(r, sess_cookie_name)) || strcmp(cookie,"") == 0 ){
       libpbc_debug("pubcookie_user: no cookies yet, must authenticate\n");
       cfg->failed = PBC_BAD_AUTH;
       return OK;
@@ -694,10 +839,9 @@ static int pubcookie_user(request_rec *r) {
   }
 
   /* check app_id */
-  current_app_id = cfg->app_id ? cfg->app_id : get_app_path(p, r->filename);
-  if( strncasecmp(current_app_id, (*cookie_data).broken.app_id, sizeof((*cookie_data).broken.app_id)-1) != 0 ) {
+  if( strncasecmp(genr_app_id(r, cfg), (*cookie_data).broken.app_id, sizeof((*cookie_data).broken.app_id)-1) != 0 ) {
     cfg->failed = PBC_BAD_AUTH;
-    libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s\n", current_app_id, (*cookie_data).broken.app_id);
+    libpbc_debug("pubcookie_user: wrong appid; current: %s cookie: %s\n", genr_app_id(r, cfg), (*cookie_data).broken.app_id);
     return OK;
   }
 
@@ -813,17 +957,36 @@ static int pubcookie_typer(request_rec *r) {
        in the app
      */
     if( cfg->inact_exp > 0 || first_time_in_session ) {
-      cookie = libpbc_get_cookie_p(r->pool, (unsigned char *) r->connection->user, PBC_COOKIE_TYPE_S, cfg->creds, scfg->serial_s_sent++, scfg->appsrv_id, (cfg->app_id?cfg->app_id:get_app_path(r->pool, r->filename)), scfg->session_sign_ctx_plus, scfg->c_stuff);
+
+      /* make session cookie */
+      cookie = libpbc_get_cookie_p(r->pool, (unsigned char *) r->connection->user, PBC_COOKIE_TYPE_S, cfg->creds, scfg->serial_s_sent++, scfg->appsrv_id, genr_app_id(r, cfg), scfg->session_sign_ctx_plus, scfg->c_stuff);
 
 #ifdef APACHE1_2
-      ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=/; secure", PBC_S_COOKIENAME, cookie, r->server->server_hostname);
+      ap_snprintf(new_cookie, PBC_1K-1, "%s=%s; domain=%s path=%s; secure", 
+              make_session_cookie_name(r->pool, genr_app_id(r, cfg)),
+              cookie, 
+              r->server->server_hostname,
+#ifdef NO_JIMB_SESSION_NAMES
+              "/");
+#else
+              get_app_path(r->pool, r->unparsed_uri), r->filename);
+#endif
 
       table_add(r->headers_out, "Set-Cookie", new_cookie);
 #else
-      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=/; secure", PBC_S_COOKIENAME, cookie, r->server->server_hostname);
+      new_cookie = ap_psprintf(r->pool, "%s=%s; domain=%s path=%s; secure", 
+              make_session_cookie_name(r->pool, genr_app_id(r, cfg)),
+              cookie, 
+              r->server->server_hostname,
+#ifdef NO_JIMB_SESSION_NAMES
+              "/");
+#else
+              get_app_path(r->pool, r->unparsed_uri, r->filename));
+#endif
 
       ap_table_add(r->headers_out, "Set-Cookie", new_cookie);
 #endif
+
     }
     return DECLINED;
   } else if(cfg->failed == PBC_BAD_AUTH) {
@@ -843,7 +1006,17 @@ static int pubcookie_typer(request_rec *r) {
 /*                                                                            */
 static int pubcookie_fixups(request_rec *r)
 {
-    blank_cookie(r, PBC_S_COOKIENAME);
+    pubcookie_dir_rec *cfg;
+
+#ifdef APACHE1_2
+    cfg = (pubcookie_dir_rec *)get_module_config(r->per_dir_config,
+					   &pubcookie_module);
+#else
+    cfg = (pubcookie_dir_rec *)ap_get_module_config(r->per_dir_config,
+					   &pubcookie_module);
+#endif
+
+    blank_cookie(r, make_session_cookie_name(r->pool, genr_app_id(r, cfg)));
     blank_cookie(r, PBC_G_COOKIENAME);
 
     return OK;
@@ -851,38 +1024,38 @@ static int pubcookie_fixups(request_rec *r)
 
 /*                                                                            */
 const char *pubcookie_set_inact_exp(cmd_parms *cmd, void *mconfig, char *v) {
-  pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
   
-  if((cfg->inact_exp = atoi(v)) < 0 && cfg->inact_exp != -1 ) {
-    return "PUBCOOKIE: Could not convert inactivity expire parameter to nonnegative number.";
-  }
-  return NULL;
+    if((cfg->inact_exp = atoi(v)) < 0 && cfg->inact_exp != -1 ) {
+        return "PUBCOOKIE: Could not convert inactivity expire parameter to nonnegative number.";
+    }
+    return NULL;
 }
 
 /*                                                                            */
 const char *pubcookie_set_hard_exp(cmd_parms *cmd, void *mconfig, char *v) {
-  pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
   
-  if((cfg->hard_exp = atoi(v)) <= 0) {
-    return "PUBCOOKIE: Could not convert hard expire parameter to nonnegative integer.";
-  }
-  else if(cfg->hard_exp > PBC_MAX_HARD_EXPIRE ) {
-    return "PUBCOOKIE: Hard expire parameter greater then allowed maximium of PBC_MAX_HARD_EXPIRE.";
-  }
-  return NULL;
+    if((cfg->hard_exp = atoi(v)) <= 0) {
+        return "PUBCOOKIE: Could not convert hard expire parameter to nonnegative integer.";
+    }
+    else if(cfg->hard_exp > PBC_MAX_HARD_EXPIRE ) {
+        return "PUBCOOKIE: Hard expire parameter greater then allowed maximium of PBC_MAX_HARD_EXPIRE.";
+    }
+    return NULL;
 }
 
 /*                                                                            */
 const char *pubcookie_set_login(cmd_parms *cmd, void *mconfig, char *v) {
-  pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
+    pubcookie_dir_rec *cfg = (pubcookie_dir_rec *) mconfig;
 
 #ifdef APACHE1_2
-  cfg->login = pstrdup(cmd->pool, v);
+    cfg->login = pstrdup(cmd->pool, v);
 #else
-  cfg->login = ap_pstrdup(cmd->pool, v);
+    cfg->login = ap_pstrdup(cmd->pool, v);
 #endif
 
-  return NULL;
+    return NULL;
 }
 
 
