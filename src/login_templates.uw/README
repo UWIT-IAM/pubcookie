@@ -1,17 +1,3 @@
-These files are in RCS.  Sample of editing one:
-
-cd /afs/.andrew/data/db/pubcookie/pubcookie_login_templates
-co -l README
--- do  your edits
-ci -u README
-
-If you edit these files with a html editor (frontpage,
-dreamweaver, etc) they wont work anymore.
-These files are templates used by the pubcookie login program.
-
-They are not valid html as they are written, for one (or both) of these
-reasons:
-
 *** some files contain HTTP server headers 
 *** editing them with visual tools looses or garbles them
 
