@@ -1,7 +1,9 @@
 # 1 is a good starting point
 debug: 1
 
-login_host: login.example.edu
+# other site-specific config
+granting_cert_file: /usr/local/pubcookie/keys/pubcookie_granting.cert 
+login_uri: https://login.example.edu/
 enterprise_domain: .example.edu
 
 # inetd must be configured to invoke keyserver on port 2222

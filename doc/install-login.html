@@ -21,6 +21,7 @@
 <li><a href="#localization">Localization</a></li>
 <li><a href="#moreconfig">More Configuration</a></li>
 <li><a href="#keymgt">Key Management</a></li>
+<li><a href="#logout">Logout Configuration</a></li>
 <li><a href="#upgrading">Upgrading</a></li>  
 <li><a href="#advconfig">Advanced Configuration</a></li>
 <li><a href="#security">Security Considerations</a></li>
@@ -59,7 +60,7 @@ Apache web server software. Other web server software which supports CGI
 and SSL should also work, but this supposition has not been tested.
 </p>
 
-<h4><a name="authsvcs">Authentication services</a></h4>
+<h4><a name="authsvcs">Authentication Services</a></h4>
 
 <p>
 Most sites will want to use the login cgi's "basic" login flavor, which 
@@ -152,11 +153,8 @@ where /login is mapped to the CGI program (index.cgi or whatever you
 rename it to).</p>
 
 <p>
-The default login server and login URI are specified as "login_host"
-and "login_uri" in pubcookie configuration file.  (Individual
-applications may override what login server they refer to with the
-PubCookieLogin directive in their apache configuration file, but this
-isn't recommended.)</p>
+Application deployers will need to know your login server's URL in order
+to configure each application server.</p>
 
 <h5>Apache configuration directive you might have to tweak</h5>
 
@@ -219,11 +217,8 @@ Some of the more notable variables are:
 <dd> An integer. A non-zero value enables debug logging.  The higher
   the number, the more debugging output that is generated.</dd>
 
-<dt> login_host </dt>
-<dd> The hostname of login server.</dd>
-
 <dt> login_uri </dt>
-<dd> The complete URI of the login cgi.</dd>
+<dd> The complete URI of the login cgi (e.g. https://weblogin.example.edu)</dd>
 
 <dt> enterprise_domain </dt>
 <dd> The domain under which all hosts will live.  Must be at least a
@@ -465,6 +460,65 @@ server's config file.</p>
 Remember that the application server will also need a correct 'config'
 file.</p>
 
+<h4><a name="logout">Logout Configuration</a></h4>
+
+<p>The login cgi automatically handles logout requests from applications.
+This functionality is built in; no configuration is necessary on the login 
+server. Through additional configuration you can create a separate logout
+URL on your login server and also tailor some of the logout text for your
+favoriate applications.</p>
+
+<p>Note: Pubcookie 3.0 does not support "global" logout: logout of all
+applications, all cookies, all at once. Rather, it supports per-application
+logout, plus the ability to logout of the login server, all separately.
+Therefore, users must still be educated and warned to exit their browser 
+in order to get logged out of everything at once.</p>
+
+<h5>Configuring a Logout URI</h5>
+
+<p>If you want to provide a URL where users can go directly to clear their 
+single sign-on session (pubcookie login cookie), it can be created with 
+the logout_prog config variable and a Unix symbolic link. Here's an example.</p>
+
+<p>Suppose the login cgi has been installed in the web server's root directory
+(e.g. https://weblogin.example.edu) and you want to create a logout URI of "/logout/"
+just below that (e.g. https://weblogin.example.edu/logout/). First, you would want
+to create the subdirectory and symbolic link to your login cgi:
+
+<pre>
+$ cd /var/www/html
+$ ls
+index.cgi     images/
+$ mkdir logout
+$ cd logout
+$ ln -s ../index.cgi index.cgi
+</pre>
+
+<p>Now any request to /logout/ on the server will map to your login cgi.
+(editor: Is there a better way to do this in httpd.conf instead?) All that's left
+is adding the appropriate <tt>logout_prog</tt> variable to your Pubcookie config file:</p>
+
+<pre>
+logout_prog: /logout/index.cgi
+</pre>
+
+<h5>Customizing Logout Responses For Special Apps </h5>
+
+<p>The login cgi builds logout response pages from several templates. One template, 
+<tt>logout_app</tt>, which is the most specific to each application, can be overridden 
+on a per-application basis, as configured and identified by the originating server 
+name and application id. It requires one <tt>app_logout_string</tt> config file variable
+for each application, where the server name and id are tacked on using dashes. For example:
+
+<pre>
+# custom logout msgs
+app_logout_string-appserver.example.edu-testapp: &lt;font size="+1"&gt;Testapp logout worked just fine.&lt;/font&gt;
+app_logout_string-webmail.example.edu-webmail: &lt;font size="+1"&gt;Webmail Logout Successful!&lt;/font&gt;
+</pre>
+
+<p>Note: Since the login cgi reads the config file and its HTML templates on each request, 
+there's no need to recompile the login cgi in order to modify response text.</p>
+
 <h4><a name="upgrading">Upgrading</a></h4>
 
 <h5>Upgrading from pre-3.0 pubcookie</h5>
@@ -584,7 +638,7 @@ Copyright 1999-2003, University of Washington.  All rights reserved.<br>
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.7 2003-01-22 23:00:50 dors Exp $
+$Id: install-login.html,v 1.8 2003-03-29 00:32:09 dors Exp $
 </pre>
 </body>
 

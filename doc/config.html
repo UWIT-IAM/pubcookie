@@ -17,8 +17,10 @@ mod_pubcookie. Some of these variables are shared by all of the code
 just to the login server.
 </p>
 
-<p>See <a href="config.sample">config.sample</a> for an example file
-containing the minimum options.</p>
+<p>See <a href="config.sample">config.sample</a> and <a 
+href="config.login.sample">config.login.sample</a> for examples
+containing the minimum options for an application server and login
+server, respectively.</p>
 
 <table border width="95%">
 <tr><th>Name</th> <th>Type</th> <th>Description</th></tr>
@@ -31,10 +33,6 @@ containing the minimum options.</p>
 <tr>
 <td>logging_level</td><td>int</td><td>Increase with your level of
 frustration.</td>
-</tr>
-
-<tr>
-<td>login_host</td><td>string</td><td>The hostname of login server</td>
 </tr>
 <tr>
 <td>login_uri</td><td>string</td><td>The complete URI of the login cgi</td>
@@ -117,6 +115,10 @@ the public portion of the granting keypair (found on all servers)</td>
 <tr>
 <td>basic_verifier</td><td> string</td><td> The verifier to use for
 the "basic" flavor</td> </tr>
+
+<tr>
+<td>app_logout_string-<i>servername</i>-<i>appid</i></td><td>string</td><td> A custom
+logout response msg for <i>appid</i> on <i>servername</i></td> </tr>
 
 <tr>
 <td>append_realm</td><td> switch</td><td> If true, the authentication
