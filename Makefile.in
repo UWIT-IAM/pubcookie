@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.27 2003-04-15 19:21:05 jjminer Exp $
+# $Id: Makefile.in,v 1.28 2003-04-19 17:19:37 jjminer Exp $
 
 @SET_MAKE@
 
@@ -167,19 +167,31 @@ MOD_SRC=$(srcdir)/src/mod_pubcookie.c \
 
 LIB_TESTS=base64 pbc_myconfig myconf
 
-LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/login \
-			    $(srcdir)/src/login_templates.generic/nonpost_redirect \
-			    $(srcdir)/src/login_templates.generic/notok_part1 \
-			    $(srcdir)/src/login_templates.generic/notok_part2 \
+LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/error \
+				$(srcdir)/src/login_templates.generic/login \
+			    $(srcdir)/src/login_templates.generic/login_bad_auth \
+			    $(srcdir)/src/login_templates.generic/login_cache_creds_wrong \
+			    $(srcdir)/src/login_templates.generic/login_nolcookie \
+				$(srcdir)/src/login_templates.generic/login_reauth \
+				$(srcdir)/src/login_templates.generic/logout_already_weblogin \
+				$(srcdir)/src/login_templates.generic/logout_app \
+				$(srcdir)/src/login_templates.generic/logout_app_custom \
+				$(srcdir)/src/login_templates.generic/logout_app_custom_prefix \
+				$(srcdir)/src/login_templates.generic/logout_app_custom_suffix \
+				$(srcdir)/src/login_templates.generic/logout_part1 \
+				$(srcdir)/src/login_templates.generic/logout_part2 \
+				$(srcdir)/src/login_templates.generic/logout_postscript_still_others \
 				$(srcdir)/src/login_templates.generic/logout_postscript_still_weblogin \
 				$(srcdir)/src/login_templates.generic/logout_still_weblogin \
-				$(srcdir)/src/login_templates.generic/notok_need_ssl \
-				$(srcdir)/src/login_templates.generic/status \
 				$(srcdir)/src/login_templates.generic/logout_time_remaining \
-				$(srcdir)/src/login_templates.generic/login_bad_auth \
-				$(srcdir)/src/login_templates.generic/login_reauth \
-				$(srcdir)/src/login_templates.generic/login_cache_creds_wrong \
-				$(srcdir)/src/login_templates.generic/login_nolcookie
+				$(srcdir)/src/login_templates.generic/logout_weblogin \
+				$(srcdir)/src/login_templates.generic/nonpost_redirect \
+				$(srcdir)/src/login_templates.generic/notok_part1 \
+				$(srcdir)/src/login_templates.generic/notok_part2 \
+				$(srcdir)/src/login_templates.generic/pinit_response1 \
+				$(srcdir)/src/login_templates.generic/pinit_response2 \
+				$(srcdir)/src/login_templates.generic/status \
+				$(srcdir)/src/login_templates.generic/welcome_back
 
 
 DOCS=$(srcdir)/doc/CHANGES.login.txt \
