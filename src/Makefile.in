@@ -6,11 +6,15 @@
 # 
 # Copyright (c) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 #
-# $Id: Makefile.in,v 2.3 2002-07-08 20:23:01 jjminer Exp $
+# $Id: Makefile.in,v 2.4 2002-07-08 23:55:23 jjminer Exp $
 
 @SET_MAKE@
 
 include Makefile.settings
+
+CONFIGURE_FILES=config.status config.log config.h
+
+GEN_MAKEFILES=Makefile Makefile.login Makefile.settings
 
 .PHONY: all index.cgi mod_pubcookie.so clean install dist
 
@@ -33,6 +37,7 @@ distclean:
 	$(MAKE) -f Makefile.login distclean
 	$(MAKE) -f Makefile.apxs distclean
 	$(FORCE_RM) $(GEN_MAKEFILES)
+	$(FORCE_RM) $(CONFIGURE_FILES)
 
 install: libclean
 	$(MAKE) -f Makefile.login install

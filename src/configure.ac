@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 2.1 $)
+AC_REVISION($Revision: 2.2 $)
 AC_INIT(Pubcookie, 3.0beta, pubcookie-dev@blah)
 AC_CONFIG_SRCDIR([libpubcookie.c])
 AC_CONFIG_HEADER([config.h])
@@ -45,7 +45,6 @@ AC_ARG_WITH(ssl-dir,
    no)
      ;;
    *)
-     CFLAGS="$CFLAGS -I$withval/include"
      CPPFLAGS="$CPPFLAGS -I$withval/include"
      LDFLAGS="$LDFLAGS -L$withval/lib"
      ;;
@@ -57,7 +56,6 @@ AC_ARG_WITH(ssl-inc-dir,
    no)
      ;;
    *)
-     CFLAGS="$CFLAGS -I$withval"
      CPPFLAGS="$CPPFLAGS -I$withval"
      ;;
   esac ])
@@ -89,9 +87,10 @@ fi
 # This needs to be set up to not change the LIBS variable, it needs to be
 # AC_SUBST'd somewhere login server specific.
 
-OLDCFLAGS=$CFLAGS
 OLDLIBS=$LIBS
 OLDLDFLAGS=$LDFLAGS
+OLDCPPFLAGS=$CPPFLAGS
+OLDCFLAGS=$CFLAGS
 
 AC_ARG_WITH(cgic-dir,
 [  --with-cgic-dir=PATH     CGIC lib/include directory],
@@ -99,7 +98,6 @@ AC_ARG_WITH(cgic-dir,
    no)
     ;;
    *)
-    CFLAGS="$CFLAGS -I$withval"
     CPPFLAGS="$CPPFLAGS -I$withval"
     LDFLAGS="$LDFLAGS -L$withval"
     ;;
@@ -155,14 +153,17 @@ if test "$enable_shadow" = "yes"; then
 fi
 
 LOGINLIBS=$LIBS
-LOGINCFLAGS=$CFLAGS
 LOGINLDFLAGS=$LDFLAGS
+LOGINCPPFLAGS=$CPPFLAGS
+LOGINCFLAGS=$CFLAGS
 
 LIBS=$OLDLIBS
-CFLAGS=$OLDCFLAGS
 LDFLAGS=$OLDLDFLAGS
+CPPFLAGS=$OLDCPPFLAGS
+CFLAGS=$OLDCFLAGS
 
 AC_SUBST(LOGINLIBS, $LOGINLIBS)
+AC_SUBST(LOGINCPPFLAGS, $LOGINCPPFLAGS)
 AC_SUBST(LOGINCFLAGS, $LOGINCFLAGS)
 AC_SUBST(LOGINLDFLAGS, $LOGINLDFLAGS)
 

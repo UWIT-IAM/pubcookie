@@ -6,11 +6,12 @@
 # 
 # Copyright (C) 2002 Jonathan J. Miner <miner@doit.wisc.edu>
 # 
-# $Id: Makefile.login.in,v 2.1 2002-07-05 23:35:48 jjminer Exp $
+# $Id: Makefile.login.in,v 2.2 2002-07-08 23:55:23 jjminer Exp $
 
 include Makefile.settings
 
-CFLAGS=@LOGINCFLAGS@ @DEFS@ $(PBC_PATH)
+CPPFLAGS=@LOGINCPPFLAGS@ @DEFS@ $(PBC_PATH)
+CFLAGS=@LOGINCFLAGS@ $(CPPFLAGS)
 LIBS=@LOGINLIBS@
 LDFLAGS=@LOGINLDFLAGS@ $(LIBS)
 
