@@ -1,6 +1,9 @@
 /*
 
-    Copyright 1999, University of Washington.  All rights reserved.
+    Copyright 2001, University of Washington.  All rights reserved.
+    Copyright 1995,1996,1997,1998 by the Massachusetts Institute of Technology.
+       All Rights Reserved.
+
 
      ____        _                     _    _
     |  _ \ _   _| |__   ___ ___   ___ | | _(_) ___
@@ -18,7 +21,7 @@
  */
 
 /*
-    $Id: index.cgi_krb.c,v 1.1 2000-08-22 19:30:45 willey Exp $
+    $Id: index.cgi_krb.c,v 1.2 2001-05-09 20:31:27 willey Exp $
  */
 
 
