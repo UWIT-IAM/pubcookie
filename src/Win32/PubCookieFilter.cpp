@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.cpp,v 1.28 2004-03-17 02:06:11 ryanc Exp $
+//  $Id: PubCookieFilter.cpp,v 1.29 2004-03-24 22:08:52 ryanc Exp $
 //
 
 //#define COOKIE_PATH
@@ -1235,7 +1235,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		if( ! Pubcookie_Check_Exp(pFC,(*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
 			filterlog(p, LOG_INFO,"[Pubcookie_User] Granting cookie expired for user: %s  elapsed: %d limit: %d; remote_host: %s", 
 				(*cookie_data).broken.user,(time(NULL)-(*cookie_data).broken.create_ts), PBC_GRANTING_EXPIRE, p->remote_host);
-			p->failed = PBC_BAD_AUTH;
+			p->failed = PBC_GRANTING_TIMEOUT;
 			pbc_free(p, cookie_data);
 			return OK;
 		}
@@ -1437,6 +1437,9 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 		return OK;
 	} else if (p->failed == PBC_BAD_PORT) {
 		p->handler = PBC_BAD_PORT;
+		return OK;
+	} else if (p->failed == PBC_GRANTING_TIMEOUT) {
+		p->handler = PBC_GRANTING_TIMEOUT;
 		return OK;
 	} else {
 		return DECLINED;
@@ -1751,44 +1754,27 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 				switch (p->handler)
 				{
 				case PBC_BAD_AUTH:
-					Auth_Failed(pFC);
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
 				case PBC_FORCE_REAUTH:
+				case PBC_BAD_APPID: // Lets try again
 					Auth_Failed(pFC);
 					return_rslt = SF_STATUS_REQ_FINISHED;
 					break;
+
 				case PBC_BAD_USER:
-					Bad_User(pFC);
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
 				case PBC_BAD_GRANTING_CERT:
-					Bad_User(pFC);
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
 				case PBC_BAD_SESSION_CERT:
-					Bad_User(pFC);
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
 				case PBC_BAD_VERSION:
-					Bad_User(pFC);
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
-				case PBC_BAD_APPID:
-					// Bad_User(pFC);
-					Auth_Failed(pFC);	  // Lets try again
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
 				case PBC_BAD_SERVERID:
+				case PBC_GRANTING_TIMEOUT:
 					Bad_User(pFC);
 					return_rslt = SF_STATUS_REQ_FINISHED;
 					break;
+
 				case PBC_BAD_PORT:      // Redirected to https
-					return_rslt = SF_STATUS_REQ_FINISHED;
-					break;
 				case PBC_LOGOUT_REDIR:   // Redirected to logout server
 					return_rslt = SF_STATUS_REQ_FINISHED;
 					break;
+
 				default:
 					filterlog(p, LOG_ERR,"[PBC_OnPreprocHeaders] Unexpected p->handler value = %d",
 						p->handler);

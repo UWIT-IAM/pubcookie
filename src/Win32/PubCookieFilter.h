@@ -4,7 +4,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.28 2004-02-17 23:06:38 ryanc Exp $
+//  $Id: PubCookieFilter.h,v 1.29 2004-03-24 22:08:52 ryanc Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.0.1 pre-beta1"
@@ -99,6 +99,7 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 // used to redirect from http->https
 #define PBC_BAD_PORT 9
 #define PBC_LOGOUT_REDIR 10
+#define PBC_GRANTING_TIMEOUT 11
 
 //AUTH Types = Cred Types
 #define AUTH_NONE '0'
