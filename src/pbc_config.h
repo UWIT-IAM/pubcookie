@@ -26,7 +26,7 @@
  */
 
 /*
-    $Id: pbc_config.h,v 1.61 2002-08-03 00:48:05 willey Exp $
+    $Id: pbc_config.h,v 1.62 2002-08-06 15:59:02 greenfld Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -69,22 +69,6 @@
 	#define DEBUG_DIR (libpbc_config_getstring("Debug_Dir", "\\LogFiles\\PubcookieFilter"))
 	#define SYSTEM_ROOT (libpbc_config_getstring("System_Root","")) /*blank for Windows System*/
 #endif
-
-/* lives only on login servers */
-extern char PBC_L_CERTFILE[1024];
-/* lives only on login server */
-extern char PBC_L_KEYFILE[1024];
-
-/* lives only on application server */
-extern char PBC_S_CERTFILE[1024];
-/* lives only on application server */
-extern char PBC_S_KEYFILE[1024];
-
-/* lives everywhere (on application servers & login server) */
-extern char PBC_G_CERTFILE[1024];
-
-/* lives only on login server */
-extern char PBC_G_KEYFILE[1024];
 
 /* the login server builds it's key Filenames from the hostname     */
 #define PBC_KEY_DIR (libpbc_config_getstring("keydir", PBC_PATH "keys"))
@@ -287,8 +271,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 		libpbc_get_cookie_with_expire_p(p, a,b,c,d,e,f,g,h)
 #define libpbc_unbundle_cookie(a,b)        libpbc_unbundle_cookie_p(p, a,b)
 #define libpbc_update_lastts(a,b,c)        libpbc_update_lastts_p(p, a,b,c)
-#define libpbc_sign_init(a) 		   libpbc_sign_init_p(p, a)
-#define libpbc_verify_init(a) 	   	   libpbc_verify_init_p(p, a)
 #define libpbc_pubcookie_init() 	   libpbc_pubcookie_init_p(p)
 #define libpbc_alloc_init(a) 		   libpbc_alloc_init_p(p, a)
 #define libpbc_gethostip() 		   libpbc_gethostip_p(p)
@@ -317,8 +299,6 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 		libpbc_get_cookie_with_expire_np(a,b,c,d,e,f,g,h)
 #define libpbc_unbundle_cookie(a,b)    libpbc_unbundle_cookie_np(a,b)
 #define libpbc_update_lastts(a,b,c)      libpbc_update_lastts_np(a,b,c)
-#define libpbc_sign_init(a) 		 libpbc_sign_init_np(a)
-#define libpbc_verify_init(a) 	   	 libpbc_verify_init_np(a)
 #define libpbc_pubcookie_init	 	 libpbc_pubcookie_init_np
 #define libpbc_alloc_init(a) 		 libpbc_alloc_init_np(a)
 #define libpbc_gethostip   		 libpbc_gethostip_np
