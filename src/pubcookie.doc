@@ -11,13 +11,13 @@ This package attempts to provide a system for transferring authentication
 information across multiple web servers.  It was designed to fill a need
 at the University of Washington.  At the time of its design, many
 university web servers relied on domain name/ip address for
-authentication and authorization.  This system was breaking down do to
+authentication and authorization.  This system was breaking down due to
 the ever expanding population of users who were authorized to use
 university resources.  The design goals for a replacement system were:
 
  * Transparent access to multiple web servers
 
- * Users should not enter their passwords into web pages
+ * Users should enter their passwords on web pages as few times as possible
 
  * No modifications required per client
 
@@ -28,7 +28,7 @@ university resources.  The design goals for a replacement system were:
  * Must be able to function with Apache, Netscape and Microsoft web
    servers
 
-This solution address all of the above points except for the second.
+This solution address all of the above points.
 This solution does not directly address the problem of authentication
 although a few examples are given in the Login Server section.
 
@@ -39,8 +39,8 @@ In short, the solution is:
 
  1) User authenticates to a login server
  2) The login server sends signed cookies to client
- 3) The client users one of the the cookies to authenticate itself to local servers.
- 4) The local server issues it's own cookie that the client send with each request.
+ 3) The client uses one of the the cookies to authenticate itself to local servers.
+ 4) The local server issues its own cookie that the client send with each request.
  
 Client Requirements
 -------------------
@@ -52,7 +52,8 @@ Server Requirements
 -------------------
 The server needs to be configured with a module that understands
 this system.  At the moment there exists a module for Apache.  Modules
-for Netscape servers and Microsoft servers are under consideration/development.
+for Netscape servers are under consideration and for Microsoft
+are being ported/developed
 
 The server needs to have a copy of the public key that matches the private
 key with which the login servers signs cookies.
@@ -67,7 +68,7 @@ Apache Directives
 -----------------
 
 The Apache module can use the following directive to
-modify it's behaviour.
+modify its behaviour.
 
 PubCookieInactiveExpire <seconds>
         The inactivity expire time for pubcookie logins.  The default is
@@ -89,7 +90,7 @@ PubCookieCryptKeyfile <file>
 PubCookieAppID <app_name>
         The name of the application.
 ForceReauth <url>
-        Force the reauth loop through the login server
+        Force the reauth loop through the login server.
 
 Except for ForceReauth and PubCookieAppID these directives can only be used
 in the configuration files outside of <Directory> or <Location>.
@@ -98,8 +99,8 @@ Keys and Certificates
 ---------------------
 
 To get keys and the login server certificate please send email to 
-pubcookie@u.washington.edu with the ip's of the web server machines.
+pubcookie@u.washington.edu with the IPs of the web server machines.
 
-$Id: pubcookie.doc,v 1.3 1998-12-18 16:03:49 willey Exp $
+$Id: pubcookie.doc,v 1.4 1998-12-18 23:01:09 willey Exp $
 
 
