@@ -1,8 +1,8 @@
-These files are in CVS.  Sample of editing one:
+These files are in RCS.  Sample of editing one:
 
 cd /afs/.andrew/data/db/pubcookie/pubcookie_login_templates
 co -l README
--- make edit
+-- do  your edits
 ci -u README
 
 If you edit these files with a html editor (frontpage,
