@@ -18,7 +18,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.c,v 1.71 2002-02-07 23:56:55 willey Exp $
+    $Id: mod_pubcookie.c,v 1.72 2002-02-20 23:28:25 willey Exp $
  */
 
 /* apache includes */
@@ -696,6 +696,8 @@ static int auth_failed(request_rec *r) {
           "1",
           PBC_ENTRPRS_DOMAIN);
         table_add(r->headers_out, "Set-Cookie", g_req_cookie);
+        if( cfg->super_debug )
+            libpbc_debug("super-debug: auth_failed: setting Form/Multipart cookie\n");
     }
 
     refresh_e = os_escape_path(r->pool, refresh, 0);
@@ -727,6 +729,8 @@ static int auth_failed(request_rec *r) {
           "1",
           PBC_ENTRPRS_DOMAIN);
         ap_table_add(r->headers_out, "Set-Cookie", g_req_cookie);
+        if( cfg->super_debug )
+            libpbc_debug("super-debug: auth_failed: setting Form/Multipart cookie\n");
     }
 
     refresh_e = ap_os_escape_path(r->pool, refresh, 0);
@@ -1159,7 +1163,7 @@ static int pubcookie_user(request_rec *r) {
   }
   
   if( cfg->super_debug )
-    libpbc_debug("super-debug: pubcookie_user: uri %s is authed with %c\n", r->uri, cfg->creds);
+    libpbc_debug("super-debug: pubcookie_user: going to check uri: %s creds: %c\n", r->uri, cfg->creds);
 
   if( cfg->force_reauth ) {
     cfg->failed = PBC_FORCE_REAUTH;
@@ -1167,11 +1171,11 @@ static int pubcookie_user(request_rec *r) {
     return OK;
   }
 
-    /* maybe dump the directory and server recs */
-    if( cfg->super_debug ) {
-        dump_server_rec(scfg);
-        dump_dir_rec(cfg);
-    }
+  /* maybe dump the directory and server recs */
+  if( cfg->super_debug ) {
+    dump_server_rec(scfg);
+    dump_dir_rec(cfg);
+  }
 
   if( cfg->super_debug )
     libpbc_debug("super-debug: pubcookie_user: about to look for some cookies; current uri: %s\n", r->uri);
