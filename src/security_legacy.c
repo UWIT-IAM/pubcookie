@@ -270,9 +270,13 @@ int security_init(pool *p)
         return -1;
     }
 
+/*
     sess_key = (EVP_PKEY *) PEM_ASN1_read((char *(*)())d2i_PrivateKey, 
 					  PEM_STRING_EVP_PKEY,
 					  fp, NULL, NULL, NULL);
+ */
+    sess_key = (EVP_PKEY *) PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+
     if (!sess_key) {
         pbc_log_activity(p, PBC_LOG_ERROR, 
                          "security_init: couldn't parse session key: %s", keyfile);
@@ -287,9 +291,13 @@ int security_init(pool *p)
                          "security_init: couldn't read certfile: pbc_fopen %s: %m", certfile);
         return -1;
     }
+ /*
     sess_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
 				       PEM_STRING_X509,
 				       fp, NULL, NULL, NULL);
+ */
+    sess_cert = (X509 *) PEM_read_X509(fp, NULL, NULL, NULL);
+
     if (!sess_cert) {
         /* xxx openssl errors */
         pbc_log_activity(p, PBC_LOG_ERROR, 
@@ -313,9 +321,13 @@ int security_init(pool *p)
 	fp = pbc_fopen(p, g_keyfile, "r");
 
 	if (fp) {
+  /*
 	    g_key = (EVP_PKEY *) PEM_ASN1_read((char *(*)()) d2i_PrivateKey, 
 					       PEM_STRING_EVP_PKEY,
 					       fp, NULL, NULL, NULL);
+ */
+            g_key = (EVP_PKEY *) PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+
 	    if (!g_key) {
 		pbc_log_activity(p, PBC_LOG_ERROR, 
                                  "security_init: couldn't parse granting key: %s", g_keyfile);
@@ -338,9 +350,12 @@ int security_init(pool *p)
                          g_certfile); /* Bugfix 8/21/02 RJC */
 	return -1;
     }
+    /*
     g_cert = (X509 *) PEM_ASN1_read((char *(*)()) d2i_X509,
 				    PEM_STRING_X509,
 				    fp, NULL, NULL, NULL);
+    */
+    g_cert = (X509 *) PEM_read_X509(fp, NULL, NULL, NULL);
     if (!g_cert) {
 	pbc_log_activity(p, PBC_LOG_ERROR, 
                          "security_init: couldn't parse granting certificate: %s", g_certfile);
