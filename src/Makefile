@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.27 2000-04-07 17:38:39 willey Exp $
+#   $Id: Makefile,v 1.28 2000-07-05 22:22:03 willey Exp $
 #
 
 # your compiler here
@@ -95,10 +95,6 @@ mkc_key_local:	mkc_key_local.o libpubcookie.o
 make_crypted_bit:	make_crypted_bit.o libpubcookie.o 
 		$(CC) ${CFLAGS} -o $@ make_crypted_bit.o libpubcookie.o base64.o $(LDFLAGS)
 
-# index.cgi needs additional libraries
-#index.cgi:	index.cgi.o index.cgi.o 
-#		$(CC) ${CFLAGS} -o $@ index.cgi.o libpubcookie.o base64.o $(LDFLAGS)
-
 h2ph:
 	co -l *.ph; \
 	h2ph -d . *.h; \
@@ -124,7 +120,6 @@ make_crypted_bit.o: make_crypted_bit.c libpubcookie.h ${GEN_HEAD} ${MAKEFILE}
 mkc_key_generic.o: mkc_key_generic.c ${GEN_HEAD} ${MAKEFILE}
 mkc_key_local.o: mkc_key_local.c ${GEN_HEAD} ${MAKEFILE}
 mod_pubcookie.o: mod_pubcookie.c libpubcookie.o ${MAKEFILE}
-index.cgi.o: index.cgi.c libpubcookie.o ${MAKEFILE}
 pbc_create.o: pbc_create.c ${GEN_HEAD} ${MAKEFILE}
 pbc_verify.o: pbc_verify.c ${GEN_HEAD} ${MAKEFILE}
 t.o: t.c ${GEN_HEAD} ${MAKEFILE}
