@@ -1,5 +1,5 @@
 /* 
-  $Id: cgic.c,v 1.2 2004-04-07 17:09:27 fox Exp $
+  $Id: cgic.c,v 1.3 2004-12-15 02:12:47 jteaton Exp $
  */
 
 #ifdef WITH_FCGI
@@ -70,6 +70,7 @@ static int cgiStrEqNc(char *s1, char *s2);
 int main(int argc, char *argv[]) {
 	int result;
 	char *cgiContentLengthString;
+        char *semi;
 
         cgiMain_init();
 
@@ -93,6 +94,9 @@ int main(int argc, char *argv[]) {
 	cgiGetenv(&cgiRemoteUser, "REMOTE_USER");
 	cgiGetenv(&cgiRemoteIdent, "REMOTE_IDENT");
 	cgiGetenv(&cgiContentType, "CONTENT_TYPE");
+        if (semi = strchr(cgiContentType, ';')) {
+           *semi = '\0';
+        }
 	cgiGetenv(&cgiContentLengthString, "CONTENT_LENGTH");
 	cgiContentLength = atoi(cgiContentLengthString);	
 	cgiGetenv(&cgiAccept, "HTTP_ACCEPT");
