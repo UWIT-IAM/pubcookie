@@ -2,7 +2,7 @@
 debug: 1
 
 login_host: login.example.edu
-enterprise_domain: example.edu
+enterprise_domain: .example.edu
 
 # inetd must be configured to invoke keyserver on port 2222
 keymgt_uri: https://login.example.edu:2222
