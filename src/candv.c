@@ -1,6 +1,8 @@
 /*
-    $Id: candv.c,v 1.9 1999-02-10 19:52:33 willey Exp $
+    $Id: candv.c,v 1.10 1999-08-11 23:00:14 willey Exp $
  */
+
+/* Copyright 1999, University of Washington.  All rights reserved. */
 
 #include <stdio.h>
 #include <stdlib.h>
