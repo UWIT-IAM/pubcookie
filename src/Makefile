@@ -18,7 +18,7 @@
 #
 ################################################################################
 #
-#   $Id: Makefile,v 1.39 2001-10-24 22:25:24 willey Exp $
+#   $Id: Makefile,v 1.40 2001-11-14 00:10:00 willey Exp $
 #
 
 # your compiler here
@@ -67,6 +67,7 @@ TESTSRC=dtest.c \
 ALLSRC=${GENERALSRC} ${TESTSRC} ${LOGINSRC} ${MODULESRC}
 
 GENERALMISC=README \
+            CREDITS \
             LICENSE
 MODULEMISC=CHANGES.mod_pubcookie \
            Makefile.tmpl \
