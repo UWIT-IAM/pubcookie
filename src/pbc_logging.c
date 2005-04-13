@@ -18,7 +18,7 @@
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.31 2005-02-07 22:26:38 willey Exp $
+ * $Id: pbc_logging.c,v 1.32 2005-04-13 21:29:49 willey Exp $
  */
 
 
@@ -157,7 +157,11 @@ static void mylog (pool * p, int logging_level, const char *mymsg)
         }
     }
 
+#if defined __FreeBSD__
+    syslog (LOG_MAKEPRI (fac, pri), "%s", mymsg);
+#else
     syslog (LOG_MAKEPRI (LOG_FAC (fac), pri), "%s", mymsg);
+#endif
 }
 
 #endif
