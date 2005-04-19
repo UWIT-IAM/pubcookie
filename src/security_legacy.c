@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.48 2005-02-17 19:50:47 willey Exp $
+ * $Id: security_legacy.c,v 1.49 2005-04-19 19:27:59 fox Exp $
  */
 
 
@@ -769,7 +769,6 @@ int libpbc_rd_priv (pool * p, const security_context * context,
 
     sig_len =
         EVP_PKEY_size (use_granting ? context->g_pub : context->sess_pub);
-    mysig = (char *) pbc_malloc (p, sig_len);
 
     if (len < sig_len + 2) {
         pbc_log_activity (p, PBC_LOG_ERROR,
@@ -784,6 +783,8 @@ int libpbc_rd_priv (pool * p, const security_context * context,
          (char *) keybuf) < 0) {
         return (1);
     }
+
+    mysig = (char *) pbc_malloc (p, sig_len);
 
     index1 = (unsigned char) buf[len - 2];
     index2 = (unsigned char) buf[len - 1];
@@ -800,12 +801,13 @@ int libpbc_rd_priv (pool * p, const security_context * context,
     if (des_set_key_checked (&key, ks)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "des_set_key_checked failed: didn't derive a good key");
+        pbc_free(p, mysig);
         return 1;
     }
 
     /* allocate outbuf */
     *outlen = len - sig_len - 2;
-    *outbuf = (char *) malloc (*outlen);
+    *outbuf = (char *) pbc_malloc (p, *outlen);
 
     /* decrypt */
     des_cfb64_encrypt ((unsigned char *) buf, (unsigned char *) mysig,

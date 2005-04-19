@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.79 2005-02-24 23:26:38 willey Exp $
+ * $Id: libpubcookie.c,v 2.80 2005-04-19 19:27:59 fox Exp $
  */
 
 
@@ -840,12 +840,14 @@ pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_unbundle_cookie: malformed cookie %s\n",
                           in);
+        pbc_free (p, buf);
         return 0;
     }
 
     if (!libpbc_base64_decode (p, (unsigned char *) in, buf, &outlen)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_unbundle_cookie: could not base64 decode cookie.");
+        pbc_free (p, buf);
         return 0;
     }
 
@@ -854,6 +856,7 @@ pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
          &plain, &plainlen)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_unbundle_cookie: libpbc_rd_priv() failed\n");
+        pbc_free (p, buf);
         return 0;
     }
 
@@ -861,6 +864,8 @@ pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_unbundle_cookie: cookie wrong size: %d != %d",
                           plainlen, sizeof (pbc_cookie_data));
+        pbc_free (p, plain);
+        pbc_free (p, buf);
         return 0;
     }
 
@@ -871,6 +876,7 @@ pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_unbundle_cookie: pbc_malloc(p, ) failed");
         pbc_free (p, plain);
+        pbc_free (p, buf);
         return 0;
     }
     memcpy ((*cookie_data).string, plain, sizeof (pbc_cookie_data));
@@ -909,7 +915,7 @@ unsigned char *libpbc_update_lastts (pool * p,
     cookie =
         libpbc_sign_bundle_cookie (p, context, cookie_string, peer,
                                    use_granting);
-    /* xxx memory leaks? */
+    pbc_free (p, cookie_string);
 
     return cookie;
 
