@@ -29,7 +29,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.36 2005-02-07 22:26:38 willey Exp $
+ * $Id: verify_kerberos5.c,v 1.37 2005-04-20 18:00:31 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -206,6 +206,7 @@ static int cred_derive (pool * p, struct credentials *creds,
     char *s, *t;
     krb5_creds request, *newcreds;
     int r = -1;
+    krb5_error_code error;
 
     assert (creds != NULL);
     assert (app != NULL && target != NULL);
@@ -240,43 +241,44 @@ static int cred_derive (pool * p, struct credentials *creds,
         *t++ = '\0';
 
     /* who am i? */
-    if (krb5_cc_get_principal (context, ccache, &(request.client))) {
+    if (error = krb5_cc_get_principal (context, ccache, &(request.client))) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "verify_kerberos5: cred_derive %s: who am i?",
-                          target);
+                          target, error_message(error));
         goto cleanup;
     }
 
     /* build requested principal */
-    if (krb5_build_principal (context, &request.server,
+    if (error = krb5_build_principal (context, &request.server,
                               strlen (realm), realm, s, t, NULL)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
-                          "verify_kerberos5: cred_derive %s: couldn't build principal",
-                          target);
+                          "verify_kerberos5: cred_derive %s: couldn't build principal: %s",
+                          target, error_message(error)
         goto cleanup;
     }
 
     /* fetch the request ticket */
-    if (krb5_get_credentials (context, 0, ccache, &request, &newcreds)) {
+    if (error = krb5_get_credentials (context, 0, ccache,
+                                      &request, &newcreds)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
-                          "verify_kerberos5: cred_derive %s: krb5_get_credentials failed",
-                          target);
+                          "verify_kerberos5: cred_derive %s: krb5_get_credentials failed: %s",
+                          target, error_message(error));
         goto cleanup;
     }
 
     if (initialize_cache == 0) {
-        if (krb5_cc_initialize (context, ccache_target, request.client)) {
+        if (error = krb5_cc_initialize (context, ccache_target, request.client)) {
             pbc_log_activity (p, PBC_LOG_ERROR,
-                              "verify_kerberos5: cred_derive %s: krb5_cc_initialize failed",
-                              target);
+                              "verify_kerberos5: cred_derive %s: krb5_cc_initialize failed: %s",
+                              target, error_message(error));
             goto cleanup;
         }
     }
 
-    if (krb5_cc_store_cred (context, ccache_target, newcreds)) {
+    if (error = krb5_cc_store_cred (context, ccache_target, newcreds)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
-                          "verify_kerberos5: cred_derive %s: krb5_cc_store_cred failed",
-                          target);
+                          "verify_kerberos5: cred_derive %s: krb5_cc_store_cred failed: %s",
+                          target, error_message(error));
         goto cleanup;
     }
 
