@@ -18,7 +18,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.33 2005-02-07 22:26:37 willey Exp $
+ * $Id: flavor_getcred.c,v 1.34 2005-04-20 14:41:10 jteaton Exp $
  */
 
 
@@ -261,7 +261,7 @@ static login_result process_getcred (pool * p,
         if (check_authz (p, l->host, target_array[i])) {
             pbc_log_activity (p, PBC_LOG_ERROR,
                               "flavor_getcred: %s requested %s; request denied",
-                              l->host, target);
+                              l->host, target_array[i]);
             *errstr =
                 "application not allowed to request these credentials";
             return LOGIN_ERR;
