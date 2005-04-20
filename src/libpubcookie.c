@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.80 2005-04-19 19:27:59 fox Exp $
+ * $Id: libpubcookie.c,v 2.81 2005-04-20 17:52:22 jteaton Exp $
  */
 
 
@@ -185,7 +185,7 @@ const char libpbc_get_credential_id (pool * p, const char *name)
 {
     if (!strcasecmp (name, "uwnetid")) {
         pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                          "WARNING: AuthType %s will not be supported in future versions - user AuthType WebISO\n",
+                          "WARNING: AuthType %s will not be supported in future versions - use AuthType WebISO\n",
                           name);
         return PBC_BASIC_CRED_ID;
     }
