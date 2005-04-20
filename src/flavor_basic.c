@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.74 2005-04-20 14:19:11 jteaton Exp $
+ * $Id: flavor_basic.c,v 1.75 2005-04-20 18:02:08 jteaton Exp $
  */
 
 
@@ -708,8 +708,10 @@ static login_result process_basic (pool * p,
                          l->realm, credsp, errstr) == 0) {
             /* xxx log realm */
             pbc_log_activity (p, PBC_LOG_AUDIT,
-                              "Authentication success: %s IP: %s type: %c\n",
+                              "Authentication success: %s%s%s IP: %s type: %c\n",
                               l->user,
+                              (l->realm == NULL ? "" : "@"),
+                              (l->realm == NULL ? "" : l->realm),
                               (cgiRemoteAddr ==
                                NULL ? "(null)" : cgiRemoteAddr), l->creds);
 
