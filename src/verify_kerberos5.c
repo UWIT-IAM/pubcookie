@@ -29,7 +29,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.37 2005-04-20 18:00:31 jteaton Exp $
+ * $Id: verify_kerberos5.c,v 1.38 2005-04-20 18:47:19 jteaton Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -253,7 +253,7 @@ static int cred_derive (pool * p, struct credentials *creds,
                               strlen (realm), realm, s, t, NULL)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "verify_kerberos5: cred_derive %s: couldn't build principal: %s",
-                          target, error_message(error)
+                          target, error_message(error));
         goto cleanup;
     }
 
