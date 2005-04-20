@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.73 2005-02-24 00:46:05 willey Exp $
+ * $Id: flavor_basic.c,v 1.74 2005-04-20 14:19:11 jteaton Exp $
  */
 
 
@@ -729,14 +729,18 @@ static login_result process_basic (pool * p,
                 char *tmp;
                 tmp =
                     pbc_malloc (p,
-                                strlen (l->user) + strlen (l->realm) + 1);
-                memset (tmp, 0, strlen (l->user) + strlen (l->realm) + 1);
+                                strlen (l->user) + strlen (l->realm) + 2);
                 if (tmp) {
+                    memset (tmp, 0, strlen (l->user) + strlen (l->realm) + 2);
                     strncat (tmp, l->user, strlen (l->user));
                     strncat (tmp, "@", 1);
                     strncat (tmp, l->realm, strlen (l->realm));
                     free (l->user);
                     l->user = tmp;
+                } else {
+                    pbc_log_activity (p, PBC_LOG_ERROR,
+                              "Unable to append realm for user %s realm %s",
+                              l->user, l->realm); 
                 }
             }
 
