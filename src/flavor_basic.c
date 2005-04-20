@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.75 2005-04-20 18:02:08 jteaton Exp $
+ * $Id: flavor_basic.c,v 1.76 2005-04-20 18:25:56 jteaton Exp $
  */
 
 
@@ -406,7 +406,8 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
     if (need_clear_login) {
         print_header (p,
                       "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
-                      PBC_L_COOKIENAME, PBC_CLEAR_COOKIE, PBC_LOGIN_HOST,
+                      PBC_L_COOKIENAME, PBC_CLEAR_COOKIE, 
+                      login_host_cookie_domain(p),
                       LOGIN_DIR, EARLIEST_EVER);
     }
 
@@ -763,7 +764,7 @@ static login_result process_basic (pool * p,
                     print_header (p,
                                   "Set-Cookie: %s=%s; domain=%s; secure\n",
                                   PBC_CRED_COOKIENAME, out64,
-                                  PBC_LOGIN_HOST);
+                                  login_host_cookie_domain(p));
 
                     /* free buffer */
                     free (outbuf);
