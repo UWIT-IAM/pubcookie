@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.47 2005-04-21 00:45:12 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.48 2005-04-21 00:51:52 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -247,9 +247,10 @@ int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
     if( cookie_data == NULL ) {
         filterlog(p, LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", p->uri);
 	p->failed = PBC_BAD_AUTH;
+
 	return -1;
     }
- 
+ 	
     return((*cookie_data).broken.pre_sess_token);
 
 }
@@ -976,7 +977,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	Read_Reg_Values (key, p);
 
 	// Then any app/subdirectory/file settings
-
+ 
 	while ( ptr ) { // while we still have a '/' left to deal with
 
 		pachUrl = ptr + 1;
@@ -1221,10 +1222,10 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	// Fetch requested URL
 
-    pHeaderInfo->GetHeader(pFC,"url",achUrl,&cbURL);
+    pHeaderInfo->GetHeader(pFC,"url",achUrl,&cbURL);	
 
 	filterlog(p, LOG_INFO,"  Requested URL : %s\n",achUrl);
-
+	
 	// Have to parse Query_String ourselves, server hasn't scanned it yet
 
 	ptr = strchr(achUrl,'?');
@@ -1327,7 +1328,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	}
 
 	/* We're done if this is an unprotected page */
-	if (p->AuthType == AUTH_NONE) {
+	if ( (p->AuthType == AUTH_NONE) || (stricmp(p->uri, "/favicon.ico") == 0) ) {
 		if (p->Set_Server_Values) {
 			Add_Header_Values   (pFC,pHeaderInfo);
 		}
@@ -1365,15 +1366,15 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		else
 			strcpy((char *)p->force_reauth,achUrl);
 
-    // Get Granting cookie or Session cookie
+    //  Get Granting cookie or Session cookie
 	// If '<cookie name>=' then client has bogus time and cleared cookie hasn't expired
 
-	if( !(cookie = Get_Cookie(pFC,PBC_G_COOKIENAME)) || (strcmp(cookie,"")==0) ) {
+	if( !(cookie = Get_Cookie(pFC,PBC_G_COOKIENAME)) || (strcmp(cookie,"")==0) || (strcmp(cookie,PBC_CLEAR_COOKIE)==0) ) {
 		if (cookie) pbc_free(p, cookie);
 		if( !(cookie = Get_Cookie(pFC,p->s_cookiename)) || (strcmp(cookie,"")==0) ) {
 			filterlog(p, LOG_INFO,"  Pubcookie_User: no cookies yet, must authenticate\n");
 			if (cookie) pbc_free(p, cookie);
-			p->failed = PBC_BAD_AUTH;
+			p->failed = PBC_BAD_AUTH; 
 			return OK;
 		}
 		else {
@@ -1386,7 +1387,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 				return OK;
 			}
 		else {
-			p->cookie_data = cookie_data;
+			
+			p->cookie_data = cookie_data;		
+			
 		}
 
 		pbc_free(p, cookie);
@@ -2100,7 +2103,7 @@ DWORD OnEndOfRequest (HTTP_FILTER_CONTEXT* pFC)
 	
 	//pbc_free(p, pFC->pFilterContext);
 
-	//pFC->pFilterContext = NULL;   // Force to Null so we don't try to free twice
+	//pFC->pFilterContext = NULL;   // Force to Null so we don't try to free twice	
 
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 
@@ -2176,9 +2179,7 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 
 
 DWORD OnEndOfNetSession (HTTP_FILTER_CONTEXT* pFC)
-{
-			
-
+{			
 	return SF_STATUS_REQ_NEXT_NOTIFICATION;
 
 
@@ -2604,7 +2605,6 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
        request cookie */
        if (cookie= Get_Ext_Cookie(pECB, p, PBC_G_REQ_COOKIENAME)) {
            relay_granting_request(pECB, p, cookie);
-
           /* Otherwise this is an invalid request */
 
     } else {
@@ -2615,6 +2615,7 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
   }
 
   free(uport);
+  free(p->Relay_URI);
   free(p);
   return retcode;
 }
@@ -2683,7 +2684,7 @@ DllMain(
 		
     case DLL_PROCESS_DETACH:
         {
-			syslog(LOG_INFO, "PBC_DllMain: DLL_PROCESS_DETACH\n");
+			syslog(LOG_INFO, "PBC_DllMain: DLL_PROCESS_DETACH\n");			
 			
 			break;
         } /* case DLL_PROCESS_DETACH */
