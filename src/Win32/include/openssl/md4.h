@@ -104,6 +104,9 @@ typedef struct MD4state_st
 	int num;
 	} MD4_CTX;
 
+#ifdef OPENSSL_FIPS
+int private_MD4_Init(MD4_CTX *c);
+#endif
 int MD4_Init(MD4_CTX *c);
 int MD4_Update(MD4_CTX *c, const void *data, unsigned long len);
 int MD4_Final(unsigned char *md, MD4_CTX *c);
@@ -114,4 +117,3 @@ void MD4_Transform(MD4_CTX *c, const unsigned char *b);
 #endif
 
 #endif
-

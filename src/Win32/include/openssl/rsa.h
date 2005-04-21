@@ -72,6 +72,10 @@
 #error RSA is disabled.
 #endif
 
+#if defined(OPENSSL_FIPS)
+#define FIPS_RSA_SIZE_T	int
+#endif
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -360,4 +364,3 @@ void ERR_load_RSA_strings(void);
 }
 #endif
 #endif
-

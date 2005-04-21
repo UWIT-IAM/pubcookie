@@ -306,6 +306,7 @@ struct x509_store_ctx_st      /* X509_STORE_CTX */
 #define		X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION		34
 #define		X509_V_ERR_KEYUSAGE_NO_CRL_SIGN			35
 #define		X509_V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION	36
+#define		X509_V_ERR_INVALID_NON_CA			37
 
 /* The application is not happy */
 #define		X509_V_ERR_APPLICATION_VERIFICATION		50
@@ -414,4 +415,3 @@ void X509_STORE_CTX_set_verify_cb(X509_STORE_CTX *ctx,
 #endif
 #endif
 
-

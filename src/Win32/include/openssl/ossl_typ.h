@@ -120,4 +120,3 @@ typedef struct engine_st ENGINE;
 #define IMPLEMENT_PKCS12_STACK_OF(type) /* Nothing */
 
 #endif /* def HEADER_OPENSSL_TYPES_H */
-
