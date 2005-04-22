@@ -1,3 +1,38 @@
+*) Updates to Pubcookie 3.2 installer for Windows/IIS: 
+   Removed enterprise domain 
+   Added third option to RUNKEYCLIENT, download only.
+   Added RUNKEYCLIENT options to GUI
+
+*) Updated OpenSSL libraries to 0.9.7f for Win32. 
+
+*) Fixed memory leaks in Pubcookie library and legacy security code.
+
+*) Fixed logging on FreeBSD to use correct syslog facility.
+
+*) Removed explicit domain scoping of login cookies in login cgi.
+
+*) Fixed bug in Apache module to preserve spaces in post data when using 
+   the POST login method.
+
+*) Fixed variable substitution in templating when one tag immediately 
+   follows another, e.g. %attr1%%attr2%. Code submission by Steve Losen,
+   University of Virginia.
+
+*) Put login cgi redirect logging into normal audit logging stream. 
+   (Originally reported by Benjamin Armintor, University of Texas-Austin.)
+
+*) Added kerserver support for subjectAltName wildcards. Code submission 
+   by Bradley Schwoerer, University of Wisconsin-Madison.
+
+*) Removed bogus call to free() that was causing segmentation faults in
+   the Sun LDAP section of LDAP verifier. (This bug originally discovered
+   and reported by Benjamin Armintor, University of Texas-Austin.)
+
+*) Fixed security code (security_legacy.c) to close crypt key files. It
+   was leaving them open, which creates stray open files, e.g. one per
+   virtual host on Apache. (Patch provided by Frank Fujimoto, who noticed 
+   on a host with 18 virtual hosts.)
+
 Changes with 3.2.0
 
 *) Fixed login cgi's POST login method to provide continue button for 
