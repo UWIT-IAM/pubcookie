@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.171 2005-04-26 01:30:45 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.172 2005-04-26 01:40:10 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -2667,7 +2667,8 @@ const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
     scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
                                                           &pubcookie_module);
 
-    ap_log_error (PC_LOG_WARN, s, "PubcookieNoBlank depreciated directive (use PubcookieNoObscureCookie instead");
+    ap_log_error (PC_LOG_WARN, s,
+                  "PubcookieNoBlank depreciated directive (use PubcookieNoObscureCookie instead");
 
     scfg->noblank = 1;
 
@@ -2676,7 +2677,8 @@ const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
 }
 
 /* allow to set a "don't obscure the cookie" mode for proxy with pubcookie */
-const char *pubcookie_set_no_obscure (cmd_parms * cmd, void *mconfig, int flag)
+const char *pubcookie_set_no_obscure (cmd_parms * cmd, void *mconfig,
+                                      int flag)
 {
     server_rec *s = cmd->server;
     pubcookie_server_rec *scfg;
@@ -2685,7 +2687,7 @@ const char *pubcookie_set_no_obscure (cmd_parms * cmd, void *mconfig, int flag)
     scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
                                                           &pubcookie_module);
 
-    scfg->noblank = (int)flag;
+    scfg->noblank = flag;
 
     return NULL;
 
@@ -2860,9 +2862,9 @@ static const command_rec pubcookie_commands[] = {
                    NULL, RSRC_CONF,
                    "Do not blank cookies."),
     AP_INIT_FLAG ("PubCookieNoObscureCookies",
-                   pubcookie_set_no_obscure,
-                   NULL, RSRC_CONF,
-                   "Do not obscure Pubcookie cookies."),
+                  pubcookie_set_no_obscure,
+                  NULL, RSRC_CONF,
+                  "Do not obscure Pubcookie cookies."),
     AP_INIT_RAW_ARGS ("PubCookieAuthTypeNames",
                       set_authtype_names,
                       NULL, RSRC_CONF,
@@ -3263,7 +3265,9 @@ static int login_reply_handler (request_rec * r)
                    p = WebTemplate_html2text(v);
                    WebTemplate_assign(W, "ARGVAL", p);
                  */
-                for (t=v;*t;t++) if (*t=='+') *t = ' ';
+                for (t = v; *t; t++)
+                    if (*t == '+')
+                        *t = ' ';
                 ap_unescape_url (v);
 
                 if (need_area (v)) {
@@ -3282,7 +3286,9 @@ static int login_reply_handler (request_rec * r)
 
         if (a && *a) {
             char *t;
-            for (t=a;*t;t++) if (*t=='+') *t = ' ';
+            for (t = (char *) a; *t; t++)
+                if (*t == '+')
+                    *t = ' ';
             arg =
                 ap_psprintf (p, "%d;URL=%s?%s", PBC_REFRESH_TIME, r_url,
                              a);
