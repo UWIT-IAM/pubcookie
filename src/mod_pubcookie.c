@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.172 2005-04-26 01:40:10 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.173 2005-04-26 16:38:36 dors Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -2656,7 +2656,7 @@ const char *set_end_session (cmd_parms * cmd, void *mconfig, const char *v)
 
 
 /* allow admin to set a "dont blank the cookie" mode for proxy with pubcookie */
-/* DEPRECIATED in favour of PubcookieNoObscureCookie                          */
+/* DEPRECATED in favour of PubcookieNoObscureCookie                          */
 const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
                                     const char *v)
 {
@@ -2668,7 +2668,7 @@ const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
                                                           &pubcookie_module);
 
     ap_log_error (PC_LOG_WARN, s,
-                  "PubcookieNoBlank depreciated directive (use PubcookieNoObscureCookie instead");
+                  "PubcookieNoBlank deprecated directive (use PubcookieNoObscureCookie instead");
 
     scfg->noblank = 1;
 
@@ -2856,7 +2856,7 @@ static const command_rec pubcookie_commands[] = {
                    NULL, RSRC_CONF,
                    "Set the name of the EGD Socket if needed for randomness."),
 
-    /* DEPRECIATED in favour of PubcookieNoObscureCookie  */
+    /* DEPRECATED in favour of PubcookieNoObscureCookie  */
     AP_INIT_TAKE1 ("PubCookieNoBlank",
                    pubcookie_set_no_blank,
                    NULL, RSRC_CONF,
