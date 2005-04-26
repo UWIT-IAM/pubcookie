@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.170 2005-03-29 23:29:00 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.171 2005-04-26 01:30:45 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -109,10 +109,12 @@ typedef apr_table_t table;
 
 #include "apr_strings.h"
 
-#define PC_LOG_DEBUG APLOG_MARK,APLOG_DEBUG,0
-#define PC_LOG_INFO  APLOG_MARK,APLOG_INFO,0
-#define PC_LOG_ERR   APLOG_MARK,APLOG_ERR,0
-#define PC_LOG_EMERG APLOG_MARK,APLOG_EMERG,0
+#define PC_LOG_DEBUG  APLOG_MARK,APLOG_DEBUG,0
+#define PC_LOG_WARN   APLOG_MARK,APLOG_WARN,0
+#define PC_LOG_NOTICE APLOG_MARK,APLOG_NOTICE,0
+#define PC_LOG_INFO   APLOG_MARK,APLOG_INFO,0
+#define PC_LOG_ERR    APLOG_MARK,APLOG_ERR,0
+#define PC_LOG_EMERG  APLOG_MARK,APLOG_EMERG,0
 #define USER user
 #define AUTH_TYPE ap_auth_type
 
@@ -147,10 +149,12 @@ static APR_OPTIONAL_FN_TYPE (ssl_var_lookup) * lookup_ssl_var = NULL;
 
 #else /* is apache 1.3 */
 
-#define PC_LOG_DEBUG APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO
-#define PC_LOG_INFO  APLOG_MARK,APLOG_INFO|APLOG_NOERRNO
-#define PC_LOG_ERR   APLOG_MARK,APLOG_ERR
-#define PC_LOG_EMERG APLOG_MARK,APLOG_EMERG|APLOG_NOERRNO
+#define PC_LOG_DEBUG  APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO
+#define PC_LOG_WARN   APLOG_MARK,APLOG_WARNING|APLOG_NOERRNO
+#define PC_LOG_NOTICE APLOG_MARK,APLOG_NOTICE|APLOG_NOERRNO
+#define PC_LOG_INFO   APLOG_MARK,APLOG_INFO|APLOG_NOERRNO
+#define PC_LOG_ERR    APLOG_MARK,APLOG_ERR
+#define PC_LOG_EMERG  APLOG_MARK,APLOG_EMERG|APLOG_NOERRNO
 #define USER connection->user
 #define AUTH_TYPE connection->ap_auth_type
 #define APR_SUCCESS HTTP_OK
@@ -2652,6 +2656,7 @@ const char *set_end_session (cmd_parms * cmd, void *mconfig, const char *v)
 
 
 /* allow admin to set a "dont blank the cookie" mode for proxy with pubcookie */
+/* DEPRECIATED in favour of PubcookieNoObscureCookie                          */
 const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
                                     const char *v)
 {
@@ -2662,7 +2667,25 @@ const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
     scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
                                                           &pubcookie_module);
 
+    ap_log_error (PC_LOG_WARN, s, "PubcookieNoBlank depreciated directive (use PubcookieNoObscureCookie instead");
+
     scfg->noblank = 1;
+
+    return NULL;
+
+}
+
+/* allow to set a "don't obscure the cookie" mode for proxy with pubcookie */
+const char *pubcookie_set_no_obscure (cmd_parms * cmd, void *mconfig, int flag)
+{
+    server_rec *s = cmd->server;
+    pubcookie_server_rec *scfg;
+    ap_pool *p = cmd->pool;
+
+    scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
+                                                          &pubcookie_module);
+
+    scfg->noblank = (int)flag;
 
     return NULL;
 
@@ -2831,10 +2854,15 @@ static const command_rec pubcookie_commands[] = {
                    NULL, RSRC_CONF,
                    "Set the name of the EGD Socket if needed for randomness."),
 
+    /* DEPRECIATED in favour of PubcookieNoObscureCookie  */
     AP_INIT_TAKE1 ("PubCookieNoBlank",
                    pubcookie_set_no_blank,
                    NULL, RSRC_CONF,
                    "Do not blank cookies."),
+    AP_INIT_FLAG ("PubCookieNoObscureCookies",
+                   pubcookie_set_no_obscure,
+                   NULL, RSRC_CONF,
+                   "Do not obscure Pubcookie cookies."),
     AP_INIT_RAW_ARGS ("PubCookieAuthTypeNames",
                       set_authtype_names,
                       NULL, RSRC_CONF,
