@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.152 2005-04-20 18:25:56 jteaton Exp $
+ * $Id: index.cgi.c,v 1.153 2005-05-11 21:50:50 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -722,6 +722,7 @@ int expire_login_cookie (pool * p, const security_context * context,
     char *message = NULL;
     int l_res;
     char *user;
+    const char *domain = login_host_cookie_domain (p);
 
     char *urluser;
     char *urlappsrvid;
@@ -774,11 +775,13 @@ int expire_login_cookie (pool * p, const security_context * context,
         return (PBC_FAIL);
     }
 
-    print_header (p, "Set-Cookie: %s=%s; domain=%s; path=%s%s\n",
+    print_header (p, "Set-Cookie: %s=%s; %spath=%s%s\n",
                   PBC_L_COOKIENAME, l_cookie,
-                  login_host_cookie_domain(p),
+                  (domain == NULL ? "" : domain),
                   LOGIN_DIR, secure_cookie);
 
+    if (domain != NULL)
+        free ((char *) domain);
     if (l_cookie != NULL)
         free (l_cookie);
     if (message != NULL)
@@ -793,15 +796,20 @@ int expire_login_cookie (pool * p, const security_context * context,
  */
 int clear_login_cookie (pool * p)
 {
+    const char *domain = login_host_cookie_domain (p);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "clear_login_cookie: hello");
 
     print_header (p,
-                  "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\n",
+                  "Set-Cookie: %s=%s; %spath=%s; expires=%s%s\n",
                   PBC_L_COOKIENAME, PBC_CLEAR_COOKIE,
-                  login_host_cookie_domain(p),
+                  (domain == NULL ? "" : domain),
                   LOGIN_DIR, EARLIEST_EVER, secure_cookie);
+
+    if (domain)
+        pbc_free (p, (char *) domain);
+
     return (PBC_OK);
 
 }
@@ -1044,12 +1052,23 @@ void close_mirror_file (pool * p)
 const char *login_host (pool * p)
 {
     return (libpbc_config_getstring (p, "login_host", PBC_LOGIN_HOST));
+
 }
 
 const char *login_host_cookie_domain (pool * p)
 {
-    return (libpbc_config_getstring (p, "login_host_cookie_domain",
-                                     login_host(p)));
+    const char *h =
+        libpbc_config_getstring (p, "login_host_cookie_domain", NULL);
+    char *buf;
+
+    if (h) {
+        buf = calloc (sizeof (char), strlen (h) + 10);  /* 9 for "domain= ;" */
+        snprintf (buf, (strlen (h) + 10), "domain=%s; ", h);
+        return (h);
+    } else {
+        return (NULL);
+    }
+
 }
 
 const char *enterprise_domain (pool * p)
@@ -2335,22 +2354,32 @@ void notok (pool * p, notok_event event, char *reason)
 
 int set_pinit_cookie (pool * p)
 {
+    const char *domain = login_host_cookie_domain (p);
 
-    print_header (p, "Set-Cookie: %s=%s; domain=%s; path=/%s\n",
-                  PBC_PINIT_COOKIENAME, PBC_SET, 
-                  login_host_cookie_domain(p),
-                  secure_cookie);
+    print_header (p, "Set-Cookie: %s=%s; %spath=/%s\n",
+                  PBC_PINIT_COOKIENAME, PBC_SET,
+                  (domain == NULL ? "" : domain), secure_cookie);
+
+    if (domain)
+        pbc_free (p, (char *) domain);
+
     return (PBC_OK);
+
 }
 
 int clear_pinit_cookie (pool * p)
 {
+    const char *domain = login_host_cookie_domain (p);
 
     print_header (p,
-                  "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s%s\n",
+                  "Set-Cookie: %s=%s; %spath=/; expires=%s%s\n",
                   PBC_PINIT_COOKIENAME, PBC_CLEAR_COOKIE,
-                  login_host_cookie_domain(p),
+                  (domain == NULL ? "" : domain),
                   EARLIEST_EVER, secure_cookie);
+
+    if (domain)
+        pbc_free (p, (char *) domain);
+
     return (PBC_OK);
 
 }
@@ -2530,6 +2559,7 @@ void print_redirect_page (pool * p, const security_context * context,
     cgiFormEntry *cur;
     cgiFormEntry *next;
     char *redirect_final_trunc = NULL;
+    const char *domain = login_host_cookie_domain (p);
 
     char *user;
     char *appsrvid;
@@ -2624,10 +2654,12 @@ void print_redirect_page (pool * p, const security_context * context,
     /* create the login cookie header */
 
     snprintf (l_set_cookie, sizeof (l_set_cookie) - 1,
-              "Set-Cookie: %s=%s; domain=%s; path=%s%s",
-              PBC_L_COOKIENAME, l_cookie, 
-              login_host_cookie_domain(p),
-              LOGIN_DIR, secure_cookie);
+              "Set-Cookie: %s=%s; %spath=%s%s",
+              PBC_L_COOKIENAME, l_cookie,
+              (domain == NULL ? "" : domain), LOGIN_DIR, secure_cookie);
+
+    if (domain)
+        pbc_free (p, (char *) domain);
 
     /* whip up the url to send the browser back to */
     if (!strcmp (l->fr, "NFR"))
