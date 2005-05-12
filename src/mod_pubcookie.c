@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.173 2005-04-26 16:38:36 dors Exp $
+ * $Id: mod_pubcookie.c,v 1.174 2005-05-12 23:50:43 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -110,7 +110,7 @@ typedef apr_table_t table;
 #include "apr_strings.h"
 
 #define PC_LOG_DEBUG  APLOG_MARK,APLOG_DEBUG,0
-#define PC_LOG_WARN   APLOG_MARK,APLOG_WARN,0
+#define PC_LOG_WARN   APLOG_MARK,APLOG_WARNING,0
 #define PC_LOG_NOTICE APLOG_MARK,APLOG_NOTICE,0
 #define PC_LOG_INFO   APLOG_MARK,APLOG_INFO,0
 #define PC_LOG_ERR    APLOG_MARK,APLOG_ERR,0
