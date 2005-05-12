@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.174 2005-05-12 23:50:43 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.175 2005-05-12 23:54:05 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -110,7 +110,7 @@ typedef apr_table_t table;
 #include "apr_strings.h"
 
 #define PC_LOG_DEBUG  APLOG_MARK,APLOG_DEBUG,0
-#define PC_LOG_WARN   APLOG_MARK,APLOG_WARNING,0
+#define PC_LOG_WARNING   APLOG_MARK,APLOG_WARNING,0
 #define PC_LOG_NOTICE APLOG_MARK,APLOG_NOTICE,0
 #define PC_LOG_INFO   APLOG_MARK,APLOG_INFO,0
 #define PC_LOG_ERR    APLOG_MARK,APLOG_ERR,0
@@ -150,7 +150,7 @@ static APR_OPTIONAL_FN_TYPE (ssl_var_lookup) * lookup_ssl_var = NULL;
 #else /* is apache 1.3 */
 
 #define PC_LOG_DEBUG  APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO
-#define PC_LOG_WARN   APLOG_MARK,APLOG_WARNING|APLOG_NOERRNO
+#define PC_LOG_WARNING   APLOG_MARK,APLOG_WARNING|APLOG_NOERRNO
 #define PC_LOG_NOTICE APLOG_MARK,APLOG_NOTICE|APLOG_NOERRNO
 #define PC_LOG_INFO   APLOG_MARK,APLOG_INFO|APLOG_NOERRNO
 #define PC_LOG_ERR    APLOG_MARK,APLOG_ERR
@@ -2667,7 +2667,7 @@ const char *pubcookie_set_no_blank (cmd_parms * cmd, void *mconfig,
     scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
                                                           &pubcookie_module);
 
-    ap_log_error (PC_LOG_WARN, s,
+    ap_log_error (PC_LOG_WARNING, s,
                   "PubcookieNoBlank deprecated directive (use PubcookieNoObscureCookie instead");
 
     scfg->noblank = 1;
