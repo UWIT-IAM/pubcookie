@@ -158,6 +158,11 @@ login cgi:</p>
      user-agent string, remote IP addresses, or IP address ranges.</dd>
 <dd> Syntax: <tt>time agent|ip [agent|ip] ... [ time agent|ip ... ]</tt></dd>
 
+<dt> <a name="login_host_cookie_domain">login_host_cookie_domain</a> <i>domain</i></dt>
+<dd> The domain used by the login cgi when setting its own cookies.</dd>
+<dd> Default: No domain is used unless this variable defines one.</dd>
+<dd> Example: <i>login.exampled.edu</i></dd>
+
 <dt> <a name="min_countdown">min_countdown</a> <i>time</i></dt>
 <dd> The minimum countdown for automatically reloading the status page.</dd>
 
@@ -286,7 +291,6 @@ ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password</pre>
 <dd> Path and directory, with trailing slash, to the <tt>templates</tt> directory
      used by the relay cgi. The path is defined by setting the relay cgi's 
      configuration <tt>--prefix</tt> option.</dd>
-<dd> Example: <i>/var/www/html/relay/templates/</i></dd>
 
 <dt> <a name="relay_uri">relay_uri</a> <i>full-uri</i></dt>
 <dd> Obsolete. This variable was removed in Pubcookie 3.1.1, as the 
