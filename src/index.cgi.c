@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.153 2005-05-11 21:50:50 willey Exp $
+ * $Id: index.cgi.c,v 1.154 2005-05-12 22:45:49 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1064,7 +1064,7 @@ const char *login_host_cookie_domain (pool * p)
     if (h) {
         buf = calloc (sizeof (char), strlen (h) + 10);  /* 9 for "domain= ;" */
         snprintf (buf, (strlen (h) + 10), "domain=%s; ", h);
-        return (h);
+        return (buf);
     } else {
         return (NULL);
     }
