@@ -17,7 +17,8 @@
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.bat;$(TargetPath)">
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
@@ -28,24 +29,26 @@
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Release/PubCookieFilter.pch"
+				AssemblerOutput="2"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386 /IGNORE:4089"
+				AdditionalOptions="/MACHINE:I386 /IGNORE:4089 /RELEASE"
 				AdditionalDependencies="libeay32.lib odbc32.lib odbccp32.lib wsock32.lib "
 				OutputFile=".\Release/PubCookieFilter.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=".\lib"
 				ModuleDefinitionFile=".\PubCookieFilter.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release/PubCookieFilter.pdb"
 				ImportLibrary=".\Release/PubCookieFilter.lib"/>
 			<Tool
@@ -105,7 +108,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
+				AdditionalOptions="/MACHINE:I386 /NODEFAULTLIB:MSVCRT"
 				AdditionalDependencies="libeay32.lib odbc32.lib odbccp32.lib wsock32.lib "
 				OutputFile=".\Debug/PubCookieFilter.dll"
 				LinkIncremental="1"
@@ -218,6 +221,9 @@
 			</File>
 			<File
 				RelativePath=".\PubCookieFilter.h">
+			</File>
+			<File
+				RelativePath=".\resource.h">
 			</File>
 			<File
 				RelativePath="..\security.h">

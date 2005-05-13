@@ -16,7 +16,7 @@
 //
 
 /*
-  $Id: winkeyclient.c,v 1.15 2005-02-07 22:30:30 willey Exp $
+  $Id: winkeyclient.c,v 1.16 2005-05-13 15:43:14 suh Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@
 #include <wincrypt.h>
 #include <wintrust.h>
 #include <schannel.h>
+#include <tchar.h>
 
 typedef void pool;
 
@@ -102,7 +103,13 @@ pubcookie_dir_rec   ppool;
 pubcookie_dir_rec  *p=&ppool;
 char *hostname = NULL;
 BOOL silent = FALSE;
+BOOL runByInstaller = FALSE;
 char *gcert = NULL;
+char *keyserver = NULL;
+char *default_keyserver = "https://weblogin.washington.edu:2222";
+char *filter_key = "System\\CurrentControlSet\\Services\\PubcookieFilter";
+
+
 
 WSADATA wsaData;
 SOCKET  Socket;
@@ -130,6 +137,25 @@ int Messagef(const char * format, ...){
 		va_end(args);
 	}
     return 1;
+}
+
+UINT MessageYesNo(const char * format, ...) {
+	UINT uiResponse = NULL;
+	char msg[2048];
+
+
+	va_list   args;
+
+	va_start(args, format);
+
+	_vsnprintf(msg, sizeof(msg)-1, format, args);
+
+	uiResponse = MessageBox(NULL,msg, "Keyclient found more than one valid certificate.", MB_YESNO);
+
+
+	va_end(args);
+
+	return uiResponse;
 }
 
 void exitf(int return_code, const char * format, ...) {
@@ -273,7 +299,7 @@ int get_crypt_key(crypt_stuff *c_stuff, const char *peer)
 void ParseCmdLine(LPSTR lpCmdLine) {
 	int c;
 
-    while ((c = getopt(__argc, __argv, "sudH:G:")) != -1) {
+	while ((c = getopt(__argc, __argv, "sudiH:G:")) != -1) {
         switch (c) {
 			case 's':
 				/* silent mode */
@@ -290,6 +316,19 @@ void ParseCmdLine(LPSTR lpCmdLine) {
                 newkeyp = -1;
                 break;
 
+			case 'i':
+				/* executed by Installer */
+				/*
+					if this is called by the installer, then this
+					will execute keyclient twice (one for getting Granting Cert,
+					another to get the key).  This can potentially lead to
+					the user seeing the message box to pick the certificate from
+					MyStore twice.  If it's executed by the Installer then
+					do a best guess and pick the first valid cert instead of prompting
+					the user to select the one they want to use
+				*/
+				runByInstaller = TRUE;
+				break;
             case 'G':
 				/* get granting cert, don't generate a new key */
                 gcert = strdup(optarg);
@@ -301,13 +340,13 @@ void ParseCmdLine(LPSTR lpCmdLine) {
 				   Default is gethostbyname() if not specified here */
                 hostname = strdup(optarg);
                 break;
-
             case '?':
             default:
                 break;
         }
     }
 }
+
 
 int APIENTRY WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -353,21 +392,24 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     // Create credentials.
     //
 
-	if(Status = CreateCredentials(hostname, &hClientCreds))
+	if(Status = CreateCredentials(hostname, runByInstaller, &hClientCreds))
 	{
 		if (Status == SEC_E_NO_CREDENTIALS) {
-			Messagef("Error creating credentials.  Could not find server certificate for %s",hostname);
-			return ERROR_INSTALL_FAILURE;
+			//Messagef("Error creating credentials.  Could not find server certificate for %s",hostname);
+			//return ERROR_INSTALL_FAILURE;			
+			exitf(ERROR_INSTALL_FAILURE,"Could not find server certificate for %s",hostname);
 		}
 		else {
-			Messagef("Error creating credentials. Error code: 0x%x\n", Status);
-			return ERROR_INSTALL_FAILURE;
+			//Messagef("Error creating credentials. Error code: 0x%x\n", Status);
+			//return ERROR_INSTALL_FAILURE;		
+			exitf(ERROR_INSTALL_FAILURE,"Error creating credentials. Error code: 0x%x\n", Status);
 		}
 	}
 
 
     /* figure out the key management server */
 	keymgturi = strdup(PBC_KEYMGT_URI);
+	message("Keyserver is %s", keymgturi);	
     keyhost = strdup(keymgturi);
 
     if (!strncmp(keyhost, "https://", 8)) keyhost += 8;
@@ -434,13 +476,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 
 
-    /* make the HTTP query */
+ 
+	 /* make the HTTP query */
     /* newkeyp = 1 means generate and get a key 
        newkeyp = 0 means get a key 
        newkeyp = -1 means something else
      */
 
-	if (newkeyp == -1) {
+   	if (newkeyp == -1) {
 		char enckey[PBC_DES_KEY_BUF * 2];
 
 		if (gcert) { /* get the granting cert */

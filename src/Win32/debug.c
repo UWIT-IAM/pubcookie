@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.17 2005-02-07 22:30:30 willey Exp $
+//  $Id: debug.c,v 1.18 2005-05-13 15:43:13 suh Exp $
 //
 
 #include <windows.h>
@@ -47,10 +47,10 @@ extern void filter_log_activity (pubcookie_dir_rec *p, const char * source, int 
 
     char      log[BUFFSIZE];
 	HANDLE hEvent;
-	PTSTR pszaStrings[1];
+	//PTSTR pszaStrings[1];	
 	unsigned short errortype;
 	DWORD eventid=PBC_ERR_ID_SIMPLE;
-	pubcookie_dir_rec *pp=NULL;
+	pubcookie_dir_rec *pp=NULL;	
 
 	if (!p) {
 		syslog(LOG_INFO, "filter_log_activity(p,%s,%d,%s,...) called without an allocated pool",source,logging_level,format);
@@ -80,12 +80,17 @@ extern void filter_log_activity (pubcookie_dir_rec *p, const char * source, int 
 			
 		}
         _vsnprintf(log, BUFFSIZE, format, args);
-		pszaStrings[0] = log;
-        hEvent = RegisterEventSource(NULL,source);
+		//pszaStrings[0] = log;
+		hEvent = RegisterEventSource(NULL,source);
 		if (hEvent) 
 		{
+			LPCSTR messages[] = {log, NULL};
+			/*
 			ReportEvent(hEvent, errortype, 0, eventid, NULL, (WORD)1, 0,                  
-                (const char **)pszaStrings, NULL);                   
+                (const char **)pszaStrings, NULL); 				
+			*/
+			ReportEvent(hEvent, errortype, 0, eventid, NULL, 1, 0,                  
+                messages, NULL); 
 			DeregisterEventSource(hEvent);
 		}
 	}
@@ -98,7 +103,7 @@ extern void filter_log_activity (pubcookie_dir_rec *p, const char * source, int 
 
 void pbc_vlog_activity(pubcookie_dir_rec *p, int logging_level, const char * format, va_list args )
 {
-	filter_log_activity (p, "Pubcookie", logging_level, format, args);
+	filter_log_activity (p, "Pubcookie ", logging_level, format, args);
 }
 
 /* Called whenever you don't have a pool yet available */

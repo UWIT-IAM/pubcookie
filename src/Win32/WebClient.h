@@ -2,9 +2,7 @@
 
 #define DLL_NAME TEXT("Secur32.dll")
 #define NT4_DLL_NAME TEXT("Security.dll")
-
 BOOL LoadSecurityLibrary(SecurityFunctionTable ** lpSecurityFunc);
-
 SECURITY_STATUS
 CreateCredentials(
     LPSTR pszUserName,

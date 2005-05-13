@@ -26,6 +26,7 @@ Abstract:
 #include <wintrust.h>
 #include <schannel.h>
 #include <sspi.h>
+#include <tchar.h>
 
 #include "WebClient.h"
 
@@ -164,10 +165,29 @@ CertCloseMyStore()
         CertCloseStore(hMyCertStore, 0);
     }
 }
+
+void 
+GetCertInfoString(LPSTR pszType, PCCERT_CONTEXT *pCertContext, LPSTR *pszValue)
+{
+	
+	//LPTSTR pszName;
+
+	
+
+	
+
+	//pszValue = pszName;
+
+	//free(pszName);
+}
+
+
 /*****************************************************************************/
 SECURITY_STATUS
 CreateCredentials(
-    LPSTR pszUserName,              // in
+    LPSTR pszHostName,              // in
+	BOOL bBestGuess,				// called by installer, make a best guess
+									// about which cert to use
     PCredHandle phCreds)            // out
 {
     TimeStamp       tsExpiry;
@@ -176,7 +196,44 @@ CreateCredentials(
     DWORD           cSupportedAlgs = 0;
     ALG_ID          rgbSupportedAlgs[16];
 
-    PCCERT_CONTEXT  pCertContext = NULL;
+    PCCERT_CONTEXT  pCertContext = NULL;	
+	PCCERT_CONTEXT  pCertContextDup = NULL;	
+	PCCERT_CONTEXT *pCertContexts = (PCCERT_CONTEXT*) malloc(2 * sizeof(PCCERT_CONTEXT));
+	
+	DWORD cbSize;
+	LPTSTR pszCertSubAltDNSName;
+	LPTSTR pszCertSubCommonName;
+	LPTSTR pszCertIssuerName;
+
+	UINT uiResponse;
+	
+	TCHAR szBufDateB[255];
+	TCHAR szBufDate[255];
+
+	int iLooper;
+	int iCounter = 0;
+
+	SYSTEMTIME stExpDate;
+	SYSTEMTIME stBegDate;
+	FILETIME ftSystemTime;
+	FILETIME ftExpDate;
+
+	LONG lTimeDiff;
+    
+	char currBuff[20];
+	char totalBuff[20];
+
+	BOOL bSelectedACert = FALSE;	
+	BOOL bSearchBySubjectAltName = TRUE;
+	BOOL bTriedBySubjectCommonName = FALSE;
+
+	char* currCert;
+	char* totalCerts;
+
+	const DWORD dwNameToStrFlags =	CERT_X500_NAME_STR | 
+									CERT_NAME_STR_NO_PLUS_FLAG |
+									CERT_NAME_STR_CRLF_FLAG;
+
 
     // Open the "MY" certificate store, which is where Internet Explorer
     // stores its client certificates.
@@ -205,26 +262,372 @@ CreateCredentials(
     // If a user name is specified, then attempt to find a client
     //
 
-    if(pszUserName)
+    if(pszHostName)
     {
-        // Find client certificate. 
-        pCertContext = CertFindCertificateInStore(hMyCertStore, 
-                                                  X509_ASN_ENCODING, 
-                                                  0,
-                                                  CERT_FIND_SUBJECT_STR_A,
-                                                  pszUserName,
-                                                  NULL);
-        if(pCertContext == NULL)
-        {
-            message("**** Error 0x%x returned by CertFindCertificateInStore\n",
-                GetLastError());
-            return SEC_E_NO_CREDENTIALS;
-        }
+        /* Find client certificate. */
+		/*
+			1) Search for all certificates with Subject Alt Name of type
+				DNS Name is equal to -H option parameter
+
+			2) If none exist, then find with Subject of type CN is equal to -H option
+				
+			3) If multiple are found, then loop through the certificates and
+				give the user the option to select which cert to use.			
+		*/
+
+        /* Find all the certs */		
+CertSearchLoop:
+		iCounter = 0;
+
+		while(pCertContext = CertEnumCertificatesInStore(hMyCertStore, pCertContext))
+		{
+
+			// Search is by Subject Alt Name
+			if (bSearchBySubjectAltName == TRUE)
+			{
+			
+				/* Check Subject Alt Name */
+				cbSize = CertGetNameString(pCertContext,
+					CERT_NAME_SIMPLE_DISPLAY_TYPE,
+					0,
+					NULL,
+					NULL,
+					0);
+
+				pszCertSubAltDNSName = (LPTSTR) malloc (cbSize * sizeof(TCHAR));
+				
+				CertGetNameString(pCertContext, 
+					CERT_NAME_SIMPLE_DISPLAY_TYPE,
+					0,
+					NULL,
+					pszCertSubAltDNSName,
+					cbSize);
+				
+				if (stricmp(pszCertSubAltDNSName, pszHostName) != 0)
+				{							
+					free(pszCertSubAltDNSName);	
+					continue;
+				}
+
+				ZeroMemory(&ftSystemTime, sizeof(&ftSystemTime));
+
+				// Validate dates
+				if(CertVerifyTimeValidity(NULL, pCertContext->pCertInfo) != 0)
+				{
+					free(pszCertSubAltDNSName);
+					continue;
+				}				
+								
+
+				free(pszCertSubAltDNSName);
+
+				/* Put all valid certs into array */
+				/* reallocate array */
+				pCertContexts = (PCCERT_CONTEXT*) realloc(pCertContexts, (iCounter + 1) * sizeof(PCCERT_CONTEXT));
+
+				/* use CertDuplicateCertificateContext to context is not NULL(ed) automatically */
+				pCertContexts[iCounter] = CertDuplicateCertificateContext(pCertContext);
+				
+				iCounter++; //# of found certs
+			
+			} // if search by SubjectAltName
+			else
+			{		
+
+				bTriedBySubjectCommonName = TRUE;
+
+				/* Check Subject Common Name */
+				cbSize = CertGetNameString(pCertContext,
+					CERT_NAME_ATTR_TYPE,
+					0,
+					szOID_COMMON_NAME,
+					NULL,
+					0);
+
+				pszCertSubCommonName = (LPTSTR) malloc (cbSize * sizeof(TCHAR));
+				
+				CertGetNameString(pCertContext, 
+					CERT_NAME_ATTR_TYPE,
+					0,
+					szOID_COMMON_NAME,
+					pszCertSubCommonName,
+					cbSize);
+				
+
+				if (stricmp(pszCertSubCommonName, pszHostName) != 0)
+				{							
+					free(pszCertSubCommonName);	
+					continue;
+				}
+
+
+				ZeroMemory(&ftSystemTime, sizeof(&ftSystemTime));
+
+				if(CertVerifyTimeValidity(NULL, pCertContext->pCertInfo) != 0)
+				{
+					free(pszCertSubAltDNSName);
+					continue;
+				}
+				
+				free(pszCertSubCommonName);
+
+				/* reallocate array */
+				pCertContexts = (PCCERT_CONTEXT*) realloc(pCertContexts, (iCounter + 1) * sizeof(PCCERT_CONTEXT));
+
+				/* use CertDuplicateCertificateContext to context is not NULL(ed) automatically */
+				pCertContexts[iCounter] = CertDuplicateCertificateContext(pCertContext);
+				
+				iCounter++; //# of found certs
+
+			}
+
+
+		} /* end while */
+
+		
+		/* if just one, then use it! otherwise let them pick one */        
+		if (iCounter > 0)
+		{
+			for(iLooper=0; iLooper<iCounter; iLooper++)
+			{
+
+				if (bSearchBySubjectAltName == TRUE)
+				{
+
+					pCertContext = pCertContexts[iLooper];
+
+
+					/* if just one, use this certificate context */
+					if (iCounter == 1 || bBestGuess)
+					{
+						bSelectedACert = TRUE;
+						break;
+					}
+
+
+					/* Check Subject Alt Name */
+					cbSize = CertGetNameString(pCertContext,
+						CERT_NAME_SIMPLE_DISPLAY_TYPE,
+						0,
+						NULL,
+						NULL,
+						0);
+
+					pszCertSubAltDNSName = (LPTSTR) malloc (cbSize * sizeof(TCHAR));
+					
+					CertGetNameString(pCertContext, 
+						CERT_NAME_SIMPLE_DISPLAY_TYPE,
+						0,
+						NULL,
+						pszCertSubAltDNSName,
+						cbSize);
+
+					
+	
+
+					///* format the date */
+					ZeroMemory(&stExpDate, sizeof(&stExpDate));
+ 
+					ftExpDate = pCertContext->pCertInfo->NotAfter;
+
+					/* must do this thing otherwise dates are off because of daylight savings */
+					FileTimeToLocalFileTime(&ftExpDate, &ftExpDate);
+
+					FileTimeToSystemTime(&ftExpDate, &stExpDate);
+
+
+					GetDateFormat(
+						NULL,
+						DATE_LONGDATE,
+
+						&stExpDate,
+						NULL,
+						szBufDate,
+						254);	
+
+
+					cbSize = CertNameToStr(pCertContext->dwCertEncodingType,
+					&pCertContext->pCertInfo->Issuer,
+					dwNameToStrFlags,
+					NULL,
+					0);
+
+				
+				
+
+					pszCertIssuerName = (LPTSTR) malloc (cbSize * sizeof(TCHAR));
+
+					CertNameToStr(pCertContext->dwCertEncodingType, 
+						&pCertContext->pCertInfo->Issuer, 
+						CERT_NAME_ISSUER_FLAG, 
+						pszCertIssuerName,
+						cbSize);
+
+
+					_snprintf(currBuff, sizeof(currBuff), "%d", iLooper+1);
+					currCert = currBuff;
+					_snprintf(totalBuff, sizeof(totalBuff), "%d", iCounter);
+					totalCerts = totalBuff;
+
+					uiResponse = MessageYesNo("Found %s of %s valid certificates, use this one?\n\nDNS = %s\nIssuer = %s\nExpiration Date = %s \n", 
+						currCert,
+						totalCerts,	
+						pszCertSubAltDNSName,
+						pszCertIssuerName,
+						szBufDate);
+
+					if (uiResponse == IDYES)
+					{
+						//use this cert
+						bSelectedACert = TRUE;
+						break;
+					}
+					else
+					{
+						continue;
+					}				
+
+
+					//clean up
+					free(pszCertSubAltDNSName);
+					free(pszCertIssuerName);
+					CertFreeCertificateContext(pCertContexts[iLooper]);
+					free(pCertContexts[iLooper]);
+				}
+				else
+				{
+					/* Search by Subject Common Name */
+					//pCertContext = CertDuplicateCertificateContext(pCertContexts[iLooper]);
+					pCertContext = pCertContexts[iLooper];
+
+
+					/* if just one, use this certificate context */
+					if (iCounter == 1)
+					{
+						bSelectedACert = TRUE;
+						break;
+					}
+
+					/* Check Subject Alt Name */
+					cbSize = CertGetNameString(pCertContext,
+						CERT_NAME_ATTR_TYPE,
+						0,
+						szOID_COMMON_NAME,
+						NULL,
+						0);
+
+					pszCertSubCommonName = (LPTSTR) malloc (cbSize * sizeof(TCHAR));
+					
+					CertGetNameString(pCertContext, 
+						CERT_NAME_ATTR_TYPE,
+						0,
+						szOID_COMMON_NAME,
+						pszCertSubCommonName,
+						cbSize);
+
+
+					///* format the date */
+					FileTimeToSystemTime(&(pCertContext->pCertInfo->NotAfter), &stExpDate);
+
+					GetDateFormat(
+						NULL,
+						DATE_LONGDATE,
+						&stExpDate,
+						NULL,
+						szBufDate,
+						254);	
+					
+
+					cbSize = CertNameToStr(pCertContext->dwCertEncodingType,
+					&pCertContext->pCertInfo->Issuer,
+					dwNameToStrFlags,
+					NULL,
+					0);
+
+				
+				
+
+					pszCertIssuerName = (LPTSTR) malloc (cbSize * sizeof(TCHAR));
+
+					CertNameToStr(pCertContext->dwCertEncodingType, 
+						&pCertContext->pCertInfo->Issuer, 
+						CERT_NAME_ISSUER_FLAG, 
+						pszCertIssuerName,
+						cbSize);
+
+
+					_snprintf(currBuff, sizeof(currBuff), "%d", iLooper+1);
+					currCert = currBuff;
+					_snprintf(totalBuff, sizeof(totalBuff), "%d", iCounter);
+					totalCerts = totalBuff;
+
+
+					uiResponse = MessageYesNo("Found %s of %s valid certificates, use this one?\n\nDNS = %s\nIssuer = %s\nExpiration Date = %s \n", 
+						currCert,
+						totalCerts,
+						pszCertSubAltDNSName,
+						pszCertIssuerName,
+						szBufDate);
+
+					if (uiResponse == IDYES)
+					{
+						//use this cert
+						bSelectedACert = TRUE;
+						break;
+					}
+					else
+					{
+						continue;
+					}				
+
+
+					//clean up
+					free(pszCertSubAltDNSName);
+					free(pszCertIssuerName);
+					CertFreeCertificateContext(pCertContexts[iLooper]);
+					free(pCertContexts[iLooper]);
+
+
+				}
+
+					
+			}
+
+			
+
+			
+		}
+		else
+		{
+			/* if none found then search the Subject CN == pszHostName */
+			bSearchBySubjectAltName = FALSE;
+			
+			if (!bTriedBySubjectCommonName)
+			{	
+				if (iCounter > 0)
+				{
+					goto CertSearchLoop;
+				}
+
+			}
+		}
+		
+		/* Could not find a valid certificate for 
+			1) Subject Alt Name DNS Name = hostname 
+			2) Subject CN = hostname 
+		*/
+		if (bSelectedACert == FALSE)
+		{
+			return SEC_E_NO_CREDENTIALS;
+		}
+
+		free(pCertContexts);
+		
     }
 	else
 	{
 		// We could continue with a NULL credential, but that isn't secure enough for this application
-            return SEC_E_NO_CREDENTIALS;
+        return SEC_E_NO_CREDENTIALS;
 	}
 
 

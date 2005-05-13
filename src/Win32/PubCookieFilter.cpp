@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.48 2005-04-21 00:51:52 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.49 2005-05-13 15:43:13 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -82,7 +82,8 @@ VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
 
     va_start(args, format);
 	if (p) {  
-		_snprintf(source,HDRSIZE,"Pubcookie-%s",p->instance_id);
+		//_snprintf(source,HDRSIZE,"Pubcookie-%s",p->instance_id);
+		_snprintf(source,HDRSIZE,"Pubcookie-siteID=%s", p->instance_id);
 	}
 	else
 	{
@@ -91,6 +92,8 @@ VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
     filter_log_activity (p, source, loglevel, format, args );
 
     va_end(args);
+
+	//free(p); // need to free??
 }
 
 bool logsource_exists(pubcookie_dir_rec *p, const char *source) {
@@ -250,6 +253,7 @@ int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
 
 	return -1;
     }
+
  	
     return((*cookie_data).broken.pre_sess_token);
 
@@ -609,6 +613,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	p->Relay_URI = strdup(szTemp);
 	Add_Post_Data(pFC, e_g_req_contents);
 	free(p->Relay_URI);
+	free(pre_s);
 	return OK;
 #endif
 
@@ -1327,13 +1332,14 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}
 	}
 
-	/* We're done if this is an unprotected page */
+	/* We're done if this is an unprotected page */	
 	if ( (p->AuthType == AUTH_NONE) || (stricmp(p->uri, "/favicon.ico") == 0) ) {
 		if (p->Set_Server_Values) {
 			Add_Header_Values   (pFC,pHeaderInfo);
 		}
 		return DECLINED;
 	}
+	
 
 	// Fill in security context
 	if (!MakeSecContext(pFC, p)) {
@@ -1552,7 +1558,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}
 	}
 
-//	pbc_free(cookie_data);  /*Need this later to reset timestamp*/
+	//pbc_free(p, cookie_data);  /*Need this later to reset timestamp*/
 
 	return OK;
 
@@ -1654,11 +1660,13 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			
 	
 #endif
+			
 			pbc_free(p, cookie);
 			pbc_free(p, p->cookie_data);
-			
+
 		
 		}
+
 		// Have a good session cookie at this point
 		// Now set effective UserId ,UWNetID and Creds values for ASP pages
 		
