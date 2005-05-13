@@ -1,7 +1,34 @@
-*) Updates to Pubcookie 3.2 installer for Windows/IIS: 
-   Removed enterprise domain 
-   Added third option to RUNKEYCLIENT, download only.
-   Added RUNKEYCLIENT options to GUI
+Changes with 3.2.1 Beta 1:
+
+*) Pubcookie.msi installer will continue with the installation after 
+   keyclient errors. User will have to re-run keyclient manually.
+
+*) Added certificate picker to Windows keyclient. This allows a user to
+   run the keyclient manually to pick among multiple valid certificates.
+
+*) Fixed PubcookieFilter problem that was crashing the Windows Event
+   Viewer on some systems.
+
+*) Added login_host_cookie_domain to make login cookie domain
+   configurable. [jeaton]
+
+*) Added realm, if present, to authentication success message in
+   flavor_basic logging. [jeaton]
+
+*) Improved error logging in Kerberos verifier. [jeaton]
+
+*) Fixed log message on denied credential request in flavor_getcred.c. 
+   [jeaton]
+
+*) Fixed off-by-one malloc error and added malloc failure logging in
+   flavor_basic.c. [jeaton]
+
+*) Pubcookie filter changes: better handling of expired/uncleared 
+   granting cookies, favicon.ico exemption, and some memory leaks fixed.
+
+*) Pubcookie.msi installer changes: removed enterprise domain config;
+   added third option to RUNKEYCLIENT, download existing key; added
+   RUNKEYCLIENT options to GUI-mode installer.
 
 *) Updated OpenSSL libraries to 0.9.7f for Win32. 
 
