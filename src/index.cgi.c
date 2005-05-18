@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.154 2005-05-12 22:45:49 willey Exp $
+ * $Id: index.cgi.c,v 1.155 2005-05-18 21:38:53 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2997,8 +2997,8 @@ login_rec *get_query (pool * p)
                       "get_query: from login appsrvid: %s\n",
                       l->appsrvid == NULL ? "(null)" : l->appsrvid);
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "get_query: from login first_kiss: %d\n",
-                      (int) l->first_kiss);
+                      "get_query: from login first_kiss: %s\n",
+                      l->first_kiss);
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                       "get_query: from login post_stuff: %s\n",
                       (l->post_stuff == NULL ? "" : l->post_stuff));

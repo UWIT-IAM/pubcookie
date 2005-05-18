@@ -32,7 +32,7 @@
  *
  * From Tim Funk <funkman@joedog.org> 18-Sept-2003
  *
- * $Id: verify_fork.c,v 1.7 2005-02-07 22:26:38 willey Exp $
+ * $Id: verify_fork.c,v 1.8 2005-05-18 21:38:53 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -61,6 +61,7 @@ typedef void pool;
 
 #include "verify.h"
 #include "pbc_logging.h"
+#include "pbc_configure.h"
 int verify_fork_v (pool * p,
                    const char *userid, const char *passwd,
                    const char *service, const char *user_realm,

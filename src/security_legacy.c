@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.49 2005-04-19 19:27:59 fox Exp $
+ * $Id: security_legacy.c,v 1.50 2005-05-18 21:38:53 willey Exp $
  */
 
 
@@ -801,7 +801,7 @@ int libpbc_rd_priv (pool * p, const security_context * context,
     if (des_set_key_checked (&key, ks)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "des_set_key_checked failed: didn't derive a good key");
-        pbc_free(p, mysig);
+        pbc_free (p, mysig);
         return 1;
     }
 

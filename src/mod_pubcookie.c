@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.176 2005-05-18 18:18:01 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.177 2005-05-18 21:38:53 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -747,7 +747,7 @@ request_rec *top_rrec (request_rec * r)
     return mr;
 }
 
-int blank_cookie (request_rec * r, char *name)
+char *blank_cookie (request_rec * r, char *name)
 {
     const char *cookie_header;
     char *cookie;
@@ -763,23 +763,18 @@ int blank_cookie (request_rec * r, char *name)
                                                        &pubcookie_module);
 
     if (scfg->noblank)
-        return (0);
+        return (NULL);
 
     /* If we've stashed the cookie, we know it's already blanked */
     if (ap_table_get (mr->notes, name) ||
         !(cookie_header = ap_table_get (r->headers_in, "Cookie")))
-        return 0;
-
-    /* if we aint got an authtype they we definately aint pubcookie */
-    /* then again, we want to always blank cookies */
-    /* if(!ap_auth_type(r))                        */
-    /*   return DECLINED;                          */
+        return (NULL);
 
     /* add an equal on the end */
     name_w_eq = ap_pstrcat (p, name, "=", NULL);
 
     if (!(cookie = strstr (cookie_header, name_w_eq)))
-        return 0;
+        return (NULL);
 
     cookie += strlen (name_w_eq);
 
@@ -809,7 +804,7 @@ int blank_cookie (request_rec * r, char *name)
 
     ap_table_set (r->headers_in, "Cookie", cookie_header);
 
-    return (int) ptr;
+    return (ptr);
 
 }
 
@@ -2323,10 +2318,10 @@ const char *pubcookie_set_domain (cmd_parms * cmd, void *mconfig,
                               &pubcookie_module);
     char *temp;
 
-    if ( *v != '.' )
-        temp = ap_pstrcat(cmd->pool, ".", v, NULL);
+    if (*v != '.')
+        temp = ap_pstrcat (cmd->pool, ".", v, NULL);
     else
-        temp = ap_pstrdup(cmd->pool, v);
+        temp = ap_pstrdup (cmd->pool, v);
 
     ap_table_set (scfg->configlist, "enterprise_domain", temp);
 
