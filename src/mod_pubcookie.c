@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.175 2005-05-12 23:54:05 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.176 2005-05-18 18:18:01 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -2321,7 +2321,15 @@ const char *pubcookie_set_domain (cmd_parms * cmd, void *mconfig,
     pubcookie_server_rec *scfg = (pubcookie_server_rec *)
         ap_get_module_config (s->module_config,
                               &pubcookie_module);
-    ap_table_set (scfg->configlist, "enterprise_domain", v);
+    char *temp;
+
+    if ( *v != '.' )
+        temp = ap_pstrcat(cmd->pool, ".", v, NULL);
+    else
+        temp = ap_pstrdup(cmd->pool, v);
+
+    ap_table_set (scfg->configlist, "enterprise_domain", temp);
+
     return NULL;
 }
 
