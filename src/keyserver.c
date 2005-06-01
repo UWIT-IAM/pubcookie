@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.59 2005-02-24 20:11:49 willey Exp $
+ * $Id: keyserver.c,v 2.60 2005-06-01 21:22:43 willey Exp $
  */
 
 
@@ -903,22 +903,9 @@ int main (int argc, char *argv[])
     pool *p = NULL;
     security_context *context = NULL;
     int max_wait = 0;
+    const char *configfile = NULL;
 
-    libpbc_config_init (p, NULL, "keyserver");
-    pbc_log_init_syslog (p, "keyserver");
-    libpbc_pubcookie_init (p, &context);
-
-    debug = libpbc_config_getint (p, "logging_level", 0);
-    keyfile = libpbc_config_getstring (p, "ssl_key_file", "server.pem");
-    certfile = libpbc_config_getstring (p, "ssl_cert_file", "server.pem");
-    cafile = libpbc_config_getstring (p, "ssl_ca_file", NULL);
-    cadir = libpbc_config_getstring (p, "ssl_ca_path", NULL);
-    gcfile = libpbc_config_getstring (p, "granting_cert_file", NULL);
-    max_wait = libpbc_config_getint (p, "keyserver_max_wait_time", 0);
-    if (max_wait < 0)
-        max_wait = 0;
-
-    while ((c = getopt (argc, argv, "apc:k:C:D:")) != -1) {
+    while ((c = getopt (argc, argv, "apc:k:C:D:f:")) != -1) {
         switch (c) {
         case 'a':
             filetype = SSL_FILETYPE_ASN1;
@@ -948,12 +935,37 @@ int main (int argc, char *argv[])
             cadir = strdup (optarg);
             break;
 
+        case 'f':
+            configfile = strdup (optarg);
+            break;
+
         case '?':
         default:
             usage ();
             break;
         }
     }
+
+    libpbc_config_init (p, configfile, "keyserver");
+    pbc_log_init_syslog (p, "keyserver");
+    libpbc_pubcookie_init (p, &context);
+
+    debug = libpbc_config_getint (p, "logging_level", 0);
+    if (!keyfile)
+        keyfile =
+            libpbc_config_getstring (p, "ssl_key_file", "server.pem");
+    if (!certfile)
+        certfile =
+            libpbc_config_getstring (p, "ssl_cert_file", "server.pem");
+    if (!cafile)
+        cafile = libpbc_config_getstring (p, "ssl_ca_file", NULL);
+    if (!cadir)
+        cadir = libpbc_config_getstring (p, "ssl_ca_path", NULL);
+
+    gcfile = libpbc_config_getstring (p, "granting_cert_file", NULL);
+    max_wait = libpbc_config_getint (p, "keyserver_max_wait_time", 0);
+    if (max_wait < 0)
+        max_wait = 0;
 
     /* xxx log connection information */
 

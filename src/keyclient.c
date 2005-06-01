@@ -18,7 +18,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.56 2005-02-07 22:26:37 willey Exp $
+ * $Id: keyclient.c,v 2.57 2005-06-01 21:22:43 willey Exp $
  */
 
 
@@ -217,6 +217,7 @@ int main (int argc, char *argv[])
     char *gcert = NULL;
     char *pcert = NULL;
     const char *cluster = NULL;
+    const char *configfile = NULL;
 
 #ifdef WIN32
     SystemRoot = malloc (MAX_PATH * sizeof (char));
@@ -235,20 +236,13 @@ int main (int argc, char *argv[])
     }
 #endif
 
-    libpbc_config_init (p, NULL, "keyclient");
-    pbc_log_init (p, "keyclient", NULL, &mylog, NULL, NULL);
-    keyfile = libpbc_config_getstring (p, "ssl_key_file", "server.pem");
-    certfile = libpbc_config_getstring (p, "ssl_cert_file", "server.pem");
-    cafile = libpbc_config_getstring (p, "ssl_ca_file", NULL);
-    cadir = libpbc_config_getstring (p, "ssl_ca_path", NULL);
-    cluster = libpbc_config_getstring (p, "login_host", "");
-
     hostname = NULL;
 
     newkeyp = 1;
     permit = 0;
     while ((c =
-            getopt (argc, argv, "0:1:P:aqpc:k:C:D:nudH:L:K:G:U:")) != -1) {
+            getopt (argc, argv,
+                    "0:1:P:aqpc:k:C:D:nudH:L:K:G:U:f:")) != -1) {
         switch (c) {
         case 'a':
             filetype = SSL_FILETYPE_ASN1;
@@ -333,12 +327,32 @@ int main (int argc, char *argv[])
             newkeyp = -1;
             break;
 
+        case 'f':
+            configfile = strdup (optarg);
+            break;
+
         case '?':
         default:
             usage ();
             break;
         }
     }
+
+    libpbc_config_init (p, configfile, "keyclient");
+    pbc_log_init (p, "keyclient", NULL, &mylog, NULL, NULL);
+
+    if (!keyfile)
+        keyfile =
+            libpbc_config_getstring (p, "ssl_key_file", "server.pem");
+    if (!certfile)
+        certfile =
+            libpbc_config_getstring (p, "ssl_cert_file", "server.pem");
+    if (!cafile)
+        cafile = libpbc_config_getstring (p, "ssl_ca_file", NULL);
+    if (!cadir)
+        cadir = libpbc_config_getstring (p, "ssl_ca_path", NULL);
+
+    cluster = libpbc_config_getstring (p, "login_host", "");
 
     /* initalize the PRNG as best we can if we have to */
     if (RAND_status () == 0) {
