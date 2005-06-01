@@ -18,7 +18,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.24 2005-03-30 21:29:11 willey Exp $
+ * $Id: ntmpl.c,v 1.25 2005-06-01 21:17:46 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -192,7 +192,7 @@ void ntmpl_print_html (pool * p, const char *fpath, const char *fname, ...)
 
     t = template;
     /* look for the next possible substitution */
-    while ((percent = strchr (t, '%')) != NULL) {
+    while (t != NULL && (percent = strchr (t, '%')) != NULL) {
         fwrite (t, percent - t, 1, htmlout);
         if (mirror != NULL)
             fwrite (t, percent - t, 1, mirror);
@@ -241,8 +241,9 @@ void ntmpl_print_html (pool * p, const char *fpath, const char *fname, ...)
     }
 
     /* print out everything from the last % on */
-    fputs (t, htmlout);
-    if (mirror != NULL)
+    if (t != NULL)
+        fputs (t, htmlout);
+    if (t != NULL && mirror != NULL)
         fputs (t, mirror);
 
     pbc_free (p, template);
@@ -327,11 +328,12 @@ char *ntmpl_sub_template (pool * p, const char *fpath, const char *fname,
     }
 
     /* keep track of length to make doubly sure we don't overflow */
-    len -= strlen (field_html);
+    if (field_html != NULL)
+        len -= strlen (field_html);
 
     t = field_html;
     /* look for the next possible substitution */
-    while ((percent = strchr (t, '%')) != NULL) {
+    while (field_html != NULL && (percent = strchr (t, '%')) != NULL) {
 
         /* look to see if this is a legitimate candidate for substitution */
         for (i = 1; percent[i] && (i < sizeof (candidate) - 1); i++) {
@@ -390,7 +392,7 @@ char *ntmpl_sub_template (pool * p, const char *fpath, const char *fname,
         pbc_free (p, buf);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: goodbye: %s",
-                      func, field_html);
+                      func, field_html == NULL ? "" : field_html);
 
     return field_html;
 
