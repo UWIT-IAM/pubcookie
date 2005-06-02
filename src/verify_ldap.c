@@ -20,7 +20,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.28 2005-02-18 23:41:27 fox Exp $
+ * $Id: verify_ldap.c,v 1.29 2005-06-02 20:58:00 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -264,6 +264,7 @@ static int ldap_connect (pool * p, LDAP ** ld,
 
     char *dn = NULL;
     char *pwd = NULL;
+    char *version = NULL;
 
     LDAPURLDesc *ludp;
     char **exts = NULL;
@@ -301,6 +302,8 @@ static int ldap_connect (pool * p, LDAP ** ld,
                     dn = strdup (val);
                 } else if (strcasecmp (*exts, "x-Password") == 0) {
                     pwd = strdup (val);
+                } else if (strcasecmp (*exts, "x-Version") == 0) {
+                    version = strdup (val);
                 } else {
                     pbc_log_activity (p, PBC_LOG_ERROR,
                                       "ldap_connect: unknown extension %s=%s\n",
@@ -362,13 +365,23 @@ static int ldap_connect (pool * p, LDAP ** ld,
     if (*ld == (LDAP *) - 1)
         *ld = NULL;
 
-    if (*ld != NULL) {
-        int three = LDAP_VERSION3;
-
-        rc = ldap_set_option (*ld, LDAP_OPT_PROTOCOL_VERSION, &three);
-    }
 # endif /* LDAP_SUN */
 #endif /* LDAP_OPENLDAP */
+
+    if (*ld != NULL) {
+        // Default LDAP Version is 3
+        int ldap_version = LDAP_VERSION3;
+
+        if (version != NULL && strcmp (version, "2") == 0)
+            ldap_version = LDAP_VERSION2;
+
+        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                          "ldap_connect: Version Requested: %s Version Using: %d\n",
+                          version, ldap_version);
+
+        rc = ldap_set_option (*ld, LDAP_OPT_PROTOCOL_VERSION,
+                              &ldap_version);
+    }
 
     if (rc != LDAP_SUCCESS || *ld == NULL) {
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
