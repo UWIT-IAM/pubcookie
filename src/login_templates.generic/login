@@ -23,13 +23,13 @@
     <table border="0" cellpadding="0" cellspacing="2" width="271" height="70">
      <tr>
 
-     <!-- Custom login message, if there is such -->
+     <!-- custom login message -->
      %message%
-     <!-- The end of reasons. -->       
+     <!-- end of custom login message -->       
 
-     <!-- The reason we were sent here. -->
+     <!-- reason we were sent here -->
      %reason%
-     <!-- The end of reasons. -->       
+     <!-- end of reasons -->       
 
      </tr>
      <tr>
