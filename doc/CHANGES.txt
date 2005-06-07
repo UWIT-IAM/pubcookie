@@ -1,3 +1,21 @@
+Changes with 3.2.1 Beta 2:
+
+*) Fixed LDAP verifier to default to LDAPv3 for all LDAP SDKs and added
+   "x-Version" parameter to the LDAP URL. Patch provided by Jon Miner,
+   University of Wisconsin-Madison.
+
+*) Added keyclient and keyserver option (-f) to specify alternate config
+   file. Patch provided by Jon Miner, University of Wisconsin-Madison.
+
+*) Fixed login cgi segfault due to missing templates. Patch provided by
+   Jon Miner, University of Wisconsin-Madison.
+
+*) Fixed 64-bit compilation problems as reported by Allan E. Johannesen,
+   Worcester Polytechnic Institute.
+
+*) Modified Apache module to assure that the configured enterprise
+   domain starts with a dot.
+
 Changes with 3.2.1 Beta 1:
 
 *) Pubcookie.msi installer will continue with the installation after 
