@@ -18,7 +18,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.57 2005-06-01 21:22:43 willey Exp $
+ * $Id: keyclient.c,v 2.58 2005-06-08 22:16:05 jjminer Exp $
  */
 
 
@@ -202,8 +202,8 @@ int main (int argc, char *argv[])
     X509 *server_cert;
     X509_NAME *peer_name;
     char peer_cn[257];
-    const char *keyfile;
-    const char *certfile;
+    const char *keyfile = NULL;
+    const char *certfile = NULL;
     const char *cafile = NULL;
     const char *cadir = NULL;
     int done = 0;

@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.60 2005-06-01 21:22:43 willey Exp $
+ * $Id: keyserver.c,v 2.61 2005-06-08 22:16:05 jjminer Exp $
  */
 
 
@@ -157,8 +157,8 @@ void myprintf (const char *format, ...)
 #endif /* ifndef KEYSERVER_CGIC */
 
 
-const char *keyfile = "server.pem";
-const char *certfile = "server.pem";
+const char *keyfile = NULL;
+const char *certfile = NULL;
 const char *cadir = NULL;
 const char *cafile = NULL;
 const char *gcfile = NULL;
