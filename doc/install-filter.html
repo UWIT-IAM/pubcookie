@@ -86,6 +86,10 @@
 				<p><b>Enhanced Keyclient.exe.</b> When run manually, it offers a certificate picker to 
                                 choose among multiple valid certificates.
 			<li>
+				<p><b>Fixed problems reading registry settings.</b> The filter is more consistent about
+				reading and applying default configuration, as well as configuration defined through 
+				alternate WebVarLocations. The related bugs in version 3.1.1 have been fixed.
+			<li>
 				<p><b>Updated Cache-control headers.</b> The Pubcookie filter matches the Apache module's
 				headers for redirections to the login server.</b>
 			<li>
@@ -554,16 +558,44 @@
 
 		<h4><a name="upgrade">Upgrading</a></h4>
 
-		<p>The installer will remove earlier versions of the filter if it appears 
-		you're upgrading from a previous version. It will preserve your existing
-		registry settings for web resources; however it will update the root
-		level settings for the filter (i.e. Pubcookie Server Variables) according 
-		to the Site Information you provide. The safest keyclient behavior is to
-		not run the keyclient; however retrieving the existing key is also a safe
-		choice.
+		<p>[fixme: This is first draft. We need more real-world experience to confirm that 
+		this section is accurate.]
 
-		<p>[fixme: any reason to back up the Pubcookie folder or uninstall previous
-		versions first?]
+		<p>The Windows installer package requires you to uninstall previous versions prior
+		to installing a newer version.
+
+		<ol>
+		<li>
+		<p>Run the installer for the version of Pubcookie currently installed on your
+		system, e.g. if you're using version 3.1.1 run the Pubcookie 3.1.1 installer.
+
+		<li>
+		<p>Choose the Remove option from the Program Maintenance screen, click Next, and
+		click Remove. This will uninstall the current version while perserving your 
+		current Pubcookie keys folder and your current configuration settings for alternate 
+		WebVarLocations and web resources (i.e. web instances, folders and files).
+
+		<p>Note: uninstalling Pubcookie removes the root level configuration settings for the 
+		filter (i.e. Pubcookie Server Variables). These settings will be added back, based
+		on the Site Information you provide, when you install the newer version.
+
+		<li>
+		<p>Once you have uninstalled the current version of Pubcookie, run the new installer.
+		It will install Pubcookie as if from scratch, perserving your current Pubcookie keys
+		folder and configuration settings.
+
+		<p>Note: Enter the same Authentication Flavor Names to ensure that current AuthType
+		configurations work the same as before. If you change your Authentication Flavor
+		Names, resources that currently require authentication may not be protected
+		anymore.
+
+		<p>Note: The safest keyclient behavior to choose during an upgrade is to not run the keyclient.
+		This leaves your keys folder unchanged. Retrieving the existing key is a safe choice too.
+
+		<p>Note: The installer will remove old versions of the filter from
+		the IIS metabase, but this generally isn't as effective as uninstalling things first.
+
+		</ol>
 
 		<h4><a name="uninstall">Uninstalling Pubcookie</a></h4>
 
