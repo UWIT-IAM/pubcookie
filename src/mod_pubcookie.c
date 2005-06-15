@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.177 2005-05-18 21:38:53 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.178 2005-06-15 20:43:41 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -1845,10 +1845,8 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
             if (tmprealm) {
                 tmprealm[0] = 0;
                 tmprealm++;
-                r->USER = tmpuser;
                 ap_table_set (r->subprocess_env, "REMOTE_REALM", tmprealm);
             }
-            ap_table_set (r->subprocess_env, "REMOTE_REALM", tmprealm);
 
             if (cfg->strip_realm == 1) {
                 r->USER = tmpuser;
