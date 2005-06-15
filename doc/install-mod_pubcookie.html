@@ -10,7 +10,7 @@
 <h1>Pubcookie Apache Module - Install Guide</h1>
 
                 <p>Note: Documentation can contain bugs too. Use the
-                   <a href="http://www.pubcookie.org/docs/install-mod_pubcookie-3.0.html">online 
+                   <a href="http://www.pubcookie.org/docs/install-mod_pubcookie.html">online 
                    version</a> of this document for the most up-to-date information.
                 </p>
 
@@ -51,6 +51,14 @@
                   for instructions on deploying a Pubcookie login server.</p>
 
                   <h4><a name="new"></a>What's New</h4>
+                  <p>Significant improvements and changes included in Pubcookie 3.2.1:</p>
+                  <ul>
+                    <li>Added keyclient option (-f) to specify alternate config file. 
+                    <li>Modified Apache module to assure that the configured enterprise
+			domain starts with a dot.
+                    <li>Bug fixes to preserve spaces during POST-based logins and to avoid a possible null pointer in <tt>REMOTE_REALM</tt> variable. 
+                  </ul>
+
                   <p>Significant improvements and changes included in Pubcookie 3.2.0:</p>
                   <ul>
                     <li>Added POST-based messaging between Apache module and login server. This method is compatible with 3.1 
@@ -374,6 +382,8 @@ Set crypt key for appserver.example.edu</pre>
                       </table> 
                     <p>Notes:</p>
                       <ul>
+                        <li><p>Use the keyclient's <tt>-f &lt;filename&gt;</tt> option (requires version 3.2.1 or higher) to 
+                           specify an alternate config file.</p></li>
                         <li><p>The keyclient uses the installation prefix by default to determine
                            the path to your keys directory. You can override this using the <tt>keydir</tt>
                            config file variable.</p></li>
