@@ -1,3 +1,17 @@
+Changes with 3.2.1:
+
+*) Fixed Apache module to avoid possible null pointer in REMOTE_REALM 
+   variable. Patch provided by Klas Lindfors, Stockholm University.
+
+*) Revised "fork" verifier to pass username and password via stdin to
+   the forked executable. The config file key has been changed from
+   fork_exe to verify_exe to avoid accidentally running the wrong
+   executable. Code submission from David Houlder, Australian National
+   University.
+
+*) Initialize keyclient and keyserver with null credentials to fix 
+   potential bizarre behavior. [miner]
+
 Changes with 3.2.1 Beta 2:
 
 *) Fixed LDAP verifier to default to LDAPv3 for all LDAP SDKs and added
@@ -78,7 +92,7 @@ Changes with 3.2.1 Beta 1:
    virtual host on Apache. (Patch provided by Frank Fujimoto, who noticed 
    on a host with 18 virtual hosts.)
 
-Changes with 3.2.0
+Changes with 3.2.0:
 
 *) Fixed login cgi's POST login method to provide continue button for 
    browsers that have disabled or don't support Javascript.
