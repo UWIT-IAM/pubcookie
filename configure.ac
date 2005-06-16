@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.82 $)
-AC_INIT(Pubcookie, [3.2.1], pubcookie-dev@u.washington.edu)
+AC_REVISION($Revision: 1.83 $)
+AC_INIT(Pubcookie, [3.2.2 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
 AC_LANG(C)
