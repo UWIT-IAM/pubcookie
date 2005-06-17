@@ -55,6 +55,9 @@ Changes with 3.2.1 Beta 1:
 *) Fixed off-by-one malloc error and added malloc failure logging in
    flavor_basic.c. [jeaton]
 
+*) Added PubcookieNoObscureCookies directive to Apache module to replace 
+   broken PubcookieNoBlank directive.
+
 *) Pubcookie filter changes: better handling of expired/uncleared 
    granting cookies, favicon.ico exemption, and some memory leaks fixed.
 

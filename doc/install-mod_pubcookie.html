@@ -53,7 +53,9 @@
                   <h4><a name="new"></a>What's New</h4>
                   <p>Significant improvements and changes included in Pubcookie 3.2.1:</p>
                   <ul>
-                    <li>Added keyclient option (-f) to specify alternate config file. 
+                    <li>Added <a href="mod_pubcookie-directives.html#PubcookieNoObscureCookies">PubcookieNoObscureCookies</a>
+                        directive to Apache module to replace broken PubcookieNoBlank directive.
+                    <li>Added keyclient command-line option (<tt>-f &lt;filename&gt;</tt>) to specify alternate config file.
                     <li>Modified Apache module to assure that the configured enterprise
 			domain starts with a dot.
                     <li>Bug fixes to preserve spaces during POST-based logins and to avoid a possible null pointer in <tt>REMOTE_REALM</tt> variable. 
