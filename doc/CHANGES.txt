@@ -1,3 +1,16 @@
+*) Fixed login cgi to forgo clearing the granting request cookie during
+   POST method login requests; there is no such cookie to clear.
+
+*) Removed pre-session cookie processing from Apache module when using
+   the POST method. Pre-session cookies are a countermeasure to threats
+   posed by enterprise-domain cookies; so they're unnecessary when the
+   POST method is used to transport authentication information.
+
+*) Added AES encryption support to login cgi and Apache module. The 
+   module determines the algorithm to use, which is configurable with
+   the new PubcookieEncryption directive. AES is the default and will
+   require a AES-encryption-enabled login server.
+
 Changes with 3.2.1:
 
 *) Fixed Apache module to avoid possible null pointer in REMOTE_REALM 
