@@ -366,6 +366,9 @@
 /* Define to the GENERAL syslog() facility */
 #undef PBC_LOG_GENERAL_FACILITY
 
+/* Define to revert to DES encryption */
+#undef PBC_USE_DES_CRYPT
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

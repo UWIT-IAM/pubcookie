@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.50 2005-05-18 21:38:53 willey Exp $
+ * $Id: security_legacy.c,v 1.51 2005-06-21 18:02:12 willey Exp $
  */
 
 
@@ -84,11 +84,13 @@ typedef apr_table_t table;
 # include <openssl/des.h>
 # include <openssl/rand.h>
 # include <openssl/err.h>
+# include <openssl/evp.h>
 #else
 # include <pem.h>
 # include <des.h>
 # include <rand.h>
 # include <err.h>
+# include <evp.h>
 #endif /* OPENSSL_IN_DIR */
 
 #ifdef HAVE_ASSERT_H
@@ -544,7 +546,6 @@ int security_init (pool * p, security_context ** contextp)
         pbc_fclose (p, fp);
         return -2;
     }
-    pbc_fclose (p, fp);
 #endif /* WIN32 */
 
 
@@ -638,9 +639,12 @@ static int get_crypt_key (pool * p, const security_context * context,
  * @param outbuf will be filled in with a malloc()ed buffer.  it must
  * later be free()ed.
  * @param outlen the length of outbuf.
+ * @param algorithm
  * @returns 0 on success, non-zero on failure.
  */
-int libpbc_mk_priv (pool * p, const security_context * context,
+
+/* old des crypt */
+int libpbc_mk_priv_des (pool * p, const security_context * context,
                     const char *peer, const char use_granting,
                     const char *buf, const int len,
                     char **outbuf, int *outlen)
@@ -659,7 +663,7 @@ int libpbc_mk_priv (pool * p, const security_context * context,
     int tries = 5;
     int c;
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: hello\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv_des: hello\n");
 
     assert (outbuf != NULL && outlen != NULL);
     assert (buf != NULL && len > 0);
@@ -732,10 +736,108 @@ int libpbc_mk_priv (pool * p, const security_context * context,
         pbc_free (p, *outbuf);
         *outbuf = NULL;
     }
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv: goodbye\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv_des: goodbye\n");
 
     return r;
 }
+
+/* AES crypt */
+int libpbc_mk_priv_aes (pool *p, const security_context *context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len,
+                    char **outbuf, int *outlen)
+{
+    int r;
+    int index1, index2;
+    int i = 0;
+    unsigned char key[EVP_MAX_KEY_LENGTH];
+    unsigned char iv[EVP_MAX_IV_LENGTH];
+    unsigned char rb[EVP_MAX_IV_LENGTH];
+    const char *peer2;
+    char *mysig = NULL;
+    int siglen;
+    int c;
+    unsigned char keybuf[PBC_DES_KEY_BUF];
+    int olen, len1;
+
+    const EVP_CIPHER *cip = EVP_aes_128_cbc();
+    EVP_CIPHER_CTX ctx;
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv_aes: hello\n");
+
+    assert (outbuf != NULL && outlen != NULL);
+    assert (buf != NULL && len > 0);
+
+    peer2 = peer ? peer : libpbc_get_cryptname (p, context);
+
+    if (get_crypt_key (p, context, peer2, (char *) keybuf) < 0) {
+        pbc_log_activity (p, PBC_LOG_ERROR,
+                          "get_crypt_key(%s) failed", peer2);
+        return -1;
+    }
+
+
+    /* choose a key from the file data  */
+    srandom(time(NULL));
+    index1 = random() % 128;
+    index2 = 0; /* not used */
+    RAND_bytes (iv, sizeof(iv));
+    RAND_bytes (rb, sizeof(rb));
+    
+    EVP_CIPHER_CTX_init(&ctx);
+    EVP_EncryptInit_ex(&ctx, cip, NULL, keybuf+index1, iv);
+
+    r = libpbc_mk_safe (p, context, peer, use_granting, buf, len, &mysig,
+                        &siglen);
+    if (r) {
+        pbc_log_activity (p, PBC_LOG_ERROR, "libpbc_mk_safe() failed");
+        pbc_free (p, *outbuf);
+        *outbuf = NULL;
+        return (r);
+    }
+
+    *outbuf = pbc_malloc (p, len + siglen + sizeof(rb) + 16);
+    assert (*outbuf != NULL);
+
+    EVP_EncryptUpdate(&ctx, (unsigned char *) ((*outbuf)), &olen,
+                     (unsigned char *) rb, sizeof(rb));
+
+    EVP_EncryptUpdate(&ctx, (unsigned char *) ((*outbuf)+olen), &len1,
+                     (unsigned char *) mysig, siglen);
+    olen += len1;
+    pbc_free (p, mysig);
+
+    EVP_EncryptUpdate(&ctx, (unsigned char *) ((*outbuf)+olen), &len1,
+                     (unsigned char *) buf, len);
+    olen += len1;
+
+    EVP_EncryptFinal_ex(&ctx, (unsigned char *) ((*outbuf)+olen), &len1);
+    olen += len1;
+ 
+    EVP_CIPHER_CTX_cleanup(&ctx);
+
+    (*outbuf)[olen] = (unsigned char) index1;
+    (*outbuf)[olen+1] = (unsigned char) index2;
+    *outlen = olen + 2;
+      
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_mk_priv_aes: goodbye\n");
+
+    return r;
+}
+
+/* Choose an encoder */
+
+int libpbc_mk_priv (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len,
+                    char **outbuf, int *outlen, char alg)
+{
+    if (alg=='a') return (libpbc_mk_priv_aes(p, context, peer,
+                    use_granting, buf, len, outbuf, outlen));
+    else return (libpbc_mk_priv_des(p, context, peer,
+                    use_granting, buf, len, outbuf, outlen));
+}
+
 
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
@@ -749,7 +851,9 @@ int libpbc_mk_priv (pool * p, const security_context * context,
  * @returns 0 on success, non-0 on failure (including if the message could 
  * not be decrypted or did not pass integrity checks
  */
-int libpbc_rd_priv (pool * p, const security_context * context,
+
+/* old des decoder */
+libpbc_rd_priv_des (pool * p, const security_context * context,
                     const char *peer, const char use_granting,
                     const char *buf, const int len, char **outbuf,
                     int *outlen)
@@ -765,7 +869,7 @@ int libpbc_rd_priv (pool * p, const security_context * context,
     int c;
     int r;
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv: hello\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv_des: hello\n");
 
     sig_len =
         EVP_PKEY_size (use_granting ? context->g_pub : context->sess_pub);
@@ -821,21 +925,111 @@ int libpbc_rd_priv (pool * p, const security_context * context,
     r = libpbc_rd_safe (p, context, peer, use_granting, *outbuf, *outlen,
                         mysig, sig_len);
 
-    if (mysig != NULL)
-        pbc_free (p, mysig);
+    if (mysig != NULL) pbc_free (p, mysig);
 
-    if (!r)
-        return 0;
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "plaintext received was %s", *outbuf);
-    pbc_free (p, *outbuf);
-    *outbuf = 0;
-    if (r == -1)
-        return -1;
+    if (r) {
+       pbc_free (p, *outbuf);
+       *outbuf = 0;
+    }
 
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv_des: goodbye\n");
     return r;
 
 }
+
+
+/* AES decoder */
+libpbc_rd_priv_aes (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len, char **outbuf,
+                    int *outlen)
+{
+    int index1, index2;
+    int i = 0;
+    unsigned char keybuf[PBC_DES_KEY_BUF];
+    int siglen;
+    int c;
+    int r;
+    unsigned char key[EVP_MAX_KEY_LENGTH];
+    unsigned char iv[EVP_MAX_IV_LENGTH];
+    unsigned char rb[EVP_MAX_IV_LENGTH];
+
+    const EVP_CIPHER *cip = EVP_aes_128_cbc();
+    EVP_CIPHER_CTX ctx;
+
+    int tlen, len1;
+
+    char *tbuf;
+    char *obuf;
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv_aes: hello\n");
+
+    siglen =
+        EVP_PKEY_size (use_granting ? context->g_pub : context->sess_pub);
+
+    if (len < siglen + 2) {
+        pbc_log_activity (p, PBC_LOG_ERROR,
+                          "libpbc_rd_priv() called with small length: %d",
+                          len);
+        return (1);
+    }
+
+    /* if peer is null, use cryptname */
+    if (get_crypt_key
+        (p, context, (peer ? peer : libpbc_get_cryptname (p, context)),
+         (char *) keybuf) < 0) {
+        return (1);
+    }
+
+    obuf = (char *) pbc_malloc (p, len + sizeof(rb) + 16);
+    index1 = (unsigned char) buf[len - 2];
+    /* index2 = (unsigned char) buf[len - 1]; */
+    RAND_bytes (iv, sizeof(iv));
+
+    EVP_CIPHER_CTX_init(&ctx);
+
+    EVP_DecryptInit_ex(&ctx, cip, NULL, keybuf+index1, iv);
+
+    /* decrypt */
+    EVP_DecryptUpdate(&ctx, (unsigned char *) (obuf), &tlen,
+                     (unsigned char *) buf, len-2);
+
+    EVP_DecryptFinal_ex(&ctx, (unsigned char *) ((obuf)+tlen), &len1);
+    tbuf = obuf + sizeof(rb);
+    tlen += len1 - sizeof(rb);
+    
+    EVP_CIPHER_CTX_cleanup(&ctx);
+
+    /* verify signature */
+    r = libpbc_rd_safe (p, context, peer, use_granting, tbuf+siglen,
+                        tlen - siglen, tbuf, siglen);
+
+    if (!r) {
+       /* allocate and fill outbuf */
+       *outlen = tlen - siglen;
+       *outbuf = (char *) malloc (*outlen);
+       memcpy(*outbuf, tbuf+siglen, *outlen);
+    }
+
+    pbc_free (p, obuf);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv_aes: goodbye\n");
+    return r;
+
+}
+
+/* choose a decoder */
+int libpbc_rd_priv (pool * p, const security_context * context,
+                    const char *peer, const char use_granting,
+                    const char *buf, const int len, char **outbuf,
+                    int *outlen, char alg)
+{
+    if (alg=='a') return (libpbc_rd_priv_aes(p, context, peer, use_granting,
+                          buf, len, outbuf, outlen));
+    else return (libpbc_rd_priv_des(p, context, peer, use_granting,
+                          buf, len, outbuf, outlen));
+}
+
 
 /**
  * libpbc_mk_safe allocates a signature and returns it to the

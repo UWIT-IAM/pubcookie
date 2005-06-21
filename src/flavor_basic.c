@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.76 2005-04-20 18:25:56 jteaton Exp $
+ * $Id: flavor_basic.c,v 1.77 2005-06-21 18:02:12 willey Exp $
  */
 
 
@@ -755,7 +755,7 @@ static login_result process_basic (pool * p,
 
                 if (!libpbc_mk_priv
                     (p, context, NULL, 0, creds->str, creds->sz, &outbuf,
-                     &outlen)) {
+                     &outlen, PBC_DEF_CRYPT)) {
                     /* save for later */
                     out64 = malloc (outlen * 4 / 3 + 20);
                     libpbc_base64_encode (p, (unsigned char *) outbuf,

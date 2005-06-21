@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.155 2005-05-18 21:38:53 willey Exp $
+ * $Id: index.cgi.c,v 1.156 2005-06-21 18:02:12 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -746,7 +746,7 @@ int expire_login_cookie (pool * p, const security_context * context,
     }
 
     l_res = create_cookie (p, context, urluser = url_encode (p, user), urlappsrvid = url_encode (p, "expired"), urlappid = url_encode (p, "expired"), PBC_COOKIE_TYPE_L, PBC_CREDS_NONE, 23, 0, time (NULL), l_cookie, NULL,    /* sending it to myself */
-                           PBC_4K);
+                           PBC_4K, PBC_DEF_CRYPT);
 
     if (urluser != NULL)
         free (urluser);
@@ -1593,7 +1593,7 @@ int logout (pool * p, const security_context * context, login_rec * l,
                          NO_NEWLINES_FUNC)) == NULL)
         appsrvid = strdup ("");
 
-    clear_greq_cookie (p);      /* just in case there in one lingering */
+    if (!l->relay_uri) clear_greq_cookie (p);      /* just in case there in one lingering */
 
     if (logout_action == LOGOUT_ACTION_NOTHING) {
         ntmpl_print_html (p, TMPL_FNAME,
@@ -2270,7 +2270,7 @@ char *check_l_cookie (pool * p, const security_context * context,
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "check_l_cookie: done dorking with creds\n");
 
-    if (!c->version || !l->version || strcmp (l->version, c->version)) {
+    if (!c->version || !l->version || strncmp (l->version, c->version, 2)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "wrong protocol version: from L cookie %s, from g_req %s for host %s",
                           c->version, l->version, l->host);
@@ -2465,7 +2465,7 @@ int cookie_test (pool * p, const security_context * context, login_rec * l,
                                                        "tmpl_login_unauth_grant",
                                                        "login_unauth_grant"),
                               NULL);
-            clear_greq_cookie (p);
+            if (!l->relay_uri) clear_greq_cookie (p);
             pbc_free (p, th);
             pbc_log_activity (p, PBC_LOG_AUDIT,
                               "Host: %s not authorized to access login server\n",
@@ -2597,7 +2597,7 @@ void print_redirect_page (pool * p, const security_context * context,
                            (c == NULL || c->expire_ts < time (NULL)
                             ? compute_l_expire (p, l)
                             : c->expire_ts), l_cookie, NULL,    /* sending it to myself */
-                           PBC_4K);
+                           PBC_4K, PBC_DEF_CRYPT);
 
     if (user != NULL)
         pbc_free (p, user);
@@ -2616,7 +2616,8 @@ void print_redirect_page (pool * p, const security_context * context,
                            PBC_COOKIE_TYPE_G,
                            l->creds_from_greq,
                            l->pre_sess_tok,
-                           0, 0, g_cookie, l->host, PBC_4K);
+                           0, 0, g_cookie, l->host, PBC_4K,
+                           l->version[2]);
 
     if (user != NULL)
         free (user);
@@ -2647,7 +2648,7 @@ void print_redirect_page (pool * p, const security_context * context,
     }
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "created cookies l_res g_res\n");
+                      "created cookies l_res g_res (%c)\n", l->version[2]);
     if (l->pinit == PBC_FALSE)
         add_app_cookie (PBC_G_COOKIENAME, g_cookie, NULL);
 
@@ -2718,8 +2719,7 @@ void print_redirect_page (pool * p, const security_context * context,
         set_pinit_cookie (p);
     if (l->user && *l->user)
         print_header (p, "%s\n", l_set_cookie);
-    if (!l->relay_uri)
-        clear_greq_cookie (p);
+    if (!l->relay_uri) clear_greq_cookie (p);
 
     /* incase we have a relay */
     if (l->relay_uri) {
@@ -3042,7 +3042,7 @@ login_rec *verify_unload_login_cookie (pool * p,
     new = malloc (sizeof (login_rec));
     init_login_rec (p, new);
 
-    cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0);
+    cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0, PBC_DEF_CRYPT);
 
     /* Done with cookie */
     if (cookie != NULL)
@@ -3084,7 +3084,8 @@ int create_cookie (pool * p, const security_context * context,
                    char creds,
                    int pre_sess_tok,
                    time_t create,
-                   time_t expire, char *cookie, const char *host, int max)
+                   time_t expire, char *cookie, const char *host, int max,
+                   char alg)
 {
     /* measured quantities */
     unsigned char user[PBC_USER_LEN];
@@ -3117,8 +3118,8 @@ int create_cookie (pool * p, const security_context * context,
     }
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "%s: ready to go get cookie, with expire_ts: %d\n",
-                      func, (int) expire);
+                      "%s: ready to go get cookie, with expire_ts: %d, alg=%c\n",
+                      func, (int) expire, alg);
 
     /* go get the cookie */
 
@@ -3144,7 +3145,7 @@ int create_cookie (pool * p, const security_context * context,
         libpbc_get_cookie_with_expire (p, context, user, type, creds,
                                        pre_sess_tok, create, expire,
                                        appsrvid, appid, peer,
-                                       peer ? 1 : 0);
+                                       (peer ? 1 : 0), alg);
 
     if (peer != NULL)
         free (peer);

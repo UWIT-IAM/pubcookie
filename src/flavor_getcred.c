@@ -18,7 +18,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.34 2005-04-20 14:41:10 jteaton Exp $
+ * $Id: flavor_getcred.c,v 1.35 2005-06-21 18:02:12 willey Exp $
  */
 
 
@@ -315,7 +315,7 @@ static login_result process_getcred (pool * p,
 
         /* decrypt */
         if (libpbc_rd_priv (p, context, NULL, 0, plain, plainlen,
-                            &(master->str), &(master->sz))) {
+                            &(master->str), &(master->sz), PBC_DEF_CRYPT)) {
             pbc_log_activity (p, PBC_LOG_ERROR,
                               "flavor_getcred: couldn't libpbc_rd_priv %s",
                               PBC_CRED_COOKIENAME);
@@ -346,7 +346,7 @@ static login_result process_getcred (pool * p,
     /* encrypt */
     if (libpbc_mk_priv
         (p, context, l->host, 1, newcreds->str, newcreds->sz, &outbuf,
-         &outlen)) {
+         &outlen, PBC_DEF_CRYPT)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "flavor_getcred: libpbc_mk_priv failed");
         *errstr = "libpbc_mk_priv failed";

@@ -18,20 +18,23 @@
 /** @file security.c
  * Support for security structure
  *
- * $Id: security.c,v 1.12 2005-02-07 22:26:38 willey Exp $
+ * $Id: security.c,v 1.13 2005-06-21 18:02:12 willey Exp $
  */
 
 
-#ifdef HAVE_STDIO_H
-# include <stdio.h>
-#endif /* HAVE_STDIO_H */
+typedef void pool;
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
 #endif
 
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif /* HAVE_STDIO_H */
+
 #include "security.h"
+
 
 void printme (pool * p, char *desc, char *str, int sz)
 {
@@ -54,6 +57,7 @@ int main (int argc, char *argv[])
     char *in;
     int inlen;
     security_context *sectext;
+    pool *p = NULL;
 
     if (argc != 2) {
         fprintf (stderr, "%s <string>\n", argv[0]);
@@ -85,15 +89,16 @@ int main (int argc, char *argv[])
     }
     printf ("ok\n");
 
-    printf ("encrypting '%s'...\n", in);
-    if (libpbc_mk_priv (p, sectext, NULL, 0, in, inlen, &outbuf, &outlen)) {
+
+    printf ("DES encrypting '%s'...\n", in);
+    if (libpbc_mk_priv_des (p, sectext, NULL, 0, in, inlen, &outbuf, &outlen)) {
         printf ("libpbc_mk_priv() failed\n");
         exit (1);
     }
     printme (p, "blob", outbuf, outlen);
 
-    printf ("decrypting blob...\n");
-    if (libpbc_rd_priv
+    printf ("DES decrypting blob...\n");
+    if (libpbc_rd_priv_des
         (p, sectext, NULL, 0, outbuf, outlen, &out2buf, &out2len)) {
         printf ("libpbc_rd_priv() failed\n");
         exit (1);
@@ -104,4 +109,23 @@ int main (int argc, char *argv[])
         exit (1);
     }
 
+
+    printf ("AES encrypting '%s'...\n", in);
+    if (libpbc_mk_priv_aes (p, sectext, NULL, 0, in, inlen, &outbuf, &outlen)) {
+        printf ("libpbc_mk_priv() failed\n");
+        exit (1);
+    }
+    printme (p, "blob", outbuf, outlen);
+
+    printf ("AES decrypting blob...\n");
+    if (libpbc_rd_priv_aes
+        (p, sectext, NULL, 0, outbuf, outlen, &out2buf, &out2len)) {
+        printf ("libpbc_rd_priv() failed\n");
+        exit (1);
+    }
+    printme (p, "plaintext", out2buf, out2len);
+    if (inlen != out2len || strncmp (in, out2buf, inlen)) {
+        printf ("encryption/decryption FAILED (%s %s)\n", in, out2buf);
+        exit (1);
+    }
 }

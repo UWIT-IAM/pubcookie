@@ -16,7 +16,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.55 2005-04-20 18:27:03 jteaton Exp $
+  $Id: index.cgi.h,v 1.56 2005-06-21 18:02:12 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -128,7 +128,7 @@ login_rec *verify_unload_login_cookie (pool *, const security_context *,
                                        login_rec *);
 int create_cookie (pool *, const security_context *, char *, char *,
                    char *, char, char, int, time_t, time_t, char *,
-                   const char *host, int);
+                   const char *host, int, char);
 int get_cookie (pool * p, char *name, char *result, int max);
 login_rec *get_query (pool *);
 char *check_login (pool *, login_rec *, login_rec *);

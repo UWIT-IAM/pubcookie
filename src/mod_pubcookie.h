@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.15 2005-02-07 22:26:38 willey Exp $
+    $Id: mod_pubcookie.h,v 2.16 2005-06-21 18:02:12 willey Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -99,6 +99,7 @@ typedef struct
     int use_post;
     char *post_reply_url;
     security_context *sectext;
+    unsigned char crypt_alg;
 }
 pubcookie_server_rec;
 

@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.178 2005-06-15 20:43:41 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.179 2005-06-21 18:02:12 willey Exp $
  */
 
 #define MAX_POST_DATA 2048      /* arbitrary */
@@ -515,7 +515,7 @@ static void set_session_cookie (request_rec * r,
                                     rr->creds,
                                     (cfg->session_reauth < 0) ? 23 : 24,
                                     (unsigned char *) appsrvid (r),
-                                    appid (r), NULL, 0);
+                                    appid (r), NULL, 0, scfg->crypt_alg);
     }
 
     new_cookie = ap_psprintf (p, "%s=%s; path=%s;%s",
@@ -537,7 +537,7 @@ static void set_session_cookie (request_rec * r,
            and why we need cookie extensions) */
         /* encrypt */
         if (libpbc_mk_priv (p, scfg->sectext, NULL, 0, rr->cred_transfer,
-                            rr->cred_transfer_len, &blob, &bloblen)) {
+                            rr->cred_transfer_len, &blob, &bloblen, scfg->crypt_alg)) {
             ap_log_rerror (PC_LOG_ERR, r,
                            "credtrans: libpbc_mk_priv() failed");
             res = -1;
@@ -835,6 +835,7 @@ static int auth_failed_handler (request_rec * r,
     int pre_sess_tok;
     apr_port_t port;
     char *post_data;
+    char vstr[4];
 
     ap_log_rerror (PC_LOG_DEBUG, r, "auth_failed_handler: hello");
 
@@ -893,6 +894,10 @@ static int auth_failed_handler (request_rec * r,
     /* the granting request is a cookie that we set  */
     /* that gets sent up to the login server cgi, it */
     /* is our main way of communicating with it      */
+    /* If we're doing compatibility encryption, send the */
+    /* compatibility version string. */
+    sprintf(vstr,"%-2.2s%c\n", PBC_VERSION,
+            scfg->crypt_alg=='d'? '\0':scfg->crypt_alg);
     ap_snprintf (g_req_contents, PBC_4K - 1,
                  "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c",
                  PBC_GETVAR_APPSRVID,
@@ -902,7 +907,7 @@ static int auth_failed_handler (request_rec * r,
                  PBC_GETVAR_CREDS,
                  rr->creds,
                  PBC_GETVAR_VERSION,
-                 PBC_VERSION,
+                 vstr,
                  PBC_GETVAR_METHOD,
                  r->method,
                  PBC_GETVAR_HOST,
@@ -962,23 +967,25 @@ static int auth_failed_handler (request_rec * r,
                           (unsigned char *) e_g_req_contents,
                           strlen (g_req_contents));
 
-    /* make the pre-session cookie */
+    /* The GET method requires a pre-session cookie */
 
-    pre_s = (char *) libpbc_get_cookie (p,
+    if (!scfg->use_post) {
+       pre_s = (char *) libpbc_get_cookie (p,
                                         scfg->sectext,
                                         (unsigned char *) "presesuser",
                                         PBC_COOKIE_TYPE_PRE_S,
                                         PBC_CREDS_NONE,
                                         pre_sess_tok,
                                         (unsigned char *) appsrvid (r),
-                                        appid (r), NULL, 0);
+                                        appid (r), NULL, 0, scfg->crypt_alg);
 
-    pre_s_cookie = ap_psprintf (p,
+       pre_s_cookie = ap_psprintf (p,
                                 "%s=%s; path=%s;%s",
                                 PBC_PRE_S_COOKIENAME,
                                 pre_s, "/", secure_cookie);
 
-    ap_table_add (r->headers_out, "Set-Cookie", pre_s_cookie);
+       ap_table_add (r->headers_out, "Set-Cookie", pre_s_cookie);
+    }
 
     /* load and send the header */
 
@@ -1266,6 +1273,9 @@ static void pubcookie_init (server_rec * main_s, pool * pconf)
         if (!scfg->post_reply_url)
             scfg->post_reply_url = "PubCookie.reply";
 
+        if (!scfg->crypt_alg) scfg->crypt_alg = PBC_DEF_CRYPT;
+
+       
     }                           /* end of per-server loop */
 
 #ifdef APACHE2
@@ -1292,6 +1302,7 @@ static void *pubcookie_server_create (pool * p, server_rec * s)
     scfg->authtype_names = NULL;
     scfg->use_post = 0;
     scfg->post_reply_url = NULL;
+    scfg->crypt_alg = 0;
 
     return (void *) scfg;
 }
@@ -1335,6 +1346,7 @@ static void *pubcookie_server_merge (pool * p, void *parent, void *newloc)
         nscfg->post_reply_url : pscfg->post_reply_url;
     scfg->configlist = ap_overlay_tables (p, nscfg->configlist,
                                           pscfg->configlist);
+    scfg->crypt_alg = nscfg->crypt_alg ? nscfg->crypt_alg : pscfg->crypt_alg;
 
     return (void *) scfg;
 }
@@ -1436,7 +1448,7 @@ int get_pre_s_from_cookie (request_rec * r)
                        r->uri);
     else
         cookie_data = libpbc_unbundle_cookie (p, scfg->sectext,
-                                              cookie, NULL, 0);
+                                              cookie, NULL, 0, scfg->crypt_alg);
 
     if (cookie_data == NULL) {
         ap_log_rerror (PC_LOG_INFO, r,
@@ -1634,7 +1646,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
         && strcmp (cookie, "") != 0) {
         cookie_data =
             libpbc_unbundle_cookie (p, scfg->sectext, cookie,
-                                    ap_get_server_name (r), 1);
+                                    ap_get_server_name (r), 1, scfg->crypt_alg);
         if (!cookie_data) {
             ap_log_rerror (PC_LOG_INFO, r,
                            "can't unbundle G cookie; uri: %s\n", r->uri);
@@ -1665,7 +1677,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
         } else {                /* hav S cookie */
 
             cookie_data =
-                libpbc_unbundle_cookie (p, scfg->sectext, cookie, NULL, 0);
+                libpbc_unbundle_cookie (p, scfg->sectext, cookie, NULL, 0, scfg->crypt_alg);
             if (!cookie_data) {
                 ap_log_rerror (PC_LOG_INFO, r,
                                "can't unbundle S cookie; uri: %s\n",
@@ -1790,29 +1802,31 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
         rr->has_granting = 1;
 
         clear_granting_cookie (r);
-        clear_pre_session_cookie (r);
+        if (!scfg->use_post) clear_pre_session_cookie (r);
 
         ap_log_rerror (PC_LOG_DEBUG, r,
                        "pubcookie_user: has granting; current uri is: %s",
                        r->uri);
 
-        /* check pre_session cookie */
-        pre_sess_from_cookie = get_pre_s_from_cookie (r);
-        ap_log_rerror (PC_LOG_DEBUG, r,
+        /* If GET, check pre_session cookie */
+        if (!scfg->use_post) {
+            pre_sess_from_cookie = get_pre_s_from_cookie (r);
+            ap_log_rerror (PC_LOG_DEBUG, r,
                        "pubcookie_user: ret from get_pre_s_from_cookie");
-        if ((*cookie_data).broken.pre_sess_token != pre_sess_from_cookie) {
-            ap_log_rerror (PC_LOG_INFO, r,
+            if ((*cookie_data).broken.pre_sess_token != pre_sess_from_cookie) {
+                ap_log_rerror (PC_LOG_INFO, r,
                            "pubcookie_user, pre session tokens mismatched, uri: %s",
                            r->uri);
-            ap_log_rerror (PC_LOG_DEBUG, r,
+                ap_log_rerror (PC_LOG_DEBUG, r,
                            "pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s",
                            (*cookie_data).broken.pre_sess_token,
                            pre_sess_from_cookie, r->uri);
-            rr->failed = PBC_BAD_G_STATE;
-            rr->stop_message =
-                ap_pstrdup (p, "Couldn't decode pre-session cookie");
-            rr->redir_reason_no = PBC_RR_BADPRES_CODE;
-            return OK;
+                rr->failed = PBC_BAD_G_STATE;
+                rr->stop_message =
+                    ap_pstrdup (p, "Couldn't decode pre-session cookie");
+                rr->redir_reason_no = PBC_RR_BADPRES_CODE;
+                return OK;
+            }
         }
 
         /* the granting cookie gets blanked too early and another login */
@@ -1973,7 +1987,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
         if (!res && libpbc_rd_priv (p, scfg->sectext, cred_from_trans ?
                                     ap_get_server_name (r) : NULL,
                                     cred_from_trans ? 1 : 0,
-                                    blob, bloblen, &plain, &plainlen)) {
+                                    blob, bloblen, &plain, &plainlen, scfg->crypt_alg)) {
             ap_log_rerror (PC_LOG_ERR, r,
                            "credtrans: libpbc_rd_priv() failed");
             res = -1;
@@ -2791,6 +2805,23 @@ static const char *pubcookie_set_method (cmd_parms * cmd,
     return NULL;
 }
 
+static const char *pubcookie_set_crypt (cmd_parms * cmd,
+                                         void *mconfig, const char *v)
+{
+    pubcookie_server_rec *scfg =
+        (pubcookie_server_rec *) ap_get_module_config (cmd->server->
+                                                       module_config,
+                                                       &pubcookie_module);
+
+    if (!strcasecmp (v, "des"))
+        scfg->crypt_alg = PBC_CRYPT_DES;
+    else if (!strcasecmp (v, "aes"))
+        scfg->crypt_alg = PBC_CRYPT_AES;
+    else
+        return ("Invalid encryption method");
+    return NULL;
+}
+
 static const char *pubcookie_set_post_url (cmd_parms * cmd,
                                            void *mconfig, const char *v)
 {
@@ -2916,6 +2947,10 @@ static const command_rec pubcookie_commands[] = {
                    pubcookie_set_method,
                    NULL, RSRC_CONF,
                    "Set login method (GET/POST).  Def = GET"),
+    AP_INIT_TAKE1 ("PubCookieEncryption",
+                   pubcookie_set_crypt,
+                   NULL, RSRC_CONF,
+                   "Set encryption method (AES/DES)."),
     AP_INIT_TAKE1 ("PubCookiePostURL",
                    pubcookie_set_post_url,
                    NULL, RSRC_CONF,

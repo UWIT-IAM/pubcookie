@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.54 2005-02-24 19:56:09 willey Exp $
+    $Id: libpubcookie.h,v 1.55 2005-06-21 18:02:12 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -61,7 +61,7 @@ unsigned char *libpbc_get_cookie (pool * p, const security_context *,
                                   unsigned char *, unsigned char,
                                   unsigned char, int, unsigned char *,
                                   unsigned char *, const char *peer,
-                                  const char use_granting);
+                                  const char use_granting, char alg);
 /* for now we use the last_ts field in login cookie as expire_ts */
 unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               const security_context *,
@@ -71,11 +71,11 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               unsigned char *,
                                               unsigned char *,
                                               const char *peer,
-                                              const char use_granting);
+                                              const char use_granting, char alg);
 pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
                                          const security_context *,
                                          char *in, const char *peer,
-                                         const char use_granting);
+                                         const char use_granting, char alg);
 unsigned char *libpbc_update_lastts (pool * p, const security_context *,
                                      pbc_cookie_data *, const char *peer,
                                      const char use_granting);

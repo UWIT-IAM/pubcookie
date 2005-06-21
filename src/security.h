@@ -16,7 +16,7 @@
  */
 
 /*
-  $Id: security.h,v 1.14 2005-02-07 22:26:38 willey Exp $
+  $Id: security.h,v 1.15 2005-06-21 18:02:12 willey Exp $
  */
 
 #ifndef INCLUDED_SECURITY_H
@@ -25,6 +25,19 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+/* crypt methods */
+
+#define PBC_CRYPT_DES 'd'
+#define PBC_CRYPT_AES 'a'
+
+#ifdef PBC_USE_DES_CRYPT
+#define PBC_DEF_CRYPT PBC_CRYPT_DES /* old compat mode */
+#else
+#define PBC_DEF_CRYPT PBC_CRYPT_AES /* new and improved */
+#endif
+
+
 
 /**
  * the secuirty context structure 
@@ -61,7 +74,7 @@ int security_init (pool * p, security_context ** context);
 int libpbc_mk_priv (pool * p, const security_context * context,
                     const char *peer, const char use_granting,
                     const char *buf, const int len, char **outbuf,
-                    int *outlen);
+                    int *outlen, char alg);
 
 /**
  * libpbc_rd_priv decodes an encrypted string sent by 'peer'.  if
@@ -81,7 +94,7 @@ int libpbc_mk_priv (pool * p, const security_context * context,
 int libpbc_rd_priv (pool * p, const security_context * context,
                     const char *peer, const char use_granting,
                     const char *buf, const int len, char **outbuf,
-                    int *outlen);
+                    int *outlen, char alg);
 
 /**
  * libpbc_mk_safe allocates a signature and returns it to the

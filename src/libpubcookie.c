@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.81 2005-04-20 17:52:22 jteaton Exp $
+ * $Id: libpubcookie.c,v 2.82 2005-06-21 18:02:12 willey Exp $
  */
 
 
@@ -709,7 +709,8 @@ unsigned char *libpbc_sign_bundle_cookie (pool * p,
                                           const security_context * context,
                                           unsigned char *cookie_string,
                                           const char *peer,
-                                          const char use_granting)
+                                          const char use_granting,
+                                          char alg)
 {
     unsigned char *cookie;
     char *out;
@@ -720,7 +721,7 @@ unsigned char *libpbc_sign_bundle_cookie (pool * p,
 
     if (libpbc_mk_priv (p, context, peer, use_granting,
                         (const char *) cookie_string,
-                        sizeof (pbc_cookie_data), &out, &outlen)) {
+                        sizeof (pbc_cookie_data), &out, &outlen, alg)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_sign_bundle_cookie: libpbc_mk_priv failed\n");
         return NULL;
@@ -756,7 +757,7 @@ unsigned char *libpbc_get_cookie (pool * p,
                                   unsigned char creds, int pre_sess_token,
                                   unsigned char *appsrvid,
                                   unsigned char *appid, const char *peer,
-                                  const char use_granting)
+                                  const char use_granting, char alg)
 {
 
     return (libpbc_get_cookie_with_expire (p, context, user,
@@ -766,7 +767,7 @@ unsigned char *libpbc_get_cookie (pool * p,
                                            time (NULL),
                                            time (NULL),
                                            appsrvid,
-                                           appid, peer, use_granting));
+                                           appid, peer, use_granting, alg));
 
 }
 
@@ -787,7 +788,8 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               unsigned char *appsrvid,
                                               unsigned char *appid,
                                               const char *peer,
-                                              const char use_granting)
+                                              const char use_granting,
+                                              char alg)
 {
 
     pbc_cookie_data *cookie_data;
@@ -808,7 +810,7 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
 
     cookie =
         libpbc_sign_bundle_cookie (p, context, cookie_string, peer,
-                                   use_granting);
+                                   use_granting, alg);
     pbc_free (p, cookie_string);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
@@ -823,7 +825,8 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
 pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
                                          const security_context * context,
                                          char *in, const char *peer,
-                                         const char use_granting)
+                                         const char use_granting,
+                                         char alg)
 {
     pbc_cookie_data *cookie_data;
     char *plain;
@@ -853,7 +856,7 @@ pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
 
     if (libpbc_rd_priv
         (p, context, peer, use_granting, (const char *) buf, outlen,
-         &plain, &plainlen)) {
+         &plain, &plainlen, alg)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "libpbc_unbundle_cookie: libpbc_rd_priv() failed\n");
         pbc_free (p, buf);
@@ -909,13 +912,17 @@ unsigned char *libpbc_update_lastts (pool * p,
 {
     unsigned char *cookie_string;
     unsigned char *cookie;
+    char alg = cookie_data->broken.version[2];
 
     (*cookie_data).broken.last_ts = time (NULL);
     cookie_string = libpbc_stringify_cookie_data (p, cookie_data);
     cookie =
         libpbc_sign_bundle_cookie (p, context, cookie_string, peer,
-                                   use_granting);
+                                   use_granting, alg);
     pbc_free (p, cookie_string);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                          "upd latts: alg=%c\n", alg);
 
     return cookie;
 
