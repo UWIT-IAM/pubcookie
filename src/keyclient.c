@@ -18,7 +18,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.58 2005-06-08 22:16:05 jjminer Exp $
+ * $Id: keyclient.c,v 2.59 2005-06-22 16:39:24 dors Exp $
  */
 
 
@@ -145,6 +145,8 @@ static void usage (void)
         ("  -c <cert file>  : cert to use for authn. Def: ssl_cert_file\n");
     printf
         ("  -d              : don't generate a new hostkey, download existing\n");
+    printf
+        ("  -f <config file>   : alternate file with configuration variables\n");
     printf
         ("  -k <key file>   : key to use for authen. Def: ssl_key_file\n");
     printf ("  -n              : just show what would be done\n");
