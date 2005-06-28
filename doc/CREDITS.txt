@@ -12,7 +12,7 @@
      * Jim Fox              University of Washington
      * Larry Greenfield     Carnegie Mellon University (former)
      * Jon Miner            University of Wisconsin
-     * Ryan Muldoon         University of Wisconsin
+     * Ryan Muldoon         University of Wisconsin (former)
      * Steve Suh            University of Washington
      * Stephen Willey       University of Washington
 
