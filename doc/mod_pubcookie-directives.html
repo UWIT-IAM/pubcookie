@@ -31,6 +31,7 @@ directives, you must do the same for other Pubcookie directives. Otherwise,
 <li><a href="#PubcookieCryptKeyfile">PubcookieCryptKeyfile</a></li>
 <li><a href="#PubcookieKeyDir">PubcookieKeyDir</a></li>
 <li><a href="#PubcookieEndSession">PubcookieEndSession</a></li>
+<li><a href="#PubcookieEncryption">PubcookieEncryption</a></li>
 <li><a href="#PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth</a></li>
 <li><a href="#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a></li>
 <li><a href="#PubcookieNoPrompt">PubcookieNoPrompt</a></li>
@@ -341,6 +342,26 @@ the login server to clear the user's login cookie.</p>
 
 <p>The <tt>off</tt> argument turns off all PubcookieEndSession
 functionality.</p>
+
+<h3><a name="PubcookieEncryption">PubcookieEncryption
+directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieEncryption AES | DES<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> directory, .htaccess<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 3.3.0 
+and higher and Apache 1.2 and later.</p>
+
+<p>Defines the encryption algorithm used by the module to encrypt and
+decrypt private data. The same 2048-byte key suffices for either encryption 
+method. 
+
+<p>Note: The default encryption method is AES in version 3.3.0 and
+higher; however, the <i>only</i> encryption method supported in earlier
+versions is DES. Therefore, to work with a login server running a 
+version earlier than 3.3.0, you must used DES encryption.
 
 <h3><a name="PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth
 directive</a></h3>
