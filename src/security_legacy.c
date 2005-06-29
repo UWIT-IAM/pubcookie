@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.51 2005-06-21 18:02:12 willey Exp $
+ * $Id: security_legacy.c,v 1.52 2005-06-29 22:53:46 fox Exp $
  */
 
 
@@ -778,8 +778,7 @@ int libpbc_mk_priv_aes (pool *p, const security_context *context,
 
 
     /* choose a key from the file data  */
-    srandom(time(NULL));
-    index1 = random() % 128;
+    index1 = libpbc_random_int((pool*)NULL) % 128;
     index2 = 0; /* not used */
     RAND_bytes (iv, sizeof(iv));
     RAND_bytes (rb, sizeof(rb));
