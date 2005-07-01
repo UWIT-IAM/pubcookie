@@ -260,7 +260,7 @@ directive</a></h3>
 "Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
 Apache 1.2 and later.</p>
 
-<p>The name of the file containing the key for session cookies.</p>
+<p>The name of the file containing the private key for session cookies.</p>
 
 <p>The default is /usr/local/pubcookie/pubcookie_session.key which is defined
 as PBC_S_KEYFILE in pbc_config.h.</p>
@@ -293,8 +293,8 @@ as PBC_S_CERTFILE in pbc_config.h.</p>
 Apache 1.2 and later<br>
 </p>
 
-<p>The name of the file containing the shared key for encrypting/decrypting
-cookies.</p>
+<p>The name of the file containing the symmetric encryption key obtained
+from your keyserver for encrypting/decrypting private data.</p>
 
 <p>The default is /usr/local/pubcookie/c_key which is defined as
 PBC_CRYPT_KEYFILE in pbc_config.h.</p>
@@ -355,7 +355,7 @@ rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 3.3.0
 and higher and Apache 1.2 and later.</p>
 
 <p>Defines the encryption algorithm used by the module to encrypt and
-decrypt private data. The same 2048-byte key suffices for either encryption 
+decrypt private data. The same 2048-byte host key suffices for either encryption 
 method. 
 
 <p>Note: The default encryption method is AES in version 3.3.0 and

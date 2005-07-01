@@ -165,7 +165,7 @@
 			<li>
                         	<p>Log in as Administrator or as an account with administrator privileges.
 				The installer needs to be able to create folders and files in <tt>System32\inetsrv</tt>,
-				to stop and start system services, to modify the Windows registry, and to read keys in 
+				to stop and start system services, to modify the Windows registry, and to read private keys in 
 				the Windows certificate store.
 
 				<p>Note: The installer can be run from the command prompt, or from within a batch file,
@@ -235,7 +235,7 @@
 				<p>Note: The keyclient must find a certicate and private key in your
 				Personal certificate store that matches the server name entered in the Site
 				Information screen. It uses this key pair to negotiate a secure SSL/TLS authenticated 
-				connection to your key server. This connection depends not only on your certificate 
+				connection to your keyserver. This connection depends not only on your certificate 
 				and the Certificate Authority that issued your certificate,
 				but also on the Certificate Authority that issued your keyserver's certificate.
 
@@ -392,7 +392,7 @@
 		<h4><a name="keyclient">Running Keyclient.exe</a></h4>
 
 		<p>The Pubcookie keyclient for Windows (<tt>System32\inetsrv\pubcookie\keyclient.exe</tt>) 
-		is used to securely obtain encryption keys for your server name(s). It uses the
+		is used to securely obtain symmetric encryption keys for your server name(s). It uses the
 		SSPI/SChannel libraries to negotiate a SSL/TLS authenticated connection to the 
 		keyserver, using credentials and trusted certificate authority (CA) information
 		from the Windows certificate store. Most likely it will use the same Server (SSL)
@@ -421,7 +421,7 @@
 
 		<p>[fixme: other options?]
 
-		<p>For example, to request a key for <i>appserver.exampled.edu</i> from
+		<p>For example, to request a host key for <i>appserver.exampled.edu</i> from
 		<i>login.example.edu</i>, you would use the <tt>-H</tt> and <tt>-K</tt> options.
 
 <pre>&gt; cd C:\WINNT\system32\inetsrv\pubcookie
@@ -437,7 +437,7 @@
 
 		<p>If the same server name is hosted on several machines, you have a <i>clustered host configuration</i>
 		and will need to synchronize your installation and configuration among the cluster members. In
-		particular, you need to make sure each member has a copy of the same encryption key and is using
+		particular, you need to make sure each member has a copy of the same host key and is using
 		the same Pubcookie session key pair.
 
 		<ol>
@@ -445,7 +445,7 @@
 			<li>
 			<p>To synchronize the host key, when you run the installer on the first host, set
 			the installer's keyclient behavior to obtain a new key. On subsequent hosts, set it to
-			retrieve the old key. Another method is to obtain a new key on the very last host and then
+			retrieve the old key. Another method is to obtain a new host key on the very last host and then
 			copy it to the previous hosts. 
 
 			<li>

@@ -165,7 +165,7 @@
                   <p>The <tt>configure</tt> script included in the distribution helps you 
                     build and install the module according to your platform, Apache version,
                     and individual preferences. It also helps you build and install the
-                    Pubcookie keyclient which will be used to obtain a symmetric key for 
+                    Pubcookie keyclient which will be used to obtain a symmetric encryption key for 
                     your server.</p>
 
                    <p>Step-by-step instructions follow below for building and installing these
@@ -311,8 +311,8 @@ keyclient*      keys/</pre></TD>
 
                   <p>Pubookie solves the problem of securely distributing symmetric encryption keys by 
                     introducing a keyserver. Participating servers make secure SSL/TLS connections to 
-                    keyserver to obtain a key. This section describes how to configure and run the
-                    Pubcookie keyclient utility to request a key from your local keyserver.</p>
+                    keyserver to obtain a host key. This section describes how to configure and run the
+                    Pubcookie keyclient utility to request keys from your local keyserver.</p>
 
                   <p>Tip: Ask your keyserver administrator for advice about configuring the keyclient. It's
                     particularly important to know the Certificate Authority that signed (and therefore can 
@@ -369,7 +369,7 @@ $ pico config</pre></td>
                   <ol>
                     <li>
                       <p>If necessary, ask your Pubcookie keyserver administrator to "permit" your server 
-                        so that it can request a key for itself. This requirement will depend on the local policy for server
+                        so that it can request a host key for itself. This requirement will depend on the local policy for server
                         registration as well as the version of keyserver being used.</p>
                     </li> 
                     <li> 
@@ -872,7 +872,8 @@ Set crypt key for vhost.example.edu</pre>
 <p>System administrators frequently cluster together several hosts 
 configured identically to provide redundancy (either for performance or 
 stability). In this section, we're assuming that you have a set of 
-machines with an identical SSL certificate and key on them.</p>
+machines with an identical SSL certificate and private key on each 
+cluster member.</p>
 
 <p>For instance, a site might have 15 webmail servers named 
 <i>webmail1.example.edu</i> through <i>webmail15.example.edu</i>
@@ -883,8 +884,8 @@ or Cisco Load Director might control the IP address for the
 
 <p>To support such a cluster, use <tt>keyclient</tt> on one host,
 say <i>webmail1.example.edu</i>, to generate a <tt>webmail.example.edu</tt> 
-DES key. Then use <tt>keyclient -d</tt> on all other webmail hosts
-to download the existing application key to the remaining servers.
+host key. Then use <tt>keyclient -d</tt> on all other webmail hosts
+to download the existing host key to the remaining servers.
 This way, they all use the same key.</p>
 
 <h4><a name="debug">Troubleshooting</a></h4>

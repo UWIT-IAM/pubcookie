@@ -476,7 +476,7 @@ managed by the Pubcookie keyserver. It issues keys to all participating
 servers, including all login servers and application servers.</p>
 
 <p><b>The keystore:</b><br />
-A master copy of each 2048-byte DES key is stored on 
+A master copy of each 2048-byte host key is stored on 
 the login server in its keystore, <tt>PREFIX/keys</tt>, in a filename
 based on the server's SSL certificate's Common Name. For example, a site 
 with a login server and three application servers might have a keystore 
@@ -493,7 +493,7 @@ total 204
 </pre>
 
 <p><b>New key generation:</b><br />
-New keys are generated and issued by the keyserver upon request. Running 
+New host keys are generated and issued by the keyserver upon request. Running 
 keyclient on a host initiates the request. If the keyclient host is 
 authorized, and the keyclient and keyserver trust each other, the 
 request is fulfilled.</p>
@@ -501,15 +501,15 @@ request is fulfilled.</p>
 <p><b>New keyclient host authorization:</b><br />
 If the <tt>keyserver_client_list</tt> config variable is set, keyserver 
 performs authorization on all keyclient requests. If it is not set,
-keyserver will issue keys to any trusted keyclient.</p>
+keyserver will issue host keys to any trusted keyclient.</p>
 
 <p>When authorization is enabled, grant-or-deny decisions are based on the
 presence a host in the keystore. If keyserver finds a host in the
 keystore, then that host can request a key. This seems like a catch-22:
 <i>to create a new host key in the keystore, the key must already exist
 in the keystore</i>. But it's not: site administrators can use
-the keyclient's "permit" option to authorize new servers to request keys.
-For example:</p>
+the keyclient's "permit" option to authorize new servers to request host
+keys. For example:</p>
 
 <pre>$ keyclient -P new.example.edu
 Host new.example.edu is permitted</pre>
@@ -537,12 +537,12 @@ OpenSSL, whatever you happen to be basing your trust policy on.</p>
 
 <p><b>Working with untrusted keyclients:</b><br />
 An untrusted keyclient is one using a SSL certificate signed by a Certificate
-Authority the keyserver doesn't trust. To allow such keyclients to request keys
-without having to obtain another certificate, there's a workaround. The login
+Authority the keyserver doesn't trust. To allow such keyclients to request host
+keys without having to obtain another certificate, there's a workaround. The login
 server administrator can cache the keyclient's SSL certificate (public key) in
 the keystore. The keyserver can then use the public key itself to verify the 
-keyclient. As a result, an otherwise untrusted keyclient can request keys without
-changing the overall CA trust policy and configuration.</p>
+keyclient. As a result, an otherwise untrusted keyclient can request host keys 
+without changing the overall CA trust policy and configuration.</p>
 
 <p>Note: the keyclient's <tt>-U cert_file</tt> option will upload a certificate
 to the keyserver, e.g.:</p>
@@ -563,13 +563,13 @@ $ cp starter.key keys/login.example.edu</pre>
 
 <p>The starter key allows keyserver to initialize when the keystore
 would otherwise be empty. Now you should be able to run keyclient to
-request a new DES key for the login server based on your current 
+request a new host key for the login server based on your current 
 config file settings:</p>
 
 <pre>$ ./keyclient
 Set crypt key for login.example.edu</pre>
 
-<p>Note: if keyclient is unable to set a new key, look in syslog for
+<p>Note: if keyclient is unable to set a new host key, look in syslog for
 keyserver error messages.</p>
 
 <h4><a name="deploy">Deploying Login CGI</a></h4>
@@ -902,7 +902,7 @@ LDAP URI.</p>
 configuration, provided that they share the same cluster
 name and settings. Use the 
 <a href="config.html#login_servers"><tt>login_servers</tt></a>
-variable to configure keyserver to push new keys to its peers.</p>
+variable to configure keyserver to push new host keys to its peers.</p>
 
 <h4><a name="fastcgi">FastCGI Configuration</a></h4>
 
@@ -1040,7 +1040,7 @@ Copyright 1999-2005, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.36 2005-06-15 21:58:09 dors Exp $
+$Id: install-login.html,v 1.37 2005-07-01 16:51:00 dors Exp $
 </pre>
 </body>
 
