@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.61 2005-06-08 22:16:05 jjminer Exp $
+ * $Id: keyserver.c,v 2.62 2005-07-06 23:37:39 willey Exp $
  */
 
 
@@ -1043,7 +1043,7 @@ int main (int argc, char *argv[])
         exit (1);
     }
 
-    pbc_log_activity (p, PBC_LOG_AUDIT, "peer cn: %s\n", peer);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "peer cn: %s\n", peer);
 
     /* read HTTP query */
     if (SSL_read (ssl, buf, sizeof (buf)) <= 0) {
@@ -1052,7 +1052,7 @@ int main (int argc, char *argv[])
         exit (1);
     }
 
-    pbc_log_activity (p, PBC_LOG_ERROR, "REQ=%s", buf);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "REQ=%s", buf);
     for (ptr = buf; *ptr != '\0'; ptr++) {
         if (*ptr == '?' || *ptr == '&') {       /* next arg */
             /* look for 'genkey' */
