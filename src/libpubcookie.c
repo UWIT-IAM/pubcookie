@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.83 2005-07-07 22:22:41 willey Exp $
+ * $Id: libpubcookie.c,v 2.84 2005-07-07 22:25:46 willey Exp $
  */
 
 
@@ -757,7 +757,8 @@ unsigned char *libpbc_get_cookie (pool * p,
                                            time (NULL),
                                            time (NULL),
                                            appsrvid,
-                                           appid, peer, use_granting, alg));
+                                           appid, peer, use_granting,
+                                           alg));
 
 }
 
@@ -815,8 +816,7 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
 pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
                                          const security_context * context,
                                          char *in, const char *peer,
-                                         const char use_granting,
-                                         char alg)
+                                         const char use_granting, char alg)
 {
     pbc_cookie_data *cookie_data;
     char *plain;
@@ -911,8 +911,7 @@ unsigned char *libpbc_update_lastts (pool * p,
                                    use_granting, alg);
     pbc_free (p, cookie_string);
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                          "upd latts: alg=%c\n", alg);
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "upd latts: alg=%c\n", alg);
 
     return cookie;
 

@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.157 2005-07-07 22:22:41 willey Exp $
+ * $Id: index.cgi.c,v 1.158 2005-07-07 22:25:46 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1027,20 +1027,20 @@ void abend (pool * p, char *message)
     pbc_log_activity (p, PBC_LOG_ERROR, "abend", message);
 
     /* initialize output if thing go wrong early on */
-    if ( ! htmlout )
+    if (!htmlout)
         htmlout = tmpfile ();
-    if ( ! headerout ) {
+    if (!headerout) {
         headerout = tmpfile ();
-pbc_log_activity (p, PBC_LOG_ERROR, "adding headers", message);
-        print_http_header(p);
+        pbc_log_activity (p, PBC_LOG_ERROR, "adding headers", message);
+        print_http_header (p);
     }
 
     notok (p, NOTOK_GENERIC, NULL);
     do_output (p);
 
-    if (htmlout) 
+    if (htmlout)
         fclose (htmlout);
-    if (headerout) 
+    if (headerout)
         fclose (headerout);
 
     pbc_log_close (p);
@@ -1608,7 +1608,8 @@ int logout (pool * p, const security_context * context, login_rec * l,
                          NO_NEWLINES_FUNC)) == NULL)
         appsrvid = strdup ("");
 
-    if (!l->relay_uri) clear_greq_cookie (p);      /* just in case there in one lingering */
+    if (!l->relay_uri)
+        clear_greq_cookie (p);  /* just in case there in one lingering */
 
     if (logout_action == LOGOUT_ACTION_NOTHING) {
         ntmpl_print_html (p, TMPL_FNAME,
@@ -2012,7 +2013,7 @@ int cgiMain_init ()
     debug = libpbc_config_getint (p, "debug", 0);
     pbc_log_init_syslog (p, "pubcookie login server");
     get_kiosk_parameters (p);
-    if ( libpbc_pubcookie_init (p, &context) == PBC_FAIL )
+    if (libpbc_pubcookie_init (p, &context) == PBC_FAIL)
         abend (p, "Initialization failed");
     init_user_agent (p);
     max_cgi_count =
@@ -2471,7 +2472,8 @@ int cookie_test (pool * p, const security_context * context, login_rec * l,
                                                        "tmpl_login_unauth_grant",
                                                        "login_unauth_grant"),
                               NULL);
-            if (!l->relay_uri) clear_greq_cookie (p);
+            if (!l->relay_uri)
+                clear_greq_cookie (p);
             pbc_free (p, th);
             pbc_log_activity (p, PBC_LOG_AUDIT,
                               "Host: %s not authorized to access login server\n",
@@ -2622,8 +2624,7 @@ void print_redirect_page (pool * p, const security_context * context,
                            PBC_COOKIE_TYPE_G,
                            l->creds_from_greq,
                            l->pre_sess_tok,
-                           0, 0, g_cookie, l->host, PBC_4K,
-                           l->version[2]);
+                           0, 0, g_cookie, l->host, PBC_4K, l->version[2]);
 
     if (user != NULL)
         free (user);
@@ -2725,7 +2726,8 @@ void print_redirect_page (pool * p, const security_context * context,
         set_pinit_cookie (p);
     if (l->user && *l->user)
         print_header (p, "%s\n", l_set_cookie);
-    if (!l->relay_uri) clear_greq_cookie (p);
+    if (!l->relay_uri)
+        clear_greq_cookie (p);
 
     /* incase we have a relay */
     if (l->relay_uri) {
@@ -3048,7 +3050,9 @@ login_rec *verify_unload_login_cookie (pool * p,
     new = malloc (sizeof (login_rec));
     init_login_rec (p, new);
 
-    cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0, PBC_DEF_CRYPT);
+    cookie_data =
+        libpbc_unbundle_cookie (p, context, cookie, NULL, 0,
+                                PBC_DEF_CRYPT);
 
     /* Done with cookie */
     if (cookie != NULL)

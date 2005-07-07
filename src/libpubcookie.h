@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.56 2005-07-07 22:22:41 willey Exp $
+    $Id: libpubcookie.h,v 1.57 2005-07-07 22:25:46 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -71,11 +71,13 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               unsigned char *,
                                               unsigned char *,
                                               const char *peer,
-                                              const char use_granting, char alg);
+                                              const char use_granting,
+                                              char alg);
 pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
                                          const security_context *,
                                          char *in, const char *peer,
-                                         const char use_granting, char alg);
+                                         const char use_granting,
+                                         char alg);
 unsigned char *libpbc_update_lastts (pool * p, const security_context *,
                                      pbc_cookie_data *, const char *peer,
                                      const char use_granting);
