@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.82 2005-06-21 18:02:12 willey Exp $
+ * $Id: libpubcookie.c,v 2.83 2005-07-07 22:22:41 willey Exp $
  */
 
 
@@ -328,12 +328,7 @@ void libpbc_augment_rand_state (pool * p, unsigned char *array, int len)
 /*                                                                            */
 /* any general startup stuff goes here                                        */
 /*                                                                            */
-#ifdef WIN32
-int
-#else
-void
-#endif
-libpbc_pubcookie_init (pool * p, security_context ** contextp)
+int libpbc_pubcookie_init (pool * p, security_context ** contextp)
 {
     unsigned char buf[sizeof (pid_t)];
     pid_t pid;
@@ -345,15 +340,10 @@ libpbc_pubcookie_init (pool * p, security_context ** contextp)
 
     if (security_init (p, contextp)) {
         pbc_log_activity (p, PBC_LOG_ERROR, "security_init failed");
-#ifndef WIN32
-        exit (1);
+        return PBC_FAIL;
     }
-#else
-        return FALSE;
-    }
-    return TRUE;
-#endif
 
+    return PBC_OK;
 }
 
 static void limit_strcpy (pool * p, char *dst, char *src, int siz)

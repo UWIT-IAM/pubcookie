@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.156 2005-06-21 18:02:12 willey Exp $
+ * $Id: index.cgi.c,v 1.157 2005-07-07 22:22:41 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -136,9 +136,9 @@ typedef void pool;
 FILE *mirror;
 
 /* 'htmlout' stores the HTML text the CGI generates until it exits */
-FILE *htmlout;
+FILE *htmlout = NULL;
 /* 'headerout' stores the HTTP headers the CGI generates */
-FILE *headerout;
+FILE *headerout = NULL;
 
 /* do we want debugging? */
 int debug;
@@ -1025,11 +1025,26 @@ void abend (pool * p, char *message)
 {
 
     pbc_log_activity (p, PBC_LOG_ERROR, "abend", message);
-    pbc_log_close (p);
+
+    /* initialize output if thing go wrong early on */
+    if ( ! htmlout )
+        htmlout = tmpfile ();
+    if ( ! headerout ) {
+        headerout = tmpfile ();
+pbc_log_activity (p, PBC_LOG_ERROR, "adding headers", message);
+        print_http_header(p);
+    }
 
     notok (p, NOTOK_GENERIC, NULL);
     do_output (p);
-    exit (0);
+
+    if (htmlout) 
+        fclose (htmlout);
+    if (headerout) 
+        fclose (headerout);
+
+    pbc_log_close (p);
+    exit (1);
 
 }
 
@@ -1997,7 +2012,8 @@ int cgiMain_init ()
     debug = libpbc_config_getint (p, "debug", 0);
     pbc_log_init_syslog (p, "pubcookie login server");
     get_kiosk_parameters (p);
-    libpbc_pubcookie_init (p, &context);
+    if ( libpbc_pubcookie_init (p, &context) == PBC_FAIL )
+        abend (p, "Initialization failed");
     init_user_agent (p);
     max_cgi_count =
         libpbc_config_getint (p, "max_requests_per_server", 100);
@@ -2318,16 +2334,6 @@ void notok (pool * p, notok_event event, char *reason)
                                                                "tmpl_notok_form_multipart",
                                                                "notok_form_multipart"),
                                       NULL);
-        break;
-    case NOTOK_NEEDSSL:
-        subtext = ntmpl_sub_template (p, TMPL_FNAME,
-                                      libpbc_config_getstring (p,
-                                                               "tmpl_notok_needssl",
-                                                               "notok_needssl"),
-                                      NULL);
-        pbc_log_activity (p, PBC_LOG_AUDIT,
-                          "host %s came in on a non-ssl port, why?",
-                          (cgiRemoteAddr == NULL ? "" : cgiRemoteAddr));
         break;
     case NOTOK_GENERIC:
     default:

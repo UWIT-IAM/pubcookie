@@ -16,7 +16,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.56 2005-06-21 18:02:12 willey Exp $
+  $Id: index.cgi.h,v 1.57 2005-07-07 22:22:41 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -100,7 +100,7 @@ typedef enum
     NOTOK_GENERIC = 1,          /* who knows? */
     NOTOK_FORMMULTIPART = 2,    /* we don't support form multipart */
     NOTOK_BADAGENT = 3,         /* not a supported or supportable browser */
-    NOTOK_NEEDSSL = 4           /* requires ssl */
+    NOTOK_NEEDSSL = 4           /* requires ssl, unused */
 }
 notok_event;
 

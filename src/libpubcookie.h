@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.55 2005-06-21 18:02:12 willey Exp $
+    $Id: libpubcookie.h,v 1.56 2005-07-07 22:22:41 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -80,12 +80,7 @@ unsigned char *libpbc_update_lastts (pool * p, const security_context *,
                                      pbc_cookie_data *, const char *peer,
                                      const char use_granting);
 md_context_plus *libpbc_sign_init (pool * p, char *);
-#ifdef WIN32
-int
-#else
-void
-#endif
-  libpbc_pubcookie_init (pool * p, security_context **);
+int libpbc_pubcookie_init (pool * p, security_context **);
 unsigned char *libpbc_alloc_init (pool * p, int);
 unsigned char *libpbc_gethostip (pool * p);
 void libpbc_free_md_context_plus (pool * p, md_context_plus *);
