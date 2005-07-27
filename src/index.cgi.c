@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.158 2005-07-07 22:25:46 willey Exp $
+ * $Id: index.cgi.c,v 1.159 2005-07-27 22:03:44 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -136,9 +136,9 @@ typedef void pool;
 FILE *mirror;
 
 /* 'htmlout' stores the HTML text the CGI generates until it exits */
-FILE *htmlout = NULL;
+FILE *htmlout;
 /* 'headerout' stores the HTTP headers the CGI generates */
-FILE *headerout = NULL;
+FILE *headerout;
 
 /* do we want debugging? */
 int debug;
@@ -746,7 +746,7 @@ int expire_login_cookie (pool * p, const security_context * context,
     }
 
     l_res = create_cookie (p, context, urluser = url_encode (p, user), urlappsrvid = url_encode (p, "expired"), urlappid = url_encode (p, "expired"), PBC_COOKIE_TYPE_L, PBC_CREDS_NONE, 23, 0, time (NULL), l_cookie, NULL,    /* sending it to myself */
-                           PBC_4K, PBC_DEF_CRYPT);
+                           PBC_4K);
 
     if (urluser != NULL)
         free (urluser);
@@ -1025,26 +1025,11 @@ void abend (pool * p, char *message)
 {
 
     pbc_log_activity (p, PBC_LOG_ERROR, "abend", message);
-
-    /* initialize output if thing go wrong early on */
-    if (!htmlout)
-        htmlout = tmpfile ();
-    if (!headerout) {
-        headerout = tmpfile ();
-        pbc_log_activity (p, PBC_LOG_ERROR, "adding headers", message);
-        print_http_header (p);
-    }
+    pbc_log_close (p);
 
     notok (p, NOTOK_GENERIC, NULL);
     do_output (p);
-
-    if (htmlout)
-        fclose (htmlout);
-    if (headerout)
-        fclose (headerout);
-
-    pbc_log_close (p);
-    exit (1);
+    exit (0);
 
 }
 
@@ -1608,8 +1593,7 @@ int logout (pool * p, const security_context * context, login_rec * l,
                          NO_NEWLINES_FUNC)) == NULL)
         appsrvid = strdup ("");
 
-    if (!l->relay_uri)
-        clear_greq_cookie (p);  /* just in case there in one lingering */
+    clear_greq_cookie (p);      /* just in case there in one lingering */
 
     if (logout_action == LOGOUT_ACTION_NOTHING) {
         ntmpl_print_html (p, TMPL_FNAME,
@@ -2013,8 +1997,7 @@ int cgiMain_init ()
     debug = libpbc_config_getint (p, "debug", 0);
     pbc_log_init_syslog (p, "pubcookie login server");
     get_kiosk_parameters (p);
-    if (libpbc_pubcookie_init (p, &context) == PBC_FAIL)
-        abend (p, "Initialization failed");
+    libpbc_pubcookie_init (p, &context);
     init_user_agent (p);
     max_cgi_count =
         libpbc_config_getint (p, "max_requests_per_server", 100);
@@ -2287,7 +2270,7 @@ char *check_l_cookie (pool * p, const security_context * context,
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "check_l_cookie: done dorking with creds\n");
 
-    if (!c->version || !l->version || strncmp (l->version, c->version, 2)) {
+    if (!c->version || !l->version || strcmp (l->version, c->version)) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "wrong protocol version: from L cookie %s, from g_req %s for host %s",
                           c->version, l->version, l->host);
@@ -2335,6 +2318,16 @@ void notok (pool * p, notok_event event, char *reason)
                                                                "tmpl_notok_form_multipart",
                                                                "notok_form_multipart"),
                                       NULL);
+        break;
+    case NOTOK_NEEDSSL:
+        subtext = ntmpl_sub_template (p, TMPL_FNAME,
+                                      libpbc_config_getstring (p,
+                                                               "tmpl_notok_needssl",
+                                                               "notok_needssl"),
+                                      NULL);
+        pbc_log_activity (p, PBC_LOG_AUDIT,
+                          "host %s came in on a non-ssl port, why?",
+                          (cgiRemoteAddr == NULL ? "" : cgiRemoteAddr));
         break;
     case NOTOK_GENERIC:
     default:
@@ -2398,7 +2391,8 @@ int pinit_response (pool * p, const security_context * context,
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "pinit_response: hello");
 
-    clear_pinit_cookie (p);
+//ssw
+//    clear_pinit_cookie (p);
 
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p, "tmpl_pinit_response1",
@@ -2472,8 +2466,7 @@ int cookie_test (pool * p, const security_context * context, login_rec * l,
                                                        "tmpl_login_unauth_grant",
                                                        "login_unauth_grant"),
                               NULL);
-            if (!l->relay_uri)
-                clear_greq_cookie (p);
+            clear_greq_cookie (p);
             pbc_free (p, th);
             pbc_log_activity (p, PBC_LOG_AUDIT,
                               "Host: %s not authorized to access login server\n",
@@ -2605,7 +2598,7 @@ void print_redirect_page (pool * p, const security_context * context,
                            (c == NULL || c->expire_ts < time (NULL)
                             ? compute_l_expire (p, l)
                             : c->expire_ts), l_cookie, NULL,    /* sending it to myself */
-                           PBC_4K, PBC_DEF_CRYPT);
+                           PBC_4K);
 
     if (user != NULL)
         pbc_free (p, user);
@@ -2624,7 +2617,7 @@ void print_redirect_page (pool * p, const security_context * context,
                            PBC_COOKIE_TYPE_G,
                            l->creds_from_greq,
                            l->pre_sess_tok,
-                           0, 0, g_cookie, l->host, PBC_4K, l->version[2]);
+                           0, 0, g_cookie, l->host, PBC_4K);
 
     if (user != NULL)
         free (user);
@@ -2655,7 +2648,7 @@ void print_redirect_page (pool * p, const security_context * context,
     }
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "created cookies l_res g_res (%c)\n", l->version[2]);
+                      "created cookies l_res g_res\n");
     if (l->pinit == PBC_FALSE)
         add_app_cookie (PBC_G_COOKIENAME, g_cookie, NULL);
 
@@ -2722,8 +2715,8 @@ void print_redirect_page (pool * p, const security_context * context,
         pbc_free (p, redirect_final_trunc);
 
     /* Send local cookies */
-    if (l->pinit == PBC_TRUE)
-        set_pinit_cookie (p);
+//    if (l->pinit == PBC_TRUE)
+//        set_pinit_cookie (p);
     if (l->user && *l->user)
         print_header (p, "%s\n", l_set_cookie);
     if (!l->relay_uri)
@@ -3005,8 +2998,8 @@ login_rec *get_query (pool * p)
                       "get_query: from login appsrvid: %s\n",
                       l->appsrvid == NULL ? "(null)" : l->appsrvid);
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "get_query: from login first_kiss: %s\n",
-                      l->first_kiss);
+                      "get_query: from login first_kiss: %d\n",
+                      (int) l->first_kiss);
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                       "get_query: from login post_stuff: %s\n",
                       (l->post_stuff == NULL ? "" : l->post_stuff));
@@ -3050,9 +3043,7 @@ login_rec *verify_unload_login_cookie (pool * p,
     new = malloc (sizeof (login_rec));
     init_login_rec (p, new);
 
-    cookie_data =
-        libpbc_unbundle_cookie (p, context, cookie, NULL, 0,
-                                PBC_DEF_CRYPT);
+    cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0);
 
     /* Done with cookie */
     if (cookie != NULL)
@@ -3094,8 +3085,7 @@ int create_cookie (pool * p, const security_context * context,
                    char creds,
                    int pre_sess_tok,
                    time_t create,
-                   time_t expire, char *cookie, const char *host, int max,
-                   char alg)
+                   time_t expire, char *cookie, const char *host, int max)
 {
     /* measured quantities */
     unsigned char user[PBC_USER_LEN];
@@ -3128,8 +3118,8 @@ int create_cookie (pool * p, const security_context * context,
     }
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "%s: ready to go get cookie, with expire_ts: %d, alg=%c\n",
-                      func, (int) expire, alg);
+                      "%s: ready to go get cookie, with expire_ts: %d\n",
+                      func, (int) expire);
 
     /* go get the cookie */
 
@@ -3155,7 +3145,7 @@ int create_cookie (pool * p, const security_context * context,
         libpbc_get_cookie_with_expire (p, context, user, type, creds,
                                        pre_sess_tok, create, expire,
                                        appsrvid, appid, peer,
-                                       (peer ? 1 : 0), alg);
+                                       peer ? 1 : 0);
 
     if (peer != NULL)
         free (peer);
