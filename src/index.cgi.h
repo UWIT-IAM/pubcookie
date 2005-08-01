@@ -16,7 +16,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.57 2005-07-07 22:22:41 willey Exp $
+  $Id: index.cgi.h,v 1.58 2005-08-01 23:03:26 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -176,22 +176,12 @@ void print_header (pool *, const char *format, ...);
 /* some messages about people who hit posts and don't have js on */
 #define PBC_POST_NO_JS_TEXT "Thank you for logging in\n"
 
-#define TROUBLE_CREATING_COOKIE "Trouble creating cookie.  Please re-enter."
-#define PROBLEMS_PERSIST "If problems persist contact help@cac.washington.edu."
-
 /* special strings about time remaining */
 #define REMAINING_EXPIRED "expired"
 #define REMAINING_UNKNOWN "unknown"
 
 /* tags the request as a reply from the form */
 #define FORM_REPLY 1
-
-/* how we accentuate warning messages */
-#define PBC_EM1_START "<P><B><FONT COLOR=\"#FF0000\" SIZE=\"+1\">"
-#define PBC_EM1_END "</FONT></B><BR></P>"
-/* how we accentuate less important warning messages */
-#define PBC_EM2_START "<P><B><FONT SIZE=\"+1\">"
-#define PBC_EM2_END "</FONT></B><BR></P>"
 
 /* identify log messages */
 #define ANY_LOGINSRV_MESSAGE "PUBCOOKIE_LOGINSRV_LOG"

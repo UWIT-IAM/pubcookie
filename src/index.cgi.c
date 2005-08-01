@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.160 2005-07-30 00:50:17 willey Exp $
+ * $Id: index.cgi.c,v 1.161 2005-08-01 23:03:26 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -719,7 +719,6 @@ int expire_login_cookie (pool * p, const security_context * context,
                          login_rec * l, login_rec * c)
 {
     char *l_cookie;
-    char *message = NULL;
     int l_res;
     char *user;
     const char *domain = login_host_cookie_domain (p);
@@ -730,8 +729,6 @@ int expire_login_cookie (pool * p, const security_context * context,
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "expire_login_cookie: hello");
-    if ((message = malloc (PBC_4K)) == NULL)
-        abend (p, "out of memory");
 
     if ((l_cookie = malloc (PBC_4K)) == NULL)
         abend (p, "out of memory");
@@ -758,21 +755,12 @@ int expire_login_cookie (pool * p, const security_context * context,
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                       "expire_login_cookie: l_res: %d", l_res);
 
-    /* if we have a problem then bail with a nice message */
-    if (l_res == PBC_FAIL) {
-        sprintf (message, "%s%s%s%s%s%s",
-                 PBC_EM1_START,
-                 TROUBLE_CREATING_COOKIE,
-                 PBC_EM1_END,
-                 PBC_EM2_START, PROBLEMS_PERSIST, PBC_EM2_END);
-        /* XXX print_login_page(l, c, "cookie create failed"); */
+    /* if we have a problem then bail with a message */
+    if (!l_res) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "Not able to create cookie for user %s at %s-%s",
-                          user, l->appsrvid ? l->appsrvid : "(none)",
-                          l->appid ? l->appid : "(none)");
-        if (message != NULL)
-            pbc_free (p, message);
-        return (PBC_FAIL);
+                          l->user, l->appsrvid, l->appid);
+        abend (p, "Unable to generate a cookie");
     }
 
     print_header (p, "Set-Cookie: %s=%s; %spath=%s%s\n",
@@ -784,8 +772,6 @@ int expire_login_cookie (pool * p, const security_context * context,
         free ((char *) domain);
     if (l_cookie != NULL)
         free (l_cookie);
-    if (message != NULL)
-        free (message);
 
     return (PBC_OK);
 
@@ -2214,8 +2200,14 @@ int cgiMain ()
                           l->user == NULL ? "(null)" : l->user,
                           cgiRemoteAddr, l->host, l->appid);
 
-        /* generate the cookies and print the redirect page */
-        print_redirect_page (p, context, l, c);
+        set_l_cookie (p, context, l, c);
+
+        /* if pinit then skip extra redirect */
+        if (l->pinit == PBC_TRUE)
+            pinit_response (p, context, l);
+        else
+            /* generate the cookies and print the redirect page */
+            print_redirect_page (p, context, l, c);
     }
 
   done:
@@ -2359,46 +2351,12 @@ void notok (pool * p, notok_event event, char *reason)
 
 }
 
-int set_pinit_cookie (pool * p)
-{
-    const char *domain = login_host_cookie_domain (p);
-
-    print_header (p, "Set-Cookie: %s=%s; %spath=/%s\n",
-                  PBC_PINIT_COOKIENAME, PBC_SET,
-                  (domain == NULL ? "" : domain), secure_cookie);
-
-    if (domain)
-        pbc_free (p, (char *) domain);
-
-    return (PBC_OK);
-
-}
-
-int clear_pinit_cookie (pool * p)
-{
-    const char *domain = login_host_cookie_domain (p);
-
-    print_header (p,
-                  "Set-Cookie: %s=%s; %spath=/; expires=%s%s\n",
-                  PBC_PINIT_COOKIENAME, PBC_CLEAR_COOKIE,
-                  (domain == NULL ? "" : domain),
-                  EARLIEST_EVER, secure_cookie);
-
-    if (domain)
-        pbc_free (p, (char *) domain);
-
-    return (PBC_OK);
-
-}
-
 int pinit_response (pool * p, const security_context * context,
-                    login_rec * l, login_rec * c)
+                    login_rec * l)
 {
-    const char *remaining = time_remaining_text (p, c);
+    const char *remaining = time_remaining_text (p, l);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "pinit_response: hello");
-
-    clear_pinit_cookie (p);
 
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p, "tmpl_pinit_response1",
@@ -2406,9 +2364,9 @@ int pinit_response (pool * p, const security_context * context,
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p, "tmpl_welcome_back",
                                                "welcome_back"),
-                      "contents", (c == NULL
-                                   || c->user ==
-                                   NULL ? "unknown" : c->user), NULL);
+                      "contents", (l == NULL
+                                   || l->user ==
+                                   NULL ? "unknown" : l->user), NULL);
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p,
                                                "tmpl_logout_time_remaining",
@@ -2490,12 +2448,6 @@ int cookie_test (pool * p, const security_context * context, login_rec * l,
         return (PBC_FAIL);
     }
 
-    /* after a pinit login we give the user something nice to look at */
-    if (strstr (cookies, PBC_PINIT_COOKIENAME) != NULL) {
-        pinit_response (p, context, l, c);
-        return (PBC_FAIL);
-    }
-
     /* a cleared G req is as bad as no g req */
     snprintf (cleared_g_req, PBC_1K, "%s=%s", PBC_G_REQ_COOKIENAME,
               PBC_CLEAR_COOKIE);
@@ -2546,50 +2498,24 @@ int check_user_agent (pool * p)
     return (0);
 }
 
-
-void print_redirect_page (pool * p, const security_context * context,
-                          login_rec * l, login_rec * c)
+int set_l_cookie (pool * p, const security_context * context,
+                  login_rec * l, login_rec * c)
 {
-    char *g_cookie;
     char *l_cookie;
-    char *redirect_uri;
-    char *message;
-    char *args_enc = NULL;
-    char *redirect_final = NULL;
-    char *redirect_dest = NULL;
-    char g_set_cookie[PBC_1K];
     char l_set_cookie[PBC_1K];
-    char *post_stuff_lower = NULL;
-    char *ptr = NULL;
-    int g_res, l_res;
-    int limitations_mentioned = 0;
-    char *submit_value = NULL;
-    cgiFormEntry *cur;
-    cgiFormEntry *next;
-    char *redirect_final_trunc = NULL;
+    int l_res;
     const char *domain = login_host_cookie_domain (p);
 
     char *user;
     char *appsrvid;
     char *appid;
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "print_redirect_page: hello (pinit=%d)\n", l->pinit);
-    if (!(redirect_dest = malloc (PBC_4K))) {
-        abend (p, "out of memory");
-    }
-    if (!(redirect_final = malloc (PBC_4K))) {
-        abend (p, "out of memory");
-    }
-    if (!(message = malloc (PBC_4K))) {
-        abend (p, "out of memory");
-    }
-    if (!(g_cookie = malloc (PBC_4K))) {
-        abend (p, "out of memory");
-    }
     if (!(l_cookie = malloc (PBC_4K))) {
         abend (p, "out of memory");
     }
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "set_l_cookie: hello\n");
+
 
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
@@ -2614,6 +2540,70 @@ void print_redirect_page (pool * p, const security_context * context,
     if (appid != NULL)
         pbc_free (p, appid);
 
+    /* if we have a problem then bail with a message */
+    if (!l_res) {
+        pbc_log_activity (p, PBC_LOG_ERROR,
+                          "Not able to create cookie for user %s at %s-%s",
+                          l->user, l->appsrvid, l->appid);
+        abend (p, "Unable to generate a cookie");
+    }
+
+    /* create the login cookie header */
+    snprintf (l_set_cookie, sizeof (l_set_cookie) - 1,
+              "Set-Cookie: %s=%s; %spath=%s%s",
+              PBC_L_COOKIENAME, l_cookie,
+              (domain == NULL ? "" : domain), LOGIN_DIR, secure_cookie);
+
+    if (domain)
+        pbc_free (p, (char *) domain);
+
+    /* set l cookie */
+    if (l->user && *l->user)
+        print_header (p, "%s\n", l_set_cookie);
+
+    if (l_cookie != NULL)
+        pbc_free (p, l_cookie);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "set_l_cookie: G'Bye\n");
+
+}
+
+void print_redirect_page (pool * p, const security_context * context,
+                          login_rec * l, login_rec * c)
+{
+    char *g_cookie;
+    char *redirect_uri;
+    char *args_enc = NULL;
+    char *redirect_final = NULL;
+    char *redirect_dest = NULL;
+    char g_set_cookie[PBC_1K];
+    char *post_stuff_lower = NULL;
+    char *ptr = NULL;
+    int g_res;
+    int limitations_mentioned = 0;
+    char *submit_value = NULL;
+    cgiFormEntry *cur;
+    cgiFormEntry *next;
+    char *redirect_final_trunc = NULL;
+
+    char *user;
+    char *appsrvid;
+    char *appid;
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                      "print_redirect_page: hello\n");
+
+    if (!(redirect_dest = malloc (PBC_4K))) {
+        abend (p, "out of memory");
+    }
+    if (!(redirect_final = malloc (PBC_4K))) {
+        abend (p, "out of memory");
+    }
+    if (!(g_cookie = malloc (PBC_4K))) {
+        abend (p, "out of memory");
+    }
+
+
     /* since the flavor responsible for 'creds_from_greq' returned
        LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
        was successful. */
@@ -2633,41 +2623,18 @@ void print_redirect_page (pool * p, const security_context * context,
     if (appid != NULL)
         free (appid);
 
-    /* if we have a problem then bail with a nice message */
-    if (!l_res || !g_res) {
-        sprintf (message, "%s%s%s%s%s%s",
-                 PBC_EM1_START,
-                 TROUBLE_CREATING_COOKIE,
-                 PBC_EM1_END,
-                 PBC_EM2_START, PROBLEMS_PERSIST, PBC_EM2_END);
-        /* xxx it's kinda hard to jump to print_login_page, because
-           what flavor should we be printing here? */
-#if 0
-        print_login_page (l, c, message, "cookie create failed",
-                          NO_CLEAR_LOGIN, NO_CLEAR_GREQ);
-#endif
-
+    /* if we have a problem then bail with a message */
+    if (!g_res) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "Not able to create cookie for user %s at %s-%s",
                           l->user, l->appsrvid, l->appid);
-        pbc_free (p, message);
-        return;
+        abend (p, "Unable to generate a cookie");
     }
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                      "created cookies l_res g_res (%c)\n", l->version[2]);
-    if (l->pinit == PBC_FALSE)
-        add_app_cookie (PBC_G_COOKIENAME, g_cookie, NULL);
+                      "created cookie g_res (%c)\n", l->version[2]);
 
-    /* create the login cookie header */
-
-    snprintf (l_set_cookie, sizeof (l_set_cookie) - 1,
-              "Set-Cookie: %s=%s; %spath=%s%s",
-              PBC_L_COOKIENAME, l_cookie,
-              (domain == NULL ? "" : domain), LOGIN_DIR, secure_cookie);
-
-    if (domain)
-        pbc_free (p, (char *) domain);
+    add_app_cookie (PBC_G_COOKIENAME, g_cookie, NULL);
 
     /* whip up the url to send the browser back to */
     if (!strcmp (l->fr, "NFR"))
@@ -2721,11 +2688,7 @@ void print_redirect_page (pool * p, const security_context * context,
     if (redirect_final_trunc != NULL)
         pbc_free (p, redirect_final_trunc);
 
-    /* Send local cookies */
-    if (l->pinit == PBC_TRUE)
-        set_pinit_cookie (p);
-    if (l->user && *l->user)
-        print_header (p, "%s\n", l_set_cookie);
+    /* Send local cookie */
     if (!l->relay_uri)
         clear_greq_cookie (p);
 
@@ -2883,10 +2846,6 @@ void print_redirect_page (pool * p, const security_context * context,
         free (redirect_dest);
     if (g_cookie != NULL)
         pbc_free (p, g_cookie);
-    if (l_cookie != NULL)
-        pbc_free (p, l_cookie);
-    if (message != NULL)
-        pbc_free (p, message);
     if (redirect_final != NULL)
         pbc_free (p, redirect_final);
 
