@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.181 2005-08-03 21:55:53 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.182 2005-08-06 00:09:49 willey Exp $
  */
 
 #define MAX_POST_DATA 4096
@@ -854,10 +854,11 @@ static int auth_failed_handler (request_rec * r,
     /* acquire any GET args */
     if (r->args) {
         /* error out if length of GET args would cause a problem */
-        if ( strlen(r->args) > PBC_2K-1 ) {
+        if ( strlen(r->args) > PBC_MAX_GET_ARGS ) {
             rr->stop_message =
                 ap_pstrdup (p, "GET arguments longer than supported");
             stop_the_show (r, scfg, cfg, rr);
+            return (OK);
         }
 
         args = ap_pcalloc (p, (strlen (r->args) + 3) / 3 * 4 + 1);

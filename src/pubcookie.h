@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.24 2005-08-03 21:55:53 willey Exp $
+    $Id: pubcookie.h,v 1.25 2005-08-06 00:09:49 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -37,6 +37,9 @@
 #endif /* OPENSSL_IN_DIR */
 
 #include <security.h>
+
+/* psuedo-arbitrary limit on the length of GET args supported */
+#define PBC_MAX_GET_ARGS 1900
 
 #define PBC_USER_LEN 42
 #define PBC_VER_LEN 4
