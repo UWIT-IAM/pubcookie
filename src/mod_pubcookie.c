@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.182 2005-08-06 00:09:49 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.183 2005-08-23 22:45:07 willey Exp $
  */
 
 #define MAX_POST_DATA 4096
@@ -1006,6 +1006,7 @@ static int auth_failed_handler (request_rec * r,
         rr->stop_message =
             ap_pstrdup (p, "multipart/form-data not allowed");
         stop_the_show (r, scfg, cfg, rr);
+        return(OK);
     }
 
     /* we handle post data unless it is too large, in which */
@@ -1019,6 +1020,7 @@ static int auth_failed_handler (request_rec * r,
             (!(post_data = get_post_data (r, post_data_len)))) {
             rr->stop_message = ap_pstrdup (p, "invalid post data");
             stop_the_show (r, scfg, cfg, rr);
+            return(OK);
         }
     }
 
