@@ -18,10 +18,10 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.183 2005-08-23 22:45:07 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.184 2005-08-25 17:20:54 fox Exp $
  */
 
-#define MAX_POST_DATA 4096
+#define MAX_POST_DATA 10485760
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
