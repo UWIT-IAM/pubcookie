@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.184 2005-08-25 17:20:54 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.185 2005-08-26 20:16:25 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -3247,7 +3247,6 @@ static int login_reply_handler (request_rec * r)
     if (lenp) {
         int post_data_len;
         if (((post_data_len = strtol (lenp, NULL, 10)) > 0) &&
-            (post_data_len < MAX_POST_DATA) &&
             ((post_data = get_post_data (r, post_data_len)))) {
             scan_args (args, post_data);
         }
