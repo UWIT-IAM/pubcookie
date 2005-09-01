@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.53 2005-06-16 21:36:03 dors Exp $
+//  $Id: PubCookieFilter.h,v 1.54 2005-09-01 19:37:04 willey Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.2.2 pre-beta1"
@@ -42,7 +42,7 @@ typedef struct {
 	char			user[PBC_USER_LEN];
 	char			appsrvid[PBC_APPSRV_ID_LEN];
 	char			appsrv_port[6];
-	char			uri[1024];		              // *** size ??
+	char			uri[PBC_MAX_GET_ARGS + 100];   // *** size ??
 	char			args[4096];                   // ***
 	char			method[8];		              // ***
 	char			handler;

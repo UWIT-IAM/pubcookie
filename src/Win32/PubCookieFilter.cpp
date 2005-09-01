@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.49 2005-05-13 15:43:13 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.50 2005-09-01 19:37:04 willey Exp $
 //
 
 //#define COOKIE_PATH
@@ -82,8 +82,8 @@ VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
 
     va_start(args, format);
 	if (p) {  
-		//_snprintf(source,HDRSIZE,"Pubcookie-%s",p->instance_id);
-		_snprintf(source,HDRSIZE,"Pubcookie-siteID=%s", p->instance_id);
+		_snprintf(source,HDRSIZE,"Pubcookie-%s",p->instance_id);
+		//_snprintf(source,HDRSIZE,"Pubcookie-siteID=%s", p->instance_id);
 	}
 	else
 	{
@@ -290,7 +290,8 @@ VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_doma
 }
 
 int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
-    char    szBuff[2048];
+    //char    szBuff[2048];
+	char	szBuff[PBC_4K];
 	DWORD	dwBuffSize;
     pubcookie_dir_rec   *p;
 
@@ -305,7 +306,7 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 	pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 		"200 OK",NULL,NULL);
 		
-    sprintf(szBuff, "<HTML>\n"
+    snprintf(szBuff, PBC_4K + 500, "<HTML>\n"
 					" <HEAD>\n"
 					"  <meta HTTP-EQUIV=\"Refresh\" CONTENT=\"%d;URL=%s\">\n"
 					" </HEAD>\n"
@@ -324,11 +325,19 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 
 int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 
-    char    szBuff[2048];
+    char    szBuff[PBC_4K + 500];
 	DWORD	dwBuffSize;
     pubcookie_dir_rec   *p;
 
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
+
+	//first check length of granting request, 
+	//if larger than 4K, log it and return an error
+	if (strlen(reinterpret_cast<char*>(greq)) > PBC_4K){
+		filterlog(p, LOG_ERR, " Granting request is too long, check the url length");
+		Redirect(pFC, p->Error_Page);
+	}
+
 
     sprintf(szBuff,"Content-Type: text/html\r\n");
 		
@@ -339,7 +348,7 @@ int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 	pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 		"200 OK",NULL,NULL);
 
-	sprintf(szBuff, "<html>\r\n"
+	snprintf(szBuff, PBC_4K + 500, "<html>\r\n"
 					" <body onLoad=\"document.relay.submit()\">\r\n"
 					"  <form method=post action=\"%s\" name=relay>\r\n\r\n"
 					"   <input type=hidden name=pubcookie_g_req value=\"%s\">\r\n"
@@ -352,6 +361,7 @@ int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 					"  </form>\r\n"
 					" </body>\r\n"
 					"</html>\r\n",p->Login_URI,greq,p->Relay_URI);
+	
 	
 	dwBuffSize=strlen(szBuff);
 
@@ -382,7 +392,7 @@ BOOL Pubcookie_Init ()
 	{
 		syslog(LOG_ERR,"[Pubcookie_Init] Unable to initialize WINSOCK: %d",rslt);
 		return FALSE;
-	}
+	} 
 
 	// Initialize Pubcookie Stuff
 	if (!libpbc_pubcookie_init(p,&default_context)) {  
@@ -492,14 +502,14 @@ void Add_No_Cache(HTTP_FILTER_CONTEXT* pFC)
 }
 void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, unsigned char* cookie_contents, char* cookie_domain)
 {
-	char			szHeaders[PBC_1K];
+	char szHeaders[PBC_4K];
     pubcookie_dir_rec   *p;
 
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 
 	filterlog(p, LOG_INFO,"  Adding cookie %s\n   domain=%s;\n   path=/;\n   secure;\n",cookie_name,cookie_domain);
 
-	snprintf(szHeaders, PBC_1K, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\n",
+	snprintf(szHeaders, PBC_4K, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\n",
 		cookie_name, 
 		cookie_contents,
 		cookie_domain);
@@ -608,8 +618,16 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	snprintf(szTemp,1024,p->Login_URI);
 	return (Redirect(pFC,szTemp));
 #else
-	// POST directly to login server
-	snprintf(szTemp,1024,"https://%s/%s?appsrvid=%s",p->appsrvid,PBC_POST_NAME,p->appsrvid);
+	char szAppPort[PBC_1K];
+	strcpy(szAppPort,p->appsrvid); 
+	if ( strlen(p->appsrv_port) > 0 ) {
+		strcat(szAppPort,":");
+		strcat(szAppPort,p->appsrv_port);
+	}
+	//OLD -- keeping it around for now, delete this after testing...
+	//snprintf(szTemp,1024,"https://%s/%s?appsrvid=%s",p->appsrvid,PBC_POST_NAME,p->appsrvid);
+	//NEW
+	snprintf(szTemp,1024,"https://%s/%s?appsrvid=%s",szAppPort,PBC_POST_NAME,p->appsrvid);
 	p->Relay_URI = strdup(szTemp);
 	Add_Post_Data(pFC, e_g_req_contents);
 	free(p->Relay_URI);
@@ -1207,12 +1225,12 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 					HTTP_FILTER_PREPROC_HEADERS* pHeaderInfo)
 {
 
-	char *cookie;
+    char *cookie;
 	char *current_appid;
 	pbc_cookie_data *cookie_data;
-    char achUrl[1025];
-	char szBuff[1025];
-    DWORD cbURL=1024;
+    char achUrl[2048];
+	char szBuff[PBC_4K];
+    DWORD cbURL=2048;
 	DWORD dwBuffSize;
 	char *pachUrl;
 	char *ptr;
@@ -1350,13 +1368,13 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	// Can't see cookies unless we are SSL. Redirect to https if needed.
 
-	szBuff[0]= NULL; dwBuffSize=1024;
+	szBuff[0]= NULL; dwBuffSize=PBC_4K;
 	pFC->GetServerVariable(pFC,"SERVER_PORT_SECURE",
 							szBuff, &dwBuffSize);
 	if ( strcmp(szBuff,"0") == 0 ) 
 	{
 		p->failed = PBC_BAD_PORT;
-		sprintf(szBuff,"https://%s%s%s%s",p->appsrvid, achUrl,(strlen(p->args) ? "?" : ""), p->args);
+		snprintf(szBuff, PBC_4K, "https://%s%s%s%s",p->appsrvid, achUrl,(strlen(p->args) ? "?" : ""), p->args);
 		return(Redirect(pFC,szBuff));
 	}
 
@@ -1785,10 +1803,10 @@ static void make_crypt_keyfile(pool *p, const char *peername, char *buf)
 DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
                         HTTP_FILTER_PREPROC_HEADERS* pHeaderInfo)
 {
-	char szBuff[1024];
-	char achUrl[1024];
+	char szBuff[PBC_MAX_GET_ARGS];
+	char achUrl[PBC_MAX_GET_ARGS + 100];
 	char LogBuff[LOGBUFFSIZE]="";
-	DWORD dwBuffSize=1024;
+	DWORD dwBuffSize=PBC_MAX_GET_ARGS + 100;
 	DWORD return_rslt;
 	pubcookie_dir_rec* p;
 	time_t ltime;
@@ -1810,9 +1828,44 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	// IBM Network Dispatcher probes web sites with a URL of "/" and command of HEAD
 	// bail quickly if this is the case
 
-	achUrl[0]= NULL; dwBuffSize=1024;
-	pHeaderInfo->GetHeader(pFC, "url",
-							achUrl, &dwBuffSize);
+	achUrl[0]= NULL; 
+	dwBuffSize=PBC_MAX_GET_ARGS + 100;
+
+
+	// Check the url, without this if check, large urls (>2000 bytes)
+	// would bypass and serve the page
+	if (!pHeaderInfo->GetHeader(pFC, "url", achUrl, &dwBuffSize))
+	{
+		syslog(LOG_ERR,"[PBC_OnPreprocHeaders] Error reading url, check length is under 2000 characters");
+		
+		char szTemp[2048];
+		DWORD dwSize;
+		pubcookie_dir_rec* p;
+
+		p = (pubcookie_dir_rec *)pFC->pFilterContext;
+
+
+		if ( strlen(p->Error_Page) == 0 ) {
+
+			pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
+									"200 OK",NULL,NULL);
+
+			sprintf(szTemp,"<B>The url is too long to process, please verify the url length is less than 2000 characters<br><br>"
+						" Please contact <a href=\"mailto:ntadmin@%s\">ntadmin@%s</a> </B> <br>",
+				p->server_hostname,p->server_hostname);
+			dwSize=strlen(szTemp);
+
+			pFC->WriteClient (pFC, szTemp, &dwSize, 0);
+
+		} else {
+			Redirect(pFC, p->Error_Page);
+		}
+
+		return SF_STATUS_REQ_FINISHED;
+		
+
+	}
+
 	if ( PBC_IGNORE_POLL && strcmp(achUrl,"/") == 0 ) {
 		pFC->ServerSupportFunction(pFC,SF_REQ_DISABLE_NOTIFICATIONS,
 								NULL,Notify_Flags,NULL);
@@ -2429,7 +2482,7 @@ BOOL getqueryarg (const char* querystr, char* value, const char* arg, int values
 	return TRUE;
 }
 
-void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *grpl, char *redirect_url)
+void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *grpl, char *redirect_url, char *get_args)
 { 
    char httpheader[START_COOKIE_SIZE+1024];
    char sztmpstr[MAX_BUFFER];
@@ -2449,7 +2502,17 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    //output page
    WriteString(pECB,"<HTML>\r\n");
    WriteString(pECB,"<HEAD>\r\n");
-   snprintf(sztmpstr,MAX_BUFFER,"<meta http-equiv=\"Refresh\" content=\"0;URL=%s\"\r\n>",redirect_url);
+   // include Get Arguments in Url!
+   if (strlen(get_args) > 0)
+   {
+	   snprintf(sztmpstr,MAX_BUFFER,"<meta http-equiv=\"Refresh\" content=\"0;URL=%s?%s\"\r\n>",redirect_url, get_args);		
+   }
+   else
+   {
+	   snprintf(sztmpstr,MAX_BUFFER,"<meta http-equiv=\"Refresh\" content=\"0;URL=%s\"\r\n>",redirect_url);		
+   }
+   
+   
    WriteString(pECB,sztmpstr);
    WriteString(pECB,"</HEAD>\r\n");
    WriteString(pECB,"<BODY>\r\n");
@@ -2517,7 +2580,7 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 
 DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 {
-  char *cookie=NULL, *val=NULL, *postdata=NULL, *redirect_url=NULL;
+  char *cookie=NULL, *val=NULL, *postdata=NULL, *redirect_url=NULL, *get_args=NULL;
   char *host, *port, *uri, *qs;
   char *uport;
   int ishttps;
@@ -2604,9 +2667,8 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
      if (hKeyFound = FindKey(hKeyList,PBC_G_COOKIENAME)) {
 		 postdata = (char *)GetKeyBuffer(hKeyFound);
 		 if (hKeyFound = FindKey(hKeyList,"redirect_url")) {
-		     redirect_url = (char *)GetKeyBuffer(hKeyFound);
-		 }
-         relay_granting_reply(pECB, p, postdata, redirect_url); 
+			 redirect_url = (char *)GetKeyBuffer(hKeyFound);		 }		 if (hKeyFound = FindKey(hKeyList,"get_args")) {			 get_args = (char *)GetKeyBuffer(hKeyFound);		 }
+	     relay_granting_reply(pECB, p, postdata, redirect_url, get_args); 
     } else  
 
       /* A login request from an application will have a granting 

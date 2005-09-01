@@ -11,6 +11,24 @@
    the new PubcookieEncryption directive. AES is the default and will
    require a AES-encryption-enabled login server.
 
+Changes with 3.2.1a:
+
+*) Defined the maximum allowable amount of post data that the Apache 
+   module will attempt to send thru the login process. 10MB is the limit.
+
+*) Added error handling to Apache module and ISAPI filter for query        
+   strings that are too long to go thru the login process (>1900 bytes).
+
+*) Restored original Event log source names in the registry for Pubcookie;  
+   i.e. we're back to using PubCookie-<x> where <x> is the current web
+   instance.
+
+*) Fixed Pubcookie filter to preserve port numbers and query strings thru
+   the login process.
+
+*) Increased a number of buffer sizes in Pubcookie filter so that granting
+   request data isn't accidentally truncated.
+
 Changes with 3.2.1:
 
 *) Fixed Apache module to avoid possible null pointer in REMOTE_REALM 
