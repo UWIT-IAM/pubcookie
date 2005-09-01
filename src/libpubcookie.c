@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.84 2005-07-07 22:25:46 willey Exp $
+ * $Id: libpubcookie.c,v 2.85 2005-09-01 20:58:01 willey Exp $
  */
 
 
@@ -628,12 +628,12 @@ unsigned char *libpbc_stringify_cookie_data (pool * p,
     ptr += sizeof (int);
 
     temp = htonl ((*cookie_data).broken.create_ts);
-    memcpy (ptr, &temp, sizeof (time_t));
-    ptr += sizeof (time_t);
+    memcpy (ptr, &temp, sizeof (int));
+    ptr += sizeof (int);
 
     temp = htonl ((*cookie_data).broken.last_ts);
-    memcpy (ptr, &temp, sizeof (time_t));
-    ptr += sizeof (time_t);
+    memcpy (ptr, &temp, sizeof (int));
+    ptr += sizeof (int);
 
     return cookie_string;
 

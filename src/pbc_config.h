@@ -16,7 +16,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.105 2005-07-27 22:03:44 willey Exp $
+     $Id: pbc_config.h,v 1.106 2005-09-01 20:58:01 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -147,8 +147,8 @@
 
 #define LOGOUT_ACTION_UNSET          -1
 #define LOGOUT_ACTION_NOTHING        0
-#define LOGOUT_ACTION_CLEAR_L        1
-#define LOGOUT_ACTION_CLEAR_L_NO_APP 2
+#define LOGOUT_ACTION_CLEAR_L        1   /* expires the L cookie */
+#define LOGOUT_ACTION_CLEAR_L_NO_APP 2   /* only way to clear a L cookie */
 
 #define PBC_SESSION_REAUTH 1
 #define PBC_SESSION_REAUTH_NO 0

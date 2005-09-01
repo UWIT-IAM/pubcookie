@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.26 2005-09-01 19:37:04 willey Exp $
+    $Id: pubcookie.h,v 1.27 2005-09-01 20:58:01 willey Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -75,8 +75,8 @@ typedef struct
     unsigned char type;
     unsigned char creds;
     int pre_sess_token;
-    time_t create_ts;
-    time_t last_ts;
+    int create_ts;
+    int last_ts;
 }
 cookie_data_struct;
 
