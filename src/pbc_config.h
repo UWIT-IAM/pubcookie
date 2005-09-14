@@ -16,7 +16,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.106 2005-09-01 20:58:01 willey Exp $
+     $Id: pbc_config.h,v 1.107 2005-09-14 19:48:03 suh Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -69,6 +69,7 @@
 #define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
 #define PBC_INSTANCE_KEY "_PBC_Web_Instances"
 #define PBC_DEFAULT_KEY "default"
+#define PBC_ENCRYPT_METHOD (libpbc_config_getstring(p, "Encryption_Method", "AES")) 
 #endif
 
 #define PBC_DEFAULT_FORM_EXPIRE_TIME	60
