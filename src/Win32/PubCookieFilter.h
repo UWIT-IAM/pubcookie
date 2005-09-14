@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.54 2005-09-01 19:37:04 willey Exp $
+//  $Id: PubCookieFilter.h,v 1.55 2005-09-14 19:45:32 suh Exp $
 //
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.2.2 pre-beta1"
@@ -65,6 +65,7 @@ typedef struct {
 	TCHAR			strbuff[MAX_REG_BUFF];  //temporary buffer for libpbc_config_getstring calls
 	security_context      *sectext;
 	DWORD			no_prompt;
+	char			crypt_alg;				// encryption algorithm, AES or DES
 
 } pubcookie_dir_rec;
 
@@ -121,6 +122,7 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 #define AUTH_NETID '1'
 #define AUTH_SECURID '3'
 
+#define PBC_VERSION_AES "a5a"
 
 //LOGOUT Types
 

@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.50 2005-09-01 19:37:04 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.51 2005-09-14 19:45:32 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -216,48 +216,48 @@ VOID create_source(pubcookie_dir_rec *p, const char *source) {
  * @returns random int or -1 for error
  * but, what do we do about that error?
  */
-int get_pre_s_token(HTTP_FILTER_CONTEXT* pFC) {
-    int i;
-    pubcookie_dir_rec   *p;
-
-	p = (pubcookie_dir_rec *)pFC->pFilterContext;
-
-
-    if( (i = libpbc_random_int(p)) == -1 ) {
-        filterlog(p, LOG_ERR,	"get_pre_s_token: OpenSSL error");
-    }
-
-		filterlog(p, LOG_INFO, "get_pre_s_token: token is %d\n", i);
-    return(i);
-
-}
-
-
-int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
-{
-    pubcookie_dir_rec   *p;
-    pbc_cookie_data     *cookie_data = NULL;
-    char 		*cookie = NULL;
-
-	p = (pubcookie_dir_rec *)pFC->pFilterContext;
-
-    if( (cookie = Get_Cookie(pFC, PBC_PRE_S_COOKIENAME)) == NULL )
-
-        filterlog(p, LOG_ERR,	"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", p->uri);
-    else
-		cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false);
-
-    if( cookie_data == NULL ) {
-        filterlog(p, LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", p->uri);
-	p->failed = PBC_BAD_AUTH;
-
-	return -1;
-    }
-
- 	
-    return((*cookie_data).broken.pre_sess_token);
-
-}
+//int get_pre_s_token(HTTP_FILTER_CONTEXT* pFC) {
+//    int i;
+//    pubcookie_dir_rec   *p;
+//
+//	p = (pubcookie_dir_rec *)pFC->pFilterContext;
+//
+//
+//    if( (i = libpbc_random_int(p)) == -1 ) {
+//        filterlog(p, LOG_ERR,	"get_pre_s_token: OpenSSL error");
+//    }
+//
+//		filterlog(p, LOG_INFO, "get_pre_s_token: token is %d\n", i);
+//    return(i);
+//
+//}
+//
+//
+//int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
+//{
+//    pubcookie_dir_rec   *p;
+//    pbc_cookie_data     *cookie_data = NULL;
+//    char 		*cookie = NULL;
+//
+//	p = (pubcookie_dir_rec *)pFC->pFilterContext;
+//
+//    if( (cookie = Get_Cookie(pFC, PBC_PRE_S_COOKIENAME)) == NULL )
+//
+//        filterlog(p, LOG_ERR,	"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", p->uri);
+//    else
+//		cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false);
+//
+//    if( cookie_data == NULL ) {
+//        filterlog(p, LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", p->uri);
+//	p->failed = PBC_BAD_AUTH;
+//
+//	return -1;
+//    }
+//
+// 	
+//    return((*cookie_data).broken.pre_sess_token);
+//
+//}
 
 VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_domain, char* cookie_path, bool secure)
 {
@@ -348,7 +348,7 @@ int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 	pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 		"200 OK",NULL,NULL);
 
-	snprintf(szBuff, PBC_4K + 500, "<html>\r\n"
+	snprintf(szBuff, PBC_4K + 1000, "<html>\r\n"
 					" <body onLoad=\"document.relay.submit()\">\r\n"
 					"  <form method=post action=\"%s\" name=relay>\r\n\r\n"
 					"   <input type=hidden name=pubcookie_g_req value=\"%s\">\r\n"
@@ -525,8 +525,11 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	char 			g_req_contents[PBC_4K];
 	unsigned char	e_g_req_contents[PBC_4K];
 	char			szTemp[PBC_1K];
+	//TODO: REMOVED - presession cookie
+	/*
     unsigned char   *pre_s;
 	int				pre_sess_tok;
+	*/
 
 	pubcookie_dir_rec* p;
 
@@ -555,16 +558,20 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		strcat(szTemp,":");
 		strcat(szTemp,p->appsrv_port);
 	}
+	//TODO: REMOVED - presession cookie
+	/*
     if( (pre_sess_tok=get_pre_s_token(pFC)) == -1 ) { //make presession token; a number
 		filterlog(p, LOG_ERR,"Security Warning:  Unable to randomize pre-session cookie!");
         return(OK);
     }
+	*/
 
   
 	
 	/* make the granting request */
-	sprintf(g_req_contents, 
-		"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c", 
+	snprintf(g_req_contents, PBC_4K,
+		//"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c", 
+		"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%c",
 		PBC_GETVAR_APPSRVID,
 		  p->server_hostname,   // Need full domain name 
 		PBC_GETVAR_APPID,
@@ -572,7 +579,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		PBC_GETVAR_CREDS, 
 		  p->AuthType, 
 		PBC_GETVAR_VERSION, 
-		  PBC_VERSION, 
+		  p->crypt_alg == PBC_CRYPT_AES ? PBC_VERSION_AES : PBC_VERSION,
 		PBC_GETVAR_METHOD, 
 		  p->method, 
 		PBC_GETVAR_HOST, 
@@ -583,8 +590,9 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		  args,
 		PBC_GETVAR_SESSION_REAUTH,
 		  p->session_reauth,
-		PBC_GETVAR_PRE_SESS_TOK,
-		  pre_sess_tok,
+		//TODO: REMOVED - presession cookie
+		//  PBC_GETVAR_PRE_SESS_TOK,
+		 // pre_sess_tok,
           PBC_GETVAR_FLAG,
 		  p->no_prompt ? 'Q' : '0');
 
@@ -597,7 +605,9 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, p->appsrvid);
 #endif
 
+	//TODO: REMOVED - presession cookie
 	/* make the pre-session cookie ; sign it*/
+	/*
     pre_s = libpbc_get_cookie(  
 		p,
 		p->sectext,
@@ -609,8 +619,10 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		(unsigned char *)p->appid,
 		p->server_hostname,
 		0);
-	
-    Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s,p->appsrvid);
+	*/
+
+	//TODO: REMOVED -  presession cookie
+    //Add_Cookie (pFC,PBC_PRE_S_COOKIENAME,pre_s,p->appsrvid);
 	
 	Add_No_Cache(pFC);
 
@@ -631,7 +643,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	p->Relay_URI = strdup(szTemp);
 	Add_Post_Data(pFC, e_g_req_contents);
 	free(p->Relay_URI);
-	free(pre_s);
+	//TODO: REMOVED -  presession cookie
+	//free(pre_s);
 	return OK;
 #endif
 
@@ -857,6 +870,7 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 	DWORD dwRead;
 	long rslt;
 	char authname[512];
+	char crypt_alg[10];
 
 	if (rslt = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		key,0,KEY_READ,&hKey) == ERROR_SUCCESS)
@@ -909,6 +923,23 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 						if ( stricmp(authname,(PBC_AUTHTYPE0)) == 0 )
 							p->AuthType = '0';
 		}
+
+		//Encryption setting
+ 		dwRead = sizeof (crypt_alg);
+ 		RegQueryValueEx (hKey, "Encryption_Method",
+ 			NULL, NULL, (LPBYTE) crypt_alg, &dwRead);
+ 
+ 		
+ 		if (strlen(crypt_alg) > 0) {			
+ 			if (stricmp(crypt_alg,("DES")) == 0 ) {
+ 				p->crypt_alg = PBC_CRYPT_DES;
+ 			} else {
+ 				if (stricmp(crypt_alg,("AES")) == 0 ) {
+ 					p->crypt_alg = PBC_CRYPT_AES;
+ 				}
+ 			}	
+ 		}
+
 
 		dwRead = sizeof (p->default_url);
 		RegQueryValueEx (hKey, "Default_Url",
@@ -980,8 +1011,9 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	strcpy(p->Login_URI, (PBC_LOGIN_URI));
 	strcpy(p->Error_Page,"");
 	p->Set_Server_Values = false;
-	p->legacy = false;
-	
+	p->legacy = false;	
+	p->crypt_alg = PBC_CRYPT_AES;
+
     // Then Look in default key
 	
 	strcpy (key, (PBC_WEB_VAR_LOCATION));
@@ -1235,7 +1267,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	char *pachUrl;
 	char *ptr;
 	pubcookie_dir_rec* p;
-	int pre_sess_from_cookie;
+	//TODO:  REMOVED - presession cookie
+	//int pre_sess_from_cookie;
 
     p = (pubcookie_dir_rec *)pFC->pFilterContext;
 
@@ -1292,12 +1325,20 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
     *pachUrl++;		// skip over first '/'
     ptr = strchr(pachUrl,'/');
-	if ( ptr ) {
+	if ( ptr ) { // subfolder, off root
 		strncpy((char *)p->appid, pachUrl, ptr-pachUrl);
 		p->appid[(ptr-pachUrl)] = NULL;
 	}
 	else if (strlen(pachUrl) > 0) {   // This could set appid to a filename in the root dir
-		strcpy((char *)p->appid, pachUrl);
+		//strcpy((char *)p->appid, pachUrl);		
+		if (stricmp(pachUrl, PBC_POST_NAME) == 0 || stricmp(pachUrl, "favicon.ico") == 0)
+		{
+			strcpy((char *)p->appid, pachUrl);
+		}
+		else
+		{
+			strcpy((char *)p->appid, (PBC_DEFAULT_APP_NAME));
+		}
 	}
     
 	// Don't loop trying to protect virtual post name
@@ -1403,7 +1444,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}
 		else {
 
-			if( ! (cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false)) ) {
+			if( ! (cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false, p->crypt_alg)) ) {
 				filterlog(p, LOG_ERR,"[Pubcookie_User] Can't unbundle Session cookie for URL %s; remote_host: %s",
 					p->uri, p->remote_host);
 				p->failed = PBC_BAD_SESSION_CERT;
@@ -1481,7 +1522,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		}*/ 		/* PBC_X_STRING doesn't seem to be used any longer */
 
 
-		if( !(cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, true)) ) {
+		if( !(cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, true, p->crypt_alg)) ) {
 			filterlog(p, LOG_ERR,"[Pubcookie_User] Can't unbundle Granting cookie for URL %s; remote_host: %s", 
 				p->uri, p->remote_host);
 			p->failed = PBC_BAD_GRANTING_CERT;
@@ -1489,7 +1530,9 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			return OK;
 		}
 
+		//TODO: REMOVED - presession cookie
 		/* check pre_session cookie */
+		/*
 		pre_sess_from_cookie = get_pre_s_from_cookie(pFC);
 		if( (*cookie_data).broken.pre_sess_token != pre_sess_from_cookie ) {
 			filterlog(p, LOG_INFO,"pubcookie_user, pre session tokens mismatched, uri: %s", p->uri);
@@ -1498,6 +1541,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			p->failed = PBC_BAD_AUTH;
 			return OK;
 		}
+		*/
 
 		pbc_free(p, cookie);
 
@@ -1625,7 +1669,8 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 		/* clear granting and presession cookies */
 		Clear_Cookie(pFC,PBC_G_COOKIENAME,p->appsrvid,"/",TRUE);
-		Clear_Cookie(pFC,PBC_PRE_S_COOKIENAME,p->appsrvid,"/",TRUE);
+		//TODO: REMOVED -  presession cookie
+		//Clear_Cookie(pFC,PBC_PRE_S_COOKIENAME,p->appsrvid,"/",TRUE);
 
 		first_time_in_session = 1;
 		p->has_granting = 0;
@@ -1651,7 +1696,8 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 					(unsigned char *)p->server_hostname, 
 					(unsigned char *)p->appid,
 					p->server_hostname,
-					0);
+					0,
+					p->crypt_alg);
 
 				filterlog(p, LOG_INFO,"  Created new session cookie.\n");
 			}
