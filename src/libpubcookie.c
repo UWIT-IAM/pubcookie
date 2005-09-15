@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.85 2005-09-01 20:58:01 willey Exp $
+ * $Id: libpubcookie.c,v 2.86 2005-09-15 19:49:10 fox Exp $
  */
 
 
@@ -530,12 +530,23 @@ int libpbc_test_crypt_key (pool * p, const char *peer)
     FILE *fp;
     char keyfile[1024];
 
-/*  pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_test_crypt_key\n"); */
+    pbc_log_activity(p, PBC_LOG_DEBUG_LOW, "libpbc_test_crypt_key: peer=%s\n", peer);
 
     make_crypt_keyfile (p, peer, keyfile);
 
     if (!(fp = pbc_fopen (p, keyfile, "rb"))) {
-        return PBC_FAIL;
+       char *s = strchr(peer,'.');
+       if (s) {
+          s++;
+          make_crypt_keyfile (p, s, keyfile);
+          if (!(fp = pbc_fopen (p, keyfile, "rb"))) {
+              pbc_log_activity(p, PBC_LOG_ERROR, "can't open %s or %s\n", peer, s); 
+              return PBC_FAIL;
+          }
+        } else {
+           pbc_log_activity(p, PBC_LOG_ERROR, "can't open %s\n", peer); 
+           return PBC_FAIL;
+        }
     }
 
     pbc_fclose (p, fp);

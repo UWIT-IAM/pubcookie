@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.186 2005-09-01 19:37:04 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.187 2005-09-15 19:49:10 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -171,6 +171,8 @@ static char *secure_cookie = "";
 #else
 char *secure_cookie = " secure";
 #endif
+
+#define ME(r) ap_get_server_name(r)
 
 void dump_server_rec (request_rec * r, pubcookie_server_rec * scfg)
 {
@@ -515,7 +517,7 @@ static void set_session_cookie (request_rec * r,
                                     rr->creds,
                                     (cfg->session_reauth < 0) ? 23 : 24,
                                     (unsigned char *) appsrvid (r),
-                                    appid (r), NULL, 0, scfg->crypt_alg);
+                                    appid (r), ME(r), 0, scfg->crypt_alg);
     }
 
     new_cookie = ap_psprintf (p, "%s=%s; path=%s;%s",
@@ -536,7 +538,7 @@ static void set_session_cookie (request_rec * r,
            the first time since our cred cookie doesn't expire (which is poor
            and why we need cookie extensions) */
         /* encrypt */
-        if (libpbc_mk_priv (p, scfg->sectext, NULL, 0, rr->cred_transfer,
+        if (libpbc_mk_priv (p, scfg->sectext, ME(r), 0, rr->cred_transfer,
                             rr->cred_transfer_len, &blob, &bloblen, scfg->crypt_alg)) {
             ap_log_rerror (PC_LOG_ERR, r,
                            "credtrans: libpbc_mk_priv() failed");
@@ -978,6 +980,7 @@ static int auth_failed_handler (request_rec * r,
     /* The GET method requires a pre-session cookie */
 
     if (!scfg->use_post) {
+       ap_log_rerror (PC_LOG_DEBUG, r, "making a pre-session ckookie");
        pre_s = (char *) libpbc_get_cookie (p,
                                         scfg->sectext,
                                         (unsigned char *) "presesuser",
@@ -985,7 +988,7 @@ static int auth_failed_handler (request_rec * r,
                                         PBC_CREDS_NONE,
                                         pre_sess_tok,
                                         (unsigned char *) appsrvid (r),
-                                        appid (r), NULL, 0, scfg->crypt_alg);
+                                        appid (r), ME(r), 0, scfg->crypt_alg);
 
        pre_s_cookie = ap_psprintf (p,
                                 "%s=%s; path=%s;%s",
@@ -1452,13 +1455,14 @@ int get_pre_s_from_cookie (request_rec * r)
                                                        module_config,
                                                        &pubcookie_module);
 
+       ap_log_rerror (PC_LOG_DEBUG, r, "retrieving a pre-session ckookie");
     if ((cookie = get_cookie (r, PBC_PRE_S_COOKIENAME)) == NULL)
         ap_log_rerror (PC_LOG_INFO, r,
                        "get_pre_s_from_cookie: no pre_s cookie, uri: %s\n",
                        r->uri);
     else
         cookie_data = libpbc_unbundle_cookie (p, scfg->sectext,
-                                              cookie, NULL, 0, scfg->crypt_alg);
+                                              cookie, ME(r), 0, scfg->crypt_alg);
 
     if (cookie_data == NULL) {
         ap_log_rerror (PC_LOG_INFO, r,
@@ -1831,7 +1835,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                            "pubcookie_user, pre session from G: %d PRE_S: %d, uri: %s",
                            (*cookie_data).broken.pre_sess_token,
                            pre_sess_from_cookie, r->uri);
-                rr->failed = PBC_BAD_G_STATE;
+                rr->failed = PBC_BAD_AUTH;
                 rr->stop_message =
                     ap_pstrdup (p, "Couldn't decode pre-session cookie");
                 rr->redir_reason_no = PBC_RR_BADPRES_CODE;
@@ -2827,6 +2831,8 @@ static const char *pubcookie_set_crypt (cmd_parms * cmd,
         scfg->crypt_alg = PBC_CRYPT_DES;
     else if (!strcasecmp (v, "aes"))
         scfg->crypt_alg = PBC_CRYPT_AES;
+    else if (!strcasecmp (v, "aes+domain"))
+        scfg->crypt_alg = PBC_CRYPT_AES_D;
     else
         return ("Invalid encryption method");
     return NULL;

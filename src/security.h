@@ -16,7 +16,7 @@
  */
 
 /*
-  $Id: security.h,v 1.15 2005-06-21 18:02:12 willey Exp $
+  $Id: security.h,v 1.16 2005-09-15 19:49:10 fox Exp $
  */
 
 #ifndef INCLUDED_SECURITY_H
@@ -30,6 +30,7 @@
 
 #define PBC_CRYPT_DES 'd'
 #define PBC_CRYPT_AES 'a'
+#define PBC_CRYPT_AES_D 'A'
 
 #ifdef PBC_USE_DES_CRYPT
 #define PBC_DEF_CRYPT PBC_CRYPT_DES /* old compat mode */

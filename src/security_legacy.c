@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.53 2005-06-30 19:03:42 fox Exp $
+ * $Id: security_legacy.c,v 1.54 2005-09-15 19:49:10 fox Exp $
  */
 
 
@@ -599,7 +599,7 @@ static int get_crypt_key (pool * p, const security_context * context,
     FILE *fp;
     char keyfile[1024];
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "get_crypt_key: hello\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "get_crypt_key: myname=%s, peer=%s\n", context->myname, peername);
 
     /* check to see if this is our key, which we already read in once */
     if (strcmp (peername, context->myname) == 0) {
@@ -610,9 +610,24 @@ static int get_crypt_key (pool * p, const security_context * context,
     make_crypt_keyfile (p, peername, keyfile);
 
     if (!(fp = pbc_fopen (p, keyfile, "rb"))) {
-        pbc_log_activity (p, PBC_LOG_ERROR,
+        char *s = strchr(peername,'.');
+        pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                           "can't open crypt key %s: %m", keyfile);
-        return -1;
+        if (s) {
+             s++;
+             pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                          "will try %s", s);
+             make_crypt_keyfile (p, s, keyfile);
+             if (!(fp = pbc_fopen (p, keyfile, "rb"))) {
+                 pbc_log_activity (p, PBC_LOG_ERROR,
+                          "can't open backup key %s either: %m", keyfile);
+                 return -1;
+             }
+        } else {
+            pbc_log_activity (p, PBC_LOG_ERROR,
+                         "no backup available");
+            return -1;
+        }
     }
 
     if (fread (buf, sizeof (char), PBC_DES_KEY_BUF, fp) != PBC_DES_KEY_BUF) {
@@ -745,7 +760,7 @@ int libpbc_mk_priv_des (pool * p, const security_context * context,
 int libpbc_mk_priv_aes (pool *p, const security_context *context,
                     const char *peer, const char use_granting,
                     const char *buf, const int len,
-                    char **outbuf, int *outlen)
+                    char **outbuf, int *outlen, char alg)
 {
     int r;
     int index1, index2;
@@ -759,6 +774,8 @@ int libpbc_mk_priv_aes (pool *p, const security_context *context,
     int c;
     unsigned char keybuf[PBC_DES_KEY_BUF];
     int olen, len1;
+    unsigned char *keyptr;
+    unsigned char shakey[SHA_DIGEST_LENGTH];
 
     const EVP_CIPHER *cip = EVP_aes_128_cbc();
     EVP_CIPHER_CTX ctx;
@@ -785,7 +802,18 @@ int libpbc_mk_priv_aes (pool *p, const security_context *context,
     RAND_bytes (rb, sizeof(rb));
     
     EVP_CIPHER_CTX_init(&ctx);
-    EVP_EncryptInit_ex(&ctx, cip, NULL, keybuf+index1, iv);
+    if (alg=='A') {
+       int lpeer = strlen(peer);
+       unsigned char *sk = (unsigned char*) malloc(128 + lpeer);
+       pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                     "..._priv_aes: doing domain key, peer=%s\n", peer);
+       memcpy(sk,keybuf+index1,128);
+       memcpy(sk+128,peer,lpeer);
+       SHA1(sk, 128+lpeer, shakey);
+       keyptr = shakey;
+    } else keyptr = keybuf+index1;
+       
+    EVP_EncryptInit_ex(&ctx, cip, NULL, keyptr, iv);
 
     r = libpbc_mk_safe (p, context, peer, use_granting, buf, len, &mysig,
                         &siglen);
@@ -832,8 +860,8 @@ int libpbc_mk_priv (pool * p, const security_context * context,
                     const char *buf, const int len,
                     char **outbuf, int *outlen, char alg)
 {
-    if (alg=='a') return (libpbc_mk_priv_aes(p, context, peer,
-                    use_granting, buf, len, outbuf, outlen));
+    if ((alg=='a') || (alg=='A')) return (libpbc_mk_priv_aes(p, context, peer,
+                    use_granting, buf, len, outbuf, outlen, alg));
     else return (libpbc_mk_priv_des(p, context, peer,
                     use_granting, buf, len, outbuf, outlen));
 }
@@ -942,7 +970,7 @@ libpbc_rd_priv_des (pool * p, const security_context * context,
 libpbc_rd_priv_aes (pool * p, const security_context * context,
                     const char *peer, const char use_granting,
                     const char *buf, const int len, char **outbuf,
-                    int *outlen)
+                    int *outlen, char alg)
 {
     int index1, index2;
     int i = 0;
@@ -961,6 +989,8 @@ libpbc_rd_priv_aes (pool * p, const security_context * context,
 
     char *tbuf;
     char *obuf;
+    unsigned char *keyptr;
+    unsigned char shakey[SHA_DIGEST_LENGTH];
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "libpbc_rd_priv_aes: hello\n");
 
@@ -988,7 +1018,23 @@ libpbc_rd_priv_aes (pool * p, const security_context * context,
 
     EVP_CIPHER_CTX_init(&ctx);
 
-    EVP_DecryptInit_ex(&ctx, cip, NULL, keybuf+index1, iv);
+    if (alg=='A') {
+       const char *zpeer = peer;
+       int lpeer;
+       unsigned char *sk;
+
+       pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                     "..._priv_aes: doing domain key, peer=%s\n", peer?peer:"(null)");
+       if (zpeer==NULL) zpeer = libpbc_get_cryptname (p, context);
+       lpeer = strlen(zpeer);
+       sk = (unsigned char*) malloc(128 + lpeer);
+       memcpy(sk,keybuf+index1,128);
+       memcpy(sk+128,zpeer,lpeer);
+       SHA1(sk, 128+lpeer, shakey);
+       keyptr = shakey;
+    } else keyptr = keybuf+index1;
+
+    EVP_DecryptInit_ex(&ctx, cip, NULL, keyptr, iv);
 
     /* decrypt */
     EVP_DecryptUpdate(&ctx, (unsigned char *) (obuf), &tlen,
@@ -1024,8 +1070,8 @@ int libpbc_rd_priv (pool * p, const security_context * context,
                     const char *buf, const int len, char **outbuf,
                     int *outlen, char alg)
 {
-    if (alg=='a') return (libpbc_rd_priv_aes(p, context, peer, use_granting,
-                          buf, len, outbuf, outlen));
+    if ((alg=='a') || (alg=='A')) return (libpbc_rd_priv_aes(p, context, peer, use_granting,
+                          buf, len, outbuf, outlen, alg));
     else return (libpbc_rd_priv_des(p, context, peer, use_granting,
                           buf, len, outbuf, outlen));
 }
