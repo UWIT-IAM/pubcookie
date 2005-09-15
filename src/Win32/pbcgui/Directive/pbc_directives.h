@@ -1,4 +1,4 @@
-#define NUM_DIRECTIVES 12
+#define NUM_DIRECTIVES 13
 #ifdef DIRECTIVE_INIT
 	wchar_t dbuffer[BUFFSIZE];
 
@@ -89,7 +89,13 @@
 	directive[11].bound_val[1] = L"1";
 	directive[11].defined_in   = L"(Program Default)";
 
-
+	directive[12].name         = L"Encryption_Method";
+	directive[12].type         = D_BOUND_STRING;
+	directive[12].value        = PBC_ENCRYPT_METHOD;
+	directive[12].defined_in   = defined_in;
+	directive[12].description  = L"Defines the encryption algorithm used by the module to encrypt and decrypt private data. The same 2048-byte key suffices for either encryption method. Use DES for backward compatibility with older login servers.";
+	directive[12].bound_val[0] = L"AES";
+	directive[12].bound_val[1] = L"DES";
 
 #endif
 
