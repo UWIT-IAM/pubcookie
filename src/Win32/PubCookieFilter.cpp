@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.51 2005-09-14 19:45:32 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.52 2005-09-15 20:40:29 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -1104,6 +1104,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			"    Login_URI        : %s\n" 
 			"    Enterprise_Domain: %s\n" 
 			"    Error_Page       : %s\n" 
+			"	 Encryption_Method: %c\n"
 			"    Set_Server_Values: %d\n",
 			key,
 			p->appid,
@@ -1121,6 +1122,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			p->Login_URI,
 			p->Enterprise_Domain,
 			p->Error_Page,
+			p->crypt_alg,
 			p->Set_Server_Values);
 		
 	filterlog(p, LOG_INFO,buff);
@@ -1683,6 +1685,15 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 		if (p->inact_exp > 0 || first_time_in_session) {
 			
 			if( !first_time_in_session ) {
+				//updating session cookie
+				if (p->crypt_alg == PBC_CRYPT_AES)
+				{
+					p->cookie_data->broken.version[2] = 'a';
+				}
+				else
+				{
+					p->cookie_data->broken.version[2] = '0';
+				}
 				cookie = libpbc_update_lastts(p, p->sectext, p->cookie_data, p->server_hostname, 0);
 				filterlog(p, LOG_INFO,"  Setting session cookie last timestamp to: %ld\n",p->cookie_data->broken.last_ts);
 			}
