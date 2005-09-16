@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.52 2005-09-15 20:40:29 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.53 2005-09-16 21:07:54 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -991,6 +991,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	char *pachUrl;
 	pubcookie_dir_rec* p;
 	DWORD dwBufferSize = 1024;
+	char appid[128];
 
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 
@@ -1019,6 +1020,8 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	strcpy (key, (PBC_WEB_VAR_LOCATION));
 	strcat (key,"\\");
 	strcat (key, PBC_DEFAULT_KEY);
+	
+	strcpy (appid, p->appid); //store current appid, i.e. webapp
 
 	Read_Reg_Values (key, p);
 
@@ -1027,7 +1030,17 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 
 	strcpy (key, PBC_WEB_VAR_LOCATION);
 	strcat (key,"\\");
-	strcat (key, p->appid);
+	
+	// if no appid is set then use the default from root, otherwise
+	// use what's set at the current folder
+	if (stricmp(p->appid, appid) == 0)
+	{
+		strcat (key, p->appid);
+	}
+	else
+	{
+		strcat (key, appid);
+	}	
 
 	Read_Reg_Values (key, p);
 
@@ -1330,7 +1343,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	if ( ptr ) { // subfolder, off root
 		strncpy((char *)p->appid, pachUrl, ptr-pachUrl);
 		p->appid[(ptr-pachUrl)] = NULL;
-	}
+	} 
 	else if (strlen(pachUrl) > 0) {   // This could set appid to a filename in the root dir
 		//strcpy((char *)p->appid, pachUrl);		
 		if (stricmp(pachUrl, PBC_POST_NAME) == 0 || stricmp(pachUrl, "favicon.ico") == 0)
