@@ -1,4 +1,4 @@
-#define NUM_DIRECTIVES 17
+#define NUM_DIRECTIVES 16
 #ifdef SERVER_VALS_INIT
 	wchar_t dbuffer[BUFFSIZE];
 
@@ -85,39 +85,39 @@
 	directive[11].defined_in   = defined_in;
 	directive[11].description  = L"Location of the Pubcookie directive database within the Windows registry.\nUse this if you wish to keep completely separate file and folder directives for the target web site.";
 
-	directive[12].name         = L"Enterprise_Domain";
+	/*directive[12].name         = L"Enterprise_Domain";
 	directive[12].type         = D_FREE_STRING;
 	directive[12].value        = PBC_ENTRPRS_DOMAIN;
 	directive[12].defined_in   = defined_in;
-	directive[12].description  = L"Domain for scoping granting request cookie.";
+	directive[12].description  = L"Domain for scoping granting request cookie.";*/
 
-	directive[13].name         = L"Default_App_Name";
-	directive[13].type         = D_FREE_STRING;
-	directive[13].value        = PBC_DEFAULT_APP_NAME;
+	directive[12].name         = L"Default_App_Name";
+	directive[12].type         = D_FREE_STRING;
+	directive[12].value        = PBC_DEFAULT_APP_NAME;
+	directive[12].defined_in   = defined_in;
+	directive[12].description  = L"Name to assign if application name cannot be determined (e.g. on a request to /).";
+
+	directive[13].name         = L"Ignore_Poll";
+	directive[13].type         = D_BOUND_INT;
+	directive[13].value        = _itow(PBC_IGNORE_POLL,dbuffer,10);
 	directive[13].defined_in   = defined_in;
-	directive[13].description  = L"Name to assign if application name cannot be determined (e.g. on a request to /).";
+	directive[13].description  = L"Set to 1 to ignore Network Dispatcher \"/\" polls.";
+	directive[13].bound_val[0] = L"0";
+	directive[13].bound_val[1] = L"1";
 
-	directive[14].name         = L"Ignore_Poll";
+	directive[14].name         = L"LegacyDirNames";
 	directive[14].type         = D_BOUND_INT;
-	directive[14].value        = _itow(PBC_IGNORE_POLL,dbuffer,10);
+	directive[14].value        = _itow(PBC_LEGACY_DIR_NAMES,dbuffer,10);
 	directive[14].defined_in   = defined_in;
-	directive[14].description  = L"Set to 1 to ignore Network Dispatcher \"/\" polls.";
+	directive[14].description  = L"Set to 1 to support legacy directory names.";
 	directive[14].bound_val[0] = L"0";
 	directive[14].bound_val[1] = L"1";
 
-	directive[15].name         = L"LegacyDirNames";
-	directive[15].type         = D_BOUND_INT;
-	directive[15].value        = _itow(PBC_LEGACY_DIR_NAMES,dbuffer,10);
-	directive[15].defined_in   = defined_in;
-	directive[15].description  = L"Set to 1 to support legacy directory names.";
-	directive[15].bound_val[0] = L"0";
-	directive[15].bound_val[1] = L"1";
-
-	directive[16].name         = L"System_Root";
-	directive[16].type         = D_FREE_STRING;
-	directive[16].value        = L"";
-	directive[16].defined_in   = L"(Program Default)";
-	directive[16].description  = L"Base directory for Pubcookie debug and config files. Leave blank to use the Windows system directory.";
+	directive[15].name         = L"System_Root";
+	directive[15].type         = D_FREE_STRING;
+	directive[15].value        = L"";
+	directive[15].defined_in   = L"(Program Default)";
+	directive[15].description  = L"Base directory for Pubcookie debug and config files. Leave blank to use the Windows system directory.";
 
 /*	directive[17].name         = L"Relay_URI";
 	directive[17].type         = D_FREE_STRING;

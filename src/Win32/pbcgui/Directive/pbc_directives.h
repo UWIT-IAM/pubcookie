@@ -1,4 +1,4 @@
-#define NUM_DIRECTIVES 13
+#define NUM_DIRECTIVES 12
 #ifdef DIRECTIVE_INIT
 	wchar_t dbuffer[BUFFSIZE];
 
@@ -54,48 +54,48 @@
 	directive[6].value        = PBC_LOGIN_URI;
 	directive[6].defined_in   = defined_in;
 
-	directive[7].name         = L"Enterprise_Domain";
+	/*directive[7].name         = L"Enterprise_Domain";
 	directive[7].type         = D_FREE_STRING;
 	directive[7].value        = PBC_ENTRPRS_DOMAIN;
 	directive[7].description  = L"Domain for scoping granting request cookie.";
-	directive[7].defined_in   = defined_in;
+	directive[7].defined_in   = defined_in;*/
 
-	directive[8].name         = L"Error_Page";
-	directive[8].type         = D_FREE_STRING;
-	directive[8].description  = L"Partial URL path for errors than halt the Pubcookie process.";
+	directive[7].name         = L"Error_Page";
+	directive[7].type         = D_FREE_STRING;
+	directive[7].description  = L"Partial URL path for errors than halt the Pubcookie process.";
+	directive[7].defined_in   = L"(Program Default)";
+
+	directive[8].name         = L"SetHeaderValues";
+	directive[8].type         = D_BOUND_INT;
+	directive[8].value        = L"0";
+	directive[8].description  = L"Set to 1 to enable Pubcookie header values even if not using Pubcookie authentication.";
+	directive[8].bound_val[0] = L"0";
+	directive[8].bound_val[1] = L"1";
 	directive[8].defined_in   = L"(Program Default)";
 
-	directive[9].name         = L"SetHeaderValues";
-	directive[9].type         = D_BOUND_INT;
-	directive[9].value        = L"0";
-	directive[9].description  = L"Set to 1 to enable Pubcookie header values even if not using Pubcookie authentication.";
-	directive[9].bound_val[0] = L"0";
-	directive[9].bound_val[1] = L"1";
-	directive[9].defined_in   = L"(Program Default)";
+	directive[9].name         = L"AppId";
+	directive[9].type         = D_FREE_STRING;
+	directive[9].value        = PBC_DEFAULT_APP_NAME;
+	directive[9].description  = L"Application ID. A case-insensitive string.\nDefaults to first directory node or ";
+	directive[9].description  += PBC_DEFAULT_APP_NAME;
+	directive[9].description  += L" if in root directory.";
+	directive[9].defined_in   = L"(Root Directory Value)";
 
-	directive[10].name         = L"AppId";
-	directive[10].type         = D_FREE_STRING;
-	directive[10].value        = PBC_DEFAULT_APP_NAME;
-	directive[10].description  = L"Application ID. A case-insensitive string.\nDefaults to first directory node or ";
-	directive[10].description  += PBC_DEFAULT_APP_NAME;
-	directive[10].description  += L" if in root directory.";
-	directive[10].defined_in   = L"(Root Directory Value)";
+	directive[10].name         = L"No_Prompt";
+	directive[10].type         = D_BOUND_INT;
+	directive[10].value        = L"0";
+	directive[10].description  = L"Set to 1 to enable empty string for pubcookie user ID in the case of no login cookie.";
+	directive[10].bound_val[0] = L"0";
+	directive[10].bound_val[1] = L"1";
+	directive[10].defined_in   = L"(Program Default)";
 
-	directive[11].name         = L"No_Prompt";
-	directive[11].type         = D_BOUND_INT;
-	directive[11].value        = L"0";
-	directive[11].description  = L"Set to 1 to enable empty string for pubcookie user ID in the case of no login cookie.";
-	directive[11].bound_val[0] = L"0";
-	directive[11].bound_val[1] = L"1";
-	directive[11].defined_in   = L"(Program Default)";
-
-	directive[12].name         = L"Encryption_Method";
-	directive[12].type         = D_BOUND_STRING;
-	directive[12].value        = PBC_ENCRYPT_METHOD;
-	directive[12].defined_in   = defined_in;
-	directive[12].description  = L"Defines the encryption algorithm used by the module to encrypt and decrypt private data. The same 2048-byte key suffices for either encryption method. Use DES for backward compatibility with older login servers.";
-	directive[12].bound_val[0] = L"AES";
-	directive[12].bound_val[1] = L"DES";
+	directive[11].name         = L"Encryption_Method";
+	directive[11].type         = D_BOUND_STRING;
+	directive[11].value        = PBC_ENCRYPT_METHOD;
+	directive[11].defined_in   = defined_in;
+	directive[11].description  = L"Defines the encryption algorithm used by the module to encrypt and decrypt private data. The same 2048-byte key suffices for either encryption method. Use DES for backward compatibility with older login servers.";
+	directive[11].bound_val[0] = L"AES";
+	directive[11].bound_val[1] = L"DES";
 
 #endif
 
