@@ -27,7 +27,7 @@
  *
  * key and cert locations all come from pubcookie config
  *
- * $Id: pbc_verify.c,v 1.23 2005-02-07 22:26:38 willey Exp $
+ * $Id: pbc_verify.c,v 1.24 2005-09-21 21:56:57 willey Exp $
  */
 
 
@@ -94,7 +94,7 @@ int main (int argc, char **argv)
 
     if (!
         (cookie_data =
-         libpbc_unbundle_cookie (p, context, in, NULL, use_granting)))
+         libpbc_unbundle_cookie (p, context, in, NULL, use_granting, PBC_DEF_CRYPT)))
         exit (1);
 
     printf ("user: %s\n", (*cookie_data).broken.user);
