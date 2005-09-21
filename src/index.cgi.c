@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.161 2005-08-01 23:03:26 willey Exp $
+ * $Id: index.cgi.c,v 1.162 2005-09-21 21:57:52 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -316,10 +316,16 @@ void print_html (pool * p, const char *format, ...)
 
     va_start (args, format);
     vfprintf (htmlout, format, args);
+    va_end (args);
+
+    va_start (args, format);
     pbc_vlog_activity (p, PBC_LOG_DEBUG_OUTPUT, format, args);
+    va_end (args);
 
     if (mirror) {
+        va_start (args, format);
         vfprintf (mirror, format, args);
+        va_end (args);
     }
 
     va_end (args);
