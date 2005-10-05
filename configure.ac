@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.84 $)
+AC_REVISION($Revision: 1.85 $)
 AC_INIT(Pubcookie, [3.2.2 pre-beta1], pubcookie-dev@u.washington.edu)
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -511,6 +511,16 @@ else
 		 [Define to 1 if openssl is directly in include path.])],
 		[AC_MSG_ERROR([can't find required SSL header files (may need --with-ssl-inc-dir)])])
 fi
+
+# default encryption
+
+AC_ARG_ENABLE(default-des,
+    AC_HELP_STRING([--enable-default-des],[Use DES encryption]),
+[ case "${enableval}" in
+   yes)
+    AC_DEFINE(PBC_USE_DES_CRYPT, 1, [Define to 1 to revert to DES])
+    ;;
+  esac ])
 
 
 # Login Server specific stuff.
