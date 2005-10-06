@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.162 2005-09-21 21:57:52 willey Exp $
+ * $Id: index.cgi.c,v 1.163 2005-10-06 14:52:05 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2001,7 +2001,23 @@ static void init_user_agent (pool * p)
 int cgiMain_init ()
 {
     void *p = NULL;
-    libpbc_config_init (p, NULL, "logincgi");
+    char *altconfig = NULL;
+
+    char *tmp_config = getenv ("PUBCOOKIE_LOGIN_CONFIG");
+
+
+    /* I don't remember if config_init will change altconfig, better safe than
+     * sorry -- tmp_config is a pointer to the static environment */
+    if (tmp_config != NULL) {
+        altconfig = pbc_malloc (p, strlen (tmp_config));
+        strncpy (altconfig, tmp_config, strlen (tmp_config));
+    }
+
+    libpbc_config_init (p, altconfig, "logincgi");
+
+    if (altconfig != NULL)
+        pbc_free (p, altconfig);
+
     debug = libpbc_config_getint (p, "debug", 0);
     pbc_log_init_syslog (p, "pubcookie login server");
     get_kiosk_parameters (p);
