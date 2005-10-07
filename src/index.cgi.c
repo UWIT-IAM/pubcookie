@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.164 2005-10-07 18:59:57 jjminer Exp $
+ * $Id: index.cgi.c,v 1.165 2005-10-07 22:17:54 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2015,11 +2015,14 @@ int cgiMain_init ()
 
     libpbc_config_init (p, altconfig, "logincgi");
 
-    if (altconfig != NULL)
-        pbc_free (p, altconfig);
-
     debug = libpbc_config_getint (p, "debug", 0);
     pbc_log_init_syslog (p, "pubcookie login server");
+
+    if ( altconfig != NULL ) {
+        pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "Using Non-standard config: %s", altconfig );
+        pbc_free( p, altconfig );
+    }
+
     get_kiosk_parameters (p);
     if (libpbc_pubcookie_init (p, &context) == PBC_FAIL)
         abend (p, "Initialization failed");
