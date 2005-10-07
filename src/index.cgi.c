@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.163 2005-10-06 14:52:05 jjminer Exp $
+ * $Id: index.cgi.c,v 1.164 2005-10-07 18:59:57 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2003,7 +2003,7 @@ int cgiMain_init ()
     void *p = NULL;
     char *altconfig = NULL;
 
-    char *tmp_config = getenv ("PUBCOOKIE_LOGIN_CONFIG");
+    char *tmp_config = getenv ("PUBCOOKIE_LOGIN_CONFIG_FILE");
 
 
     /* I don't remember if config_init will change altconfig, better safe than
