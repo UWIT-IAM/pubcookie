@@ -16,7 +16,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.107 2005-09-14 19:48:03 suh Exp $
+     $Id: pbc_config.h,v 1.108 2005-10-12 21:59:48 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -69,7 +69,7 @@
 #define PBC_RELAY_WEB_KEY "_PBC_Relay_CGI"
 #define PBC_INSTANCE_KEY "_PBC_Web_Instances"
 #define PBC_DEFAULT_KEY "default"
-#define PBC_ENCRYPT_METHOD (libpbc_config_getstring(p, "Encryption_Method", "AES")) 
+#define PBC_ENCRYPT_METHOD (libpbc_config_getstring(p, "Encryption_Method", "AES"))
 #endif
 
 #define PBC_DEFAULT_FORM_EXPIRE_TIME	60
@@ -81,7 +81,6 @@
 #define PBC_MAX_HARD_EXPIRE 	( 12 * 60 * 60 )
 #define PBC_DEFAULT_HARD_EXPIRE  ( 8 * 60 * 60 )
 #define PBC_UNSET_HARD_EXPIRE                  0
-#define PBC_DEFAULT_EXPIRE_LOGIN ( 8 * 60 * 60 )
 #define PBC_GRANTING_EXPIRE               ( 60 )
 #define PBC_BAD_AUTH 1
 #define PBC_BAD_USER 2
@@ -148,8 +147,8 @@
 
 #define LOGOUT_ACTION_UNSET          -1
 #define LOGOUT_ACTION_NOTHING        0
-#define LOGOUT_ACTION_CLEAR_L        1   /* expires the L cookie */
-#define LOGOUT_ACTION_CLEAR_L_NO_APP 2   /* only way to clear a L cookie */
+#define LOGOUT_ACTION_CLEAR_L        1  /* expires the L cookie */
+#define LOGOUT_ACTION_CLEAR_L_NO_APP 2  /* only way to clear a L cookie */
 
 #define PBC_SESSION_REAUTH 1
 #define PBC_SESSION_REAUTH_NO 0

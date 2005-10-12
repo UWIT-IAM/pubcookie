@@ -29,7 +29,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.38 2005-04-20 18:47:19 jteaton Exp $
+ * $Id: verify_kerberos5.c,v 1.39 2005-10-12 21:59:48 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -96,7 +96,6 @@ typedef void pool;
 #endif /* HAVE_DMALLOC_H */
 
 #define KRB5_DEFAULT_OPTIONS 0
-#define KRB5_DEFAULT_LIFE (PBC_DEFAULT_EXPIRE_LOGIN)
 
 static char thishost[BUFSIZ];
 
@@ -556,7 +555,10 @@ static int kerberos5_v (pool * p, const char *userid,
     no_addrs.val = NULL;
     krb5_get_init_creds_opt_set_address_list (&opts, &no_addrs);
 #endif
-    krb5_get_init_creds_opt_set_tkt_life (&opts, KRB5_DEFAULT_LIFE);
+    krb5_get_init_creds_opt_set_tkt_life (&opts,
+            libpbc_config_getint (p, "default_l_expire", DEFAULT_LOGIN_EXPIRE) +
+            libpbc_config_getint (p, "kerberos5_extralife", 0));
+
     if ((k5_retcode = krb5_get_init_creds_password (context, &creds,
                                                     auth_user, localpwd,
                                                     NULL, NULL, 0, NULL,
