@@ -16,6 +16,8 @@
 			<li>
 				<a href="#news">What's New</a>
 			<li>
+				<a href="#compatibility">Compatibility Notes</a>
+			<li>
 				<a href="#prereq">Prerequisites</a>
 			<li>
 				<a href="#sysreq">System Requirements</a>
@@ -50,7 +52,7 @@
 		<h4><a name="overview">Overview</a></h4>
 
 		<p>This guide helps Microsoft Internet Information Server administrators 
-		to install, configure and use the Pubcookie 3.2 ISAPI filter, herein referred to as, 
+		to install, configure and use the Pubcookie 3.3 ISAPI filter, herein referred to as, 
 		simply, <i>the filter</i>.</p>
 
 		<p>The filter controls user authentication. When a resource is
@@ -64,7 +66,25 @@
 
 		<h4><a name="news">What's New</a></h4>
 		
-		<p>Significant improvements since version 3.1.1:</p>
+		<p>Significant changes in version 3.3.0:</p>
+
+		<ul>
+			<li>
+				<p><b>Added AES encryption support.</b> AES is now the default encryption algorithm requested by and
+                                used by the filter to encrypt and decrypt private data. To interoperate with earlier versions of the
+                                login server, use the IIS Manager to set the new Encryption Method directive to DES for your web
+                                site.</p>
+			<li>
+				<p><b>Removed pre-session cookie countermeasure.</b> Unneeded complexity and, as it turns out, an
+                                unnecessary countermeasure when messages are communicated using HTTP POST message bodies as they've
+                                been since the 3.2 release.
+			<li>
+				<p><b>Removed Enterprise_Domain directive from MMC extension.</b> Obsolete since the 3.2 release.
+
+		</ul>
+
+		<p>Significant changes in version 3.2:</p>
+
 		<ul>
 			<li>
 				<p><b>PubcookieFilter DLL now acts as an ISAPI extension
@@ -74,7 +94,7 @@
                                 POST-based login method introduced in the Pubcookie 3.2.0 Apache module.
                                 This change effectively replaces the classic enterprise-cookie-based method 
                                 used in the past. As a result, Enterprise_Domain has been removed from the 
-                                installer and MMC snap-in, and the relay cgi has been removed altogether.
+                                installer, and the relay cgi has been removed altogether.
 			<li>
 				<p><b>Updated Windows Installer package (Pubcookie.msi).</b> Site Information 
                                 screen now provides 3 keyclient options: obtain new key, retrieve old key,
@@ -101,6 +121,54 @@
 				<p><b>Other bug fixes and improved memory management.</b>
 
 		</ul>
+
+		<h4><a name="compatibility">Compatibility</a></h4>
+
+                <p>Here are some compatibility notes for version 3.3:</p>
+
+                <dl>
+
+                <dt>Compatibility note on version 3.3 encryption options:</dt>
+                <dd>The version 3.3 filter supports different encryption algorithms. AES encryption is the default. However, earlier
+                versions of the login server only support one algorithm, DES, so you will have to determine the version of your
+                login server and set the Encryption Method directive accordingly. It may make the most sense to do this at the
+                web site level.
+
+		<p><img src="images/encryption.jpg">
+
+                <dt>Upgrading from version 3.0/3.1/3.2 to 3.3:</dt>
+                <dd>Servers being upgraded from version 3.0/3.1/3.2 to version 3.3 should be aware that version 3.3 expects and uses
+                AES encryption by default. If your login server is version 3.3 or higher there is no concern; it supports
+                authentication requests that ask for AES encrypted replies. However, to interoperate with earlier versions of the
+                login server, you must set the Encryption Method directive to use DES encryption for your web site. This will ensure
+                that your upgraded filter continues to use DES encryption. 
+
+                <p>If your login server is version 3.3 higher and therefore allows you to use AES encryption, you should note that
+                session cookies encrypted with DES cannot be unencrypted with AES. As a result, session cookies obtained by users
+                prior to upgrading the module will be invalid after the upgrade. This means some users will be redirected through
+                the login server to establish a new session.</p>
+
+                <p>Clustered hosts should be upgraded with special care to keep all cluster members using the same encryption
+                method.</p>
+
+                <p>Note: You do not have to request a new encryption key to use version 3.3. Your current host key works equally
+                well for AES and DES encryption.</p>
+
+                <dt>Upgrading from version 2.7 to 3.3:</dt>
+                <dd>Servers being upgraded from earlier versions of the filter (classic versions, such as version 2.7) may require
+                configuration changes. Extra care should be given to reviewing that authentication is working as expected after the
+                upgrade. Also review the sections on <a href="#vhosts">multiple web site configuration</a> and <a
+                href="#clusters">clustered host configuration</a> if they apply to your environment.
+
+                <p>Servers being upgraded from earlier versions should also be aware of the switch to AES encryption noted in the
+                compatibility notes above.</p>
+
+                <p>Also recall that version 2.7 requires an encryption key specific to your primary IP address. If you want to be
+                able to rollback to version 2.7 more easily, you should keep your current key intact on your server as well as on
+                your site's Pubcookie login server. To do so, select the option to retrieve your old key when working through the
+                installer; otherwise it will obtain a new key from the keyserver, one that isn't compatible with version 2.7.</p>
+
+                </dl>
 
 		<h4><a name="prereq">Prerequisites</a></h4>
 
@@ -558,7 +626,7 @@
 
 		<h4><a name="upgrade">Upgrading</a></h4>
 
-		<p>[fixme: This is first draft. We need more real-world experience to confirm that 
+		<p>[fixme: This is draft text. We need more real-world experience to confirm that 
 		this section is accurate.]
 
 		<p>The Windows installer package requires you to uninstall previous versions prior
@@ -603,7 +671,7 @@
 
 		<h4><a name="problems">Known Problems</a></h4>
 
-		<p>Known problems with Pubcookie 3.2.1 include:</p>
+		<p>Known problems with Pubcookie 3.3 include:</p>
 
 		<ul>
 			<li>
@@ -619,13 +687,11 @@
 			<p>[fixme: does this belong up above somewhere?]
 
 			<li>
-			<p><b>Enterprise_Domain.</b> This obsolete setting will be removed from the 
-			Pubcookie Directives configuration tab in future release. It should be ignored.
-
-			<li>
 			<p><b>Event log sources.</b> If a new web site is added after installation,
 			its IIS Instance ID may need to be registered as an event log source pointing
 			to the pbc_messages DLL containing the event log messages.
+
+			<p>[fixme: new eventlog source names for 3.3 in-the-works.]
 		</ul>
 
 		<h4><a name="certs">Appendix A: Windows Certificate Store</a></h4>
