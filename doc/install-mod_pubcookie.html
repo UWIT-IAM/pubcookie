@@ -18,6 +18,7 @@
                   <ul>
                     <li><a href="#overview">Overview</a></li>
                     <li><a href="#new">What's New</a></li>
+                    <li><a href="#compatibility">Compatibility Notes</a></li>
                     <li><a href="#upgrading">Upgrading</a></li>
                     <li><a href="#pre">Prerequisites</a></li>
                     <li><a href="#req">System Requirements</a></li>
@@ -31,11 +32,14 @@
                     <li><a href="#relay">Cross-Domain Relay Configuration</a></li>
                     <li><a href="#vhosts">Virtual Host Configuration</a></li>
                     <li><a href="#clusters">Clustered Host Configuration</a></li>
+                    <li><a href="#wildcard">Wildcard Subdomain Key Configuration</a></li>
                     <li><a href="#debug">Troubleshooting</a></li>
                     <li><a href="#A">Appendix A: How to Enable SSL</a></li>
                     <li><a href="#B">Appendix B: Configuration For Abbreviated Domain Names</a></li>
                   </ul>
+
                   <h4><a name="overview">Overview</a></h4>
+
                   <p>This guide helps Apache HTTP server administrators install and use the Pubcookie Apache
                      module, herein referred to as simply <i>the module</i>, but also commonly known
                      as mod_pubcookie.</p>
@@ -50,53 +54,107 @@
                   <p>Site administrators should refer to the <a href="install-login.html">login server guide</a> 
                   for instructions on deploying a Pubcookie login server.</p>
 
-                  <h4><a name="new"></a>What's New</h4>
-                  <p>Significant improvements and changes included in Pubcookie 3.2.1:</p>
+                  <h4><a name="new">What's New</a></h4>
+
+                  <p>Significant improvements and changes included in Pubcookie 3.3.0:</p>
+
                   <ul>
-                    <li>Added <a href="mod_pubcookie-directives.html#PubcookieNoObscureCookies">PubcookieNoObscureCookies</a>
-                        directive to Apache module to replace broken PubcookieNoBlank directive.
-                    <li>Added keyclient command-line option (<tt>-f &lt;filename&gt;</tt>) to specify alternate config file.
-                    <li>Modified Apache module to assure that the configured enterprise
-			domain starts with a dot.
-                    <li>Bug fixes to preserve spaces during POST-based logins and to avoid a possible null pointer in <tt>REMOTE_REALM</tt> variable. 
+
+                  <li>Added AES encryption as the default encryption algorithm requested by and used by the module.
+                  To interoperate with earlier versions of the login server, set 
+                  <a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a>
+                  to DES or build the module with the <tt>--enable-default-des</tt> configure option.</li>
+                  <li>Removed pre-session cookie countermeasure when using POST
+                  <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a>. 
+                  Unneeded complexity and, as it turns out, an unnecessary countermeasure.</li>
+                  <li>Added <a href="#wildcard">wildcard subdomain key</a> capability for large multi-user 
+                  web-hosting environments.</li>
+
+                  
                   </ul>
 
-                  <p>Significant improvements and changes included in Pubcookie 3.2.0:</p>
-                  <ul>
-                    <li>Added POST-based messaging between Apache module and login server. This method is compatible with 3.1 
-                        login servers and introduces two new directives:
-                         <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> and
-                         <a href="mod_pubcookie-directives.html#PubcookiePostURL">PubcookiePostURL</a>. This feature
-                         obsoletes the 3.1 relay cgi.</li>
-                    <li>Added keyclient support for wild card certificates and Subject Alt Names (3.2.0 keyserver required).</li>
-                    <li>Cleaner request handling and improved compatibility with other Apache modules</li>
-                    <li>Exempted <tt>/favicon.ico</tt> location for browser compatibility issues</li>
-                    <li>Removed obsolete relay cgi component. See above.</li>
-                  </ul>
                   <p>See <tt>doc/CHANGES.txt</tt> for bug fixes and other improvements.</p> 
 
-                  <h4><a name="upgrading"></a>Upgrading</h4>
-                  <p>Apache servers running version 3.0.0, 3.1.0, or 3.1.1 of the module should be easy to upgrade 
-                  to the 3.2.0 release. Just build and install the new module and keyclient. You can reuse your existing configuration, 
-                  granting certificate, and symmetric key.</p>
+                  <h4><a name="compatibility">Compatibility Notes</a></h4>
 
-                  <p>Apache servers running earlier versions of the module (e.g. 1.77) may have to update their Apache configuration and will need
-                  to obtain a new symmetric key from their local keyserver.</p>
+                  <p>Here are some compatibility notes for version 3.3:</p>
 
-                  <p><b>Compatibility note on third-party relays:</b> Use of third-part relays (i.e., those
-                  not on the same host as the application) is deprecated in version 3.2.0 and may not be
-                  supported by your site's deployment of the 3.2.0 login server. Application servers using
-                  the 3.1 relay cgi are <strong>strongly encouraged</strong> to upgrade to version 3.2.0
-                  and use its POST-based messaging instead of the relay cgi.</p>
+                  <dl>
+
+                  <dt>Compatibility note on version 3.3 encryption options:
+                  <dd>The version 3.3 module supports different encryption alogrithms. AES encryption is the default.
+                  However, earlier versions of the login server only support one algorithm, DES, so you will have to determine the
+                  version of your login server and configure the <a
+                  href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> directive accordingly.
+  
+                  <dt>Compatibility note on version 3.1 relays:
+                  <dd>The need for the cgi-based relays introduced in version 3.1 to authenticate across DNS domains was redressed
+                  by the POST-based messaging method introduced in version 3.2 and, thenceforth, <strong>use of third-party 3.1
+                  relays has been deprecated</strong>. A third-party relay is any relay not hosted on the same server that requests
+                  authentication. Application servers using third-party relays are strongly encouraged to upgrade to version 3.2 or
+                  higher and use the POST-based messaging method.
+
+                  </dl>
+
+                  <h4><a name="upgrading">Upgrading</a></h4>
+
+                  <p>In general (note exceptions below) upgrading a working installation of the module requires very few, if any,
+                  changes to the current Apache configuration, and you can typically reuse your current Pubcookie granting
+                  certificate and symmetric encryption key too.</p>
+
+                  <p>Here are some compatibility notes for upgrading between specific versions:</p>
+
+                  <dl>
+
+                  <dt>Upgrading from version 3.0/3.1/3.2 to 3.3:
+
+                  <dd>Apache servers being upgraded from version 3.0/3.1/3.2 to version 3.3 should be aware that <strong>version 3.3
+                  expects and uses AES encryption by default.</strong> If your login server is version 3.3 or higher
+                  there is no concern; it supports authentication requests that ask for AES encrypted replies. However, to
+                  interoperate with earlier versions of the login server, you either must set the
+                  <a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> directive to
+                  use DES encryption or, if you don't want to make any Apache configuration changes, build the module
+                  using the <tt>--enable-default-des</tt> configure option. This will ensure that your upgraded module
+                  continues to use DES encryption.
+
+                  <p>If your login server is version 3.3 higher and therefore allows you to use AES encryption, you should note that
+                  session cookies encrypted with DES cannot be unencrypted with AES.  As a result, pre-session and session cookies
+                  obtained by users prior to upgrading the module will be invalid after the upgrade. This means some users will be
+                  redirected through the login server to establish a new session.</p>
+
+                  <p>Clustered hosts should be upgraded with special care to keep all cluster members using the same encryption
+                  method.</p>
+
+                  <p>Note: You do not have to request a new encryption key to use version 3.3. Your current host key works equally
+                  well for AES and DES encryption.</p>
+
+                  <dt>Upgrading from version 1.77 to 3.3:
+
+                  <dd>Apache servers being upgraded from earlier versions of the module (classic versions, such as version 1.77) 
+                  may require minor configuration changes. Review the <a href="#config">Apache configuration</a> section closely.
+                  Also review the sections on <a href="#vhosts">virtual host configuration</a> and <a href="#cluster">clustered host
+                  configuration</a> if they apply to your environment.</p>
+
+                  <p>Apache servers being upgraded from earlier versions should also be aware of the switch to AES encryption noted
+                  in the section above.</p>
+
+                  <p>Also recall that version 1.77 requires an encryption key specific to your primary IP address. If you want to be
+                  able to rollback to version 1.77 more easily, you should keep your current key intact on your server as well as
+                  on your site's Pubcookie login server. To do so, use the keyclient's <tt>-d</tt> option when downloading
+                  the current key; otherwise the keyserver will generate a new one that isn't compatible with version 1.77.
+
+                  </dl>
 
                   <h4><a name="pre">Prerequisites</a></h4>
+
                   <p>The module relies on additional infrastructure at your site.
                   Here are some general prerequisites that,  if fulfilled, will lead
                   to a smooth, successful installation.</p>
                   <ul>
                     <li> 
                       <p>Determine the location of your site's Pubcookie login server. You'll need this URL to configure 
-                        the module. You may also want to find out its version, so that you know what features it supports.</p>
+                        the module. You may also want to find out its version, for <a href="#upgrading">compatibility</a> reasons, 
+                        and to know what features it supports.
                     </li>
                     <li>
                       <p>Determine the location of your site's Pubcookie keyserver. You'll need this URL to request a 
@@ -310,7 +368,7 @@ keyclient*      keys/</pre></TD>
 		  <h4><a name="keyclient">Run Keyclient</a></h4>
 
                   <p>Pubookie solves the problem of securely distributing symmetric encryption keys by 
-                    introducing a keyserver. Participating servers make secure SSL/TLS connections to 
+                    introducing a keyserver. Participating servers make authenticated SSL/TLS connections to 
                     keyserver to obtain a host key. This section describes how to configure and run the
                     Pubcookie keyclient utility to request keys from your local keyserver.</p>
 
@@ -322,8 +380,8 @@ keyclient*      keys/</pre></TD>
 
                   <ol>
                     <li> 
-                      <p>The keyclient accepts command-line arguments, but it's generally easier
-                        to configure it via a separate text configuration file. Go ahead and create one now:</p>
+                      <p>The keyclient accepts command-line options, but it's generally easier
+                        to configure by specifying values in a separate text configuration file. Go ahead and create one now:</p>
                     <p> 
                     <table bgcolor="#E0E5F5" border="0" cellspacing="0" cellpadding="5">
                       <tr> 
@@ -331,8 +389,8 @@ keyclient*      keys/</pre></TD>
 $ pico config</pre></td>
                       </tr>
                     </table></p>
-                    <p>Note: keyclient has a built-in idea, based on your original installation prefix,
-                      where to find its config file and store keys. Adjust the path above accordingly.</p>
+                    <p>Note: keyclient uses a built-in location, based on your original installation prefix,
+                      to look for a config file and to store host keys. Adjust the path above accordingly.</p>
                     </li>
                     <li>
                       <p>Add the following <a href="config.html">configuration variables</a>
@@ -416,11 +474,14 @@ appserver.example.edu</pre></td>
                       <ul>
                         <li><p>The key's filename is derived from your certificate's Common Name field
                           which should match the domain name visitor's see in the URL for your website.</p></li>
-                        <li> During configuration, this key is found within the directory defined by the 
+                        <li><p>During configuration, this key is found within the directory defined by the 
                           <a href="mod_pubcookie-directives.html#PubcookieKeyDir">PubcookieKeyDir</a>
                           directive or corresponds directly with the <a 
                           href="mod_pubcookie-directives.html#PubcookieCryptKeyFile">PubcookieCryptKeyFile</a>
                           directive.</p></li>
+                        <li><p>Each key works fine with either encryption method offered by the <a
+                          href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a>
+                          directive.</p>
                       </ul>
                   </ol>
 
@@ -527,9 +588,12 @@ AddModule mod_pubcookie.c
 PubcookieGrantingCertFile /usr/local/pubcookie/keys/pubcookie_granting.cert
 PubcookieSessionKeyFile /etc/httpd/conf/ssl.key/appserver.key
 PubcookieSessionCertFile /etc/httpd/conf/ssl.crt/appserver.crt
-PubcookieLogin https://weblogin.example.edu/
-PubcookieDomain .example.edu
 PubcookieKeyDir /usr/local/pubcookie/keys/
+
+PubcookieLogin https://weblogin.example.edu/
+PubcookieLoginMethod POST
+PubcookieDomain .example.edu
+PubcookieEncryption AES
 PubcookieAuthTypeNames EGNetID
 
 # Disable inactivity timeout by default
@@ -545,12 +609,18 @@ PubcookieInactiveExpire -1
                       <p>Notes:</p>
                       <ul>
                       <li>
-                        <p>These are the recommended server config directives. They're not all required to
-                        initialize the module. But it's a good exercise to configure them explicitly.</p>
+                        <p>These are recommended configuration directives, but they're not all required to
+                        initialize the module. It's a good exercise, however, to configure them explicitly,
+                        so you know what's going on.</p>
                       </li>
                       <li>
-                        <p>Add a <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> 
-                        directive to control the messaging method (classic cookie-based or POST-based).</p>
+                        <p><a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> 
+                        defines the encryption algorithm used by the module. Since the module chooses the algorithm,
+                        it's important for <a href="#compatibility">compatibility</a> reasons to get this one right.</p>
+                      </li>
+                      <li>
+                        <p><a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> defines
+                        the messaging method used by the module. Follow that link to review the choices.</p>
                       </li>
                       <li>
                         <p><a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
@@ -837,43 +907,41 @@ PubcookieEndSession clearLogin
 
 <h4><a name="relay">Cross-Domain Relay Configuration</a></h4>
 
-<p>Cross-dns-domain scenarios have been greatly simplified in Pubcookie 3.2.0
-with the addition of POST-based messaging. Just set 
-<a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> 
-to <tt>POST</tt> to avoid the traditional cross-dns-domain constraits.</p>
-
-<p>Note: the 3.1. relay cgi has been obsoleted by POST-based messaging. It is no longer
-supported in the distribution and its use is now deprecated.</p>
+<p>Authentication across DNS domains was greatly simplified in Pubcookie 3.2.0
+with the addition of the POST-based 
+<a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a>.
 
 <h4><a name="vhosts">Virtual Host Configuration</a></h4>
 
-<p>Virtual host support is new in Pubcookie 3.1. One approach 
-to configuration is to use your main server config to set up
-defaults, as described in the <a href="#config">Configuration</a> section
+<p>One approach to configuring separate virtual hosts on the same system
+is to use your main server configuration section to establish default settings
+for Pubcookie, as described in the <a href="#config">Configuration</a> section
 above. Then override directives as needed for each virtual host.</p>
 
-<p>For example, you should use a separate session keypair for each 
-virtual host, so you will need to define new 
+<p>For example, a separate session keypair should be used for each 
+virtual host, which you can do by defining different
 <a href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKeyFile</a>
 and <a href="mod_pubcookie-directives.html#PubcookieSessionCertFile">PubcookieSessionCertFile</a>
-directives for each. It may be acceptable to use defaults
-for all other module settings.</p>
+directives within your virtual host configuration. It may be acceptable to use defaults
+for the module's other configuration settings.</p>
 
-<p>To request a symmetric encryption key for each virtual server, 
-you can use your current config file and simply point keyclient
-to the virtual host's SSL private key and certificate files. For 
-example:</p>
+<p>To request a symmetric encryption key for each virtual server name, 
+you can use your current config file to define default values and then 
+override them using command-line options for each virtual host's SSL private 
+key and certificate files. For example:</p>
 
 <pre>$ ./keyclient -k vhost.key -c vhost.crt
 Set crypt key for vhost.example.edu</pre>
 
+<p>You can also set up a config file for each virtual host and use the
+keyclient's <tt>-f filename</tt> to point to each separately.</p>
+
 <h4><a name="clusters">Clustered Host Configuration</a></h4>
 
 <p>System administrators frequently cluster together several hosts 
-configured identically to provide redundancy (either for performance or 
-stability). In this section, we're assuming that you have a set of 
-machines with an identical SSL certificate and private key on each 
-cluster member.</p>
+for better redundancy, performance, stability, and recoverability. Each 
+host in the cluster is configured the same, so each has a SSL certificate 
+and private key identical to the other cluster members.</p>
 
 <p>For instance, a site might have 15 webmail servers named 
 <i>webmail1.example.edu</i> through <i>webmail15.example.edu</i>
@@ -887,6 +955,33 @@ say <i>webmail1.example.edu</i>, to generate a <tt>webmail.example.edu</tt>
 host key. Then use <tt>keyclient -d</tt> on all other webmail hosts
 to download the existing host key to the remaining servers.
 This way, they all use the same key.</p>
+
+<h4><a name="wildcard">Wildcard Subdomain Key Configuration</a></h4>
+
+<p>Wildcard subdomain configuration allows the module to reuse
+a single host key file for protecting several server names in
+the same subdomain. For example, it allows a single <i>students.example.edu</i> host key
+to function as the encryption key for all the individual
+student web sites (<i>abe.students.example.edu</i>, <i>bess.students.example.edu</i>,
+<i>spud.example.edu</i>, etc.) as might happen on a large
+multi-user web-hosting environment.</p>
+
+<p>It works like this: the actual key for AES encryption 
+is a randomly chosen 128 bits from the host key file. To allow 
+the same host key file to encrypt cookies for all subdomains 
+the wildcard-subdomain encryption mode augments the usual 128 bits with the 
+requested web site's full domain name. The key becomes 
+<i>SHA1( (128 bits from file) + (web site's full domain name) )</i>.
+When the module fails to find a key for the requested web site's
+full domain name, it will look again with the first part of the
+name removed, i.e. for a key representing a wildcard for the 
+subdomain.</p>
+
+<p>This feature is enabled by setting the 
+<a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> 
+directive to <tt>AES+DOMAIN</tt> and requires that Apache's
+<a href="http://httpd.apache.org/docs/2.0/mod/core.html#usecanonicalname">UseCanonicalName</a>
+directive is turned off.</p>
 
 <h4><a name="debug">Troubleshooting</a></h4>
 
