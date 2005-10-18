@@ -196,10 +196,23 @@ Apache 1.2 and later.</p>
 "Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
 3.2.0 and higher and Apache 1.2 and later.</p>
 
-<p>Sets the browser messaging method. GET is the classic cookie-based 
-approach. POST is the HTTP POST approach. Default is GET.</p>
+<p>This directive specifies how authentication requests and responses are
+communicated between the module and the login server.</p>
 
-<p>All versions prior to 3.2.0 use the GET method.</p>
+<p>The default method, <tt>GET</tt>, is Pubcookie's classic cookie-based 
+messaging method. It communicates the request and response using meta-refresh
+redirects and cookies scoped to the enterprise domain 
+(see <a href="#PubcookieDomain">PubcookieDomain</a>).
+
+<p>The newer method, <tt>POST</tt>, is closer to the industry standard
+SAML Browser/POST profile. It communicates the request and response using
+HTTP POST message bodies and uses, but does not require, Javascript to
+facilitate the process. It requires an additional 
+<a href="#PubcookiePostURL">PubcookiePostURL</a> endpoint to consume the
+initial response sent by the login server.</p>
+
+<p>All versions of the module prior to 3.2.0 can only use the GET method.
+Versions 3.2.0 and higher support either method.</p>
 
 <h3><a name="PubcookiePostURL">PubcookiePostURL directive</a></h3>
 
@@ -211,9 +224,11 @@ approach. POST is the HTTP POST approach. Default is GET.</p>
 "Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 
 3.2.0 and higher and Apache 1.2 and later.</p>
 
-<p>Sets the POST reply URL for consuming assertions sent from the login
-server when the POST login method is used. Default is
-<tt>/PubCookie.reply</tt>.</p>
+<p>This directive specifies the URL endpoint used to consume authentication
+responses sent from the login server when using the POST 
+<a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a>. 
+
+<p>The default location is <tt>/PubCookie.reply</tt>.</p>
 
 <h3><a name="PubcookieDomain">PubcookieDomain directive</a></h3>
 
@@ -347,21 +362,27 @@ functionality.</p>
 directive</a></h3>
 
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieEncryption AES | DES<br>
+"Help"><strong>Syntax:</strong></a> PubcookieEncryption AES | DES | AES+DOMAIN<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
 "Help"><strong>Context:</strong></a> directory, .htaccess<br>
  <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
 rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 3.3.0 
 and higher and Apache 1.2 and later.</p>
 
-<p>Defines the encryption algorithm used by the module to encrypt and
-decrypt private data. The same 2048-byte host key suffices for either encryption 
-method. 
+<p>This directive defines the encryption algorithm used by the module to 
+encrypt and decrypt private cookie data, including pre-session and session 
+cookies as well as the type of encryption it asks for and expects from the 
+login server for granting cookies and messages.</p>
 
-<p>Note: The default encryption method is AES in version 3.3.0 and
-higher; however, the <i>only</i> encryption method supported in earlier
-versions is DES. Therefore, to work with a login server running a 
-version earlier than 3.3.0, you must used DES encryption.
+<p>In version 3.3.0 and higher, AES encryption is the default (unless the module 
+has been built with the <tt>--enable-default-des</tt> option). The <i>only</i> 
+encryption method supported in earlier versions is DES. Therefore, you must set 
+this directive to use DES encryption to interoperate with login servers earlier 
+than version 3.3.0.</p>
+
+<p>The AES+DOMAIN setting enables the module's 
+<a href="install-mod_pubcookie.html#wildcard">wildcard subdomain</a> 
+capability.</p>
 
 <h3><a name="PubcookieSessionCauseReAuth">PubcookieSessionCauseReAuth
 directive</a></h3>
