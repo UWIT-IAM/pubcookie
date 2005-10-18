@@ -89,7 +89,7 @@ login cgi:</p>
 <dt> <a name="ssl_cert_file">ssl_cert_file</a> <i>string</i></dt>
 <dd> Path and filename of the SSL certificate.</dd> 
 
-<dt> <a name="ssl_key_file">ssl_key_file <i>string</i></dt>
+<dt> <a name="ssl_key_file">ssl_key_file</a> <i>string</i></dt>
 <dd> Path and filename of the SSL key.</dd>  
 
 <dt> <a name="umask">umask</a> <i>string</i></dt>
@@ -246,6 +246,13 @@ login cgi:</p>
      the service key. 
 <dd> Default: <tt>host</tt></dd>
 
+<dt> <a name="kerberos5_extralife">kerberos5_extralife</a> <i>time</i></dt>
+<dd> Adds extra ticket lifetime to delegated kerberos5 tickets. The total
+lifetime is equal to <tt>default_l_expire + kerberos5_extralife</tt>.
+This provideds a longer ticket lifetime than the login
+cookie lifetime and can be helpful when delegating credentials to an
+application just before the login cookie expires.
+
 </dl>
 
 <h4><a name="ldap">LDAP Verifier Variables</a></h4>
@@ -253,17 +260,38 @@ login cgi:</p>
 <dl>
 
 <dt> <a name="ldap_uri">ldap_uri</a> <i>list</i></dt>
-<dd> The full LDAP URI.</dd>
-<dd> URI Format:
-<pre>ldaps://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password
-ldap://host/o=searchbase???(uid=%s)?x-BindDN=Bind%20DN,x-Password=Password</pre>
-<dd> Note: <tt>(uid=%s)</tt> is the search filter for finding an account by netid.  
-     The <tt>%s</tt> will be replaced with the netid.  The host string can optionally
-     contain a port number. The filter can only contain one <tt>%s</tt> at this time.
-<dd> Note: <tt>x-BindDN</tt> and <tt>x-Password</tt> are the Bind DN and Password, URL
-     encoded. They may be omitted entirely if the connection is anonymous.</dd>
-<dd> <b>Warning:</b> Commas must be encoded as <tt>%2c</tt> and spaces as 
-     <tt>%20</tt>.</dd>
+<dd> The full LDAP URI. The LDAP verifier uses this URI to
+bind to the directory and search for a DN that matches the
+userid as entered into the login form. If it finds an entry 
+for the user, it does another bind to verify the user's 
+password as entered into the login form. If it can't even 
+connect to the directory, it will fail over to the next URI
+in the list, if there is another one to try.
+
+<dd> <p>URI Format:
+<pre>ldaps://host/o=searchbase???<i>(uid=%s)</i>?x-BindDN=<i>Bind%20DN</i>,x-Password=<i>Password</i>
+ldap://host/o=searchbase???<i>(uid=%s)</i>?x-BindDN=<i>Bind%20DN</i>,x-Password=<i>Password</i></pre>
+</dd>
+
+<dd> <p>Note: A port number can be optionally added to the <tt>host</tt> string.</dd>
+
+<dd> <p>Note: <tt><i>(uid=%s)</i></tt> is the search filter for finding an account by userid.  
+     The <tt>%s</tt> will be replaced with the userid as entered into the login form. The 
+     search filter can only contain one <tt>%s</tt> at this time.</dd>
+
+<dd> <p>Note: <tt><i>x-BindDN</i></tt> and <tt><i>x-Password</i></tt> are the initial bind DN and password, 
+     URL encoded. They may be omitted entirely if the connection is anonymous (and anonymous
+     connections are allowed). <b>Warning:</b> Commas must be URL encoded as <tt>%2C</tt> 
+     and spaces as <tt>%20</tt>.</dd>
+
+<dd> <p>Note: <tt>x-Version=2</tt> can be added to the URI if LDAP version 2 is required.</p>
+
+<dd>Example:
+<pre>ldaps://ldap.example.edu/dc=example,dc=edu???(uid=%s)?x-BindDN=cn=<i>bind_user</i>;%2Cou=people%2Cdc=example%2Cdc=edu,x-Password=<i>bind_pw</i></pre>
+</dd>
+
+<dd> <p>Note: <tt><i>bind_user</i></tt> and <tt><i>bind_pw</i></tt> are userid and password
+used in the initial bind to the server.</p>
 
 <dt> <a name="cert_db_path">cert_db_path</a> <i>string</i></dt>
 <dd> Path to where Netscape's cert7.db and key3.db can be found.</dd>
