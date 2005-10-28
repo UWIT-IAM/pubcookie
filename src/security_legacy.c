@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.55 2005-10-12 21:59:48 willey Exp $
+ * $Id: security_legacy.c,v 1.56 2005-10-28 21:27:28 willey Exp $
  */
 
 
@@ -266,13 +266,32 @@ int security_init (pool * p, security_context ** contextp)
     keyfile =
         mystrdup (p, libpbc_config_getstring (p, "ssl_key_file", NULL));
     if (keyfile && access (keyfile, R_OK | F_OK)) {
+        if (access (keyfile, F_OK)) {
+            pbc_log_activity (p, PBC_LOG_ERROR,
+                              "security_init: Session keyfile (%s) doesn't exist.",
+                              keyfile);
+        } else if (access (keyfile, R_OK)) {
+            pbc_log_activity (p, PBC_LOG_ERROR,
+                              "security_init: Permissions prohibit reading session keyfile (%s).",
+                              keyfile);
+        }
         pbc_free (p, keyfile);
         /* not there ? */
         keyfile = NULL;
     }
+
     certfile =
         mystrdup (p, libpbc_config_getstring (p, "ssl_cert_file", NULL));
     if (certfile && access (certfile, R_OK | F_OK)) {
+        if (access (certfile, F_OK)) {
+            pbc_log_activity (p, PBC_LOG_ERROR,
+                              "security_init: Session certfile (%s) doesn't exist.",
+                              certfile);
+        } else if (access (certfile, R_OK)) {
+            pbc_log_activity (p, PBC_LOG_ERROR,
+                              "security_init: Permissions prohibit reading session certfile (%s).",
+                              certfile);
+        }
         pbc_free (p, certfile);
         /* not there ? */
         certfile = NULL;
@@ -320,12 +339,12 @@ int security_init (pool * p, security_context ** contextp)
 #ifndef WIN32
     if (!keyfile) {
         pbc_log_activity (p, PBC_LOG_ERROR,
-                          "security_init: couldn't find session keyfile (try setting ssl_key_file?)");
+                          "security_init: couldn't find session keyfile (try setting ssl_key_file for login server or PubCookieSessionKeyFile for Apache module?)");
         return -1;
     }
     if (!certfile) {
         pbc_log_activity (p, PBC_LOG_ERROR,
-                          "security_init: couldn't find session certfile (try setting ssl_cert_file?)");
+                          "security_init: couldn't find session certfile (try setting ssl_cert_file for login server or PubCookieSessionCertFile for Apache module?)");
         return -1;
     }
 #endif
