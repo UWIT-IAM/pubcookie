@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.189 2005-10-28 21:27:28 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.190 2005-10-28 21:59:45 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1857,7 +1857,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                 rr->failed = PBC_BAD_AUTH;
                 rr->stop_message =
                     ap_psprintf (p,
-                                 "Couldn't decode pre-session cookie. (from G: %d from PRE_S: %s)",
+                                 "Couldn't decode pre-session cookie. (from G: %d from PRE_S: %d)",
                                  (*cookie_data).broken.pre_sess_token,
                                  pre_sess_from_cookie);
                 rr->redir_reason_no = PBC_RR_BADPRES_CODE;
