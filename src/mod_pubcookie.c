@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.187 2005-09-15 19:49:10 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.188 2005-10-28 00:42:29 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -858,7 +858,7 @@ static int auth_failed_handler (request_rec * r,
         /* error out if length of GET args would cause a problem */
         if ( strlen(r->args) > PBC_MAX_GET_ARGS ) {
             rr->stop_message =
-                ap_pstrdup (p, "GET arguments longer than supported");
+                ap_psprintf (p, "GET arguments longer than supported.  (args length: %d)", strlen(r->args));
             stop_the_show (r, scfg, cfg, rr);
             return (OK);
         }
@@ -895,7 +895,7 @@ static int auth_failed_handler (request_rec * r,
     if ((pre_sess_tok = get_pre_s_token (r)) == -1) {
         /* this is weird since we're already in a handler */
         rr->stop_message =
-            ap_pstrdup (p, "Couldn't get pre session token");
+            ap_pstrdup (p, "Couldn't get pre session token. (Already in handler)");
         stop_the_show (r, scfg, cfg, rr);
         return (OK);
     }
@@ -1021,7 +1021,7 @@ static int auth_failed_handler (request_rec * r,
         if (((post_data_len = strtol (lenp, NULL, 10)) <= 0) ||
             (post_data_len > MAX_POST_DATA) ||
             (!(post_data = get_post_data (r, post_data_len)))) {
-            rr->stop_message = ap_pstrdup (p, "invalid post data");
+            rr->stop_message = ap_psprintf (p, "Invalid POST data. (POST data length: %d)", post_data_len);
             stop_the_show (r, scfg, cfg, rr);
             return(OK);
         }
@@ -1597,6 +1597,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
     char *new_cookie = ap_palloc (p, PBC_1K);
     int cred_from_trans;
     int pre_sess_from_cookie;
+    int bogus_g = 0;  /* remember if we get a g cookie we can't unbundle */
 
     /* get defaults for unset args */
     pubcookie_dir_defaults (cfg);
@@ -1653,23 +1654,25 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                    "pubcookie_user: about to look for some cookies; current uri: %s",
                    r->uri);
 
-    /* check if the granting cookie's appid matches.  if not, then act as
-       if we don't have one.  This helps if there are any old g cookies */
+    /* check if we hav a granting cookie's and a pre-session cookie.
+       when using GET method we need the pair (pre sess and granting), but 
+       when using POST method there is no pre-session cookie used.  
+       if the granting cookie fails to decrypt (unbundle) we move on to look 
+       at the session cookie(s).  The assumption is that graning cookies that 
+       fail to decrypt aren't for our app server.  In cases where the crypt
+       key is incorrect on the app server this will cause looping */
     cookie_data = NULL;
     if ((cookie = get_cookie (r, PBC_G_COOKIENAME))
-        && strcmp (cookie, "") != 0) {
+        && strcmp (cookie, "") != 0
+        && (scfg->use_post || get_cookie (r, PBC_PRE_S_COOKIENAME)) ) {
         cookie_data =
             libpbc_unbundle_cookie (p, scfg->sectext, cookie,
                                     ap_get_server_name (r), 1, scfg->crypt_alg);
         if (!cookie_data) {
             ap_log_rerror (PC_LOG_INFO, r,
-                           "can't unbundle G cookie; uri: %s\n", r->uri);
-            ap_log_rerror (PC_LOG_INFO, r, "cookie is:\n%s\n", cookie);
-            rr->failed = PBC_BAD_G_STATE;
-            rr->stop_message =
-                ap_pstrdup (p, "Couldn't decode granting message");
-            rr->redir_reason_no = PBC_RR_BADG_CODE;
-            return OK;
+                           "can't unbundle G cookie, it's probably not for us; uri: %s\n", r->uri);
+            bogus_g = 1;
+            clear_granting_cookie (r);
         }
     }
 
@@ -1837,7 +1840,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                            pre_sess_from_cookie, r->uri);
                 rr->failed = PBC_BAD_AUTH;
                 rr->stop_message =
-                    ap_pstrdup (p, "Couldn't decode pre-session cookie");
+                    ap_psprintf (p, "Couldn't decode pre-session cookie. (from G: %d from PRE_S: %s)", (*cookie_data).broken.pre_sess_token, pre_sess_from_cookie);
                 rr->redir_reason_no = PBC_RR_BADPRES_CODE;
                 return OK;
             }
