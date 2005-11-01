@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.191 2005-11-01 15:23:54 dors Exp $
+ * $Id: mod_pubcookie.c,v 1.192 2005-11-01 15:28:18 dors Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1682,13 +1682,10 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                                     scfg->crypt_alg);
         if (!cookie_data) {
             ap_log_rerror (PC_LOG_INFO, r,
-                           "can't unbundle G cookie; uri: %s\n", r->uri);
-                           ap_log_rerror (PC_LOG_INFO, r, "cookie is:\n%s\n", cookie);
-            rr->failed = PBC_BAD_G_STATE;	             
-            rr->stop_message =	 
-                ap_pstrdup (p, "Couldn't decode granting message from login server");	 
-            rr->redir_reason_no = PBC_RR_BADG_CODE;	 
-            return OK;
+                           "can't unbundle G cookie, it's probably not for us; uri: %s\n",
+                           r->uri);
+            bogus_g = 1;
+            clear_granting_cookie (r);
         }
     }
 
