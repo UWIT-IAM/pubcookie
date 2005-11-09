@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.166 2005-10-07 22:20:24 jjminer Exp $
+ * $Id: index.cgi.c,v 1.167 2005-11-09 23:48:59 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -580,16 +580,17 @@ void free_login_rec (pool * p, login_rec * r)
 }
 
 /*
- * this returns first cookie for a given name
+ * this returns n'th cookie for a given name
  */
-int get_cookie (pool * p, char *name, char *result, int max)
+int get_cookie (pool * p, char *name, char *result, int max, int n)
 {
     char *s;
     char *ptr;
     char *target;
     char *wkspc;
+    int i;
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "get_cookie: hello\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "get_cookie: hello: name=%s, n=%d\n", name, n);
 
     if (!(target = malloc (PBC_20K))) {
         abend (p, "out of memory");
@@ -606,13 +607,16 @@ int get_cookie (pool * p, char *name, char *result, int max)
     /* make us a local copy */
     strlcpy (target, s, PBC_20K - 1);
 
-    if (!(wkspc = strstr (target, name))) {
-        free (target);
-        return (PBC_FAIL);
+    for (wkspc=target,i=0;i<=n;i++) {
+       if (!(wkspc = strstr (wkspc, name))) {
+           free (target);
+           return (PBC_FAIL);
+       }
+       wkspc += strlen (name) + 1;
     }
 
     /* get rid of the <name>= part from the cookie */
-    ptr = wkspc = wkspc + strlen (name) + 1;
+    ptr = wkspc;
     while (*ptr) {
         if (*ptr == ';') {
             *ptr = '\0';
@@ -1111,7 +1115,7 @@ char *get_granting_request (pool * p)
         abend (p, "out of memory");
     }
 
-    if (get_cookie (p, PBC_G_REQ_COOKIENAME, cookie, PBC_4K - 1) ==
+    if (get_cookie (p, PBC_G_REQ_COOKIENAME, cookie, PBC_4K - 1, 0) ==
         PBC_FAIL) {
         pbc_free (p, cookie);
         return (NULL);
@@ -3017,6 +3021,7 @@ login_rec *verify_unload_login_cookie (pool * p,
     char *cookie = NULL;
     login_rec *new = NULL;
     time_t t;
+    int cn = 0;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                       "verify_unload_login_cookie: hello\n");
@@ -3025,27 +3030,21 @@ login_rec *verify_unload_login_cookie (pool * p,
         abend (p, "out of memory");
 
     /* get the login cookie */
-    if ((get_cookie (p, PBC_L_COOKIENAME, cookie, PBC_4K - 1) == PBC_FAIL)
-        || !strcmp (cookie, PBC_CLEAR_COOKIE)) {
-        if (cookie != NULL)
-            free (cookie);
-        return ((login_rec *) NULL);
+    while ((get_cookie (p, PBC_L_COOKIENAME, cookie, PBC_4K - 1, cn) != PBC_FAIL)) {
+        if (!strcmp (cookie, PBC_CLEAR_COOKIE)) continue;
+        cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0,
+                                PBC_DEF_CRYPT);
+        if (cookie_data) break;
+        cn++;
     }
+
+    /* Done with cookie */
+    if (cookie != NULL) free (cookie);
+
+    if (!cookie_data) return ((login_rec *) NULL);
 
     new = malloc (sizeof (login_rec));
     init_login_rec (p, new);
-
-    cookie_data =
-        libpbc_unbundle_cookie (p, context, cookie, NULL, 0,
-                                PBC_DEF_CRYPT);
-
-    /* Done with cookie */
-    if (cookie != NULL)
-        pbc_free (p, cookie);
-
-    if (!cookie_data) {
-        return ((login_rec *) NULL);
-    }
 
     new->user = strdup ((*cookie_data).broken.user);
     new->version = strdup ((*cookie_data).broken.version);

@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.192 2005-11-01 15:28:18 dors Exp $
+ * $Id: mod_pubcookie.c,v 1.193 2005-11-09 23:48:59 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -750,66 +750,6 @@ request_rec *top_rrec (request_rec * r)
     return mr;
 }
 
-char *blank_cookie (request_rec * r, char *name)
-{
-    const char *cookie_header;
-    char *cookie;
-    char *ptr;
-    pool *p = r->pool;
-    request_rec *mr = top_rrec (r);
-    char *c2;
-    char *name_w_eq;
-    pubcookie_server_rec *scfg;
-    scfg =
-        (pubcookie_server_rec *) ap_get_module_config (r->server->
-                                                       module_config,
-                                                       &pubcookie_module);
-
-    if (scfg->noblank)
-        return (NULL);
-
-    /* If we've stashed the cookie, we know it's already blanked */
-    if (ap_table_get (mr->notes, name) ||
-        !(cookie_header = ap_table_get (r->headers_in, "Cookie")))
-        return (NULL);
-
-    /* add an equal on the end */
-    name_w_eq = ap_pstrcat (p, name, "=", NULL);
-
-    if (!(cookie = strstr (cookie_header, name_w_eq)))
-        return (NULL);
-
-    cookie += strlen (name_w_eq);
-
-    /*
-     * Because the cookie blanking affects the whole subrequest chain, we
-     * need to stash the cookie away to be used again later.  We need cookies
-     * to persist among subrequests, either because subrequests need the
-     * cookie, such as in mod_cern_meta, or because the first time fixups is
-     * run and blanks the cookies is during a subrequest itself.
-     *
-     * Because of all this, we stash in the topmost request's notes table.
-     * Note that we must use the topmost request's pool instead of our own
-     * pool!
-     */
-    c2 = ap_pstrdup (mr->pool, cookie);
-    if ((ptr = strchr (c2, ';')))
-        *ptr = '\0';
-    ap_table_set (mr->notes, name, c2);
-
-    ptr = cookie;
-    while (*ptr) {
-        if (*ptr == ';')
-            break;
-        *ptr = PBC_X_CHAR;
-        ptr++;
-    }
-
-    ap_table_set (r->headers_in, "Cookie", cookie_header);
-
-    return (ptr);
-
-}
 
 /* Herein we deal with the redirect of the request to the login server        */
 /*    if it was only that simple ...                                          */
@@ -1129,17 +1069,29 @@ char *make_session_cookie_name (pool * p, char *cookiename,
  * We don't bother with using the topmost request when playing with the
  * headers because only the pointer is copied, anyway.
  */
-char *get_cookie (request_rec * r, char *name)
+char *get_cookie (request_rec * r, char *name, int n)
 {
     const char *cookie_header;
+    char *chp;
     char *cookie, *ptr;
     request_rec *mr = top_rrec (r);
     char *name_w_eq;
     pool *p = r->pool;
+    pubcookie_server_rec *scfg;
+    int i;
+
+    scfg =
+        (pubcookie_server_rec *) ap_get_module_config (r->server->
+                                                       module_config,
+                                                       &pubcookie_module);
+
+    ap_log_rerror (PC_LOG_DEBUG, r, "get_cookie: %s (%d)", name, n);
 
     /* get cookies */
-    if ((cookie_header = ap_table_get (mr->notes, name)))
+    if ((n==0) && (cookie_header = ap_table_get (mr->notes, name))&&(*cookie_header)) {
+        ap_log_rerror (PC_LOG_DEBUG, r, " .. by cache: %s", cookie_header);
         return ap_pstrdup (p, cookie_header);
+    }
     if (!(cookie_header = ap_table_get (r->headers_in, "Cookie")))
         return NULL;
 
@@ -1147,12 +1099,12 @@ char *get_cookie (request_rec * r, char *name)
     name_w_eq = ap_pstrcat (p, name, "=", NULL);
 
     /* find the one that's pubcookie */
-    if (!(cookie_header = strstr (cookie_header, name_w_eq)))
-        return NULL;
+    for (chp=(char*)cookie_header,i=0;i<=n;i++) {
+       if (!(chp = strstr(chp, name_w_eq))) return NULL;
+       chp += strlen (name_w_eq);
+    }
 
-    cookie_header += strlen (name_w_eq);
-
-    cookie = ap_pstrdup (p, cookie_header);
+    cookie = ap_pstrdup (p, chp);
 
     ptr = cookie;
     while (*ptr) {
@@ -1161,8 +1113,20 @@ char *get_cookie (request_rec * r, char *name)
         ptr++;
     }
 
-    blank_cookie (r, name);
-    return cookie;
+    // cache and blank cookie
+    ptr = ap_pstrdup (mr->pool, cookie);
+    ap_table_set (mr->notes, name, ptr);
+
+    if (!scfg->noblank) {
+       for (ptr=chp; *ptr&&*ptr!=';'; ptr++) *ptr = PBC_X_CHAR;
+       ap_table_set (r->headers_in, "Cookie", cookie_header);
+    }
+
+    if (*cookie) {
+        ap_log_rerror (PC_LOG_DEBUG, r, " .. return: %s", cookie);
+        return cookie;
+    }
+    return (NULL);
 
 }
 
@@ -1457,6 +1421,7 @@ int get_pre_s_from_cookie (request_rec * r)
     pbc_cookie_data *cookie_data = NULL;
     char *cookie = NULL;
     pool *p = r->pool;
+    int ccnt = 0;
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config (r->per_dir_config,
                                                       &pubcookie_module);
@@ -1466,20 +1431,21 @@ int get_pre_s_from_cookie (request_rec * r)
                                                        &pubcookie_module);
 
     ap_log_rerror (PC_LOG_DEBUG, r, "retrieving a pre-session ckookie");
-    if ((cookie = get_cookie (r, PBC_PRE_S_COOKIENAME)) == NULL)
-        ap_log_rerror (PC_LOG_INFO, r,
-                       "get_pre_s_from_cookie: no pre_s cookie, uri: %s\n",
-                       r->uri);
-    else
+    while (cookie = get_cookie (r, PBC_PRE_S_COOKIENAME, ccnt)) {
         cookie_data = libpbc_unbundle_cookie (p, scfg->sectext,
                                               cookie, ME (r), 0,
                                               scfg->crypt_alg);
-
-    if (cookie_data == NULL) {
+        if (cookie_data) break;
         ap_log_rerror (PC_LOG_INFO, r,
                        "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n",
                        r->uri);
-        return -1;
+        ccnt++;
+    }
+    if (!cookie_data) {
+        ap_log_rerror (PC_LOG_INFO, r,
+                       "get_pre_s_from_cookie: no pre_s cookie, uri: %s\n",
+                       r->uri);
+        return (-1);
     }
 
     return ((*cookie_data).broken.pre_sess_token);
@@ -1608,7 +1574,8 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
     char *new_cookie = ap_palloc (p, PBC_1K);
     int cred_from_trans;
     int pre_sess_from_cookie;
-    int bogus_g = 0;            /* remember if we get a g cookie we can't unbundle */
+    int gcnt = 0;
+    int scnt = 0;
 
     /* get defaults for unset args */
     pubcookie_dir_defaults (cfg);
@@ -1673,52 +1640,41 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
        fail to decrypt aren't for our app server.  In cases where the crypt
        key is incorrect on the app server this will cause looping */
     cookie_data = NULL;
-    if ((cookie = get_cookie (r, PBC_G_COOKIENAME))
-        && strcmp (cookie, "") != 0
-        && (scfg->use_post || get_cookie (r, PBC_PRE_S_COOKIENAME))) {
+    while ((cookie = get_cookie (r, PBC_G_COOKIENAME, gcnt))
+        && (scfg->use_post || get_cookie (r, PBC_PRE_S_COOKIENAME, 0))) {
         cookie_data =
             libpbc_unbundle_cookie (p, scfg->sectext, cookie,
                                     ap_get_server_name (r), 1,
                                     scfg->crypt_alg);
-        if (!cookie_data) {
-            ap_log_rerror (PC_LOG_INFO, r,
-                           "can't unbundle G cookie, it's probably not for us; uri: %s\n",
-                           r->uri);
-            bogus_g = 1;
-            clear_granting_cookie (r);
-        }
+        if (cookie_data) break;
+        ap_log_rerror (PC_LOG_INFO, r,
+                       "can't unbundle G cookie, it's probably not for us; uri: %s\n",
+                       r->uri);
+        gcnt++;
+        clear_granting_cookie (r);
     }
 
-    /* do we hav a session cookie for this appid? if not check the g cookie */
+    /* If no valid granting cookie, check session cookie  */
     if (!cookie_data || strncasecmp ((const char *) appid (r),
                                      (const char *) cookie_data->broken.
                                      appid,
                                      sizeof (cookie_data->broken.appid) -
                                      1) != 0) {
-        if (!(cookie = get_cookie (r, sess_cookie_name))
-            || strcmp (cookie, "") == 0) {
-
-            ap_log_rerror (PC_LOG_DEBUG, r,
-                           "No G or S cookie; uri: %s appid: %s sess_cookie_name: %s",
-                           r->uri, appid (r), sess_cookie_name);
-            rr->failed = PBC_BAD_AUTH;
-            rr->redir_reason_no = PBC_RR_NOGORS_CODE;
-            return OK;
-        } else {                /* hav S cookie */
-
+        while (cookie = get_cookie (r, sess_cookie_name, scnt)) {
             cookie_data =
                 libpbc_unbundle_cookie (p, scfg->sectext, cookie, NULL, 0,
                                         scfg->crypt_alg);
-            if (!cookie_data) {
-                ap_log_rerror (PC_LOG_INFO, r,
-                               "can't unbundle S cookie; uri: %s\n",
-                               r->uri);
-                rr->failed = PBC_BAD_AUTH;
-                rr->redir_reason_no = PBC_RR_BADS_CODE;
-                return OK;
-            } else {
-                rr->cookie_data = cookie_data;
-            }
+
+            if (cookie_data) break;
+            ap_log_rerror (PC_LOG_INFO, r,
+                           "can't unbundle S cookie; uri: %s\n",
+                           r->uri);
+            scnt++;
+        }
+
+        if (cookie_data) {
+
+            rr->cookie_data = cookie_data;
 
             /* we tell everyone what authentication check we did */
             r->AUTH_TYPE = ap_pstrdup (p, ap_auth_type (r));
@@ -1825,6 +1781,15 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                 rr->redir_reason_no = PBC_RR_NOGORS_CODE;
                 return OK;
             }
+
+        } else {                /* hav S cookie */
+
+            ap_log_rerror (PC_LOG_DEBUG, r,
+                           "No G or S cookie; uri: %s appid: %s sess_cookie_name: %s",
+                           r->uri, appid (r), sess_cookie_name);
+            rr->failed = PBC_BAD_AUTH;
+            rr->redir_reason_no = PBC_RR_NOGORS_CODE;
+            return OK;
 
         }                       /* end if session cookie */
 
@@ -1984,7 +1949,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
     /* extensions */
 
     /* transcred */
-    cookie = get_cookie (r, PBC_CRED_TRANSFER_COOKIENAME);
+    cookie = get_cookie (r, PBC_CRED_TRANSFER_COOKIENAME, 0);
     cred_from_trans = 1;
     if (!cookie) {
         char *mycookie;
@@ -1994,7 +1959,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                                              appid (r));
 
         cred_from_trans = 0;    /* not transferring creds */
-        cookie = get_cookie (r, mycookie);
+        cookie = get_cookie (r, mycookie, 0);
     }
     if (cookie) {
         char *blob = ap_palloc (p, strlen (cookie));
@@ -2165,7 +2130,8 @@ static int pubcookie_fixups (request_rec * r)
     return OK;
 }
 
-/* Scan the request's cookies for those of interest to us                     */
+/* See if we should augment the directives */
+
 static int pubcookie_hparse (request_rec * r)
 {
     char *cookies;
@@ -2187,22 +2153,6 @@ static int pubcookie_hparse (request_rec * r)
             *nextcookie++ = '\0';
             while (*nextcookie && *nextcookie == ' ')
                 ++nextcookie;
-        }
-        /* the module might be run on the login server don't blank g req */
-        if (strncasecmp
-            (c, PBC_G_REQ_COOKIENAME, sizeof (PBC_G_REQ_COOKIENAME) - 1)
-            &&
-            (!strncasecmp
-             (c, PBC_G_COOKIENAME, sizeof (PBC_G_COOKIENAME) - 1)
-             || !strncasecmp (c, PBC_PRE_S_COOKIENAME,
-                              sizeof (PBC_PRE_S_COOKIENAME) - 1)
-             || !strncasecmp (c, PBC_S_COOKIENAME,
-                              sizeof (PBC_S_COOKIENAME) - 1))) {
-            char *s = strchr (c, '=');
-            if (s) {
-                *s = '\0';
-                get_cookie (r, c);
-            }
         }
 
         /* Look for the directive key cookie */

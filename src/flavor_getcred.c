@@ -18,7 +18,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.35 2005-06-21 18:02:12 willey Exp $
+ * $Id: flavor_getcred.c,v 1.36 2005-11-09 23:48:59 fox Exp $
  */
 
 
@@ -291,7 +291,7 @@ static login_result process_getcred (pool * p,
 
         if (get_cookie
             (p, PBC_CRED_COOKIENAME, cookie,
-             sizeof (cookie) - 1) != PBC_OK) {
+             sizeof (cookie) - 1, 0) != PBC_OK) {
             pbc_log_activity (p, PBC_LOG_ERROR,
                               "flavor_getcred: couldn't retrieve cookie %s",
                               PBC_CRED_COOKIENAME);
