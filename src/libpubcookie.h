@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.57 2005-07-07 22:25:46 willey Exp $
+    $Id: libpubcookie.h,v 1.58 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -67,7 +67,7 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               const security_context *,
                                               unsigned char *,
                                               unsigned char, unsigned char,
-                                              int, time_t, time_t,
+                                              int, pbc_time_t, pbc_time_t,
                                               unsigned char *,
                                               unsigned char *,
                                               const char *peer,
@@ -113,7 +113,7 @@ int libpbc_set_crypt_key (pool * p, const char *key, const char *peer);
  */
 int libpbc_test_crypt_key (pool * p, const char *peer);
 
-char *libpbc_time_string (pool * p, time_t);
+char *libpbc_time_string (pool * p, pbc_time_t);
 void *libpbc_abend (pool * p, const char *, ...);
 int libpbc_debug (pool * p, const char *, ...);
 void *libpbc_malloc_debug (pool * p, size_t x);
@@ -126,7 +126,7 @@ int libpbc_base64_encode (pool * p, unsigned char *, unsigned char *, int);
 int libpbc_base64_decode (pool * p, unsigned char *, unsigned char *,
                           int *);
 int libpbc_check_version (pool * p, pbc_cookie_data *);
-int libpbc_check_exp (pool * p, time_t, int);
+int libpbc_check_exp (pool * p, pbc_time_t, int);
 
 /**
  * converts seconds to a text string with hours, mintues and seconds

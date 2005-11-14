@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.63 2005-11-14 21:45:39 jjminer Exp $
+ * $Id: keyserver.c,v 2.64 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -975,7 +975,7 @@ int main (int argc, char *argv[])
 
     /* initalize the PRNG as best we can if we have to */
     if (RAND_status () == 0) {
-        time_t t = time (NULL);
+        pbc_time_t t = pbc_time (NULL);
         pid_t pid = getpid ();
         char buf[1024];
         char *cmd[3] = { "/bin/ps", "-ef", NULL };

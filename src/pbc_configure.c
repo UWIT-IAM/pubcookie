@@ -18,7 +18,7 @@
 /** @file pbc_configure.c
  * Configure stuff
  *
- * $Id: pbc_configure.c,v 2.11 2005-02-07 22:26:38 willey Exp $
+ * $Id: pbc_configure.c,v 2.12 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,11 +26,9 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+#include "pbc_time.h"
 
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
+typedef void pool;
 
 #ifdef HAVE_STRINGS_H
 # include <strings.h>

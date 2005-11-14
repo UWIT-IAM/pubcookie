@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.56 2005-10-28 21:27:28 willey Exp $
+ * $Id: security_legacy.c,v 1.57 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -26,6 +26,8 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 #ifdef APACHE2
 #undef HAVE_CONFIG_H
@@ -69,10 +71,6 @@ typedef apr_table_t table;
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
-
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>

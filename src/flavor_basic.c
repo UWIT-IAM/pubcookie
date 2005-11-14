@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.77 2005-06-21 18:02:12 willey Exp $
+ * $Id: flavor_basic.c,v 1.78 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -523,7 +523,7 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
                                       (l->first_kiss ? l->first_kiss : ""),
                                       PBC_GETVAR_PINIT, l->pinit,
                                       PBC_GETVAR_REPLY, FORM_REPLY,
-                                      PBC_GETVAR_CREATE_TS, time (NULL)
+                                      PBC_GETVAR_CREATE_TS, pbc_time (NULL)
             );
     }
 
@@ -554,7 +554,7 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
         }
     }
 
-    snprintf (now, sizeof (now), "%ld", time (NULL));
+    snprintf (now, sizeof (now), "%ld", pbc_time (NULL));
 
     /* what should the user field look like? */
     user_field = flb_get_user_field (p, l, c, reason);
@@ -699,7 +699,7 @@ static login_result process_basic (pool * p,
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                           "process_basic: create=%d\n", l->create_ts);
         if (l->create_ts
-            && (time (NULL) >
+            && (pbc_time (NULL) >
                 (l->create_ts +
                  libpbc_config_getint (p, "form_expire_time",
                                        PBC_DEFAULT_FORM_EXPIRE_TIME)))) {
@@ -719,9 +719,9 @@ static login_result process_basic (pool * p,
             /* authn succeeded! */
 
             /* set the create time */
-            l->create_ts = time (NULL);
+            l->create_ts = pbc_time (NULL);
             if (c != NULL)
-                c->create_ts = time (NULL);
+                c->create_ts = pbc_time (NULL);
 
             /* xxx modify 'l' accordingly ? */
 
@@ -808,7 +808,7 @@ static login_result process_basic (pool * p,
     } else if (l->session_reauth &&
                ((l->session_reauth == 1) ||
                 (c
-                 && (c->create_ts + (l->session_reauth) < time (NULL))))) {
+                 && (c->create_ts + (l->session_reauth) < pbc_time (NULL))))) {
         *errstr = "reauthentication required";
         rcode = FLB_REAUTH;
 

@@ -16,7 +16,7 @@
  */
 
 /*
-  $Id: index.cgi.h,v 1.59 2005-11-09 23:48:59 fox Exp $
+  $Id: index.cgi.h,v 1.60 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_LOGIN_CGI
@@ -27,15 +27,14 @@
 # include "pbc_path.h"
 #endif
 
+#include "pbc_time.h"
+
 /* cgic---needed for typenames */
 #ifdef HAVE_CGIC_H
 # include <cgic.h>
 #endif /* HAVE_CGIC_H */
 
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
-
+#include "pubcookie.h"
 #include "security.h"
 
 typedef struct
@@ -64,8 +63,8 @@ typedef struct
     char *flag;
     char *referer;
     char type;
-    time_t create_ts;
-    time_t expire_ts;
+    pbc_time_t create_ts;
+    pbc_time_t expire_ts;
     int pre_sess_token;
     int session_reauth;
     int duration;
@@ -127,7 +126,7 @@ void print_uwnetid_logo (pool *);
 login_rec *verify_unload_login_cookie (pool *, const security_context *,
                                        login_rec *);
 int create_cookie (pool *, const security_context *, char *, char *,
-                   char *, char, char, int, time_t, time_t, char *,
+                   char *, char, char, int, pbc_time_t, pbc_time_t, char *,
                    const char *host, int, char);
 int get_cookie (pool * p, char *name, char *result, int max, int n);
 login_rec *get_query (pool *);

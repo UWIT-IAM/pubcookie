@@ -18,7 +18,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.59 2005-06-22 16:39:24 dors Exp $
+ * $Id: keyclient.c,v 2.60 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -358,7 +358,7 @@ int main (int argc, char *argv[])
 
     /* initalize the PRNG as best we can if we have to */
     if (RAND_status () == 0) {
-        time_t t = time (NULL);
+        pbc_time_t t = pbc_time (NULL);
         pid_t pid = getpid ();
 #ifndef WIN32
         char buf[1024];

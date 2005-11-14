@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.13 2005-02-24 00:46:05 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.14 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -278,7 +278,7 @@ int flus_get_custom_login_msg (pool * p, const char *appid,
 char ride_free_zone (login_rec * l, login_rec * c)
 {
     char *cookie;
-    time_t t;
+    pbc_time_t t;
     pool *p = NULL;
     char func[] = "ride_free_zone";
 
@@ -306,7 +306,7 @@ char ride_free_zone (login_rec * l, login_rec * c)
         return (PBC_CREDS_NONE);
     }
 
-    if ((c->create_ts + RIDE_FREE_TIME) < (t = time (NULL))) {
+    if ((c->create_ts + RIDE_FREE_TIME) < (t = pbc_time (NULL))) {
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                           "%s %s: No Free Ride login cookie created: %d now: %d user: %s",
                           func, l->first_kiss, c->create_ts, t, c->user);
@@ -750,7 +750,7 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
                                       PBC_GETVAR_REPLY, FORM_REPLY);
     }
 
-    snprintf (now, sizeof (now), "%d", time (NULL));
+    snprintf (now, sizeof (now), "%d", pbc_time (NULL));
 
     /* what should the uwnetid field look like? */
     user_field = flus_get_user_field (p, l, c, reason);
@@ -903,9 +903,9 @@ static login_result process_uwsecurid (pool * p,
 
 
             /* set the create time */
-            l->create_ts = time (NULL);
+            l->create_ts = pbc_time (NULL);
             if (c != NULL)
-                c->create_ts = time (NULL);
+                c->create_ts = pbc_time (NULL);
 
             /* xxx modify 'l' accordingly ? */
 

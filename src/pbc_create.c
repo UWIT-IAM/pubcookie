@@ -24,7 +24,7 @@
  *             crypt_file cert_key_file
  *    anything too big is just truncated, no support for defaults or anything
  *
- * $Id: pbc_create.c,v 1.22 2005-02-07 22:26:38 willey Exp $
+ * $Id: pbc_create.c,v 1.23 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -33,13 +33,11 @@
 # include "pbc_path.h"
 #endif
 
+#include "pbc_time.h"
+
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
 #endif /* HAVE_STDIO_H */
-
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
 
 #ifdef HAVE_STRING_H
 # include <string.h>

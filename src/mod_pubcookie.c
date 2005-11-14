@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.193 2005-11-09 23:48:59 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.194 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -27,6 +27,8 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 #ifdef APACHE2
 #undef HAVE_CONFIG_H
@@ -85,17 +87,10 @@ typedef apr_table_t table;
 #include "html.h"
 
 /* system stuff */
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
 
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
-
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
@@ -1738,7 +1733,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                                "S cookie hard expired; user: %s cookie timestamp: %d timeout: %d now: %d uri: %s\n",
                                (*cookie_data).broken.user,
                                (*cookie_data).broken.create_ts,
-                               cfg->hard_exp, time (NULL), r->uri);
+                               cfg->hard_exp, pbc_time (NULL), r->uri);
                 rr->failed = PBC_BAD_AUTH;
                 rr->redir_reason_no = PBC_RR_SHARDEX_CODE;
                 return OK;
@@ -1751,7 +1746,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                                "S cookie inact expired; user: %s cookie timestamp %d timeout: %d now: %d uri: %s\n",
                                (*cookie_data).broken.user,
                                (*cookie_data).broken.last_ts,
-                               cfg->inact_exp, time (NULL), r->uri);
+                               cfg->inact_exp, pbc_time (NULL), r->uri);
                 rr->failed = PBC_BAD_AUTH;
                 rr->redir_reason_no = PBC_RR_SINAEX_CODE;
                 return OK;
@@ -1891,7 +1886,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
              PBC_GRANTING_EXPIRE) == PBC_FAIL) {
             ap_log_rerror (PC_LOG_INFO, r,
                            "pubcookie_user: G cookie expired by %ld; user: %s create: %ld uri: %s",
-                           time (NULL) - (*cookie_data).broken.create_ts -
+                           pbc_time (NULL) - (*cookie_data).broken.create_ts -
                            PBC_GRANTING_EXPIRE, (*cookie_data).broken.user,
                            (*cookie_data).broken.create_ts, r->uri);
             rr->failed = PBC_BAD_AUTH;

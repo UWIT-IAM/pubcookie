@@ -18,7 +18,7 @@
 /** @file what_is_my_ip.c
  * Identifies IP being used by pubcookie
  *
- * $Id: what_is_my_ip.c,v 1.13 2005-02-07 22:26:38 willey Exp $
+ * $Id: what_is_my_ip.c,v 1.14 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -26,6 +26,8 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
@@ -38,10 +40,6 @@
 #ifdef HAVE_STDLIB_H
 # include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
-
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
 
 #ifdef HAVE_STRING_H
 # include <string.h>

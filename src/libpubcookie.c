@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.86 2005-09-15 19:49:10 fox Exp $
+ * $Id: libpubcookie.c,v 2.87 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -26,6 +26,8 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 #ifdef APACHE2
 #undef HAVE_CONFIG_H
@@ -53,10 +55,6 @@
 #  include <stdarg.h>
 # endif /* HAVE_STDARG_H */
 
-# ifdef HAVE_TIME_H
-#  include <time.h>
-# endif /* HAVE_TIME_H */
-
 # ifdef HAVE_STRING_H
 #  include <string.h>
 # endif /* HAVE_STRING_H */
@@ -64,10 +62,6 @@
 # ifdef HAVE_STRINGS_H
 #  include <strings.h>
 # endif /* HAVE_STRINGS_S */
-
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# endif /* HAVE_SYS_TIME_H */
 
 # ifdef HAVE_SYS_UTSNAME_H
 #  include <sys/utsname.h>
@@ -227,12 +221,12 @@ static void print_hex_bytes (pool * p, FILE * f, void *s_in, int len)
 }
 
 /* get a nice pretty log time                                                 */
-char *libpbc_time_string (pool * p, time_t t)
+char *libpbc_time_string (pool * p, pbc_time_t t)
 {
     struct tm *tm;
     static char buf[PBC_1K];
 
-    tm = localtime (&t);
+    tm = localtime ( (const time_t *) &t);
     strftime (buf, sizeof (buf) - 1, "%Y/%m/%d %H:%M:%S", tm);
 
     return buf;
@@ -639,12 +633,12 @@ unsigned char *libpbc_stringify_cookie_data (pool * p,
     ptr += sizeof (int);
 
     temp = htonl ((*cookie_data).broken.create_ts);
-    memcpy (ptr, &temp, sizeof (int));
-    ptr += sizeof (int);
+    memcpy (ptr, &temp, sizeof (pbc_time_t));
+    ptr += sizeof (pbc_time_t);
 
     temp = htonl ((*cookie_data).broken.last_ts);
-    memcpy (ptr, &temp, sizeof (int));
-    ptr += sizeof (int);
+    memcpy (ptr, &temp, sizeof (pbc_time_t));
+    ptr += sizeof (pbc_time_t);
 
     return cookie_string;
 
@@ -672,8 +666,8 @@ void libpbc_populate_cookie_data (pool * p, pbc_cookie_data * cookie_data,
                                   unsigned char type,
                                   unsigned char creds,
                                   int pre_sess_token,
-                                  time_t create,
-                                  time_t expire,
+                                  pbc_time_t create,
+                                  pbc_time_t expire,
                                   unsigned char *appsrvid,
                                   unsigned char *appid)
 {
@@ -765,8 +759,8 @@ unsigned char *libpbc_get_cookie (pool * p,
                                            type,
                                            creds,
                                            pre_sess_token,
-                                           time (NULL),
-                                           time (NULL),
+                                           pbc_time (NULL),
+                                           pbc_time (NULL),
                                            appsrvid,
                                            appid, peer, use_granting,
                                            alg));
@@ -786,7 +780,7 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               unsigned char type,
                                               unsigned char creds,
                                               int pre_sess_token,
-                                              time_t create, time_t expire,
+                                              pbc_time_t create, pbc_time_t expire,
                                               unsigned char *appsrvid,
                                               unsigned char *appid,
                                               const char *peer,
@@ -915,7 +909,7 @@ unsigned char *libpbc_update_lastts (pool * p,
     unsigned char *cookie;
     char alg = cookie_data->broken.version[2];
 
-    (*cookie_data).broken.last_ts = time (NULL);
+    (*cookie_data).broken.last_ts = pbc_time (NULL);
     cookie_string = libpbc_stringify_cookie_data (p, cookie_data);
     cookie =
         libpbc_sign_bundle_cookie (p, context, cookie_string, peer,
@@ -955,14 +949,14 @@ int libpbc_check_version (pool * p, pbc_cookie_data * cookie_data)
  * @param exp number of seconds for timeout
  * @returns PBC_OK if not expired, PBC_FAIL if expired
  */
-int libpbc_check_exp (pool * p, time_t fromc, int exp)
+int libpbc_check_exp (pool * p, pbc_time_t fromc, int exp)
 {
 
 #ifdef IMMORTAL_COOKIES
     return PBC_OK;
 #endif
 
-    if ((fromc + exp) > time (NULL))
+    if ((fromc + exp) > pbc_time (NULL))
         return PBC_OK;
     else
         return PBC_FAIL;

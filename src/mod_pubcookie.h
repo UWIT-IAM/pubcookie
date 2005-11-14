@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.16 2005-06-21 18:02:12 willey Exp $
+    $Id: mod_pubcookie.h,v 2.17 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -27,6 +27,8 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 /* apache includes */
 #include "httpd.h"
@@ -60,17 +62,9 @@
 #include "security.h"
 
 /* system stuff */
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif /* HAVE_STRING_H */
-
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>

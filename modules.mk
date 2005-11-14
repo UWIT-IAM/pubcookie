@@ -5,7 +5,7 @@
 MOD_PUBCOOKIE=libpubcookie base64 strlcpy pbc_myconfig \
         security_legacy \
         pbc_logging capture_cmd_output pbc_configure \
-        mod_pubcookie pbc_apacheconfig
+        mod_pubcookie pbc_apacheconfig pbc_time
 
 mod_pubcookie.la: ${MOD_PUBCOOKIE:=.slo}
 	$(SH_LINK) -rpath $(libexecdir) -module -avoid-version ${MOD_PUBCOOKIE:=.lo}

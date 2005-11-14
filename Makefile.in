@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.64 2004-12-23 15:51:57 dors Exp $
+# $Id: Makefile.in,v 1.65 2005-11-14 22:37:22 jjminer Exp $
 
 @SET_MAKE@
 
@@ -150,7 +150,8 @@ LIB_HEAD=$(srcdir)/src/pbc_config.h \
 		 $(srcdir)/src/pbc_logging.h \
 		 $(srcdir)/src/strlcpy.h \
 		 $(srcdir)/src/snprintf.h \
-		 $(srcdir)/src/pbc_configure.h
+		 $(srcdir)/src/pbc_configure.h \
+		 $(srcdir)/src/pbc_time.h
 
 
 LIB_SRC=$(srcdir)/src/libpubcookie.c \
@@ -161,7 +162,8 @@ LIB_SRC=$(srcdir)/src/libpubcookie.c \
 		$(srcdir)/src/security_legacy.c \
 		$(srcdir)/src/pbc_logging.c \
 		$(srcdir)/src/capture_cmd_output.c \
-		$(srcdir)/src/pbc_configure.c
+		$(srcdir)/src/pbc_configure.c \
+		$(srcdir)/src/pbc_time.c
 
 LIB_OBJ=$(builddir)/src/libpubcookie.o \
 		$(builddir)/src/base64.o \
@@ -171,7 +173,8 @@ LIB_OBJ=$(builddir)/src/libpubcookie.o \
 		$(builddir)/src/security_legacy.o \
 		$(builddir)/src/pbc_logging.o \
 		$(builddir)/src/capture_cmd_output.o \
-		$(builddir)/src/pbc_configure.o
+		$(builddir)/src/pbc_configure.o \
+		$(builddir)/src/pbc_time.o
 
 MOD_SRC=$(srcdir)/src/mod_pubcookie.c \
         $(srcdir)/src/pbc_apacheconfig.c

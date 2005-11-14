@@ -43,13 +43,15 @@
  *   @return 0 on success, -1 if sid lookup fails, -3 next PRN,
  *          -2 on system error
  *
- * $Id: verify_uwsecurid.c,v 2.7 2005-02-07 22:26:38 willey Exp $
+ * $Id: verify_uwsecurid.c,v 2.8 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
@@ -94,10 +96,6 @@ pool *p = NULL;
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
-
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
 
 #ifdef HAVE_SYS_RESOURCE_H
 # include <sys/resource.h>
@@ -152,7 +150,7 @@ int securid (char *reason,
     int i, prn, ret;
     char tmp_res[BIGS];
     struct stat info;
-    time_t date;
+    pbc_time_t date;
     char buff[BSIZ];
     int mode, opts, rets;
     MgoHandle *shndl;
@@ -160,7 +158,7 @@ int securid (char *reason,
 
     MGOzero (&crn, sizeof (CrnList));
     strcpy (crn.principal, user);
-    time (&date);
+    pbc_time (&date);
     shndl = NULL;
     rets = 0;
     sprintf (buff, "%s/%s", "weblogin", user);

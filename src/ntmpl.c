@@ -18,7 +18,7 @@
 /** @file ntmpl.c
  * Template library
  *
- * $Id: ntmpl.c,v 1.25 2005-06-01 21:17:46 willey Exp $
+ * $Id: ntmpl.c,v 1.26 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -30,11 +30,9 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+#include "pbc_time.h"
 
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
+typedef void pool;
 
 #ifdef HAVE_STRINGS_H
 # include <strings.h>

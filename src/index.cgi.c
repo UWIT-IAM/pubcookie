@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.167 2005-11-09 23:48:59 fox Exp $
+ * $Id: index.cgi.c,v 1.168 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -29,6 +29,8 @@
 # include "config.h"
 # include "pbc_path.h"
 #endif
+
+#include "pbc_time.h"
 
 /* LibC */
 #ifdef HAVE_ARPA_INET_H
@@ -74,14 +76,6 @@
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif /* HAVE_SYS_SOCKET_H */
-
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif /* HAVE_SYS_TIME_H */
-
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -471,7 +465,7 @@ void print_http_header (pool * p)
  * @returns PBC_FAIL for expired
  * @returns PBC_OK   for not expired
  */
-int check_l_cookie_expire (pool * p, login_rec * c, time_t t)
+int check_l_cookie_expire (pool * p, login_rec * c, pbc_time_t t)
 {
 
 #ifndef IMMORTAL_COOKIES
@@ -752,7 +746,7 @@ int expire_login_cookie (pool * p, const security_context * context,
         user = c->user;
     }
 
-    l_res = create_cookie (p, context, urluser = url_encode (p, user), urlappsrvid = url_encode (p, "expired"), urlappid = url_encode (p, "expired"), PBC_COOKIE_TYPE_L, PBC_CREDS_NONE, 23, 0, time (NULL), l_cookie, NULL,    /* sending it to myself */
+    l_res = create_cookie (p, context, urluser = url_encode (p, user), urlappsrvid = url_encode (p, "expired"), urlappid = url_encode (p, "expired"), PBC_COOKIE_TYPE_L, PBC_CREDS_NONE, 23, 0, pbc_time (NULL), l_cookie, NULL,    /* sending it to myself */
                            PBC_4K, PBC_DEF_CRYPT);
 
     if (urluser != NULL)
@@ -1477,9 +1471,9 @@ int get_kiosk_duration (pool * p, login_rec * l)
  * @param *l from login session
  * @returns time of expiration
  */
-time_t compute_l_expire (pool * p, login_rec * l)
+pbc_time_t compute_l_expire (pool * p, login_rec * l)
 {
-    time_t t;
+    pbc_time_t t;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "compute_l_expire: hello");
 
@@ -1489,7 +1483,7 @@ time_t compute_l_expire (pool * p, login_rec * l)
             libpbc_config_getint (p, "default_l_expire",
                                   DEFAULT_LOGIN_EXPIRE);
 
-    t = time (NULL) + l->duration;
+    t = pbc_time (NULL) + l->duration;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "compute_l_expire: bye %d",
                       t);
@@ -1514,9 +1508,9 @@ const char *time_remaining_text (pool * p, login_rec * c)
         return (NULL);
 
     if (c->expire_ts == 0) {
-        secs_left = c->create_ts + DEFAULT_LOGIN_EXPIRE - time (NULL);
+        secs_left = c->create_ts + DEFAULT_LOGIN_EXPIRE - pbc_time (NULL);
     } else {
-        secs_left = c->expire_ts - time (NULL);
+        secs_left = c->expire_ts - pbc_time (NULL);
     }
 
     if (secs_left <= 0)
@@ -1615,7 +1609,7 @@ int logout (pool * p, const security_context * context, login_rec * l,
 
         app_logged_out (p, c, appid, appsrvid);
         if (c == NULL
-            || check_l_cookie_expire (p, c, time (NULL)) == PBC_FAIL) {
+            || check_l_cookie_expire (p, c, pbc_time (NULL)) == PBC_FAIL) {
             ntmpl_print_html (p, TMPL_FNAME,
                               libpbc_config_getstring (p,
                                                        "tmpl_logout_already_weblogin",
@@ -1664,7 +1658,7 @@ int logout (pool * p, const security_context * context, login_rec * l,
                                                    "logout_part1"), NULL);
         app_logged_out (p, c, appid, appsrvid);
         if (c == NULL
-            || check_l_cookie_expire (p, c, time (NULL)) == PBC_FAIL)
+            || check_l_cookie_expire (p, c, pbc_time (NULL)) == PBC_FAIL)
             ntmpl_print_html (p, TMPL_FNAME,
                               libpbc_config_getstring (p,
                                                        "tmpl_logout_already_weblogin",
@@ -1702,7 +1696,7 @@ int logout (pool * p, const security_context * context, login_rec * l,
                                                    "tmpl_logout_part1",
                                                    "logout_part1"), NULL);
         if (c == NULL
-            || check_l_cookie_expire (p, c, time (NULL)) == PBC_FAIL)
+            || check_l_cookie_expire (p, c, pbc_time (NULL)) == PBC_FAIL)
             ntmpl_print_html (p, TMPL_FNAME,
                               libpbc_config_getstring (p,
                                                        "tmpl_logout_already_weblogin",
@@ -1865,7 +1859,7 @@ int pinit (pool * p, const security_context * context, login_rec * l,
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "pinit: hello");
 
-    if (c == NULL || check_l_cookie_expire (p, c, time (NULL)) == PBC_FAIL) {
+    if (c == NULL || check_l_cookie_expire (p, c, pbc_time (NULL)) == PBC_FAIL) {
         /* what credentials should we default to if a user has
            come directly to us? */
         const char *credname =
@@ -2268,7 +2262,7 @@ int cgiMain ()
 char *check_l_cookie (pool * p, const security_context * context,
                       login_rec * l, login_rec * c)
 {
-    time_t t;
+    pbc_time_t t;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "check_l_cookie: hello\n");
 
@@ -2290,7 +2284,7 @@ char *check_l_cookie (pool * p, const security_context * context,
         return "malformed";
     }
 
-    if (check_l_cookie_expire (p, c, t = time (NULL)) == PBC_FAIL) {
+    if (check_l_cookie_expire (p, c, t = pbc_time (NULL)) == PBC_FAIL) {
         pbc_log_activity (p, PBC_LOG_AUDIT,
                           "%s expired login cookie; created: %d expire: %d now: %d",
                           l->first_kiss, c->create_ts, c->expire_ts, t);
@@ -2558,7 +2552,7 @@ int set_l_cookie (pool * p, const security_context * context,
                            l->creds,
                            0,
                            (c != NULL ? c->create_ts : 0),
-                           (c == NULL || c->expire_ts < time (NULL)
+                           (c == NULL || c->expire_ts < pbc_time (NULL)
                             ? compute_l_expire (p, l)
                             : c->expire_ts), l_cookie, NULL,    /* sending it to myself */
                            PBC_4K, PBC_DEF_CRYPT);
@@ -3020,7 +3014,7 @@ login_rec *verify_unload_login_cookie (pool * p,
     pbc_cookie_data *cookie_data;
     char *cookie = NULL;
     login_rec *new = NULL;
-    time_t t;
+    pbc_time_t t;
     int cn = 0;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
@@ -3059,7 +3053,7 @@ login_rec *verify_unload_login_cookie (pool * p,
 
     pbc_free (p, cookie_data);
 
-    if (check_l_cookie_expire (p, new, t = time (NULL)) == PBC_FAIL)
+    if (check_l_cookie_expire (p, new, t = pbc_time (NULL)) == PBC_FAIL)
         new->alterable_username = PBC_TRUE;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
@@ -3077,8 +3071,8 @@ int create_cookie (pool * p, const security_context * context,
                    char type,
                    char creds,
                    int pre_sess_tok,
-                   time_t create,
-                   time_t expire, char *cookie, const char *host, int max,
+                   pbc_time_t create,
+                   pbc_time_t expire, char *cookie, const char *host, int max,
                    char alg)
 {
     /* measured quantities */
@@ -3133,7 +3127,7 @@ int create_cookie (pool * p, const security_context * context,
 
     /* if this is an update use the old time stamp */
     if (create == 0)
-        create = time (NULL);
+        create = pbc_time (NULL);
 
     cookie_local = (char *)
         libpbc_get_cookie_with_expire (p, context, user, type, creds,

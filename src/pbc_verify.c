@@ -27,7 +27,7 @@
  *
  * key and cert locations all come from pubcookie config
  *
- * $Id: pbc_verify.c,v 1.24 2005-09-21 21:56:57 willey Exp $
+ * $Id: pbc_verify.c,v 1.25 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -36,13 +36,11 @@
 # include "pbc_path.h"
 #endif
 
+#include "pbc_time.h"
+
 #ifdef HAVE_STDIO_H
 # include <stdio.h>
 #endif /* HAVE_STDIO_H */
-
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
 
 #ifdef HAVE_STRING_H
 # include <string.h>

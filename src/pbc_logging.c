@@ -18,7 +18,7 @@
 /** @file pbc_logging.c
  * Logging
  *
- * $Id: pbc_logging.c,v 1.32 2005-04-13 21:29:49 willey Exp $
+ * $Id: pbc_logging.c,v 1.33 2005-11-14 22:37:22 jjminer Exp $
  */
 
 
@@ -27,11 +27,9 @@
 # include "pbc_path.h"
 #endif
 
-typedef void pool;
+#include "pbc_time.h"
 
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
+typedef void pool;
 
 #ifdef HAVE_STRINGS_H
 # include <strings.h>

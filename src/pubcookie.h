@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: pubcookie.h,v 1.27 2005-09-01 20:58:01 willey Exp $
+    $Id: pubcookie.h,v 1.28 2005-11-14 22:37:22 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_MAIN
@@ -26,9 +26,7 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_TIME_H
-# include <time.h>
-#endif /* HAVE_TIME_H */
+#include "pbc_time.h"
 
 #ifdef OPENSSL_IN_DIR
 # include <openssl/pem.h>
@@ -75,8 +73,8 @@ typedef struct
     unsigned char type;
     unsigned char creds;
     int pre_sess_token;
-    int create_ts;
-    int last_ts;
+    pbc_time_t create_ts;
+    pbc_time_t last_ts;
 }
 cookie_data_struct;
 
