@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.62 2005-07-06 23:37:39 willey Exp $
+ * $Id: keyserver.c,v 2.63 2005-11-14 21:45:39 jjminer Exp $
  */
 
 
@@ -162,6 +162,7 @@ const char *certfile = NULL;
 const char *cadir = NULL;
 const char *cafile = NULL;
 const char *gcfile = NULL;
+const char *configfile = NULL;
 
 enum optype
 {
@@ -242,7 +243,7 @@ int pushkey (const char *peer, const security_context * context,
         }
         if (res == 0) {
             const char *keyclient = KEYCLIENT;
-            const char *cmd[15];
+            const char *cmd[20];
             int n = 0;
             cmd[n++] = keyclient;
             cmd[n++] = "-q";
@@ -267,10 +268,14 @@ int pushkey (const char *peer, const security_context * context,
                 cmd[n++] = "-D";
                 cmd[n++] = cadir;
             }
+            if (NULL != configfile) {
+                cmd[n++] = "-f";
+                cmd[n++] = configfile;
+            }
             cmd[n] = NULL;
 
             res = execv (keyclient, (char **const) cmd);
-            pbc_log_activity (p, PBC_LOG_ERROR, "execl(): %m");
+            pbc_log_activity (p, PBC_LOG_ERROR, "execv(): %m");
             for (n = 0; cmd[n] != NULL; n++) {
                 pbc_log_activity (p, PBC_LOG_ERROR, "%d %s", n, cmd[n]);
             }
@@ -903,7 +908,6 @@ int main (int argc, char *argv[])
     pool *p = NULL;
     security_context *context = NULL;
     int max_wait = 0;
-    const char *configfile = NULL;
 
     while ((c = getopt (argc, argv, "apc:k:C:D:f:")) != -1) {
         switch (c) {
