@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.168 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: index.cgi.c,v 1.169 2005-11-16 17:09:00 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -3011,7 +3011,7 @@ login_rec *verify_unload_login_cookie (pool * p,
                                        const security_context * context,
                                        login_rec * l)
 {
-    pbc_cookie_data *cookie_data;
+    pbc_cookie_data *cookie_data = NULL;
     char *cookie = NULL;
     login_rec *new = NULL;
     pbc_time_t t;
