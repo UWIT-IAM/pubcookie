@@ -1,10 +1,35 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.85 $)
-AC_INIT(Pubcookie, [3.2.2 pre-beta1], pubcookie-dev@u.washington.edu)
+AC_REVISION($Revision: 1.86 $)
+
+dnl Unfortunately, this must come before the seperate version splits, which are
+dnl definted below.  Please set them first, and then set the second argument of
+dnl this to:
+dnl PBC_VERSION_MAJOR.PBC_VERSION_MINOR.PBC_VERSION_PATCH PBC_VERSION_TYPE
+dnl Omit PBC_VERSION_TYPE if the TYPE is "final"
+dnl I apologize that this isn't done automatically
+AC_INIT(Pubcookie, [3.2.1a wisc-2], pubcookie-dev@u.washington.edu)
+
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
 AC_LANG(C)
+
+dnl The version number, to be assembled
+PBC_VERSION_MAJOR=3
+PBC_VERSION_MINOR=2
+PBC_VERSION_PATCH=2
+
+dnl The version "type".
+dnl If this is "final", it is not included in the version string.
+dnl Otherwise it is.  For the National Edition, this will be "pre-beta" or
+dnl "beta".  For campus editions, this will be unique for the campus, we
+dnl imagine.
+PBC_VERSION_TYPE=pre-beta1
+
+AC_SUBST(PBC_VERSION_MAJOR, "$PBC_VERSION_MAJOR")
+AC_SUBST(PBC_VERSION_MINOR, "$PBC_VERSION_MINOR")
+AC_SUBST(PBC_VERSION_PATCH, "$PBC_VERSION_PATCH")
+AC_SUBST(PBC_VERSION_TYPE, "$PBC_VERSION_TYPE") 
 
 # Set default prefix to /usr/local/pubcookie
 AC_PREFIX_DEFAULT(/usr/local/pubcookie)
@@ -889,7 +914,7 @@ AC_SUBST( SNPRINTF_C, $SNPRINTF_C )
 
 AM_MAINTAINER_MODE
 
-AC_CONFIG_FILES([Makefile src/pbc_path.h cgic/Makefile])
+AC_CONFIG_FILES([Makefile src/pbc_path.h src/pbc_version.h cgic/Makefile])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
 
 

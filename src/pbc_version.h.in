@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: pbc_version.h,v 1.77 2005-09-01 19:37:04 willey Exp $
+    $Id: pbc_version.h.in,v 1.1 2005-11-16 02:57:05 jjminer Exp $
  */
 
 #ifndef PUBCOOKIE_VERSION
@@ -33,20 +33,17 @@
  * Someday the cookie version will be the major version or something like that.
  */
 
-#define PBC_VERSION_MAJOR "3"
-#define PBC_VERSION_MINOR "2"
-#define PBC_VERSION_PATCH "2"
-
-/* beta or final, so the code knows what it is, should it care. */
-#define PBC_VERSION_RELEASE "final"
-
 /*
- * Please note that if you change the version string here, you should change it
- * in configure.ac and re-run autoconf and autoheader.
- * This is _exactly_ the same as PACKAGE_VERSION in configure.  At some point
- * configure should probably set this.
+ * NOTE: These version strings are from configure.ac now.
  */
 
-#define PBC_VERSION_STRING "3.2.2 pre-beta1"
+#define PBC_VERSION_MAJOR "@PBC_VERSION_MAJOR@"
+#define PBC_VERSION_MINOR "@PBC_VERSION_MINOR@"
+#define PBC_VERSION_PATCH "@PBC_VERSION_PATCH@"
+
+/* beta or final, so the code knows what it is, should it care. */
+#define PBC_VERSION_RELEASE "@PBC_VERSION_TYPE@"
+
+#define PBC_VERSION_STRING "@PACKAGE_VERSION@"
 
 #endif /* !PUBCOOKIE_VERSION */
