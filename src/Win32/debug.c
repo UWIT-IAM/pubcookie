@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.18 2005-05-13 15:43:13 suh Exp $
+//  $Id: debug.c,v 1.19 2005-11-23 18:48:03 suh Exp $
 //
 
 #include <windows.h>
@@ -103,7 +103,7 @@ extern void filter_log_activity (pubcookie_dir_rec *p, const char * source, int 
 
 void pbc_vlog_activity(pubcookie_dir_rec *p, int logging_level, const char * format, va_list args )
 {
-	filter_log_activity (p, "Pubcookie ", logging_level, format, args);
+	filter_log_activity (p, "Pubcookie", logging_level, format, args);
 }
 
 /* Called whenever you don't have a pool yet available */
