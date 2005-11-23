@@ -17,7 +17,7 @@
  */
 
 /*
-  $Id: pbc_time.h,v 2.1 2005-11-14 22:37:22 jjminer Exp $
+  $Id: pbc_time.h,v 2.2 2005-11-23 01:04:18 suh Exp $
  */
 
 #ifndef INCLUDED_PBC_TIME_H
@@ -43,7 +43,11 @@
 # include <string.h>
 #endif /* HAVE_STRING_H */
 
-typedef int32_t pbc_time_t;
+#ifdef WIN32
+	typedef int pbc_time_t; //on Windows int is always 32bit	
+#else
+	typedef int32_t pbc_time_t;
+#endif
 
 /**
  *
