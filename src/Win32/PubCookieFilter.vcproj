@@ -177,7 +177,7 @@
 				RelativePath="..\pbc_myconfig.c">
 			</File>
 			<File
-				RelativePath="\\suh.homedir.nebula.washington.edu\homes\pubCookieCVS_Win\webiso\pubcookie\src\pbc_time.c">
+				RelativePath="..\pbc_time.c">
 			</File>
 			<File
 				RelativePath=".\PubCookieFilter.cpp">
@@ -217,7 +217,7 @@
 				RelativePath="..\pbc_myconfig.h">
 			</File>
 			<File
-				RelativePath="\\suh.homedir.nebula.washington.edu\homes\pubCookieCVS_Win\webiso\pubcookie\src\pbc_time.h">
+				RelativePath="..\pbc_time.h">
 			</File>
 			<File
 				RelativePath="..\pbc_version.h">
