@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.53 2005-09-16 21:07:54 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.54 2005-11-23 01:06:54 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -721,13 +721,13 @@ int Pubcookie_Check_Version (HTTP_FILTER_CONTEXT* pFC, unsigned char *a, unsigne
 
 
 /* check and see if whatever has timed out                                    */
-int Pubcookie_Check_Exp(HTTP_FILTER_CONTEXT* pFC, time_t fromc, int exp)
+int Pubcookie_Check_Exp(HTTP_FILTER_CONTEXT* pFC, pbc_time_t fromc, int exp)
 {
     pubcookie_dir_rec   *p;
 
 	p = (pubcookie_dir_rec *)pFC->pFilterContext;
 
-	if ( (fromc + exp) > time(NULL) ) {
+	if ( (fromc + exp) > pbc_time (NULL) ) {
 		filterlog(p, LOG_INFO," Pubcookie_Check_Exp: True");
 		return 1;
 	}
@@ -1490,7 +1490,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
                 (*cookie_data).broken.user,
                 (*cookie_data).broken.create_ts,
                 p->hard_exp,
-                (time(NULL)-(*cookie_data).broken.create_ts) );
+                (pbc_time(NULL)-(*cookie_data).broken.create_ts) );
 			if ( strcmp(p->force_reauth,PBC_NO_FORCE_REAUTH) != 0 &&
 				 strlen(p->timeout_url) > 0 )
 				strcpy((char *)p->force_reauth,p->timeout_url);
@@ -1503,7 +1503,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
                 (*cookie_data).broken.user,
                 (*cookie_data).broken.create_ts,
                 p->hard_exp,
-                (time(NULL)-(*cookie_data).broken.create_ts) );
+                (pbc_time(NULL)-(*cookie_data).broken.create_ts) );
 		}
 
 		if(p->inact_exp != -1 &&
@@ -1512,7 +1512,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
                 (*cookie_data).broken.user,
                 (*cookie_data).broken.last_ts,
                 p->inact_exp,
-                (time(NULL)-(*cookie_data).broken.last_ts) );
+                (pbc_time(NULL)-(*cookie_data).broken.last_ts) );
 			if ( strcmp(p->force_reauth,PBC_NO_FORCE_REAUTH) != 0 &&
 				 strlen(p->timeout_url) > 0 )
 				strcpy((char *)p->force_reauth,p->timeout_url);
@@ -1573,7 +1573,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 		if( ! Pubcookie_Check_Exp(pFC,(*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
 			filterlog(p, LOG_INFO,"[Pubcookie_User] Granting cookie expired for user: %s  elapsed: %d limit: %d; remote_host: %s", 
-				(*cookie_data).broken.user,(time(NULL)-(*cookie_data).broken.create_ts), PBC_GRANTING_EXPIRE, p->remote_host);
+				(*cookie_data).broken.user,(pbc_time(NULL)-(*cookie_data).broken.create_ts), PBC_GRANTING_EXPIRE, p->remote_host);
 			p->failed = PBC_GRANTING_TIMEOUT;
 			pbc_free(p, cookie_data);
 			return OK;
@@ -1879,7 +1879,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	DWORD dwBuffSize=PBC_MAX_GET_ARGS + 100;
 	DWORD return_rslt;
 	pubcookie_dir_rec* p;
-	time_t ltime;
+	pbc_time_t ltime;
 
 	// pFC->pFilterContext = pbc_malloc(p, sizeof(pubcookie_dir_rec)); 
 	/* Slower but safer to let IIS handle this malloc */
@@ -1942,7 +1942,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 		return SF_STATUS_REQ_NEXT_NOTIFICATION;
 	}
 
-	time(&ltime);
+	pbc_time(&ltime);
 
 	szBuff[0]= NULL; dwBuffSize=1024;
 	pFC->GetServerVariable(pFC, "INSTANCE_ID",
@@ -1967,7 +1967,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	strncpy((char *)p->server_hostname, szBuff, PBC_APPSRV_ID_LEN);
 	strncpy(p->appsrvid, szBuff, PBC_APPSRV_ID_LEN);   // Use SERVER_NAME for appsrvid
 
-	filterlog(p, LOG_INFO,"\n %s \n PBC_OnPreprocHeaders\n",ctime(&ltime));
+	filterlog(p, LOG_INFO,"\n %s \n PBC_OnPreprocHeaders\n",pbc_time(&ltime));
 	/* Have to use szBuff here since p->strbuff in PBC_KEY_DIR will be overwritten with the filterlog call*/
 	snprintf(szBuff,1024,"\n Using crypt key: %s\\%s",PBC_KEY_DIR,p->server_hostname);
 	filterlog(p, LOG_INFO, szBuff);
