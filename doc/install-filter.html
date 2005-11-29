@@ -493,7 +493,7 @@
 		<i>login.example.edu</i>, you would use the <tt>-H</tt> and <tt>-K</tt> options.
 
 <pre>&gt; cd C:\WINNT\system32\inetsrv\pubcookie
-&gt; pubcookie.exe -H appserver.example.edu -K https://login.example.edu:2222 </pre>
+&gt; keyclient.exe -H appserver.example.edu -K https://login.example.edu:2222 </pre>
 
 		<p>Note: The keyclient skips over expired certificates in its search for one
 		that matches the specified (<tt>-H</tt>) hostname.
@@ -680,7 +680,7 @@
 			Idle timeout). When it times out, it's like IIS has been reset, causing the filter 
 			to reinitialize and generate a new session key (if you don't have one on disk). 
 			The new session key can't be used to read old session cookies, causing error messages
-			for users will session cookies that predate the timeout. The Event log will	
+			for users with session cookies that predate the timeout. The Event log will	
 			show <i>Can't unbundle session cookie</i> errors. Uncheck idle timeout to prevent
 			this from happening.
 
