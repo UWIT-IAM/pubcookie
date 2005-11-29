@@ -1,15 +1,54 @@
+Changes with 3.3.0 Beta 1:
+
+*) Improved login cgi and Apache module to better handle stray,
+   malicious, and other spurious cookies by reading all available cookie
+   instead of checking only the first cookie.
+
+*) Removed trailing space after Pubcookie event source name to create
+   event log entries that match the source name in the registry.
+
+*) Changed all references to time_t (or int used as a time) to
+   pbc_time_t to better support 64-bit and other architectures that may
+   represent time as something other than 32-bit integer. Also changed
+   all calls to time() to call pbc_time(), which correctly sizes the
+   returned time_t to pbc_time_t.
+
+*) Version strings for Unix components are generated from configure.ac.
+   pbc_version.h is now generated from pbc_version.h.in, which is filled
+   in from the new variables in configure.ac. 
+
+*) Fixed keyserver to propagate alternate config file to keyclient calls
+   when keyserver is called with -f option.
+
+*) Added more specific error messages to Apache module for missing
+   certificate and key files.
+
+*) More fixes for 64-bit systems from Allan E. Johannesen, Worcester
+   Polytechnic Institute, and Steve Losen, University of Virginia.
+
+*) Added AES encryption support to login cgi, Apache module, and filter.
+   The application server determines which encryption algorithm is used,
+   configurable by the new PubcookieEncryption directive . AES
+   is the default and will require a AES-encryption-enabled (version 3.3
+   or higher) login server.
+
+*) Removed pre-session cookie processing from the Pubcookie filter,
+   completely, and from Apache module when using the POST method.
+   Pre-session cookies are a countermeasure to threats posed by
+   enterprise-domain cookies; so they're unnecessary when the
+   authenticaiton information is transported using the POST method.
+
 *) Fixed login cgi to forgo clearing the granting request cookie during
    POST method login requests; there is no such cookie to clear.
 
-*) Removed pre-session cookie processing from Apache module when using
-   the POST method. Pre-session cookies are a countermeasure to threats
-   posed by enterprise-domain cookies; so they're unnecessary when the
-   POST method is used to transport authentication information.
+*) Better error handling in login cgi when encountering an error during
+   initialization.
 
-*) Added AES encryption support to login cgi and Apache module. The 
-   module determines the algorithm to use, which is configurable with
-   the new PubcookieEncryption directive. AES is the default and will
-   require a AES-encryption-enabled login server.
+*) Removed remnants of Enterprise_Domain setting from MMC extension.
+
+*) Fixed Apache module to recover from pre-session cookie problems.
+
+*) Fixed Pubcookie filter to apply default AppID to root level files.
 
 Changes with 3.2.1a:
 
