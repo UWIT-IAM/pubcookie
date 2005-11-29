@@ -66,11 +66,13 @@
                   to DES or build the module with the <tt>--enable-default-des</tt> configure option.</li>
                   <li>Removed pre-session cookie countermeasure when using POST
                   <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a>. 
-                  Unneeded complexity and, as it turns out, an unnecessary countermeasure.</li>
+                  It's unneeded complexity and in this case an unnecessary countermeasure.</li>
                   <li>Added <a href="#wildcard">wildcard subdomain key</a> capability for large multi-user 
                   web-hosting environments.</li>
+                  <li>Better handling of stray, malicious, and other spurious cookies.  
+                  The module will read all available session, pre-session, and granting cookies, until it
+                  finds a valid one. Previously it only checked the first one, which may be invalid.</li>
 
-                  
                   </ul>
 
                   <p>See <tt>doc/CHANGES.txt</tt> for bug fixes and other improvements.</p> 
@@ -81,7 +83,7 @@
 
                   <dl>
 
-                  <dt>Compatibility note on version 3.3 encryption options:
+                  <dt>Compatibility note on version 3.3 encryption algorithms:
                   <dd>The version 3.3 module supports different encryption algorithms. AES encryption is the default.
                   However, earlier versions of the login server only support one algorithm, DES, so you will have to determine the
                   version of your login server and configure the <a
@@ -89,8 +91,8 @@
   
                   <dt>Compatibility note on version 3.1 relays:
                   <dd>The need for the cgi-based relays introduced in version 3.1 to authenticate across DNS domains was redressed
-                  by the POST-based messaging method introduced in version 3.2 and, thenceforth, <strong>use of third-party 3.1
-                  relays has been deprecated</strong>. A third-party relay is any relay not hosted on the same server that requests
+                  by the POST-based messaging method introduced in version 3.2. <strong>Use of third-party 3.1
+                  relays has therefore been deprecated.</strong> A third-party relay is any relay not hosted on the same server that requests
                   authentication. Application servers using third-party relays are strongly encouraged to upgrade to version 3.2 or
                   higher and use the POST-based messaging method.
 
@@ -109,17 +111,15 @@
                   <dt>Upgrading from version 3.0/3.1/3.2 to 3.3:
 
                   <dd>Apache servers being upgraded from version 3.0/3.1/3.2 to version 3.3 should be aware that <strong>version 3.3
-                  expects and uses AES encryption by default.</strong> If your login server is version 3.3 or higher
-                  there is no concern; it supports authentication requests that ask for AES encrypted replies. However, to
-                  interoperate with earlier versions of the login server, you either must set the
-                  <a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> directive to
-                  use DES encryption or, if you don't want to make any Apache configuration changes, build the module
-                  using the <tt>--enable-default-des</tt> configure option. This will ensure that your upgraded module
-                  continues to use DES encryption.
+                  expects and uses AES encryption by default.</strong> If your login server is version 3.3 or higher,
+                  interoperability isn't a concern. However, to interoperate with earlier version of login server, you should configure
+                  <a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> to use DES encryption,
+                  or, if you don't want to make any Apache configuration changes, you should build the module using the
+                  <tt>--enable-default-des</tt> configure option, which forces the module to use DES encryption by default.
 
                   <p>If your login server is version 3.3 higher and therefore allows you to use AES encryption, you should note that
                   session cookies encrypted with DES cannot be unencrypted with AES.  As a result, pre-session and session cookies
-                  obtained by users prior to upgrading the module will be invalid after the upgrade. This means some users will be
+                  obtained by users prior to upgrading the module will be invalid after the upgrade. Therefore, some users will be
                   redirected through the login server to establish a new session.</p>
 
                   <p>Clustered hosts should be upgraded with special care to keep all cluster members using the same encryption
@@ -615,19 +615,25 @@ PubcookieInactiveExpire -1
                       </li>
                       <li>
                         <p><a href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> 
-                        defines the encryption algorithm used by the module. Since the module chooses the algorithm,
-                        it's important for <a href="#compatibility">compatibility</a> reasons to get this one right.</p>
+                        defines the encryption algorithm used by the module. Since the module chooses the algorithm
+                        that the login server will use to encrypt messages, it's important to get this one correct.
+                        (See <a href="#compatibility">compatibility notes</a>.)</p>
                       </li>
                       <li>
                         <p><a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> defines
-                        the messaging method used by the module. Follow that link to review the choices.</p>
+                        the messaging method used by the module. Servers in country code top-level domains (e.g. 
+                        <i>.ca</i>, <i>.de</i>) must use the <tt>POST</tt> method.</p>
+                      </li>
+                      <li>
+                        <p><a href="mod_pubcookie-directives.html#PubcookieDomain">PubcookieDomain</a> is unnecessary
+                        if you use POST as your PubcookieLoginMethod.</p>
                       </li>
                       <li>
                         <p><a href="mod_pubcookie-directives.html#PubcookieAuthTypeNames">PubcookieAuthTypeNames</a>
                         defines the authentication types that the module enables as additional arguments to 
                         the <a href="mod_pubcookie-directives.html#AuthType">AuthType</a> directive. (<tt>EGNetID</tt>
-                        just happens to be what they use at Example State University.) Each added type corresponds
-                        with a "login flavor" offered by your login server. Most sites, however, have just one.</p>
+                        just happens to be what they use at Example State University.) Each type you define should 
+                        correspond with a "login flavor" offered by your login server. Most sites have just one.</p>
                       </li>
                       <li>
                         <p>Turning off the inactivity expiration via the <a 
@@ -653,7 +659,7 @@ PubcookieInactiveExpire -1
                       <li>
                         <p>The RSA private key represented by <a 
                         href="mod_pubcookie-directives.html#PubcookieSessionKeyFile">PubcookieSessionKeyFile</a>
-                        cannot be encrypted. The module won't initialize and therefore Apache won't start if this 
+                        cannot be encrypted. The module won't initialize, and Apache therefore won't start, if this 
                         key requires a passphrase.</p>
                       </li>
                     </ul>
@@ -662,7 +668,7 @@ PubcookieInactiveExpire -1
                       href="mod_pubcookie-directives.html">run-time configuration directives</a> reference.</p>
 
                     <li> 
-                      <p>(Optional) Add other default settings as needed, such as default timeout lengths. 
+                      <p>(Optional) Add other default settings as needed, such as default timeout durations. 
                         Refer to the module's <a href="mod_pubcookie-directives.html">run-time 
                         configuration directives</a> reference for possibilities.</p>
 

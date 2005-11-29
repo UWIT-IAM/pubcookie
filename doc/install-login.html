@@ -82,9 +82,8 @@ local login server.</p>
 Pubcookie 3.3.0:</p>
 
 <ul>
-<li>Added AES encryption support. The module and filter ask for AES or DES
-    in the authentication request. The login cgi encrypts messages accordingly. 
-    AES encryption is the default. See ... section.</li>
+<li>Added AES encryption support. The login cgi will encrypt authentication
+messages with the encryption algorithm specified in the authentication request.</li>
 
 <li>Changed login cgi to use AES encryption on its private login cookies.</li>
 
@@ -93,6 +92,10 @@ to define an alternate config file for the login cgi.</li>
 
 <li>Added support for the Apache module's wildcard subdomain key encryption mode 
 for large multi-user web-hosting environments.</li>
+
+<li>Better handling of stray, malicious, and other spurious cookies.  
+The login cgi will read all available login cookies, until it finds a valid one. 
+Previously it only checked the first one, which may be invalid.</li>
 
 <li>Added <a href="config.html#kerberos5_extralife"><tt>kerberos5_extralife</tt></a> 
 config file variable to extend the lifetime of delegated tickets past the SSO
@@ -1126,7 +1129,7 @@ Copyright 1999-2005, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.38 2005-10-18 17:39:06 dors Exp $
+$Id: install-login.html,v 1.39 2005-11-29 23:18:27 dors Exp $
 </pre>
 </body>
 
