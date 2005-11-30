@@ -16,8 +16,14 @@
 //
 
 //
-//  $Id: PubCookieFilter.h,v 1.57 2005-11-23 19:48:02 dors Exp $
+//  $Id: PubCookieFilter.h,v 1.58 2005-11-30 00:36:23 jjminer Exp $
 //
+
+// **************************************************************************
+// CAUTION!  This file (PubCookieFilter.h) is automtically generated from
+// PubCookieFilter.h.in.  Changes made to PubCookieFilter.h will be overwritten
+// when configure is run again!
+// **************************************************************************
 
 #define Pubcookie_Version "Pubcookie ISAPI Filter, 3.3.0 pre-beta2"
 
