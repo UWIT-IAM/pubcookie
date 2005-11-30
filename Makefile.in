@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.66 2005-11-16 02:57:04 jjminer Exp $
+# $Id: Makefile.in,v 1.67 2005-11-30 00:58:52 jjminer Exp $
 
 @SET_MAKE@
 
@@ -60,6 +60,8 @@ CONFIGURE_TMP_FILES=$(builddir)/config.status \
 					$(builddir)/Makefile \
 					$(builddir)/src/pbc_path.h \
 					$(builddir)/src/pbc_version.h \
+					$(builddir)/src/Win32/PubCookieFilter.h \
+					$(builddir)/src/Win32/PubCookieFilter.rc \
 					$(builddir)/stamp-h
 
 CONFIGURE_TMP_DIRS=$(srcdir)/autom4te.cache
@@ -296,7 +298,9 @@ $(srcdir)/stamp-h.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac
 $(builddir)/src/config.h: $(builddir)/stamp-h
 $(builddir)/src/pbc_path.h: $(builddir)/stamp-h
 $(builddir)/src/pbc_version.h: $(builddir)/stamp-h
-$(builddir)/stamp-h: $(srcdir)/src/config.h.in $(srcdir)/src/pbc_path.h.in $(srcdir)/src/pbc_version.h.in $(builddir)/config.status
+$(builddir)/src/Win32/PubCookieFilter.h: $(builddir)/stamp-h
+$(builddir)/src/Win32/PubCookieFilter.rc: $(builddir)/stamp-h
+$(builddir)/stamp-h: $(srcdir)/src/config.h.in $(srcdir)/src/pbc_path.h.in $(srcdir)/src/pbc_version.h.in $(srcdir)/src/Win32/PubCookieFilter.h.in $(srcdir)/src/Win32/PubCookieFilter.rc.in $(builddir)/config.status
 	$(builddir)/config.status
 
 $(builddir)/Makefile: $(srcdir)/Makefile.in $(builddir)/src/config.h $(builddir)/config.status
@@ -568,8 +572,10 @@ WIN32_LIB_SRC=$(srcdir)/src/Win32/lib/libeay32.lib \
 WIN32_FILTER_SRC=$(srcdir)/src/Win32/PubCookieFilter.cpp \
 			$(srcdir)/src/Win32/PubCookieFilter.def \
 			$(srcdir)/src/Win32/PubCookieFilter.h  \
+			$(srcdir)/src/Win32/PubCookieFilter.h.in  \
 			$(srcdir)/src/Win32/PubCookieFilter.opt \
 			$(srcdir)/src/Win32/PubCookieFilter.rc \
+			$(srcdir)/src/Win32/PubCookieFilter.rc.in \
 			$(srcdir)/src/Win32/PubCookieFilter.sln \
 			$(srcdir)/src/Win32/PubCookieFilter.vcproj \
 			$(srcdir)/src/Win32/resource.h
