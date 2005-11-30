@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.89 $)
+AC_REVISION($Revision: 1.90 $)
 
 dnl Unfortunately, this must come before the seperate version splits, which are
 dnl definted below.  Please set them first, and then set the second argument of
@@ -30,6 +30,19 @@ AC_SUBST(PBC_VERSION_MAJOR, "$PBC_VERSION_MAJOR")
 AC_SUBST(PBC_VERSION_MINOR, "$PBC_VERSION_MINOR")
 AC_SUBST(PBC_VERSION_PATCH, "$PBC_VERSION_PATCH")
 AC_SUBST(PBC_VERSION_TYPE, "$PBC_VERSION_TYPE") 
+
+dnl The Windows "Build Number" ..  Unfortunately doesn't support using a text
+dnl string, so we'll just kinda make it up.  ** Anyone got a better way? **
+
+PBC_WIN_BUILD_NUMBER=`echo $PBC_VERSION_TYPE | sed -e 's/[[^0-9]]*//'`
+if test "x$PBC_WIN_BUILD_NUMBER" = "x"; then
+    # Aparently this is a production release, give it #0.
+    # Yes, this might be a problem, because the betas will actually have a
+    # *higher* number.
+    PBC_WIN_BUILD_NUMBER=0
+fi
+
+AC_SUBST(PBC_WIN_BUILD_NUMBER, "$PBC_WIN_BUILD_NUMBER") 
 
 # Set default prefix to /usr/local/pubcookie
 AC_PREFIX_DEFAULT(/usr/local/pubcookie)
@@ -914,7 +927,8 @@ AC_SUBST( SNPRINTF_C, $SNPRINTF_C )
 
 AM_MAINTAINER_MODE
 
-AC_CONFIG_FILES([Makefile src/pbc_path.h src/pbc_version.h cgic/Makefile])
+AC_CONFIG_FILES([Makefile src/pbc_path.h src/pbc_version.h cgic/Makefile
+                 src/Win32/PubCookieFilter.h src/Win32/PubCookieFilter.rc])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
 
 
