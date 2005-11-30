@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.90 $)
+AC_REVISION($Revision: 1.91 $)
 
 dnl Unfortunately, this must come before the seperate version splits, which are
 dnl definted below.  Please set them first, and then set the second argument of
@@ -15,6 +15,7 @@ AC_CONFIG_HEADER([src/config.h])
 AC_LANG(C)
 
 dnl The version number, to be assembled
+dnl If any of these change, reset PBC_WIN_BUILD_NUMBER
 PBC_VERSION_MAJOR=3
 PBC_VERSION_MINOR=3
 PBC_VERSION_PATCH=0
@@ -24,24 +25,19 @@ dnl If this is "final", it is not included in the version string.
 dnl Otherwise it is.  For the National Edition, this will be "pre-beta" or
 dnl "beta".  For campus editions, this will be unique for the campus, we
 dnl imagine.
+dnl When this changes, don't forget to increment PBC_WIN_BUILD_NUMBER
 PBC_VERSION_TYPE=pre-beta2
+
+dnl The Windows "Build Number" ..  Unfortunately the Windows build process can't
+dnl use the text version (betaX, pre-betaX), so this is just incremented every
+dnl time the PBC_VERSION_TYPE changes, and reset to 0 when any part of the
+dnl version number proper (MAJOR, MINOR, PATCH) changes.
+PBC_WIN_BUILD_NUMBER=3
 
 AC_SUBST(PBC_VERSION_MAJOR, "$PBC_VERSION_MAJOR")
 AC_SUBST(PBC_VERSION_MINOR, "$PBC_VERSION_MINOR")
 AC_SUBST(PBC_VERSION_PATCH, "$PBC_VERSION_PATCH")
 AC_SUBST(PBC_VERSION_TYPE, "$PBC_VERSION_TYPE") 
-
-dnl The Windows "Build Number" ..  Unfortunately doesn't support using a text
-dnl string, so we'll just kinda make it up.  ** Anyone got a better way? **
-
-PBC_WIN_BUILD_NUMBER=`echo $PBC_VERSION_TYPE | sed -e 's/[[^0-9]]*//'`
-if test "x$PBC_WIN_BUILD_NUMBER" = "x"; then
-    # Aparently this is a production release, give it #0.
-    # Yes, this might be a problem, because the betas will actually have a
-    # *higher* number.
-    PBC_WIN_BUILD_NUMBER=0
-fi
-
 AC_SUBST(PBC_WIN_BUILD_NUMBER, "$PBC_WIN_BUILD_NUMBER") 
 
 # Set default prefix to /usr/local/pubcookie
