@@ -15,10 +15,6 @@
 // ========================================================================
 //
 
-//
-//  $Id: PubCookieFilter.h.in,v 1.2 2005-11-30 00:26:30 jjminer Exp $
-//
-
 // **************************************************************************
 // CAUTION!  This file (PubCookieFilter.h) is automtically generated from
 // PubCookieFilter.h.in.  Changes made to PubCookieFilter.h will be overwritten

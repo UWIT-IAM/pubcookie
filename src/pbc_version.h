@@ -15,10 +15,6 @@
  * ========================================================================
  */
 
-/*
-    $Id: pbc_version.h,v 1.81 2005-11-30 00:58:52 jjminer Exp $
- */
-
 /***************************************************************************
  * CAUTION!  This file (pbc_version.h) is automatically generated from
  * pbc_version.h.in.  Changes made directly in pbc_version.h will be overwritten
