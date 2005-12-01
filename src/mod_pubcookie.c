@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.194 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: mod_pubcookie.c,v 1.195 2005-12-01 19:30:47 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -123,6 +123,7 @@ typedef apr_table_t table;
 #define ap_table_set apr_table_set
 #define ap_table_setn apr_table_setn
 #define ap_table_merge apr_table_merge
+#define ap_table_unset apr_table_unset
 #define ap_overlay_tables apr_table_overlay
 #define ap_psprintf apr_psprintf
 #define ap_snprintf apr_snprintf
@@ -1457,6 +1458,7 @@ static int pubcookie_user_hook (request_rec * r)
     pubcookie_req_rec *rr;
     int first_time_in_session = 0;
     char creds;
+    const char *ifms;
 
     scfg =
         (pubcookie_server_rec *) ap_get_module_config (r->server->
@@ -1551,9 +1553,22 @@ static int pubcookie_user_hook (request_rec * r)
         } else
             set_session_cookie (r, scfg, cfg, rr, first_time_in_session);
     }
+
+    /* Since we've done something any "if-modified"s must be cancelled
+       to prevent "not modified" responses.  There may be other "if"s
+       (see: http_protocol.c:ap_meets_conditions) that we are not
+       considering as they have not yet come up. */
+
+    ifms = ap_table_get (r->headers_in, "If-Modified-Since");
+    if (ifms) {
+        ap_log_rerror (PC_LOG_DEBUG, r, " .. user_hook: removing if-modified = %s", ifms);
+        ap_table_unset(r->headers_in, "If-Modified-Since");
+    }
+
     ap_log_rerror (PC_LOG_DEBUG, r,
                    " .. user_hook exit: user '%s', type '%s'", r->USER,
                    r->AUTH_TYPE);
+    
     return (s);
 }
 
