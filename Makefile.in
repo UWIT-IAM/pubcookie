@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.68 2005-12-06 22:24:48 dors Exp $
+# $Id: Makefile.in,v 1.69 2005-12-06 23:05:39 dors Exp $
 
 @SET_MAKE@
 
@@ -579,7 +579,9 @@ WIN32_FILTER_SRC=$(srcdir)/src/Win32/PubCookieFilter.cpp \
 			$(srcdir)/src/Win32/PubCookieFilter.sln \
 			$(srcdir)/src/Win32/PubCookieFilter.vcproj \
 			$(srcdir)/src/Win32/resource.h \
-			$(srcdir)/src/Win32/keys.h
+			$(srcdir)/src/Win32/keys.h \
+			$(srcdir)/src/Win32/keys.cpp \
+			$(srcdir)/src/Win32/html.cpp
 
 
 WIN32_MESSAGES_SRC=$(srcdir)/src/Win32/MSG00001.bin \
