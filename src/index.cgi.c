@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.169 2005-11-16 17:09:00 fox Exp $
+ * $Id: index.cgi.c,v 1.170 2005-12-06 23:32:29 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -685,6 +685,9 @@ char *clean_username (pool * p, char *in)
                                                "trim_username_to_atsign",
                                                1);
 
+    int loweruser = libpbc_config_getswitch (p, "lowercase_username", 0);
+    int upperuser = libpbc_config_getswitch (p, "uppercase_username", 0);
+
     ptr = in;
     while (*ptr) {
         if (trim2atsign)        /* allow things like email addresses or principals */
@@ -702,6 +705,12 @@ char *clean_username (pool * p, char *in)
             *ptr = '\0';
             break;
         }
+
+        if (loweruser)
+            *ptr = tolower(*ptr);
+
+        if (upperuser)
+            *ptr = toupper(*ptr);
 
         ptr++;
     }
