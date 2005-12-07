@@ -87,22 +87,26 @@ messages with the encryption algorithm specified in the authentication request.<
 
 <li>Changed login cgi to use AES encryption on its private login cookies.</li>
 
-<li>New <tt>PUBCOOKIE_LOGIN_CONFIG_FILE</tt> environment variable can be used
-to define an alternate config file for the login cgi.</li>
+<li>Added <tt>PUBCOOKIE_LOGIN_CONFIG_FILE</tt> environment variable for defining
+an alternate config file for the login cgi.</li>
 
 <li>Added support for the Apache module's wildcard subdomain key encryption mode 
 for large multi-user web-hosting environments.</li>
-
-<li>Better handling of stray, malicious, and other spurious cookies.  
-The login cgi will read all available login cookies, until it finds a valid one. 
-Previously it only checked the first one, which may be invalid.</li>
 
 <li>Added <a href="config.html#kerberos5_extralife"><tt>kerberos5_extralife</tt></a> 
 config file variable to extend the lifetime of delegated tickets past the SSO
 lifetime.</li>
 
+<li>Added <a href="config.html#lowercase_username"><tt>lowercase_username</tt></a>
+and <a href="config.html#uppercase_username"><tt>uppercase_username</tt></a> site 
+policies to the login cgi for modifying the case of the username.</li>
+
 <li>Modified minimum <tt>LDAP_VENDOR_VERSION</tt> in configure script for 
 better compatibility with Sun LDAP SDK.</li>
+
+<li>Better handling of stray, malicious, and other spurious cookies.  
+The login cgi will read all available login cookies to find a valid one. 
+Previously, it only checked the first one, which might be invalid.</li>
 
 <li>Other minor login cgi fixes to error handling and cookie clearing.</li>
 
@@ -137,7 +141,8 @@ login cgi uses AES encryption on all login cookies. Earlier versions use DES
 encryption. As a result, login cookies obtained by users prior to upgrading 
 the login cgi will be invalid after the upgrade. This means some users will 
 have to reauthenticate where they might not have had to before. Others might 
-notice that the login page no longer remembers (i.e. pre-fills) their username.
+notice that the login page no longer remembers (i.e. no longer pre-fills) 
+their username.
 
 <p>There are no template changes between version 3.2 and version 3.3.
 
@@ -865,6 +870,10 @@ userids that look like email addresses can use this feature to provide
 some flexibility in this regard, i.e., to trim off the extra realm info 
 the user added and verify just the proper userid.</p></li>
 
+<li><p>Use <a href="config.html#lowercase_username"><tt>lowercase_username</tt></a>
+or <a href="config.html#uppercase_username"><tt>uppercase_username</tt></a> to 
+change the userid to lowercase or uppercase.</p></li>
+
 </ul>
 
 <p>Refer to the <a href="config.html">config file variable
@@ -949,6 +958,12 @@ directory.</p>
 <a href="config.html#ldap_uri">ldap_uri</a>: ldaps://host/o=searchbase???<i>(uid=%s)</i>?x-BindDN=<i>Bind%20DN</i>,x-Password=<i>Password</i>
 </pre>
 
+<p>Note: LDAP in general is not case sensitive, so most implementations 
+don't enforce case sensitivity on the username (uid) attribute. This may
+result in usernames of mixed case being sent to application servers for
+the same authenticated user (e.g. jon, Jon, jOn). To prevent this, use the 
+<a href="config.html#lowercase_username"><tt>lowercase_username</tt></a>
+site policy to change the username entered to lowercase.</p>
 
 <h4><a name="clusters">Redundant Login Server Configuration</a></h4>
 
@@ -1129,7 +1144,7 @@ Copyright 1999-2005, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.39 2005-11-29 23:18:27 dors Exp $
+$Id: install-login.html,v 1.40 2005-12-07 23:48:36 dors Exp $
 </pre>
 </body>
 

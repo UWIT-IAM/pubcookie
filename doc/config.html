@@ -141,11 +141,13 @@ login cgi:</p>
 <dd> Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</dd>
 
 <dt> <a name="enterprise_domain">enterprise_domain</a> <i>string</i></dt>
-<dd> The DNS domain under which all participating hosts will live.  Must be at
-     least a second level domain; used to scope "granting" cookies sent between 
-     the login server and application servers. Servers outside this domain must
-     use the Pubcookie relay cgi to authenticate users.</dd> 
-<dd> Example: <i>example.edu</i> or <i></i></dd>
+<dd> The DNS domain used to scope the cookies that carry the messages in Pubcookie's 
+     classic cookie-based messaging method. It must be at least a second level domain.</dd>
+<dd> Note: Sites can use the POST-based messaging method to avoid DNS domain issues 
+     entirely. And sites in country code top-level domains (e.g. example.ca) must do 
+     so, since browsers don't allow cookies to be set to second level domains within 
+     country code top-level domains.</dd>
+<dd> Example: <i>.example.edu</i></dd>
 
 <dt> <a name="form_expire_time">form_expire_time</a> <i>time</i></dt>
 <dd> Defines how long someone can take to log in before the login form
@@ -162,6 +164,12 @@ login cgi:</p>
 <dd> The domain used by the login cgi when setting its own cookies.</dd>
 <dd> Default: No domain is used unless this variable defines one.</dd>
 <dd> Example: <i>login.example.edu</i></dd>
+
+<dt> <a name="lowercase_username">lowercase_username</a> <i>int</i></dt>
+<dd> Defines the site policy on changing the username entered to
+     lower case.</dd>
+<dd> Values: <tt>1</tt>, changes to lower case. <tt>0</tt> doesn't.</dd>
+<dd> Default: 0</dd>
 
 <dt> <a name="min_countdown">min_countdown</a> <i>time</i></dt>
 <dd> The minimum countdown for automatically reloading the status page.</dd>
@@ -195,6 +203,12 @@ login cgi:</p>
 <dd> Values: <tt>1</tt>, trims off the realm before verifying; 
      <tt>0</tt>, doesn't trim.</dd>
 <dd> Default: <tt>1</tt>.</dd>
+
+<dt> <a name="uppercase_username">uppercase_username</a> <i>int</i></dt>
+<dd> Defines the site policy on changing the username entered to
+     upper case.</dd>
+<dd> Values: <tt>1</tt>, changes to upper case. <tt>0</tt> doesn't.</dd>
+<dd> Default: 0</dd>
 
 <!-- lets put deprecated variables down here for now -->
 
@@ -253,6 +267,14 @@ This provideds a longer ticket lifetime than the login
 cookie lifetime and can be helpful when delegating credentials to an
 application just before the login cookie expires.
 
+<dt> <a name="save_credentials">save_credentials</a> <i>switch</i></dt> 
+<dd> Controls whether the basic flavor, when used with the Kerberos verifier,
+     saves a copy of the user's master credentials for later use by flavor_getcred.</dd> 
+
+<dt> <a name="getcred_authz_file">getcred_authz_file</a> <i>string</i></dt> 
+<dd> flavor_getcred uses this file to determine which application are authorized 
+     to request what credentials.</dd>
+
 </dl>
 
 <h4><a name="ldap">LDAP Verifier Variables</a></h4>
@@ -284,7 +306,7 @@ ldap://host/o=searchbase???<i>(uid=%s)</i>?x-BindDN=<i>Bind%20DN</i>,x-Password=
      connections are allowed). <b>Warning:</b> Commas must be URL encoded as <tt>%2C</tt> 
      and spaces as <tt>%20</tt>.</dd>
 
-<dd> <p>Note: <tt>x-Version=2</tt> can be added to the URI if LDAP version 2 is required.</p>
+<dd> <p>Note: <tt>x-Version=2</tt> can be added to the URI to force LDAP version 2.</p>
 
 <dd>Example:
 <pre>ldaps://ldap.example.edu/dc=example,dc=edu???(uid=%s)?x-BindDN=cn=<i>bind_user</i>;%2Cou=people%2Cdc=example%2Cdc=edu,x-Password=<i>bind_pw</i></pre>
@@ -294,7 +316,8 @@ ldap://host/o=searchbase???<i>(uid=%s)</i>?x-BindDN=<i>Bind%20DN</i>,x-Password=
 used in the initial bind to the server.</p>
 
 <dt> <a name="cert_db_path">cert_db_path</a> <i>string</i></dt>
-<dd> Path to where Netscape's cert7.db and key3.db can be found.</dd>
+<dd> Path to cert7.db and key3.db files when using Sun/Netscape/iPlanet LDAP libraries.
+     (When using OpenLDAP libraries configure this sort of thing in your ldap.conf file.)</dd>
 <dd> Default: <tt>PREFIX/keys</tt></dd>
 
 </dl>
@@ -303,20 +326,14 @@ used in the initial bind to the server.</p>
 
 <dl>
 
-<dt> <a name="save_credentials">save_credentials</a> <i>switch</i></dt> 
-<dd> Controls whether the basic flavor, when used with the Kerberos verifier,
-     saves a copy of the user's master credentials for later use by flavor_getcred.</dd> 
-
-<dt> <a name="getcred_authz_file">getcred_authz_file</a> <i>string</i></dt> 
-<dd> flavor_getcred uses this file to determine which application are authorized to request
-     what credentials.</dd> 
-
 <dt> <a name="relay_login_uri">relay_login_uri</a> <i>string</i></dt>
-<dd> The full URI used by the relay cgi for its login cgi.</dd>
+<dd> Deprecated. Cross dns domain support is built-in as of version 3.2. 
+     The full URI used by the relay cgi for its login cgi.</dd>
 <dd> Example: <i>https://login.example.edu/</i></dd>
 
 <dt> <a name="relay_template_path">relay_template_path</a> <i>string</i></dt>
-<dd> Path and directory, with trailing slash, to the <tt>templates</tt> directory
+<dd> Deprecated. Cross dns domain support is built-in as of version 3.2. 
+     Path and directory, with trailing slash, to the <tt>templates</tt> directory
      used by the relay cgi. The path is defined by setting the relay cgi's 
      configuration <tt>--prefix</tt> option.</dd>
 <dd> Example: <i>/var/www/html/relay/templates/</i></dd>

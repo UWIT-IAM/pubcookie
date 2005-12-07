@@ -240,10 +240,14 @@ responses sent from the login server when using the POST
 "Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 3.0.0 and
 higher and Apache 1.2 and later.</p>
 
-<p>The DNS domain under which all hosts will live. It must be at                        
-least a second level domain (e.g. example.edu); used to scope                    
-"granting" cookies for communication between the login server and 
-application servers.</p>
+<p>The DNS domain used to scope the cookies that carry the messages in Pubcookie's classic 
+cookie-based messaging method. It must be at least a second level domain.</p>
+
+<p>Note: Sites can use the POST-based messaging method to avoid DNS domain issues entirely. 
+Sites in country code top-level domains (e.g. example.ca) must do so, since browsers 
+don't allow cookies to be set to second level domains within country code top-level 
+domains. See
+<a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a>.</p>
 
 <h3><a name="PubcookieGrantingCertfile">PubcookieGrantingCertfile
 directive</a></h3>
