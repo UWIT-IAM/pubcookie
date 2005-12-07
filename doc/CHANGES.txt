@@ -1,3 +1,17 @@
+Changes with 3.3.0 Beta 2:
+
+*) Fixed MMC snap-in to display the correct default, inherited, or
+   explicitly applied AppId setting.
+
+*) Added lowercase_username and uppercase_username site policies to the
+   login cgi for modifying the case of the username.
+
+*) Disabled "If-Modified-Since" headers in Apache module for protected
+   pages. This fixes logins for the Opera browser. Perhaps others too.
+
+*) Version strings for ISAPI filter are generated from configure.ac, as
+   are PubcookieFilter.h and PubCookieFilter.rc.
+
 Changes with 3.3.0 Beta 1:
 
 *) Improved login cgi and Apache module to better handle stray,
