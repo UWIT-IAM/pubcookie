@@ -154,7 +154,7 @@ HKEY CPBC_PropSheet::OpenKey(LPCTSTR szKey, REGSAM samDesired, int readonly) {
 		}
 	}
 
-	if (!readonly) {
+	//if (!readonly) {
 		// Create and open key and subkey.
 		if( RegCreateKeyEx(rhKey ,
 			szKey,
@@ -164,7 +164,7 @@ HKEY CPBC_PropSheet::OpenKey(LPCTSTR szKey, REGSAM samDesired, int readonly) {
 		{
 			return NULL ;
 		}
-	}
+	//}
 
 	return hKey;
 
