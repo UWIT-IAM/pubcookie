@@ -44,7 +44,7 @@ LPTSTR CPBC_PropSheet::libpbc_myconfig_getstring(LPTSTR strbuff, LPCTSTR key, LP
 		StringCbCat (keyBuff,KEY_SIZE,_T(PBC_INSTANCE_KEY));
 		StringCbCat (keyBuff,KEY_SIZE,L"\\");
 		StringCbCat (keyBuff,KEY_SIZE,pwzInstance); 
-		hKey = OpenKey(keyBuff,KEY_READ);
+		hKey = OpenKey(keyBuff,KEY_READ,0);
 		if (hKey) {
 			if (RegQueryValueEx(hKey, key, NULL, NULL, (UCHAR *)strbuff,
 				&dsize) == ERROR_SUCCESS) {
@@ -58,7 +58,7 @@ LPTSTR CPBC_PropSheet::libpbc_myconfig_getstring(LPTSTR strbuff, LPCTSTR key, LP
 	}
 
 	StringCbCopy(keyBuff,KEY_SIZE,_T(PBC_FILTER_KEY));  /* Then main pubcookie service key */
-	hKey = OpenKey(keyBuff,KEY_READ);
+	hKey = OpenKey(keyBuff,KEY_READ,0);
 	if (!hKey) {
 		libpbc_myconfig_copystring(strbuff,def,MAX_REG_BUFF);  
 	}
@@ -95,7 +95,7 @@ int CPBC_PropSheet::libpbc_myconfig_getint(LPTSTR strbuff, LPCTSTR key, int def)
 		StringCbCat (keyBuff,KEY_SIZE,_T(PBC_INSTANCE_KEY));
 		StringCbCat (keyBuff,KEY_SIZE,L"\\");
 		StringCbCat (keyBuff,KEY_SIZE,pwzInstance); 
-		hKey = OpenKey(keyBuff,KEY_READ);
+		hKey = OpenKey(keyBuff,KEY_READ,0);
 		if (hKey) {
 			if (RegQueryValueEx(hKey, key, NULL, NULL, (LPBYTE)&value,
 				&dsize) == ERROR_SUCCESS) {
@@ -110,7 +110,7 @@ int CPBC_PropSheet::libpbc_myconfig_getint(LPTSTR strbuff, LPCTSTR key, int def)
 
 	StringCbCopy (keyBuff,KEY_SIZE,_T(PBC_FILTER_KEY));  /* config. settings in main pubcookie service key */
 
-	hKey = OpenKey(keyBuff,KEY_READ);
+	hKey = OpenKey(keyBuff,KEY_READ,0);
 	if (!hKey) 
 	{
 		return def;  

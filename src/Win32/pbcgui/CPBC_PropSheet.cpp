@@ -31,6 +31,7 @@ CPBC_PropSheet::CPBC_PropSheet() : m_cref(0)
 	pwzMachineName=NULL;
 	pwzInstance=NULL;
 	pwzRegPath=NULL;
+	
 	OBJECT_CREATED
 }
 
@@ -137,7 +138,7 @@ HRESULT CPBC_PropSheet::ExtractData( IDataObject* piDataObject,
 	return hr;
 } 
 
-HKEY CPBC_PropSheet::OpenKey(LPCTSTR szKey, REGSAM samDesired) {
+HKEY CPBC_PropSheet::OpenKey(LPCTSTR szKey, REGSAM samDesired, int readonly) {
 
 	HKEY hKey,rhKey;
 	_TCHAR localname[MAX_COMPUTERNAME_LENGTH + 1];
@@ -152,14 +153,17 @@ HKEY CPBC_PropSheet::OpenKey(LPCTSTR szKey, REGSAM samDesired) {
 			MessageBox(hwndDlg,L"Error opening remote registry.  Values displayed may not be accurate.",L"Error",MB_ICONERROR);
 		}
 	}
-	// Create and open key and subkey.
-	if( RegCreateKeyEx(rhKey ,
-		szKey,
-		0, NULL, REG_OPTION_NON_VOLATILE,
-		samDesired, NULL,
-		&hKey, NULL) != ERROR_SUCCESS) 
-	{
-		return NULL ;
+
+	if (!readonly) {
+		// Create and open key and subkey.
+		if( RegCreateKeyEx(rhKey ,
+			szKey,
+			0, NULL, REG_OPTION_NON_VOLATILE,
+			samDesired, NULL,
+			&hKey, NULL) != ERROR_SUCCESS) 
+		{
+			return NULL ;
+		}
 	}
 
 	return hKey;
@@ -229,24 +233,29 @@ BOOL CPBC_PropSheet::WriteRegInt(const _TCHAR* szKey,
     return TRUE ;
 }
 
-void CPBC_PropSheet::ReadValAsString(LPTSTR key, int i, LPCTSTR defined_in_val) {
+void CPBC_PropSheet::ReadValAsString(LPTSTR key, int i, LPCTSTR defined_in_val, int &inreg, int readonly) {
 	HKEY hKey;
 	_TCHAR RegBuff[BUFFSIZE];
 	long debug;
 	DWORD dwRead=BUFFSIZE*sizeof(_TCHAR);
 
-	if (hKey = OpenKey(key,KEY_READ)) {
+	inreg = 0;
+
+	if (hKey = OpenKey(key,KEY_READ, readonly)) {
 			if ((debug = RegQueryValueEx (hKey,directive[i].name.c_str(), NULL, NULL, (LPBYTE)RegBuff, &dwRead)) == ERROR_SUCCESS) {
 			if (directive[i].type == D_FREE_INT || directive[i].type == D_BOUND_INT) {
 				wchar_t tmpw[22];
 				directive[i].value = _itow(*(DWORD *)RegBuff,tmpw,10);
 			} else {
 				directive[i].value = RegBuff;
+				inreg = 1; //found in registry				
 			}
 			directive[i].defined_in = defined_in_val;
+	
 		} 
 		RegCloseKey (hKey); 
 	} 
+	
 }
 
 void CPBC_PropSheet::PopulateComboBox()
@@ -430,6 +439,7 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
 
  DWORD dwLength = MAX_PATH * sizeof(WCHAR);
 
+ 
  pwzInstance = reinterpret_cast<LPWSTR>(::LocalAlloc(LPTR, dwLength));
  pwzMachineName = reinterpret_cast<LPWSTR>(::LocalAlloc(LPTR, dwLength));
  pwzMetaPath = reinterpret_cast<LPWSTR>(::LocalAlloc(LPTR, dwLength));
@@ -451,6 +461,7 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
  if ( pwzService )
 	 CPBC_PropSheet::ExtractString(lpIDataObject, s_cfService, pwzService, dwLength);
 
+ 
  //XP Pro IIS gets the above strings wrong so we can't trust and have to rebuild them from pwzMetaPath
 
  LPWSTR str1 = wcsstr(pwzMetaPath,L"W3SVC/");
@@ -458,7 +469,8 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
 	wcsncpy(pwzService,L"W3SVC",7);
 	LPWSTR str1 = wcsstr(pwzMetaPath,L"W3SVC/");
 	str1+=6;
-	LPWSTR str2 = wcschr(str1,L'/');    
+	LPWSTR str2 = wcschr(str1,L'/');  	
+
 	wcsncpy(pwzInstance,str1,str2-str1);
 
 	pwzInstance[str2-str1]=0;
@@ -471,6 +483,7 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
 		 ppathend=str1;
 	}
 
+	
 	if (ppathend) {
 		wcsncpy(pwzParentPath,ppathstart,ppathend-ppathstart);
 		pwzParentPath[ppathend-ppathstart]=0;
@@ -482,13 +495,20 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
  }
 // end of XP bug workaround
 
- LPWSTR ppath = wcsstr(pwzParentPath,L"/");
+
+
+
+LPWSTR ppath = wcsstr(pwzParentPath,L"/");
+
  if (ppath) {
 	StringCbCopy(pwzRegPath, MAX_PATH*2 ,ppath+1);
 	StringCbCat (pwzRegPath, MAX_PATH*2 ,L"/");
  } else {
-	pwzRegPath[0] = 0;
+	// root level folders and files
+	//pwzRegPath[0] = 0;	
  }
+
+
  StringCbCat(pwzRegPath, MAX_PATH*2 ,pwzNode);
 
  psp.dwSize = sizeof(PROPSHEETPAGE);
@@ -500,13 +520,15 @@ HRESULT CPBC_PropSheet::CreatePropertyPages(
  psp.pszTitle = MAKEINTRESOURCE(IDS_PST_TAB_NAME);
  //psp.pszIcon = MAKEINTRESOURCE();
 
- hPage = CreatePropertySheetPage(&psp);
+  hPage = CreatePropertySheetPage(&psp);
  _ASSERT(hPage);
 
  hr = lpProvider->AddPage(hPage);
 
  return hr;
 }
+
+
 
 HRESULT CPBC_PropSheet::QueryPagesFor( 
                                            /* [in] */ LPDATAOBJECT lpDataObject)

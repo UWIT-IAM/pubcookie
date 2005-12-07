@@ -5,6 +5,10 @@
 #include <tchar.h>
 #include <mmc.h>
 #include <string>
+
+#include <iadmw.h> // COM Interface header 
+#include <iiscnfg.h>// MD_ & IIS_MD_ #defines 
+
 using namespace std;
 
 #define D_FREE_STRING 0
@@ -45,6 +49,7 @@ private:
     static UINT s_cfDisplayName;
     static UINT s_cfSnapInCLSID;
     static UINT s_cfNodeType;
+
     
 public:
     CPBC_PropSheet();
@@ -59,9 +64,10 @@ public:
 	void SetupPropSheet();
 	void PopulatePage();
 	BOOL UpdateNewValue();
-	void ReadValAsString(LPTSTR key, int i, LPCTSTR defined_in);
+	void ReadValAsString(LPTSTR key, int i, LPCTSTR defined_in, int &inreg, int readonly);
 	int  libpbc_myconfig_getint(LPTSTR strbuff, LPCTSTR key, int def);
 	LPTSTR libpbc_myconfig_getstring(LPTSTR strbuff, LPCTSTR key, LPCTSTR def);
+	
 
 	///////////////////////////////
     // Interface IUnknown
@@ -105,7 +111,7 @@ private:
         LPARAM lParam  // second message parameter
         );
 
-	HKEY OpenKey(LPCTSTR szKey, REGSAM samDesired);
+	HKEY OpenKey(LPCTSTR szKey, REGSAM samDesired, int readonly);
 	HKEY OpenPBCKey(LPCTSTR szKey, REGSAM samDesired);
 	BOOL WriteRegString(const _TCHAR* szKey,
               const _TCHAR* szValueName,
@@ -123,7 +129,7 @@ private:
 	void DeleteValue();
 	void Set_Delete_Button(int i);
 	void ReadSelectedValue();
-	void GetHandles();
+	void GetHandles();		
 
 
     ///////////////////////////////
