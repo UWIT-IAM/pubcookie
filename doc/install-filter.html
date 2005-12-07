@@ -79,6 +79,9 @@
                                 unnecessary countermeasure when messages are communicated using HTTP POST message bodies as they've
                                 been since the 3.2 release.
 			<li>
+				<p><b>Fixed AppID display in MMC snap-in.</b> The Pubcookie Directives tab displays the correct default,
+                                inherited, or explicitly applied AppId setting that is being used by the ISAPI filter itself.
+			<li>
 				<p><b>Removed Enterprise_Domain directive from MMC extension.</b> Obsolete since the 3.2 release.
 
 		</ul>
@@ -689,9 +692,25 @@
 			<li>
 			<p><b>Event log sources.</b> If a new web site is added after installation,
 			its IIS Instance ID may need to be registered as an event log source pointing
-			to the pbc_messages DLL containing the event log messages.
+			to the pbc_messages DLL containing the event log messages.</p>
 
-			<p>[fixme: new eventlog source names for 3.3 in-the-works.]
+			<li>
+			<p><b>Empty registry keys.</b> The MMC extension habitually adds empty, harmless 
+                        registry keys when you open the Pubcookie Directives tab.</p>
+
+			<li>
+			<p><b>Can't set inherited configurations.</b> The MMC extension won't allow you to override inherited values with
+                        the same value that's being inherited.</p>
+
+			<li>
+			<p><b>Event Viewer crashes.</b> The pbc_messages.dll file is known to crash the Event Viewer
+                        on some systems when viewing Pubcookie events. This <i>should</i> be fixed already in version 3.3, but we're leaving
+                        this note here in case people run into and want to report the contradiction.</p>
+
+			<li>
+			<p><b>Trailing slash required.</b> Requests to folder resources that don't include the trailing
+                        slash may not always pick up the right configuration. Until this is fixed, links and requests should 
+                        always include the trailing slash. (It's good form anyway.)
 		</ul>
 
 		<h4><a name="certs">Appendix A: Windows Certificate Store</a></h4>
