@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.54 2005-11-23 01:06:54 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.55 2005-12-07 19:37:58 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -1338,7 +1338,19 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		return DECLINED;
 	}
 
+	// this skipping over the first '/'
+	// creates a bug where folders without a trailing '/' 
+	// forces authentication, even if the AuthType is set to 'NONE'
     *pachUrl++;		// skip over first '/'
+
+	//forces a trailing slash -- need to test more, hold till next release
+	/*
+	if (!strrchr(pachUrl,'/')) {
+		char* slash = "/";
+		strcat(pachUrl,slash);
+	} 
+	*/
+
     ptr = strchr(pachUrl,'/');
 	if ( ptr ) { // subfolder, off root
 		strncpy((char *)p->appid, pachUrl, ptr-pachUrl);
@@ -1967,7 +1979,9 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	strncpy((char *)p->server_hostname, szBuff, PBC_APPSRV_ID_LEN);
 	strncpy(p->appsrvid, szBuff, PBC_APPSRV_ID_LEN);   // Use SERVER_NAME for appsrvid
 
-	filterlog(p, LOG_INFO,"\n %s \n PBC_OnPreprocHeaders\n",pbc_time(&ltime));
+	//remove reference to pbc_time, previously ctime, which converts time to string
+	//filterlog(p, LOG_INFO,"\n %s \n PBC_OnPreprocHeaders\n",pbc_time(&ltime));
+	filterlog(p, LOG_INFO,"\n PBC_OnPreprocHeaders\n");
 	/* Have to use szBuff here since p->strbuff in PBC_KEY_DIR will be overwritten with the filterlog call*/
 	snprintf(szBuff,1024,"\n Using crypt key: %s\\%s",PBC_KEY_DIR,p->server_hostname);
 	filterlog(p, LOG_INFO, szBuff);
