@@ -56,7 +56,7 @@
  *************************************************************************** */
 
 /* beta or final, so the code knows what it is, should it care. */
-#define PBC_VERSION_RELEASE "pre-beta2"
+#define PBC_VERSION_RELEASE "beta2"
 
 /***************************************************************************
  * CAUTION!  This file (pbc_version.h) is automatically generated from
