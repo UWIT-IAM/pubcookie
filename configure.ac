@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.92 $)
+AC_REVISION($Revision: 1.93 $)
 
 dnl Unfortunately, this must come before the seperate version splits, which are
 dnl definted below.  Please set them first, and then set the second argument of
@@ -8,7 +8,7 @@ dnl this to:
 dnl PBC_VERSION_MAJOR.PBC_VERSION_MINOR.PBC_VERSION_PATCH PBC_VERSION_TYPE
 dnl Omit PBC_VERSION_TYPE if the TYPE is "final"
 dnl I apologize that this isn't done automatically
-AC_INIT(Pubcookie, [3.3.0 pre-beta2], pubcookie-dev@u.washington.edu)
+AC_INIT(Pubcookie, [3.3.0 beta2], pubcookie-dev@u.washington.edu)
 
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
