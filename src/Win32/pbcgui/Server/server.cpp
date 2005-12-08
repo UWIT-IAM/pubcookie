@@ -89,6 +89,6 @@ HKEY CPBC_PropSheet::OpenPBCKey(LPCTSTR szKey, REGSAM samDesired) {
 	}
 	ReplaceSlashes(szKeyBuf);
 
-	return(OpenKey(szKeyBuf,samDesired));
+	return(OpenKey(szKeyBuf,samDesired,0));
 
 }
