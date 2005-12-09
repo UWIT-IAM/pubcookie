@@ -490,8 +490,6 @@
 
 		</ul>
 
-		<p>[fixme: other options?]
-
 		<p>For example, to request a host key for <i>appserver.exampled.edu</i> from
 		<i>login.example.edu</i>, you would use the <tt>-H</tt> and <tt>-K</tt> options.
 
@@ -674,43 +672,38 @@
 
 		<h4><a name="problems">Known Problems</a></h4>
 
-		<p>Known problems with Pubcookie 3.3 include:</p>
+		<p>Known problems with the Windows components in Pubcookie 3.3.0:</p>
 
 		<ul>
 			<li>
-			<p><b>IIS 6.0 Inactivity Timeouts.</b> The inactivity timeout on IIS 6 defaults
-			to 20 minutes for each web application pool (see Properties > Performance >
-			Idle timeout). When it times out, it's like IIS has been reset, causing the filter 
-			to reinitialize and generate a new session key (if you don't have one on disk). 
-			The new session key can't be used to read old session cookies, causing error messages
-			for users with session cookies that predate the timeout. The Event log will	
-			show <i>Can't unbundle session cookie</i> errors. Uncheck idle timeout to prevent
-			this from happening.
-
-			<p>[fixme: does this belong up above somewhere?]
+			<p><b>IIS 6.0 Idle Timeout causes session errors.</b> Uncheck idle timeouts to prevent session errors.
+                        The default inactivity timeout in IIS 6 is 20 minutes for each web application pool (see Properties > 
+                        Performance > Idle timeout). When this times out, it's like resetting IIS, which causes the filter 
+			to reinitialize and generate a new session key (if you don't have one on disk). The new session key can't
+                        be used to read old session cookies, so users who establish a session before the
+                        timeout/reinitialization receive error messages. They manifest themselves as <i>Can't unbundle session
+                        cookie</i> messages in the Event Log.</p>
 
 			<li>
-			<p><b>Event log sources.</b> If a new web site is added after installation,
-			its IIS Instance ID may need to be registered as an event log source pointing
-			to the pbc_messages DLL containing the event log messages.</p>
+			<p><b>New Event Log sources not added for new Web Sites.</b> If a new Web Site is added after Pubcookie has
+                        been installed, a new Event Log source may need to be registered manually.</p>
 
 			<li>
-			<p><b>Empty registry keys.</b> The MMC extension habitually adds empty, harmless 
-                        registry keys when you open the Pubcookie Directives tab.</p>
+			<p><b>MMC adds empty registry keys.</b> The MMC extension adds empty, harmless, but nevertheless
+                        extraneous registry keys when you open the Pubcookie Directives tab.</p>
 
 			<li>
-			<p><b>Can't set inherited configurations.</b> The MMC extension won't allow you to override inherited values with
+			<p><b>MMC can't set inherited settings.</b> The MMC extension won't allow you to override inherited values with
                         the same value that's being inherited.</p>
 
 			<li>
-			<p><b>Event Viewer crashes.</b> The pbc_messages.dll file is known to crash the Event Viewer
-                        on some systems when viewing Pubcookie events. This <i>should</i> be fixed already in version 3.3, but we're leaving
-                        this note here in case people run into and want to report the contradiction.</p>
+			<p><b>Windows Event Viewer crashes.</b> Past versions of the pbc_messages DLL are known to crash the Event Viewer
+                        on some systems when viewing Pubcookie events. This <i>should</i> be fixed in version 3.3, so please report it if it still happens.</p>
 
 			<li>
-			<p><b>Trailing slash required.</b> Requests to folder resources that don't include the trailing
-                        slash may not always pick up the right configuration. Until this is fixed, links and requests should 
-                        always include the trailing slash. (It's good form anyway.)
+			<p><b>Filter requires trailing slash on some requests.</b> Requests to folder resources that don't include a
+                        trailing slash may not always pick up the right configuration settings. Until this is fixed, links and
+                        requests should always include the trailing slash. (But that's good form anyway.)
 		</ul>
 
 		<h4><a name="certs">Appendix A: Windows Certificate Store</a></h4>
