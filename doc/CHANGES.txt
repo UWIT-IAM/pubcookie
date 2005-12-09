@@ -7,7 +7,8 @@ Changes with 3.3.0 Beta 2:
    login cgi for modifying the case of the username.
 
 *) Disabled "If-Modified-Since" headers in Apache module for protected
-   pages. This fixes logins for the Opera browser. Perhaps others too.
+   pages when setting or updating cookies. This fixes logins for the
+   Opera browser. Perhaps others too.
 
 *) Version strings for ISAPI filter are generated from configure.ac, as
    are PubcookieFilter.h and PubCookieFilter.rc.
