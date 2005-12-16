@@ -89,6 +89,11 @@
                   version of your login server and configure the <a
                   href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> directive accordingly.
   
+                  <dt>Known problem with Kerberos ticket passing:</dt> 
+                  <dd>There is a known problem in the 3.3.0 release with Kerberos ticket
+                  passing. Sites using this functionality should continue to use the latest 
+                  3.2 release and wait for a 3.3.x patch release.</dd>
+
                   <dt>Compatibility note on version 3.1 relays:
                   <dd>The need for the cgi-based relays introduced in version 3.1 to authenticate across DNS domains was redressed
                   by the POST-based messaging method introduced in version 3.2. <strong>Use of third-party 3.1
