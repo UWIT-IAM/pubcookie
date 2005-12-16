@@ -413,7 +413,7 @@
 		<i>Pubcookie Server Values</i> and <i>Pubcookie Directives</i>.
 
 		<p>Pubcookie Server Values apply configuration behaviors to Pubcookie itself.
-		They can be found under your master or web site propeties. Click the Pubcookie
+		They can be found under your master or web site properties. Click the Pubcookie
 		Server Values tab.
 
 		<p>Pubcookie Directives apply configuration behaviors to specific resources: web sites,
@@ -701,9 +701,11 @@
                         on some systems when viewing Pubcookie events. This <i>should</i> be fixed in version 3.3, so please report it if it still happens.</p>
 
 			<li>
-			<p><b>Filter requires trailing slash on some requests.</b> Requests to folder resources that don't include a
-                        trailing slash may not always pick up the right configuration settings. Until this is fixed, links and
-                        requests should always include the trailing slash. (But that's good form anyway.)
+			<p><b>Requests to root level resources require a trailing slash.</b> Requests to folders and virtual
+                        directories at the root level of a web site require a trailing slash. Without it, the filter uses
+                        the default web site configuration and doesn't pick up the settings specific to the folder or virtual
+                        directory. Until this is fixed in the filter, links and requests should always include the trailing slash.
+                        (But that's good form anyway.)
 		</ul>
 
 		<h4><a name="certs">Appendix A: Windows Certificate Store</a></h4>
