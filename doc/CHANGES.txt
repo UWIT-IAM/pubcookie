@@ -1,3 +1,9 @@
+Changes with 3.3.0:
+
+*) No source code changes. A few documentation updates, that's all.
+   Note: 3.3.0 has a known problem with Kerberos ticket passing via 
+   the getcred flavor. We'll address this in a patch release.
+
 Changes with 3.3.0 Beta 2:
 
 *) Fixed MMC snap-in to display the correct default, inherited, or
