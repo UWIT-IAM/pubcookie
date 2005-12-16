@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.94 $)
+AC_REVISION($Revision: 1.95 $)
 
 dnl Unfortunately, this must come before the seperate version splits, which are
 dnl definted below.  Please set them first, and then set the second argument of
@@ -8,7 +8,7 @@ dnl this to:
 dnl PBC_VERSION_MAJOR.PBC_VERSION_MINOR.PBC_VERSION_PATCH PBC_VERSION_TYPE
 dnl Omit PBC_VERSION_TYPE if the TYPE is "final"
 dnl I apologize that this isn't done automatically
-AC_INIT(Pubcookie, [3.3.0 pre-beta3], pubcookie-dev@u.washington.edu)
+AC_INIT(Pubcookie, [3.3.0], pubcookie-dev@u.washington.edu)
 
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -26,13 +26,13 @@ dnl Otherwise it is.  For the National Edition, this will be "pre-beta" or
 dnl "beta".  For campus editions, this will be unique for the campus, we
 dnl imagine.
 dnl When this changes, don't forget to increment PBC_WIN_BUILD_NUMBER
-PBC_VERSION_TYPE=pre-beta3
+PBC_VERSION_TYPE=final
 
 dnl The Windows "Build Number" ..  Unfortunately the Windows build process can't
 dnl use the text version (betaX, pre-betaX), so this is just incremented every
 dnl time the PBC_VERSION_TYPE changes, and reset to 0 when any part of the
 dnl version number proper (MAJOR, MINOR, PATCH) changes.
-PBC_WIN_BUILD_NUMBER=2
+PBC_WIN_BUILD_NUMBER=3
 
 AC_SUBST(PBC_VERSION_MAJOR, "$PBC_VERSION_MAJOR")
 AC_SUBST(PBC_VERSION_MINOR, "$PBC_VERSION_MINOR")
