@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.78 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: flavor_basic.c,v 1.79 2005-12-19 01:51:40 willey Exp $
  */
 
 
@@ -398,6 +398,7 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
     int ret = PBC_FAIL;
     char *login_msg = NULL;
     char *reason_msg = NULL;
+    const char *domain = login_host_cookie_domain(p);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello reason: %d",
                       func, reason);
@@ -407,7 +408,7 @@ static int print_login_page (pool * p, login_rec * l, login_rec * c,
         print_header (p,
                       "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s; secure\n",
                       PBC_L_COOKIENAME, PBC_CLEAR_COOKIE, 
-                      login_host_cookie_domain(p),
+                      (domain == NULL ? "" : domain),
                       LOGIN_DIR, EARLIEST_EVER);
     }
 
@@ -644,6 +645,7 @@ static login_result process_basic (pool * p,
     struct credentials **credsp = NULL;
     int also_allow_cred = 0;
     int rcode;
+    const char *domain = login_host_cookie_domain(p);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_basic: hello\n");
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
@@ -762,9 +764,9 @@ static login_result process_basic (pool * p,
                                           (unsigned char *) out64, outlen);
 
                     print_header (p,
-                                  "Set-Cookie: %s=%s; domain=%s; secure\n",
+                                  "Set-Cookie: %s=%s; %ssecure\n",
                                   PBC_CRED_COOKIENAME, out64,
-                                  login_host_cookie_domain(p));
+                                  (domain == NULL ? "" : domain));
 
                     /* free buffer */
                     free (outbuf);
