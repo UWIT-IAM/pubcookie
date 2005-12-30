@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.170 2005-12-06 23:32:29 jjminer Exp $
+ * $Id: index.cgi.c,v 1.171 2005-12-30 19:01:33 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2549,6 +2549,10 @@ int set_l_cookie (pool * p, const security_context * context,
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "set_l_cookie: hello\n");
 
+    /* update times, used in pinit_response, maybe other places */
+    l->create_ts = (c != NULL ? c->create_ts : 0),
+    l->expire_ts = (c == NULL || c->expire_ts < pbc_time (NULL) 
+			? compute_l_expire (p, l) : c->expire_ts);
 
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
@@ -2560,11 +2564,12 @@ int set_l_cookie (pool * p, const security_context * context,
                            PBC_COOKIE_TYPE_L,
                            l->creds,
                            0,
-                           (c != NULL ? c->create_ts : 0),
-                           (c == NULL || c->expire_ts < pbc_time (NULL)
-                            ? compute_l_expire (p, l)
-                            : c->expire_ts), l_cookie, NULL,    /* sending it to myself */
-                           PBC_4K, PBC_DEF_CRYPT);
+                           l->create_ts,
+                           l->expire_ts,
+                           l_cookie, 
+                           NULL,    /* sending it to myself */
+                           PBC_4K, 
+                           PBC_DEF_CRYPT);
 
     if (user != NULL)
         pbc_free (p, user);
