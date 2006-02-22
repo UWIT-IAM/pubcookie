@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.87 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: libpubcookie.c,v 2.88 2006-02-22 19:00:11 willey Exp $
  */
 
 
@@ -175,7 +175,7 @@ const char *get_my_hostname (pool * p, const security_context * context)
  * @param name the name of the authtype
  * @returns either PBC_CREDS_NONE or the credential id to pass in the cookie
  */
-const char libpbc_get_credential_id (pool * p, const char *name)
+char libpbc_get_credential_id (pool * p, const char *name)
 {
     if (!strcasecmp (name, "uwnetid")) {
         pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
@@ -909,6 +909,9 @@ unsigned char *libpbc_update_lastts (pool * p,
     unsigned char *cookie;
     char alg = cookie_data->broken.version[2];
 
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                      "libpbc_update_lastts: hello\n");
+
     (*cookie_data).broken.last_ts = pbc_time (NULL);
     cookie_string = libpbc_stringify_cookie_data (p, cookie_data);
     cookie =
@@ -916,7 +919,7 @@ unsigned char *libpbc_update_lastts (pool * p,
                                    use_granting, alg);
     pbc_free (p, cookie_string);
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "upd latts: alg=%c\n", alg);
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "upd lastts: alg=%c\n", alg);
 
     return cookie;
 

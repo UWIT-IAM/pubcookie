@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.171 2005-12-30 19:01:33 willey Exp $
+ * $Id: index.cgi.c,v 1.172 2006-02-22 19:00:11 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -454,7 +454,7 @@ void print_http_header (pool * p)
     print_header (p,
                   "Cache-Control: no-store, no-cache, must-revalidate\n");
     print_header (p, "Expires: Sat, 1 Jan 2000 01:01:01 GMT\n");
-    print_header (p, "Content-Type: text/html\n");
+    print_header (p, "Content-Type: text/html; charset=ISO-8859-1\n");
 }
 
 /**
@@ -637,7 +637,7 @@ int get_cookie (pool * p, char *name, char *result, int max, int n)
 }
 
 
-char *get_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
+char *get_clear_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
 {
     int length;
     char *s;
@@ -659,6 +659,104 @@ char *get_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
     }
 
 }
+
+/* Get string - encoding some special chars.
+   If this is a url we must preserve the colons in
+   "http[s]://something[:port]/something_more"
+
+   'isurl' deals with the @#$%^*&# colons. 
+
+   Input string will be  free'd if encoding is done. */
+
+static char *safer_string (pool *p, char *cs, int isurl)
+{
+    char *s, *enc, *e;
+    int n = 0;
+    int pc = 0; /* 0 at start, 1 at port, 2 when ':' must be encoded */
+    int pcs = 0;
+    int err = 0;
+
+    if (!cs) return (NULL);
+
+    /* url special checks */
+    if (isurl<0) {
+       pcs = 999999;  /* no encoding of colons */
+    } else if (isurl>0) {
+       if (!strncmp(cs,"http://",7)) pcs = 7;   /* encode some colons */
+       else if (!strncmp(cs,"https://",8)) pcs = 8;
+    } else pc = 2; /* encode all colons */
+
+    /* count special chars */
+    for (s=cs;s&&*s;s++) {
+        if ((*s=='<') ||
+            (*s=='>') ||
+            (*s==':') ||
+            (*s=='#') ||
+            (*s=='\'') ||
+            (*s=='`') ||
+            (*s=='\r') ||
+            (*s=='\n') ||
+            (*s=='"')) n++;
+    }
+    if (!n) return (cs);
+
+    enc = (char*) malloc(strlen(cs)+(n*5));
+    for (n=0,e=enc,s=cs;s&&*s;s++,n++) {
+
+        if ((n>=pcs)&&(*s=='/')) pc = 2; /* ends possible port */
+
+        if ((pc==1)&&!isdigit(*s)) {  /* invalid port number */
+           *s = '_';
+           err++;
+        }
+
+        switch(*s) {
+
+            case ':':  if ((n<pcs)||(pc==0)) {   /* keep colon */
+                          if ((n>=pcs)&&(pc==0)) pc = 1; /* must be port */
+                          *e++ = *s;
+                       } else {
+                          strcpy(e, "%3A"); e+=3;
+                       }
+                       break;
+
+            /* encode all other special chars */
+            case '"':  strcpy(e, "%22"); e+=3; break;
+            case '<':  strcpy(e, "%3C"); e+=3; break;
+            case '>':  strcpy(e, "%3E"); e+=3; break;
+            case '#':  strcpy(e, "%23"); e+=3; break;
+            case '\'':  strcpy(e, "%27"); e+=3; break;
+            case '`':  strcpy(e, "%60"); e+=3; break;
+            case '\n': strcpy(e, "&#10;"); e+=5; break;
+            case '\r': strcpy(e, "&#13;"); e+=5; break;
+            default: *e++ = *s;
+         }
+    }
+    *e = '\0';
+    if (err) pbc_log_activity (p, PBC_LOG_ERROR,
+                      "safer_encode: invalid port: %s",  cs);
+    free (cs);
+    return (enc);
+}
+
+/* get string - encoding some special chars */
+
+char *get_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
+{
+    char *cs = get_clear_string_arg(p, name, f);
+    return (safer_string(p, cs, 0));
+}
+
+/* get a url string arg - check for validity
+   basically allowing only one ':' which must be
+   followed by just digits until a '/' */
+
+char *get_url_arg (pool * p, char *name, cgiFormResultType (*f) ())
+{
+    char *cs = get_clear_string_arg(p, name, f);
+    return (safer_string(p, cs, 1));
+}
+
 
 /**
  * uses cgic calls to get an int from parsed string of encoded stuff
@@ -849,11 +947,11 @@ login_rec *load_login_rec (pool * p, login_rec * l)
         }
     }
 
-    l->pass = get_string_arg (p, PBC_GETVAR_PASS, NO_NEWLINES_FUNC);
-    l->pass2 = get_string_arg (p, PBC_GETVAR_PASS2, NO_NEWLINES_FUNC);
+    l->pass = get_clear_string_arg (p, PBC_GETVAR_PASS, NO_NEWLINES_FUNC);
+    l->pass2 = get_clear_string_arg (p, PBC_GETVAR_PASS2, NO_NEWLINES_FUNC);
     l->args = get_string_arg (p, PBC_GETVAR_ARGS, YES_NEWLINES_FUNC);
-    l->uri = get_string_arg (p, PBC_GETVAR_URI, NO_NEWLINES_FUNC);
-    l->host = get_string_arg (p, PBC_GETVAR_HOST, NO_NEWLINES_FUNC);
+    l->uri = get_url_arg (p, PBC_GETVAR_URI, NO_NEWLINES_FUNC);
+    l->host = get_url_arg (p, PBC_GETVAR_HOST, NO_NEWLINES_FUNC);
     l->method = get_string_arg (p, PBC_GETVAR_METHOD, NO_NEWLINES_FUNC);
     l->version = get_string_arg (p, PBC_GETVAR_VERSION, NO_NEWLINES_FUNC);
     l->creds = get_int_arg (p, PBC_GETVAR_CREDS, 0) + 48;
@@ -865,10 +963,10 @@ login_rec *load_login_rec (pool * p, login_rec * l)
     l->appid = get_string_arg (p, PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
     l->appsrvid =
         get_string_arg (p, PBC_GETVAR_APPSRVID, NO_NEWLINES_FUNC);
-    l->fr = get_string_arg (p, PBC_GETVAR_FR, NO_NEWLINES_FUNC);
+    l->fr = get_url_arg (p, PBC_GETVAR_FR, NO_NEWLINES_FUNC);
 
     l->real_hostname =
-        get_string_arg (p, PBC_GETVAR_REAL_HOST, NO_NEWLINES_FUNC);
+        get_url_arg (p, PBC_GETVAR_REAL_HOST, NO_NEWLINES_FUNC);
     l->appsrv_err =
         get_string_arg (p, PBC_GETVAR_APPSRV_ERR, NO_NEWLINES_FUNC);
     l->file = get_string_arg (p, PBC_GETVAR_FILE_UPLD, NO_NEWLINES_FUNC);
@@ -879,7 +977,7 @@ login_rec *load_login_rec (pool * p, login_rec * l)
     l->duration = get_int_arg (p, PBC_GETVAR_DURATION, 0);
     l->pinit = get_int_arg (p, PBC_GETVAR_PINIT, 0);
     l->pre_sess_tok = get_int_arg (p, PBC_GETVAR_PRE_SESS_TOK, 0);
-    tmp = get_string_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
+    tmp = get_url_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
     if (tmp)
         l->relay_uri = tmp;
     l->create_ts = get_int_arg (p, PBC_GETVAR_CREATE_TS, 0);
@@ -1003,6 +1101,14 @@ char *string_encode (pool * p, char *in)
         case '>':
             *ptr = '&';
             *(++ptr) = 'g';
+            *(++ptr) = 't';
+            *(++ptr) = ';';
+            break;
+        case '"':
+            *ptr = '&';
+            *(++ptr) = 'q';
+            *(++ptr) = 'u';
+            *(++ptr) = 'o';
             *(++ptr) = 't';
             *(++ptr) = ';';
             break;
@@ -2152,7 +2258,9 @@ int cgiMain ()
             hp = l->relay_uri + 8;
 #endif
         if (hp) {
-            if (strncmp (hp, l->host, strlen (l->host))) {
+            int hl = strlen(l->host);
+            if ((strncmp (hp, l->host, hl)) ||
+                ! ((hp[hl]==':') || (hp[hl]=='/'))) {
 #ifdef ALLOW_RELAY
                 pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                                   "Is a relay: %s for %s\n", l->relay_uri,
@@ -2551,8 +2659,8 @@ int set_l_cookie (pool * p, const security_context * context,
 
     /* update times, used in pinit_response, maybe other places */
     l->create_ts = (c != NULL ? c->create_ts : 0),
-    l->expire_ts = (c == NULL || c->expire_ts < pbc_time (NULL) 
-			? compute_l_expire (p, l) : c->expire_ts);
+    l->expire_ts = (c == NULL || c->expire_ts < pbc_time (NULL)
+                       ? compute_l_expire (p, l) : c->expire_ts);
 
     /* the login cookie is encoded as having passed 'creds', which is what
        the flavor verified. */
@@ -2566,9 +2674,9 @@ int set_l_cookie (pool * p, const security_context * context,
                            0,
                            l->create_ts,
                            l->expire_ts,
-                           l_cookie, 
+                           l_cookie,
                            NULL,    /* sending it to myself */
-                           PBC_4K, 
+                           PBC_4K,
                            PBC_DEF_CRYPT);
 
     if (user != NULL)
@@ -2612,6 +2720,7 @@ void print_redirect_page (pool * p, const security_context * context,
     char *g_cookie;
     char *redirect_uri;
     char *args_enc = NULL;
+    char *args_enc1;
     char *redirect_final = NULL;
     char *redirect_dest = NULL;
     char g_set_cookie[PBC_1K];
@@ -2689,9 +2798,10 @@ void print_redirect_page (pool * p, const security_context * context,
               l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
 
     if (l->args) {
-        args_enc = calloc (1, strlen (l->args));
+        args_enc1 = calloc (1, strlen (l->args));
         libpbc_base64_decode (p, (unsigned char *) l->args,
-                              (unsigned char *) args_enc, NULL);
+                              (unsigned char *) args_enc1, NULL);
+        args_enc = safer_string(p, args_enc1, l->relay_uri?-1:0);
         snprintf (redirect_final, PBC_4K - 1, "%s?%s", redirect_dest,
                   args_enc);
     } else {
@@ -2739,7 +2849,7 @@ void print_redirect_page (pool * p, const security_context * context,
                     l->relay_uri);
         print_html (p,
                     "<input type=hidden name=post_stuff value=\"%s\">\n",
-                    l->post_stuff ? l->post_stuff : "");
+                    l->post_stuff ? string_encode(p, l->post_stuff) : "");
         print_html (p, "<input type=hidden name=get_args value=\"%s\">\n",
                     l->args ? args_enc : "");
         print_html (p,
@@ -2930,7 +3040,7 @@ login_rec *get_query (pool * p)
             g_req = get_granting_request (p);
 
         l->relay_uri =
-            get_string_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
+            get_url_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
         pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                           "get_query: %s g req, relay=%s\n",
                           g_req ? "have" : "no",

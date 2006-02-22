@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.14 2005-11-14 22:37:22 jjminer Exp $
+    $Id: flavor_uwsecurid.c,v 2.15 2006-02-22 19:00:11 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -234,18 +234,20 @@ int flus_get_custom_login_msg (pool * p, const char *appid,
                                                              "custom_login_file_prefix",
                                                              CUSTOM_LOGIN_MSG);
     const char func[] = "flus_get_custom_login_msg";
+    const char *l_appid = strdup( appid ? appid : "");
+    const char *l_appsrvid = strdup( appsrvid ? appsrvid : "");
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "%s: hello appid: %s appsrvid: %s", func, appid,
-                      appsrvid);
+                      "%s: hello appid: %s appsrvid: %s", func, l_appid,
+                      l_appsrvid);
 
     len =
-        strlen (appid) + strlen (appsrvid) + strlen (cust_login_prefix) +
+        strlen (l_appid) + strlen (l_appsrvid) + strlen (cust_login_prefix) +
         3;
     filename = calloc (len, sizeof (char));
     snprintf (filename, len, "%s%c%s%c%s", cust_login_prefix,
-              APP_LOGOUT_STR_SEP, (appsrvid == NULL ? "" : appsrvid),
-              APP_LOGOUT_STR_SEP, (appid == NULL ? "" : appid));
+              APP_LOGOUT_STR_SEP, l_appsrvid,
+              APP_LOGOUT_STR_SEP, l_appid);
 
     /* clean non compliant chars from string */
     ptr = new = filename;

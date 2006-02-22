@@ -1,3 +1,31 @@
+Changes with 3.3.0a:
+
+*) Applied login server security fixes to address XSS vulnerabilities  
+   described in February 2006 security advisory.
+   
+*) Fixed getcred login flavor by applying correct encryption method and
+   setting correct domain on pubcookie_cred cookie.
+   
+*) Fixed virtual host problems in Apache module by using the correct
+   peer name when calling libpbc_mk_priv.
+
+*) Modified several login templates. Added Content-Type definition with
+   charset=ISO-8859-1 to error, login, nonpost_redirect, notok, status,
+   pinit_response1, and logout_part1 templates. Also removed comment
+   with redirect-url substitution from nonpost_redirect template.
+
+*) Modified module and filter extension to use HTTP 302 redirects instead
+   of meta-refresh on redirects back to the original resource. Also 
+   updated the handling of output values when printing redirect pages.
+
+*) Removed dumpvars.asp from sample web application and installer.
+
+*) Fixed login cgi to report the correct time remaining after a pinit.
+
+*) Applied Bradley Schwoerer's fixes for strict compilers.
+
+*) Applied Steve Losen's fix for libpbc_get_credential_id declaration.
+
 Changes with 3.3.0:
 
 *) No source code changes. A few documentation updates, that's all.

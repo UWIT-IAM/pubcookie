@@ -18,10 +18,11 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.195 2005-12-01 19:30:47 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.196 2006-02-22 19:00:11 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
+#define CONTENT_TYPE "text/html; charset=ISO-8859-1"
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -169,6 +170,7 @@ char *secure_cookie = " secure";
 #endif
 
 #define ME(r) ap_get_server_name(r)
+static char *encode_get_args (request_rec *r, char *in, int ec);
 
 void dump_server_rec (request_rec * r, pubcookie_server_rec * scfg)
 {
@@ -258,6 +260,7 @@ request_rec *find_request_from_pool (pool * p)
  * @param r reuquest_rec
  * @return int 
  */
+
 char *get_post_data (request_rec * r, int post_len)
 {
     char *buffer;
@@ -502,7 +505,7 @@ static void set_session_cookie (request_rec * r,
         /* xxx it would be nice if the idle timeout has been disabled
            to avoid recomputing and resigning the cookie? */
         cookie =
-            libpbc_update_lastts (p, scfg->sectext, rr->cookie_data, NULL,
+            libpbc_update_lastts (p, scfg->sectext, rr->cookie_data, ME(r),
                                   0);
     } else {
         /* create a brand new cookie, initialized with the present time */
@@ -679,7 +682,7 @@ static int do_end_session_redirect (request_rec * r,
 
     ap_log_rerror (PC_LOG_DEBUG, r, "do_end_session_redirect: hello");
 
-    r->content_type = "text/html";
+    r->content_type = CONTENT_TYPE;
     clear_granting_cookie (r);
     clear_pre_session_cookie (r);
     clear_session_cookie (r);
@@ -716,7 +719,7 @@ static int stop_the_show (request_rec * r, pubcookie_server_rec * scfg,
 
     ap_log_rerror (PC_LOG_DEBUG, r, "stop_the_show: hello");
 
-    r->content_type = "text/html";
+    r->content_type = CONTENT_TYPE;
     clear_granting_cookie (r);
     clear_pre_session_cookie (r);
     clear_session_cookie (r);
@@ -814,7 +817,7 @@ static int auth_failed_handler (request_rec * r,
     } else
         args = ap_pstrdup (p, "");
 
-    r->content_type = "text/html";
+    r->content_type = CONTENT_TYPE;
 
     /* if there is a non-standard port number just tack it onto the hostname  */
     /* the login server just passes it through and the redirect works         */
@@ -846,8 +849,10 @@ static int auth_failed_handler (request_rec * r,
     /* is our main way of communicating with it      */
     /* If we're doing compatibility encryption, send the */
     /* compatibility version string. */
-    sprintf (vstr, "%-2.2s%c\n", PBC_VERSION,
+
+    sprintf (vstr, "%-2.2s%c", PBC_VERSION,
              scfg->crypt_alg == 'd' ? '\0' : scfg->crypt_alg);
+
     ap_snprintf (g_req_contents, PBC_4K - 1,
                  "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c",
                  PBC_GETVAR_APPSRVID,
@@ -1006,13 +1011,13 @@ static int auth_failed_handler (request_rec * r,
         else
             sprintf (cp, ":%d", port);
         ap_rprintf (r, post_request_html, scfg->login,
-                    e_g_req_contents, post_data,
+                    e_g_req_contents, encode_get_args(r, post_data, 1),
                     ap_get_server_name (r), cp, scfg->post_reply_url);
 
     } else if (ctype && (tenc || lenp || r->method_number == M_POST)) {
 
         ap_rprintf (r, get_post_request_html, scfg->login,
-                    post_data, scfg->login, PBC_WEBISO_LOGO,
+                    encode_get_args(r, post_data, 1), scfg->login, PBC_WEBISO_LOGO,
                     PBC_POST_NO_JS_BUTTON);
 
     } else {
@@ -1109,7 +1114,7 @@ char *get_cookie (request_rec * r, char *name, int n)
         ptr++;
     }
 
-    // cache and blank cookie
+    /* cache and blank cookie */
     ptr = ap_pstrdup (mr->pool, cookie);
     ap_table_set (mr->notes, name, ptr);
 
@@ -1469,6 +1474,7 @@ static int pubcookie_user_hook (request_rec * r)
                                                     &pubcookie_module);
     rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
                                                      &pubcookie_module);
+
     ap_log_rerror (PC_LOG_DEBUG, r,
                    "pubcookie_user_hook: uri: %s auth_type: %s", r->uri,
                    ap_auth_type (r));
@@ -1492,6 +1498,7 @@ static int pubcookie_user_hook (request_rec * r)
     /* get pubcookie creds or bail if not a pubcookie auth_type */
     if ((creds = pubcookie_auth_type (r)) == PBC_CREDS_NONE)
         return DECLINED;
+
 
     /* If this is a subrequest we either already have a user or we don't. */
     if (!rr) {
@@ -1524,7 +1531,7 @@ static int pubcookie_user_hook (request_rec * r)
             return DONE;
         } else if (rr->failed == PBC_BAD_USER) {
             ap_log_rerror (PC_LOG_DEBUG, r, " .. user_hook: bad user");
-            r->content_type = "text/html";
+            r->content_type = CONTENT_TYPE;
             ap_send_http_header (r);
             ap_rprintf (r, "Unauthorized user.");
             return DONE;
@@ -1672,7 +1679,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                                      1) != 0) {
         while (cookie = get_cookie (r, sess_cookie_name, scnt)) {
             cookie_data =
-                libpbc_unbundle_cookie (p, scfg->sectext, cookie, NULL, 0,
+                libpbc_unbundle_cookie (p, scfg->sectext, cookie, ME(r), 0,
                                         scfg->crypt_alg);
 
             if (cookie_data) break;
@@ -3151,47 +3158,246 @@ static int pubcookie_cleanup (request_rec * r)
        </Location>
   */
 
-/* read and parse query_string args */
-static void scan_args (table * argtbl, char *arg)
+
+/* Encode the args */
+
+static char *encode_get_args (request_rec *r, char *in, int ec)
+{
+    int na = 0;
+    char *enc, *s;
+
+    for (s=in; s&&*s; s++) {
+        if ( (*s=='"') ||
+             (*s == '<') ||
+             (*s == '>') ||
+             (*s == '(') ||
+             (*s == ')') ||
+             (*s == ':') ||
+             (*s == ';') ||
+             (*s == '\n') ||
+             (*s == '\r') ) na++;
+    }
+    if (!na) return (in);
+
+    enc = (char*) ap_palloc (r->pool, strlen(in)+(na*5));
+    for (s=enc; in&&*in; in++) {
+        switch (*in) { 
+
+            case '"':  strcpy(s, "%22"); s+=3; break;
+            case '<':  strcpy(s, "%3C"); s+=3; break;
+            case '>':  strcpy(s, "%3E"); s+=3; break;
+            case '(':  strcpy(s, "%28"); s+=3; break;
+            case ')':  strcpy(s, "%29"); s+=3; break;
+            case ':':  if (ec) {
+                           strcpy(s, "%3A"); s+=3;
+                       } else *s++ = *in;
+                       break;
+            case ';':  strcpy(s, "%3B"); s+=3; break;
+            case '\n': strcpy(s, "&#10;"); s+=5; break;
+            case '\r': strcpy(s, "&#13;"); s+=5; break;
+            default: *s++ = *in;
+        }
+    }
+    *s = '\0';
+
+    return (enc);
+}
+
+/* entity encode some post data */
+
+static char *encode_data (request_rec *r, char *in)
+{
+    int na = 0;
+    char *enc, *s;
+
+    for (s=in; s&&*s; s++) {
+        if ( (*s=='"') ||
+             (*s == '\'') ||
+             (*s == '<') ||
+             (*s == '>') ||
+             (*s == ':') ||
+             (*s == '\n') ||
+             (*s == '\r') ) na++;
+    }
+    if (!na) return (in);
+
+    enc = (char*) ap_palloc (r->pool, strlen(in)+(na*5));
+    for (s=enc; in&&*in; in++) {
+        switch (*in) { 
+
+            case '"':  strcpy(s, "&quot;"); s+=6; break;
+            case '<':  strcpy(s, "&lt;"); s+=4; break;
+            case '>':  strcpy(s, "&gt;"); s+=4; break;
+            case '\n': strcpy(s, "&#10;"); s+=5; break;
+            case '\r': strcpy(s, "&#13;"); s+=5; break;
+            default: *s++ = *in;
+        }
+    }
+    *s = '\0';
+
+    return (enc);
+}
+
+/* decode an arg string */
+
+static char *decode_data(char *in)
+{
+   char *s;
+   char *v;
+   long int k;
+   char hex[4];
+   char *e;
+
+   if ((!in)||!*in) return ("");
+   for (v=in,s=in; *s; s++) {
+      switch (*s) {
+        case '+': *v++ = ' ';
+                  break;
+        case '%': hex[0] = *++s;
+                  hex[1] = *++s;
+                  hex[2] = '\0';
+                  k = strtol(hex,0,16);
+                  *v++ = (char)k;
+                  break;
+        default:  *v++ = *s;
+      }
+   }
+   *v = '\0';
+
+   for (v=in,s=in; *s; s++) {
+      switch (*s) {
+        case '&': if (*(s+1)=='#') {
+                     s += 2;
+                     if ((*s=='x')||(*s=='X')) k = strtol(s+1, &e, 16);
+                     else k = strtol(s, &e, 10);
+                     *v++ = (char)k;
+                     if (*e==';') s = e;
+                     else s = e-1;
+                  } else *v++ = '&';
+                  break; 
+        default:  *v++ = *s;
+      }
+   }
+   *v = '\0';
+
+   return (in);
+}
+
+/* Read and parse query_string args. 
+   Check validity and add to argtbl. */
+
+static void scan_args (request_rec *r, table *argtbl, char *arg)
 {
     char *p, *q, *s;
 
     p = arg;
-    if (!p)
-        return;
-    while (q = strchr (p, '&')) {
-        *q++ = '\0';
-        if (s = strchr (p, '='))
-            *s++ = '\0';
-        else
-            s = "";
-        ap_unescape_url (s);
+
+    while (p) {
+        if (q = strchr (p, '&')) *q++ = '\0';
+        if (s = strchr (p, '=')) *s++ = '\0';
+        else s = "";
+
+        decode_data (s);
         ap_table_set (argtbl, p, s);
         p = q;
-    }
-    if (p) {
-        if (s = strchr (p, '='))
-            *s++ = '\0';
-        else
-            s = "";
-        ap_unescape_url (s);
-        ap_table_set (argtbl, p, s);
     }
     return;
 }
 
-/* see if we need to use a textarea */
-static int need_area (char *in)
+/* verify the url. return the url if OK.
+   We are mostly checking for characters that
+   could introduce javascript xss code. 
+
+   If we're not encoding colons - the GET case - then
+   we will also decode any encoded ones from the login server. */
+
+static char *verify_url(request_rec *r, char *in, int ec)
 {
-    for (; *in; in++) {
-        if (*in == '"')
-            return (1);
-        if (*in == '\n')
-            return (1);
-        if (*in == '\r')
-            return (1);
+    int n;
+    char *sa, *e, *enc;
+    char *s = in;
+
+    if (!s) return (NULL);
+
+    ap_log_rerror (PC_LOG_DEBUG, r, "verify-url in: %s", in);
+
+    /* check protocol */
+    if (!strncmp(s, "http://", 7)) s+=7;
+    else if (!strncmp(s, "https://", 8)) s += 8;
+    else return (NULL);
+
+    /* check hostname ( letters, digits, dash )*/
+    while (isalnum(*s) || (*s=='-') || (*s=='.')) s++;
+    if (*s=='\0') return (in);
+  
+    /* port? */
+    if (*s==':') {
+       s++;
+       while (isdigit(*s)) s++;
     }
-    return (0);
+    if (*s=='\0') return (in);
+    if (*s++!='/') return (NULL);
+
+    /* see if we have to encode anything in the path */
+
+    sa = s;
+    n = 0;
+    for (; s&&*s; s++) {
+        if ( (*s=='"') ||
+             (*s == '<') ||
+             (*s == '>') ||
+             (*s == ':') ||
+             (*s == ';') ||
+             (*s == '?') ||
+             (*s == '%') ||
+             (*s == '=') ) n++;
+    }
+    if (n==0) return (in);  /* nothing to do */
+
+    /* else have some 'coding to do */
+    enc = (char*) ap_palloc (r->pool, strlen(in)+(n*4));
+    strncpy(enc, in, sa-in);
+    for (s=enc+(sa-in); sa&&*sa; sa++) {
+        switch (*sa) { 
+
+            case '"':  strcpy(s, "%22"); s+=3; break;
+            case '<':  strcpy(s, "%3C"); s+=3; break;
+            case '>':  strcpy(s, "%3E"); s+=3; break;
+            case ':':  if (ec) {
+                           strcpy(s, "%3A"); s+=3;
+                       } else *s++ = *in;
+                       break;
+            case ';':  strcpy(s, "%3B"); s+=3; break;
+            case '?':  strcpy(s, "%3F"); s+=3; break;
+            case '=':  strcpy(s, "%3D"); s+=3; break;
+            case '%':  if (ec || strncmp(sa,"%3A",3)) *s++ = *sa;
+                       else *s++=':',sa+=2;
+                       break;
+            default: *s++ = *sa;
+        }
+    }
+    *s = '\0';
+
+    ap_log_rerror (PC_LOG_DEBUG, r, "verify-url out: %s", enc);
+
+    return (enc);
+}
+
+
+/* verify a base64 string. return 1 on OK, Truncate at error. */
+
+static int verify_base64(request_rec *r, char *in)
+{
+    char *s;
+    for (s=in; s && *s; s++) {
+       if (isalnum(*s)) continue;
+       if ((*s=='+')||(*s=='/')||(*s=='=')) continue;
+       *s++ = '\0';
+       if (!*s) break; /* newline at end */
+       ap_log_rerror (PC_LOG_ERR, r, "verify-base64 truncated: %s", in);
+       return (0);  
+    }
+    return (1);
 }
 
 /* Handle the granting reply */
@@ -3199,6 +3405,7 @@ static int login_reply_handler (request_rec * r)
 {
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec *cfg;
+    pubcookie_req_rec *rr;
     table *args = ap_make_table (r->pool, 5);
     const char *greply, *creply, *pdata;
     char *arg;
@@ -3208,7 +3415,6 @@ static int login_reply_handler (request_rec * r)
     const char *r_url;
     pool *p = r->pool;
 
-
     scfg =
         (pubcookie_server_rec *) ap_get_module_config (r->server->
                                                        module_config,
@@ -3217,6 +3423,9 @@ static int login_reply_handler (request_rec * r)
     cfg = (pubcookie_dir_rec *) ap_get_module_config (r->per_dir_config,
                                                       &pubcookie_module);
 
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
+
 #ifdef APACHE2
     if (strcmp (r->handler, "pubcookie-post-reply"))
         return DECLINED;
@@ -3224,20 +3433,20 @@ static int login_reply_handler (request_rec * r)
 
     ap_log_rerror (PC_LOG_DEBUG, r, "login_reply_handler: hello");
 
-    r->content_type = "text/html";
+    r->content_type = CONTENT_TYPE;
     set_no_cache_headers (r);
 
     /* Get the request data */
 
     if (r->args) {
         arg = ap_pstrdup (p, r->args);
-        scan_args (args, arg);
+        scan_args (r, args, arg);
     }
     if (lenp) {
         int post_data_len;
         if (((post_data_len = strtol (lenp, NULL, 10)) > 0) &&
             ((post_data = get_post_data (r, post_data_len)))) {
-            scan_args (args, post_data);
+            scan_args (r, args, post_data);
         }
     }
 
@@ -3245,15 +3454,28 @@ static int login_reply_handler (request_rec * r)
     if (!greply) {
         /* Send out bad call error */
         ap_send_http_header (r);
+        rr->stop_message = ap_pstrdup (p, "No granting reply");
+        stop_the_show (r, scfg, cfg, rr);
+        return (OK);
     }
+    verify_base64(r, (char*)greply);
 
-    r_url = ap_table_get (args, "redirect_url");
-    if (!r_url) {
+    /* see if we do GET or POST */
+    pdata = ap_table_get (args, PBC_GETVAR_POST_STUFF);
+    if (!pdata) pdata = "";
+
+    if (!(r_url=verify_url(r, (char*)ap_table_get (args, "redirect_url"), (*pdata)?1:0))) {
         /* Send out bad call error */
+        ap_log_rerror (PC_LOG_ERR, r,
+                       "bad redirect url: %s", r_url);
         ap_send_http_header (r);
+        rr->stop_message = ap_pstrdup (p, "Invalid relay URL");
+        stop_the_show (r, scfg, cfg, rr);
+        return (OK);
     }
 
     creply = ap_table_get (args, PBC_CRED_TRANSFER_COOKIENAME);
+    verify_base64(r, (char*)creply);
 
     /* Build the redirection */
 
@@ -3269,67 +3491,59 @@ static int login_reply_handler (request_rec * r)
     }
 
 
-    ap_send_http_header (r);
-
-    /* see if we do GET or POST */
-    pdata = ap_table_get (args, PBC_GETVAR_POST_STUFF);
-    if (pdata && *pdata) {
+    if (*pdata) {
         char *a, *v;
         char *t;
         int needclick = 0;
 
+        ap_send_http_header (r);
+
         post_data = ap_pstrdup (p, pdata);
-        if (strstr (post_data, "submit="))
-            needclick = 1;
-        printf ("relay is post, click=%d\n", needclick);
+        if (strstr (post_data, "submit=")) needclick = 1;
+        ap_log_rerror (PC_LOG_DEBUG, r,
+                       "relay is post, click=%d", needclick);
 
         /* send post form with original elements */
         ap_rprintf (r, post_reply_1_html,
                     needclick ? POST_REPLY_CLICK : POST_REPLY_SUBMIT,
                     r_url);
 
-        do {
-            if (a = strchr (post_data, '&'))
-                *a++ = '\0';
+        while (post_data) {
+            if (a = strchr (post_data, '&')) *a++ = '\0';
             if (*post_data) {
+                int na;
 
-                if (v = strchr (post_data, '='))
-                    *v++ = '\0';
-                /* WebTemplate_assign(W, "ARGNAME", post);
-                   p = WebTemplate_html2text(v);
-                   WebTemplate_assign(W, "ARGVAL", p);
-                 */
-                for (t = v; *t; t++)
-                    if (*t == '+')
-                        *t = ' ';
-                ap_unescape_url (v);
+                if (v = strchr (post_data, '=')) *v++ = '\0';
+                for (t = v; t&&*t; t++) if (*t == '+') *t = ' ';
+                decode_data (v);
 
-                if (need_area (v)) {
-                    ap_rprintf (r, post_reply_area_html, post_data, v);
-                } else {
-                    ap_rprintf (r, post_reply_arg_html, post_data, v);
-                }
+                ap_rprintf (r, post_reply_arg_html, encode_data(r, post_data), encode_data(r, v)); 
+
             }
-        } while (post_data = a);
+            post_data = a;
+        }
 
         ap_rprintf (r, post_reply_2_html);
 
     } else {                    /* do a get */
+
         const char *a = ap_table_get (args, "get_args");
-        printf ("relay is get\n");
+        char *t;
 
         if (a && *a) {
-            char *t;
-            for (t = (char *) a; *t; t++)
-                if (*t == '+')
-                    *t = ' ';
-            arg =
-                ap_psprintf (p, "%d;URL=%s?%s", PBC_REFRESH_TIME, r_url,
-                             a);
+            arg = ap_psprintf (p, "%s?%s", r_url, encode_get_args(r, (char*)a, 0));
         } else {
-            arg = ap_psprintf (p, "%d;URL=%s", PBC_REFRESH_TIME, r_url);
+            arg = (char*) r_url;
         }
-        ap_rprintf (r, redirect_html, arg);
+        /* make sure there are no newlines in the redirect location */
+        if (t=strchr(arg,'\n')) *t = '\0';
+        if (t=strchr(arg,'\r')) *t = '\0';
+
+        /* Apache uses the error headers when we return a redirect */
+        ap_table_add (r->err_headers_out, "Set-Cookie", gr_cookie);
+        if (creply) ap_table_add (r->err_headers_out, "Set-Cookie", cr_cookie);
+        ap_table_add (r->headers_out, "Location", arg);
+        return (HTTP_MOVED_TEMPORARILY);
 
     }
 

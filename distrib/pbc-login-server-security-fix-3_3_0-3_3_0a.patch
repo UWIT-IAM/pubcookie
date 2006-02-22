@@ -1,0 +1,361 @@
+Index: webiso/pubcookie/src/index.cgi.c
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/index.cgi.c,v
+retrieving revision 1.170
+diff -u -r1.170 index.cgi.c
+--- webiso/pubcookie/src/index.cgi.c	6 Dec 2005 23:32:29 -0000	1.170
++++ webiso/pubcookie/src/index.cgi.c	8 Feb 2006 23:26:30 -0000
+@@ -454,7 +454,7 @@
+     print_header (p,
+                   "Cache-Control: no-store, no-cache, must-revalidate\n");
+     print_header (p, "Expires: Sat, 1 Jan 2000 01:01:01 GMT\n");
+-    print_header (p, "Content-Type: text/html\n");
++    print_header (p, "Content-Type: text/html; charset=ISO-8859-1\n");
+ }
+ 
+ /**
+@@ -637,7 +637,7 @@
+ }
+ 
+ 
+-char *get_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
++char *get_clear_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
+ {
+     int length;
+     char *s;
+@@ -660,6 +660,104 @@
+ 
+ }
+ 
++/* Get string - encoding some special chars.
++   If this is a url we must preserve the colons in
++   "http[s]://something[:port]/something_more"
++
++   'isurl' deals with the @#$%^*&# colons. 
++
++   Input string will be  free'd if encoding is done. */
++
++static char *safer_string (pool *p, char *cs, int isurl)
++{
++    char *s, *enc, *e;
++    int n = 0;
++    int pc = 0; /* 0 at start, 1 at port, 2 when ':' must be encoded */
++    int pcs = 0;
++    int err = 0;
++
++    if (!cs) return (NULL);
++
++    /* url special checks */
++    if (isurl<0) {
++       pcs = 999999;  /* no encoding of colons */
++    } else if (isurl>0) {
++       if (!strncmp(cs,"http://",7)) pcs = 7;   /* encode some colons */
++       else if (!strncmp(cs,"https://",8)) pcs = 8;
++    } else pc = 2; /* encode all colons */
++
++    /* count special chars */
++    for (s=cs;s&&*s;s++) {
++        if ((*s=='<') ||
++            (*s=='>') ||
++            (*s==':') ||
++            (*s=='#') ||
++            (*s=='\'') ||
++            (*s=='`') ||
++            (*s=='\r') ||
++            (*s=='\n') ||
++            (*s=='"')) n++;
++    }
++    if (!n) return (cs);
++
++    enc = (char*) malloc(strlen(cs)+(n*5));
++    for (n=0,e=enc,s=cs;s&&*s;s++,n++) {
++
++        if ((n>=pcs)&&(*s=='/')) pc = 2; /* ends possible port */
++
++        if ((pc==1)&&!isdigit(*s)) {  /* invalid port number */
++           *s = '_';
++           err++;
++        }
++
++        switch(*s) {
++
++            case ':':  if ((n<pcs)||(pc==0)) {   /* keep colon */
++                          if ((n>=pcs)&&(pc==0)) pc = 1; /* must be port */
++                          *e++ = *s;
++                       } else {
++                          strcpy(e, "%3A"); e+=3;
++                       }
++                       break;
++
++            /* encode all other special chars */
++            case '"':  strcpy(e, "%22"); e+=3; break;
++            case '<':  strcpy(e, "%3C"); e+=3; break;
++            case '>':  strcpy(e, "%3E"); e+=3; break;
++            case '#':  strcpy(e, "%23"); e+=3; break;
++            case '\'':  strcpy(e, "%27"); e+=3; break;
++            case '`':  strcpy(e, "%60"); e+=3; break;
++            case '\n': strcpy(e, "&#10;"); e+=5; break;
++            case '\r': strcpy(e, "&#13;"); e+=5; break;
++            default: *e++ = *s;
++         }
++    }
++    *e = '\0';
++    if (err) pbc_log_activity (p, PBC_LOG_ERROR,
++                      "safer_encode: invalid port: %s",  cs);
++    free (cs);
++    return (enc);
++}
++
++/* get string - encoding some special chars */
++
++char *get_string_arg (pool * p, char *name, cgiFormResultType (*f) ())
++{
++    char *cs = get_clear_string_arg(p, name, f);
++    return (safer_string(p, cs, 0));
++}
++
++/* get a url string arg - check for validity
++   basically allowing only one ':' which must be
++   followed by just digits until a '/' */
++
++char *get_url_arg (pool * p, char *name, cgiFormResultType (*f) ())
++{
++    char *cs = get_clear_string_arg(p, name, f);
++    return (safer_string(p, cs, 1));
++}
++
++
+ /**
+  * uses cgic calls to get an int from parsed string of encoded stuff
+  * @param name argument 
+@@ -849,11 +947,11 @@
+         }
+     }
+ 
+-    l->pass = get_string_arg (p, PBC_GETVAR_PASS, NO_NEWLINES_FUNC);
+-    l->pass2 = get_string_arg (p, PBC_GETVAR_PASS2, NO_NEWLINES_FUNC);
++    l->pass = get_clear_string_arg (p, PBC_GETVAR_PASS, NO_NEWLINES_FUNC);
++    l->pass2 = get_clear_string_arg (p, PBC_GETVAR_PASS2, NO_NEWLINES_FUNC);
+     l->args = get_string_arg (p, PBC_GETVAR_ARGS, YES_NEWLINES_FUNC);
+-    l->uri = get_string_arg (p, PBC_GETVAR_URI, NO_NEWLINES_FUNC);
+-    l->host = get_string_arg (p, PBC_GETVAR_HOST, NO_NEWLINES_FUNC);
++    l->uri = get_url_arg (p, PBC_GETVAR_URI, NO_NEWLINES_FUNC);
++    l->host = get_url_arg (p, PBC_GETVAR_HOST, NO_NEWLINES_FUNC);
+     l->method = get_string_arg (p, PBC_GETVAR_METHOD, NO_NEWLINES_FUNC);
+     l->version = get_string_arg (p, PBC_GETVAR_VERSION, NO_NEWLINES_FUNC);
+     l->creds = get_int_arg (p, PBC_GETVAR_CREDS, 0) + 48;
+@@ -865,10 +963,10 @@
+     l->appid = get_string_arg (p, PBC_GETVAR_APPID, NO_NEWLINES_FUNC);
+     l->appsrvid =
+         get_string_arg (p, PBC_GETVAR_APPSRVID, NO_NEWLINES_FUNC);
+-    l->fr = get_string_arg (p, PBC_GETVAR_FR, NO_NEWLINES_FUNC);
++    l->fr = get_url_arg (p, PBC_GETVAR_FR, NO_NEWLINES_FUNC);
+ 
+     l->real_hostname =
+-        get_string_arg (p, PBC_GETVAR_REAL_HOST, NO_NEWLINES_FUNC);
++        get_url_arg (p, PBC_GETVAR_REAL_HOST, NO_NEWLINES_FUNC);
+     l->appsrv_err =
+         get_string_arg (p, PBC_GETVAR_APPSRV_ERR, NO_NEWLINES_FUNC);
+     l->file = get_string_arg (p, PBC_GETVAR_FILE_UPLD, NO_NEWLINES_FUNC);
+@@ -879,7 +977,7 @@
+     l->duration = get_int_arg (p, PBC_GETVAR_DURATION, 0);
+     l->pinit = get_int_arg (p, PBC_GETVAR_PINIT, 0);
+     l->pre_sess_tok = get_int_arg (p, PBC_GETVAR_PRE_SESS_TOK, 0);
+-    tmp = get_string_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
++    tmp = get_url_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
+     if (tmp)
+         l->relay_uri = tmp;
+     l->create_ts = get_int_arg (p, PBC_GETVAR_CREATE_TS, 0);
+@@ -1006,6 +1104,14 @@
+             *(++ptr) = 't';
+             *(++ptr) = ';';
+             break;
++        case '"':
++            *ptr = '&';
++            *(++ptr) = 'q';
++            *(++ptr) = 'u';
++            *(++ptr) = 'o';
++            *(++ptr) = 't';
++            *(++ptr) = ';';
++            break;
+         default:
+             *ptr = *in;
+             break;
+@@ -2152,7 +2258,9 @@
+             hp = l->relay_uri + 8;
+ #endif
+         if (hp) {
+-            if (strncmp (hp, l->host, strlen (l->host))) {
++            int hl = strlen(l->host);
++            if ((strncmp (hp, l->host, hl)) ||
++                ! ((hp[hl]==':') || (hp[hl]=='/'))) {
+ #ifdef ALLOW_RELAY
+                 pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                                   "Is a relay: %s for %s\n", l->relay_uri,
+@@ -2607,6 +2715,7 @@
+     char *g_cookie;
+     char *redirect_uri;
+     char *args_enc = NULL;
++    char *args_enc1;
+     char *redirect_final = NULL;
+     char *redirect_dest = NULL;
+     char g_set_cookie[PBC_1K];
+@@ -2684,9 +2793,10 @@
+               l->host, (*redirect_uri == '/' ? "" : "/"), redirect_uri);
+ 
+     if (l->args) {
+-        args_enc = calloc (1, strlen (l->args));
++        args_enc1 = calloc (1, strlen (l->args));
+         libpbc_base64_decode (p, (unsigned char *) l->args,
+-                              (unsigned char *) args_enc, NULL);
++                              (unsigned char *) args_enc1, NULL);
++        args_enc = safer_string(p, args_enc1, l->relay_uri?-1:0);
+         snprintf (redirect_final, PBC_4K - 1, "%s?%s", redirect_dest,
+                   args_enc);
+     } else {
+@@ -2734,7 +2844,7 @@
+                     l->relay_uri);
+         print_html (p,
+                     "<input type=hidden name=post_stuff value=\"%s\">\n",
+-                    l->post_stuff ? l->post_stuff : "");
++                    l->post_stuff ? string_encode(p, l->post_stuff) : "");
+         print_html (p, "<input type=hidden name=get_args value=\"%s\">\n",
+                     l->args ? args_enc : "");
+         print_html (p,
+@@ -2925,7 +3035,7 @@
+             g_req = get_granting_request (p);
+ 
+         l->relay_uri =
+-            get_string_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
++            get_url_arg (p, PBC_GETVAR_RELAY_URL, NO_NEWLINES_FUNC);
+         pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
+                           "get_query: %s g req, relay=%s\n",
+                           g_req ? "have" : "no",
+Index: webiso/pubcookie/src/login_templates.generic/error
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/error,v
+retrieving revision 1.2
+diff -u -r1.2 error
+--- webiso/pubcookie/src/login_templates.generic/error	14 Apr 2003 13:30:52 -0000	1.2
++++ webiso/pubcookie/src/login_templates.generic/error	8 Feb 2006 23:26:30 -0000
+@@ -7,6 +7,7 @@
+ <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+ <html>
+   <head>
++    <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+     <title>pubcookie generic Login</title>
+   </head>
+ 
+Index: webiso/pubcookie/src/login_templates.generic/login
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/login,v
+retrieving revision 1.10
+diff -u -r1.10 login
+--- webiso/pubcookie/src/login_templates.generic/login	7 Jun 2005 14:49:22 -0000	1.10
++++ webiso/pubcookie/src/login_templates.generic/login	8 Feb 2006 23:26:30 -0000
+@@ -8,6 +8,7 @@
+ <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+ <html>
+  <head>
++  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>pubcookie generic Login</title>
+  </head>
+ 
+Index: webiso/pubcookie/src/login_templates.generic/login_uwsecurid
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/login_uwsecurid,v
+retrieving revision 1.5
+diff -u -r1.5 login_uwsecurid
+--- webiso/pubcookie/src/login_templates.generic/login_uwsecurid	6 Oct 2004 22:46:11 -0000	1.5
++++ webiso/pubcookie/src/login_templates.generic/login_uwsecurid	8 Feb 2006 23:26:30 -0000
+@@ -1,6 +1,7 @@
+ <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+ <html>
+   <head>
++    <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+     <title>UW NetID Weblogin</title>
+   </head>
+ 
+Index: webiso/pubcookie/src/login_templates.generic/logout_part1
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/logout_part1,v
+retrieving revision 1.1
+diff -u -r1.1 logout_part1
+--- webiso/pubcookie/src/login_templates.generic/logout_part1	25 Mar 2003 06:55:52 -0000	1.1
++++ webiso/pubcookie/src/login_templates.generic/logout_part1	8 Feb 2006 23:26:30 -0000
+@@ -2,6 +2,7 @@
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+ <HTML>
+ <HEAD>
++<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+ <TITLE>pubcookie logout response</TITLE>
+ </HEAD>
+ 
+Index: webiso/pubcookie/src/login_templates.generic/nonpost_redirect
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/nonpost_redirect,v
+retrieving revision 1.3
+diff -u -r1.3 nonpost_redirect
+--- webiso/pubcookie/src/login_templates.generic/nonpost_redirect	14 Apr 2003 13:30:52 -0000	1.3
++++ webiso/pubcookie/src/login_templates.generic/nonpost_redirect	8 Feb 2006 23:26:30 -0000
+@@ -1,6 +1,7 @@
+ <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+ <html>
+   <head>
++    <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+     <SCRIPT LANGUAGE="JavaScript">
+       window.location.replace("%url%");
+     </SCRIPT> 
+@@ -11,7 +12,6 @@
+   </head>
+ 
+   <body bgcolor="white">
+-    <!-- redirecting to %url% -->
+   </body>
+ </html>
+ 
+Index: webiso/pubcookie/src/login_templates.generic/notok
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/notok,v
+retrieving revision 1.1
+diff -u -r1.1 notok
+--- webiso/pubcookie/src/login_templates.generic/notok	23 Aug 2004 21:47:19 -0000	1.1
++++ webiso/pubcookie/src/login_templates.generic/notok	8 Feb 2006 23:26:30 -0000
+@@ -1,6 +1,7 @@
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+ <html>
+ <head>
++<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+ <title>UW NetID Weblogin</title>
+ </head>
+ <body bgcolor="pink">
+Index: webiso/pubcookie/src/login_templates.generic/pinit_response1
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/pinit_response1,v
+retrieving revision 1.2
+diff -u -r1.2 pinit_response1
+--- webiso/pubcookie/src/login_templates.generic/pinit_response1	2 Apr 2003 23:55:29 -0000	1.2
++++ webiso/pubcookie/src/login_templates.generic/pinit_response1	8 Feb 2006 23:26:30 -0000
+@@ -2,6 +2,7 @@
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+ <HTML>
+ <HEAD>
++<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+ <TITLE>pubcookie generic login</TITLE>
+ </HEAD>
+ 
+Index: webiso/pubcookie/src/login_templates.generic/status
+===================================================================
+RCS file: /usr/local/cvsroot/webiso/pubcookie/src/login_templates.generic/status,v
+retrieving revision 1.5
+diff -u -r1.5 status
+--- webiso/pubcookie/src/login_templates.generic/status	14 May 2004 23:51:52 -0000	1.5
++++ webiso/pubcookie/src/login_templates.generic/status	8 Feb 2006 23:26:30 -0000
+@@ -1,6 +1,7 @@
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+ <HTML>
+ <HEAD>
++<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+ <TITLE>pubcookie generic Login</TITLE>
+ %refresh%
+ </HEAD>

@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.55 2005-12-07 19:37:58 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.56 2006-02-22 19:00:12 willey Exp $
 //
 
 //#define COOKIE_PATH
@@ -53,6 +53,184 @@ extern "C"
 
 #define HDRSIZE 56
 #define MAX_BUFFER 4096
+
+
+static char *encode_get_args (pubcookie_dir_rec *p, char *in, int en)
+{
+    int na = 0;
+    char *enc, *s;
+
+    for (s=in; s&&*s; s++) {
+        if ( (*s=='"') ||
+             (*s == '<') ||
+             (*s == '>') ||
+             (*s == '(') ||
+             (*s == ')') ||
+             (*s == ':') ||
+             (*s == ';') ||
+             (*s == '\n') ||
+             (*s == '\r') ) na++;
+    }
+    if (!na) return (in);
+
+    //enc = (char*) ap_palloc (r->pool, strlen(in)+(na*5));
+	//enc = (char*) malloc(strlen(in)+(na*5));
+	enc = (char*) pbc_malloc(p, strlen(in)+(na*5));
+	
+    for (s=enc; in&&*in; in++) {
+        switch (*in) { 
+
+            case '"':  strcpy(s, "%22"); s+=3; break;
+            case '<':  strcpy(s, "%3C"); s+=3; break;
+            case '>':  strcpy(s, "%3E"); s+=3; break;
+            case '(':  strcpy(s, "%28"); s+=3; break;
+            case ')':  strcpy(s, "%29"); s+=3; break;
+            //case ':':  strcpy(s, "%3A"); s+=3; break;
+			case ':': if (en) {
+							strcpy(s, "%3A"); s+=3;
+					  }else *s++ = *in;
+					  break;
+            case ';':  strcpy(s, "%3B"); s+=3; break;
+            case '\n': strcpy(s, "&#10;"); s+=5; break;
+            case '\r': strcpy(s, "&#13;"); s+=5; break;
+            default: *s++ = *in;
+        }
+    }
+    *s = '\0';
+
+    return (enc);
+}
+
+static char *decode_data(char *in)
+{
+   char *s;
+   char *v;
+   long int k;
+   char hex[4];
+   char *e;
+
+   if ((!in)||!*in) return ("");
+   for (v=in,s=in; *s; s++) {
+      switch (*s) {
+        case '+': *v++ = ' ';
+                  break;
+        case '%': hex[0] = *++s;
+                  hex[1] = *++s;
+                  hex[2] = '\0';
+                  k = strtol(hex,0,16);
+                  *v++ = (char)k;
+                  break;
+        default:  *v++ = *s;
+      }
+   }
+   *v = '\0';
+
+   for (v=in,s=in; *s; s++) {
+      switch (*s) {
+        case '&': if (*(s+1)=='#') {
+                     s += 2;
+                    if ((*s=='x')||(*s=='X')) k = strtol(s+1, &e, 16);
+                     else k = strtol(s, &e, 10);
+                     *v++ = (char)k;
+                     if (*e==';') s = e;
+                     else s = e-1;
+                  } else *v++ = '&';
+                  break; 
+        default:  *v++ = *s;
+      }
+   }
+   *v = '\0';
+
+   return (in);
+}
+
+/* verify the url. return 0 if OK.
+   We are mostly checking for characters that
+   could introduce javascript xss code. */
+static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
+{
+    int n;
+    char *sa, *e, *enc;
+    char *s = in;
+
+    if (!s) return (NULL);
+
+    //ap_log_rerror (PC_LOG_DEBUG, r, "verify-url in: %s", in);
+
+    /* check protocol */
+    if (!strncmp(s, "http://", 7)) s+=7;
+    else if (!strncmp(s, "https://", 8)) s += 8;
+    else return (NULL);
+
+    /* check hostname ( letters, digits, dash )*/
+    while (isalnum(*s) || (*s=='-') || (*s=='.')) s++;
+    if (*s=='\0') return (in);
+  
+    /* port? */
+    if (*s==':') {
+       s++;
+       while (isdigit(*s)) s++;
+    }
+    if (*s=='\0') return (in);
+    if (*s++!='/') return (NULL);
+
+    /* see if we have to encode anything in the path */
+
+    sa = s;
+    n = 0;
+    for (; s&&*s; s++) {
+        if ( (*s=='"') ||
+             (*s == '<') ||
+             (*s == '>') ||
+             (*s == ':') ||
+             (*s == ';') ||
+             (*s == '?') ||
+			 (*s == '%') ||
+             (*s == '=') ) n++;
+    }
+    if (n==0) return (in);  /* checks out ok */
+
+    /* else have to encode them */    
+	enc = (char*) pbc_malloc(p, strlen(in)+(n*4));
+    strncpy(enc, in, sa-in);
+    for (s=enc+(sa-in); sa&&*sa; sa++) {
+        switch (*sa) { 
+
+            case '"':  strcpy(s, "%22"); s+=3; break;
+            case '<':  strcpy(s, "%3C"); s+=3; break;
+            case '>':  strcpy(s, "%3E"); s+=3; break;
+            //case ':':  strcpy(s, "%3A"); s+=3; break;
+			case ':':  if (ec) {
+                           strcpy(s, "%3A"); s+=3;
+                       } else *s++ = *in;
+                       break;
+            case ';':  strcpy(s, "%3B"); s+=3; break;
+            case '?':  strcpy(s, "%3F"); s+=3; break;
+            case '=':  strcpy(s, "%3D"); s+=3; break;
+			case '%':  if (ec || strncmp(sa,"%3A",3)) *s++ = *sa;
+                       else *s++=':',sa+=2;
+                       break;
+            default: *s++ = *sa;
+        }
+     }
+    *s = '\0';
+    return (enc);
+}
+
+static int verify_base64(pubcookie_dir_rec *p, char *in)
+{
+    char *s;
+    for (s=in; s && *s; s++) {
+       if (isalnum(*s)) continue;
+       if ((*s=='+')||(*s=='/')||(*s=='=')) continue;
+       *s++ = '\0';
+       if (!*s) break; /* newline at end */
+       //ap_log_rerror (PC_LOG_ERR, r, "verify-base64 truncated: %s", in);
+	   //filterlog(p, LOG_ERROR, "verify-base64 truncated: %s", in);
+       return (0);  
+    }
+    return (1);
+}
 
 /* a place to hold all of the certificates and keys */
 struct security_context_s {
@@ -211,54 +389,6 @@ VOID create_source(pubcookie_dir_rec *p, const char *source) {
 
 }
 
-/**
- * get a random int used to bind the granting cookie and pre-session
- * @returns random int or -1 for error
- * but, what do we do about that error?
- */
-//int get_pre_s_token(HTTP_FILTER_CONTEXT* pFC) {
-//    int i;
-//    pubcookie_dir_rec   *p;
-//
-//	p = (pubcookie_dir_rec *)pFC->pFilterContext;
-//
-//
-//    if( (i = libpbc_random_int(p)) == -1 ) {
-//        filterlog(p, LOG_ERR,	"get_pre_s_token: OpenSSL error");
-//    }
-//
-//		filterlog(p, LOG_INFO, "get_pre_s_token: token is %d\n", i);
-//    return(i);
-//
-//}
-//
-//
-//int get_pre_s_from_cookie(HTTP_FILTER_CONTEXT* pFC)
-//{
-//    pubcookie_dir_rec   *p;
-//    pbc_cookie_data     *cookie_data = NULL;
-//    char 		*cookie = NULL;
-//
-//	p = (pubcookie_dir_rec *)pFC->pFilterContext;
-//
-//    if( (cookie = Get_Cookie(pFC, PBC_PRE_S_COOKIENAME)) == NULL )
-//
-//        filterlog(p, LOG_ERR,	"get_pre_s_from_cookie: no pre_s cookie, uri: %s\n", p->uri);
-//    else
-//		cookie_data = libpbc_unbundle_cookie(p, p->sectext, cookie, p->server_hostname, false);
-//
-//    if( cookie_data == NULL ) {
-//        filterlog(p, LOG_ERR, "get_pre_s_from_cookie: can't unbundle pre_s cookie uri: %s\n", p->uri);
-//	p->failed = PBC_BAD_AUTH;
-//
-//	return -1;
-//    }
-//
-// 	
-//    return((*cookie_data).broken.pre_sess_token);
-//
-//}
-
 VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_domain, char* cookie_path, bool secure)
 {
 
@@ -339,7 +469,7 @@ int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 	}
 
 
-    sprintf(szBuff,"Content-Type: text/html\r\n");
+    sprintf(szBuff, "Content-Type: text/html; charset=ISO-8859-1\r\n");
 		
 	filterlog(p, LOG_INFO," Adding POST data");
 
@@ -557,16 +687,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	if ( strlen(p->appsrv_port) > 0 ) {
 		strcat(szTemp,":");
 		strcat(szTemp,p->appsrv_port);
-	}
-	//TODO: REMOVED - presession cookie
-	/*
-    if( (pre_sess_tok=get_pre_s_token(pFC)) == -1 ) { //make presession token; a number
-		filterlog(p, LOG_ERR,"Security Warning:  Unable to randomize pre-session cookie!");
-        return(OK);
-    }
-	*/
-
-  
+	}	  
 	
 	/* make the granting request */
 	snprintf(g_req_contents, PBC_4K,
@@ -1304,7 +1425,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		*ptr++;
 		strncpy(szBuff, ptr, strlen(ptr));
 		szBuff[strlen(ptr)] = NULL;
-		strcpy(p->args,szBuff);
+		strcpy(p->args, decode_data(szBuff));		
+
 		filterlog(p, LOG_INFO,"  Query String  : %s\n",szBuff);
 	}
 	// Else dfcg->args[0]=NULL because of original memset
@@ -2565,45 +2687,88 @@ BOOL getqueryarg (const char* querystr, char* value, const char* arg, int values
 	free(searchstr);
 	return TRUE;
 }
-
+
 void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *grpl, char *redirect_url, char *get_args)
-{ 
-   char httpheader[START_COOKIE_SIZE+1024];
-   char sztmpstr[MAX_BUFFER];
+{ 	char httpheader[START_COOKIE_SIZE+1024];
+	char sztmpstr[MAX_BUFFER];	char f_url[MAX_BUFFER];
+	int urlError = 0;	
+	// Send HTTP headers and set granting cookie
 
-   // Send HTTP headers and set granting cookie
+	// syslog(LOG_INFO,"Extension relaying cookie %s\n   domain=%s;\n   path=/;\n   secure;\n",PBC_G_COOKIENAME,p->Enterprise_Domain);
+	// Access issues in 6.0
+	
+	char* r_url = redirect_url;
+	if (!(r_url=verify_url(p, redirect_url, 0))) {
+		//filterlog(p, LOG_ERR, " bad redirect url: %s", redirect_url);		
+		syslog(LOG_ERR, " bad redirect url: %s", redirect_url);	
+		urlError = 1;
+	}
 
-   // syslog(LOG_INFO,"Extension relaying cookie %s\n   domain=%s;\n   path=/;\n   secure;\n",PBC_G_COOKIENAME,p->Enterprise_Domain);
-   // Access issues in 6.0
+	
 
-   snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\nContent-type: text/html\r\n\r\n", 
-			PBC_G_COOKIENAME,
-			grpl,
-			p->appsrvid); 
+	if (strlen(get_args) > 0) {
+		snprintf(f_url, MAX_BUFFER, "%s?%s", r_url, encode_get_args(p, get_args, 0));
+		r_url = f_url;
+	}
 
-   SendHttpHeaders(pECB, "200 OK", httpheader);
+	char* t;
+	if (t=strchr(r_url,'\n')) *t = '\0';
+    if (t=strchr(r_url,'\r')) *t = '\0';
+    if (t=strstr(r_url,"&#10;")) *t = '\0';
+    if (t=strstr(r_url,"&#13;")) *t = '\0';
 
-   //output page
-   WriteString(pECB,"<HTML>\r\n");
-   WriteString(pECB,"<HEAD>\r\n");
-   // include Get Arguments in Url!
-   if (strlen(get_args) > 0)
-   {
-	   snprintf(sztmpstr,MAX_BUFFER,"<meta http-equiv=\"Refresh\" content=\"0;URL=%s?%s\"\r\n>",redirect_url, get_args);		
-   }
-   else
-   {
-	   snprintf(sztmpstr,MAX_BUFFER,"<meta http-equiv=\"Refresh\" content=\"0;URL=%s\"\r\n>",redirect_url);		
-   }
-   
-   
-   WriteString(pECB,sztmpstr);
-   WriteString(pECB,"</HEAD>\r\n");
-   WriteString(pECB,"<BODY>\r\n");
-   WriteString(pECB,"</BODY>\r\n");
-   WriteString(pECB,"</HTML>\r\n");
-}
+	verify_base64(p, (char*)grpl);
+	
 
+	// invalid url
+	if (!urlError) {			
+		snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\nContent-type: text/html; charset=ISO-8859-1;  \r\nLocation: %s\r\n\r\n", 
+					PBC_G_COOKIENAME,
+					grpl,
+					p->appsrvid,
+					r_url); 		
+	}else{		snprintf(httpheader, START_COOKIE_SIZE+1024, "Content-type: text/html; charset=ISO-8859-1;\r\n\r\n");			}		if (urlError) {		SendHttpHeaders(pECB, "200 OK", httpheader);
+	}else{
+		SendHttpHeaders(pECB, "302 Moved Temporarily", httpheader);
+	}
+
+	
+	//output page
+	WriteString(pECB,"<HTML>\r\n");
+	WriteString(pECB,"<HEAD>\r\n");
+	
+	
+
+
+	// include Get Arguments in Url
+	if (urlError) 
+	{
+
+		WriteString(pECB,"<TITLE>Authentication Error</TITLE>");
+		WriteString(pECB,"</HEAD>\r\n");
+		WriteString(pECB,"<BODY>\r\n");		WriteString(pECB,"<H1>Authentication Error</H1>\r\n");		WriteString(pECB,"<P>Invalid redirect URL.</P>\r\n");		WriteString(pECB,"</BODY>\r\n");
+		WriteString(pECB,"</HTML>\r\n");
+	}
+	else
+	{			
+
+		WriteString(pECB,"<TITLE>302 Found</TITLE>");
+
+		WriteString(pECB,"</HEAD>\r\n");
+		WriteString(pECB,"<BODY>\r\n");
+		WriteString(pECB, "<H1>Found</H1>\r\n");
+
+		snprintf(sztmpstr,MAX_BUFFER,"<P>This document has moved <A HREF=\"%s\">here</A>.</P>\r\n>",r_url);		
+						
+		WriteString(pECB,sztmpstr);		
+		WriteString(pECB,"</BODY>\r\n");
+		WriteString(pECB,"</HTML>\r\n");
+	}
+	   
+	   
+	
+}
+
 
 /* Logout requests from an application will have a the
    logout action variable.  Relay to the login server. 
@@ -2689,8 +2854,7 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 
   // syslog(LOG_ERR,"p->Login_URI = %s : strlen = %d",p->Login_URI,strlen(p->Login_URI)); 
 
-  if (strlen(p->appsrvid) < 1) {
-	 output_error_page(pECB);
+  if (strlen(p->appsrvid) < 1) {	 output_error_page(pECB);
      return HSE_STATUS_ERROR;
   }
 
@@ -2747,7 +2911,7 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
     /* A login reply to the application will have a granting
      cookie in posted form data */
      hKeyList = GetKeyList(pECB);
-
+ 
      if (hKeyFound = FindKey(hKeyList,PBC_G_COOKIENAME)) {
 		 postdata = (char *)GetKeyBuffer(hKeyFound);
 		 if (hKeyFound = FindKey(hKeyList,"redirect_url")) {
@@ -2761,8 +2925,7 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
            relay_granting_request(pECB, p, cookie);
           /* Otherwise this is an invalid request */
 
-    } else {
-       output_error_page(pECB);
+    } else {       output_error_page(pECB);
        retcode = HSE_STATUS_ERROR;
     }
    FreeKeyList(hKeyList);

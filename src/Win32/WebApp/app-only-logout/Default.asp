@@ -48,7 +48,6 @@
 <p>URL: <B>
   <% = Request.ServerVariables("URL") %>
   </B></p>
-<p><B><a href="dumpvars.asp">See all the Server Variables with Dumpvars.asp</a></B></p>
 
 </BODY>
 </HTML>

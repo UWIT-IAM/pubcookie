@@ -18,7 +18,7 @@
 /** @file flavor_getcred.c
  * Getcred flavor
  *
- * $Id: flavor_getcred.c,v 1.36 2005-11-09 23:48:59 fox Exp $
+ * $Id: flavor_getcred.c,v 1.37 2006-02-22 19:00:11 willey Exp $
  */
 
 
@@ -346,7 +346,7 @@ static login_result process_getcred (pool * p,
     /* encrypt */
     if (libpbc_mk_priv
         (p, context, l->host, 1, newcreds->str, newcreds->sz, &outbuf,
-         &outlen, PBC_DEF_CRYPT)) {
+         &outlen, l->version[2])) {
         pbc_log_activity (p, PBC_LOG_ERROR,
                           "flavor_getcred: libpbc_mk_priv failed");
         *errstr = "libpbc_mk_priv failed";

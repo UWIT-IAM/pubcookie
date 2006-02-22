@@ -56,6 +56,15 @@
 
                   <h4><a name="new">What's New</a></h4>
 
+                  <p>Significant improvements and changes included in Pubcookie 3.3.0a:</p>
+
+                  <ul>
+                  <li>Fixed encryption problems found with some virtual host configurations.</li>
+                  <li>Modified POST <a href="mod_pubcookie-directives.html#PubcookieLoginMethod">PubcookieLoginMethod</a> 
+                  to use HTTP 302 redirects instead of meta-refresh on redirect back to the resource.</li>
+                  <li>Updated the module's handling of output values when printing redirect pages.</li>
+                  </ul>
+
                   <p>Significant improvements and changes included in Pubcookie 3.3.0:</p>
 
                   <ul>
@@ -89,11 +98,6 @@
                   version of your login server and configure the <a
                   href="mod_pubcookie-directives.html#PubcookieEncryption">PubcookieEncryption</a> directive accordingly.
   
-                  <dt>Known problem with Kerberos ticket passing:</dt> 
-                  <dd>There is a known problem in the 3.3.0 release with Kerberos ticket
-                  passing. Sites using this functionality should continue to use the latest 
-                  3.2 release and wait for a 3.3.x patch release.</dd>
-
                   <dt>Compatibility note on version 3.1 relays:
                   <dd>The need for the cgi-based relays introduced in version 3.1 to authenticate across DNS domains was redressed
                   by the POST-based messaging method introduced in version 3.2. <strong>Use of third-party 3.1

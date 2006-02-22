@@ -43,7 +43,7 @@
  *   @return 0 on success, -1 if sid lookup fails, -3 next PRN,
  *          -2 on system error
  *
- * $Id: verify_uwsecurid.c,v 2.8 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: verify_uwsecurid.c,v 2.9 2006-02-22 19:00:12 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -161,7 +161,7 @@ int securid (char *reason,
     pbc_time (&date);
     shndl = NULL;
     rets = 0;
-    sprintf (buff, "%s/%s", "weblogin", user);
+    snprintf (buff, BSIZ, "%s/%s", "weblogin", user);
     opts = MGO_OPT_CST;
 
     snprintf (tmp_res, BIGS,

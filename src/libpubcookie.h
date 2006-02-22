@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.58 2005-11-14 22:37:22 jjminer Exp $
+    $Id: libpubcookie.h,v 1.59 2006-02-22 19:00:11 willey Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -52,7 +52,7 @@ char *escape_percs (pool *, char *);
  * @param name the name of the authtype
  * @returns either PBC_CREDS_NONE or the credential id to pass in the cookie
  */
-const char libpbc_get_credential_id (pool * p, const char *name);
+char libpbc_get_credential_id (pool * p, const char *name);
 
 int libpbc_get_crypt_key (pool * p, crypt_stuff * c_stuff,
                           const char *peer);

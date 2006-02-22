@@ -79,6 +79,19 @@ local login server.</p>
 <h4><a name="new">What's New</a></h4>
 
 <p>Significant improvements and changes to the login server components included in 
+Pubcookie 3.3.0a:</p>
+
+<ul>
+
+<li>Applied security fixes to address vulnerabilities described in
+February 2006 security advisory.</li>
+
+<li>Fixed problems found in 3.3.0 release with "getcred" flavor's 
+Kerberos ticket passing.</li>
+
+</ul>
+
+<p>Significant improvements and changes to the login server components included in 
 Pubcookie 3.3.0:</p>
 
 <ul>
@@ -134,34 +147,52 @@ versions:</p>
 
 <dl>
 
-<dt>Known problem with Kerberos ticket passing:</dt>
+<dt>Upgrading to 3.3:</dt>
 
-<dd>There is a known problem in the 3.3.0 release with Kerberos ticket
-passing. Sites using this functionality should continue to use the latest 
-3.2 release and wait for a 3.3.x patch release.</dd>
+<dd><b>AES encryption impact on SSO:</b> Sites upgrading to 3.3 should
+be aware that in version 3.3 the login cgi uses AES encryption on all
+login cookies, while earlier versions have used DES encryption. As a
+result, login cookies obtained by users prior to upgrading the login cgi
+will be invalid after the upgrade. This will affect some users' SSO
+experience in the following ways: first, after the upgrade some users
+will have to reauthenticate where they might not have had to before;
+others might notice that the login page no longer remembers (i.e. no
+longer pre-fills) their username. Again, this is only around the time of
+the upgrade and only for browsing sessions that were started before the
+upgrade occurs.
 
 <dt>Upgrading from version 3.2 to 3.3:</dt>
 
-<dd>Sites upgrading from 3.2 to 3.3 should be aware that in version 3.3 the
-login cgi uses AES encryption on all login cookies. Earlier versions use DES
-encryption. As a result, login cookies obtained by users prior to upgrading 
-the login cgi will be invalid after the upgrade. This means some users will 
-have to reauthenticate where they might not have had to before. Others might 
-notice that the login page no longer remembers (i.e. no longer pre-fills) 
-their username.
+<dd><b>Template changes:</b> The only template changes between versions
+3.2 and 3.3 are those from the February 2006 login server security patch
+release. Therefore, sites upgrading an unpatched 3.2 login server
+(3.2.1a or earlier) to a patched 3.3 login server (3.3.0a or higher)
+should update their templates accordingly. Namely, explicit
+Content-Type definitions have been added to the following templates:
+<tt>error</tt>, <tt>login</tt>, <tt>nonpost_redirect</tt>,
+<tt>notok</tt>, <tt>status</tt>, <tt>pinit_response1</tt>, and
+<tt>logout_part1</tt>. Also, the entire HTML comment containing an
+unnecessary <tt>%url%</tt> variable substitution was removed from the
+<tt>nonpost_redirect</tt> template. These files can all be found in
+<tt>PREFIX/login_templates.default</tt>. 
 
-<p>There are no template changes between version 3.2 and version 3.3.
+<p>Sites upgrading to 3.3 from the patched 3.2.1b release or from a
+manually patched 3.2 version should already have these template changes
+as they are part of the patch.</p>
 
 <dt>Upgrading from version 3.0/3.1 to 3.3:</dt>
 
-<dd>Sites upgrading from 3.0/3.1 to version to 3.3 should be aware of the 
-switch to AES encryption noted in the section above.
-
-<p>Sites upgrading from 3.0/3.1 to version 3.3 will also need to update 
-several templates from <tt>PREFIX/login_templates.default</tt>.
-The following templates include new variable substitutions (introduced in
-version 3.2) that you should identify and compare relative to your current
-templates:</p>
+<dd><b>Template changes:</b> Sites upgrading from 3.0/3.1 to version 3.3
+must update their templates to account for changes that were introduced
+in versions 3.2 and carried into 3.3, as well as for those from the
+February 2006 login server security patch release. As noted above, the
+patch release updated to the following templates:
+<tt>error</tt>, <tt>login</tt>, <tt>nonpost_redirect</tt>,
+<tt>notok</tt>, <tt>status</tt>, <tt>pinit_response1</tt>, and
+<tt>logout_part1</tt>. These changes are on top of those from version
+3.2, which introduced new variable substitutions in several templates.
+Sites should identify these substitutions by comparing these templates
+relative to their own production templates:</p>
 
 <ul>
 <li><tt>login</tt> (adds new <tt>%reason%</tt> and <tt>%version%</tt> variables)
@@ -170,8 +201,8 @@ templates:</p>
 <li><tt>pinit_response2</tt> (adds new  <tt>%version%</tt> variable)
 </ul>
 
-<p>The following templates are new (also as of version 3.2) and should be 
-reviewed and added to your production templates:</p>
+<p>The following templates are new (in version 3.2, and therefore in
+3.3) and should be reviewed and added to your production templates:</p>
 
 <ul>
 <li><tt>notok</tt>, 
@@ -181,8 +212,9 @@ reviewed and added to your production templates:</p>
 <tt>notok_need_ssl</tt>
 </ul>
 
-<p>The following templates have been removed (again, with version 3.2) and
-safely can be removed from your production templates:</p>
+<p>Finally, the following templates have been removed (in version 3.2,
+and therefore in 3.3) and therefore can be removed from your production
+template directory after upgrading:</p>
 
 <ul>
 <li><tt>notok_part1</tt>, <tt>notok_part2</tt>
@@ -190,15 +222,16 @@ safely can be removed from your production templates:</p>
 
 <dt>Compatibility note on version 3.1 relays:</dt> 
 
-<dd>The need for the cgi-based relays introduced in version 3.1 to authenticate
-across DNS domains was redressed by the POST-based messaging method introduced 
-in version 3.2 and, thenceforth, <b>use of third-party 3.1 relays has been
-deprecated</b>. To continue to support third-party relays at all, you must
-use the <tt>--enable-unsafe-relay</tt> configure option while building the 
-login cgi. Preferably, upgrade all your application servers using third-party 
-relays to version 3.2 or higher, and configure them to use the POST-based
-messaging method. Then there will be no need to support third-party relays
-in your login cgi.
+<dd><b>Third-party relays deprecated:</b> The need for the cgi-based
+relays introduced in version 3.1 to authenticate across DNS domains was
+redressed by the POST-based messaging method introduced in version 3.2
+and, thenceforth, use of third-party 3.1 relays has been deprecated. To
+continue to support third-party relays at all, you must use the
+<tt>--enable-unsafe-relay</tt> configure option while building the login
+cgi. Preferably, upgrade all your application servers using third-party
+relays to version 3.2 or higher, and configure them to use the
+POST-based messaging method. Then there will be no need to support
+third-party relays in your login cgi.
 
 </dl>
 
@@ -1150,7 +1183,7 @@ Copyright 1999-2005, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.41 2005-12-16 19:02:20 dors Exp $
+$Id: install-login.html,v 1.42 2006-02-22 19:00:11 willey Exp $
 </pre>
 </body>
 
