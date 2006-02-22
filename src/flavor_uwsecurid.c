@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.15 2006-02-22 19:00:11 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.16 2006-02-22 22:01:45 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -428,15 +428,12 @@ char *flus_get_user_field (pool * p, login_rec * l, login_rec * c,
                                  STATIC_USER_FIELD_KIND);
     char *user_field_html;
 
-
-
     if (strcmp (static_config, STATIC_USER_FIELD_KIND) == 0) {
-        if (c != NULL && c->user != NULL & reason == FLUS_REAUTH ||
-            c != NULL && c->user != NULL & reason == FLUS_NEXT_PRN ||
-            c != NULL && c->user != NULL & reason == FLUS_CACHE_CREDS_WRONG
-            || l->user != NULL
-            && l->ride_free_creds == PBC_BASIC_CRED_ID) {
-            user_field_html =
+        if ((c && c->user &&
+               (reason == FLUS_REAUTH || reason == FLUS_NEXT_PRN ||
+               reason == FLUS_CACHE_CREDS_WRONG)) ||
+               (l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID)) {
+           user_field_html =
                 flus_get_field_html (p,
                                      libpbc_config_getstring (p,
                                                               "tmpl_login_user_static",
