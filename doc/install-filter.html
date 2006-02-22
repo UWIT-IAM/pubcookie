@@ -227,12 +227,14 @@
 			<li>
 				<p>Domain name registered in DNS (e.g. <i>appserver.example.edu</i>).</p>
 			<li>
-				<P>An SSL enabled web site. All intended users should be able to reach your website 
-					via HTTPS at your registered DNS name without errors.</P>
+				<p>An SSL enabled web site. All intended users should be able to reach your website 
+				via HTTPS at your registered DNS name without errors.</p>
 			<li>
-				<P>The <tt>System32\inetsrv</tt> folder should be world writable or writable by the 
-					administrator account running the installer.</P>
-			</li>
+				<p>The <tt>System32\inetsrv</tt> folder should be world writable or writable by the 
+				administrator account running the installer.</p>
+			<li>
+				<p>After installation, the IUSR account must be able to read and execute 
+ 				<tt>System32\inetsrv\Pubcookie\PubCookieFilter.dll</tt>.</p>
 		</ul>
 
 		<h4><a name="install">Installing Pubcookie</a></h4>
@@ -685,6 +687,13 @@
 		<p>Known problems with the Windows components in Pubcookie 3.3.0:</p>
 
 		<ul>
+			<li>
+			<p><b>Memory leaks.</b> Memory leaks have been observed on systems using the filter, causing the
+			inetinfo.exe (IIS 5) and w3wp.exe (IIS 6) processes to grow over time. This can be addressed on
+			heavily loaded systems by recycling sites or resetting IIS nightly, in which case it is 
+			recommended that you store your Pubcookie session key pair on disk (see <a
+			href="#clusters">clustered host	configuration</a>) to preserve sessions between restarts.</p>
+
 			<li>
 			<p><b>IIS 6.0 Idle Timeout causes session errors.</b> Uncheck idle timeouts to prevent session errors.
                         The default inactivity timeout in IIS 6 is 20 minutes for each web application pool (see Properties > 
