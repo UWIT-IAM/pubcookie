@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file what_is_my_ip.c
  * Identifies IP being used by pubcookie
  *
- * $Id: what_is_my_ip.c,v 1.14 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: what_is_my_ip.c,v 1.15 2006-02-23 00:46:33 willey Exp $
  */
 
 

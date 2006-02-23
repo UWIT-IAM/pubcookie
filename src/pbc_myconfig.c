@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file pbc_myconfig.c
  * Runtime configuration 
  *
- * $Id: pbc_myconfig.c,v 1.47 2005-02-07 22:26:38 willey Exp $
+ * $Id: pbc_myconfig.c,v 1.48 2006-02-23 00:46:33 willey Exp $
  */
 
 

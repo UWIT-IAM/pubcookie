@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.172 2006-02-22 19:00:11 willey Exp $
+ * $Id: index.cgi.c,v 1.173 2006-02-23 00:46:33 willey Exp $
  */
 
 #ifdef WITH_FCGI

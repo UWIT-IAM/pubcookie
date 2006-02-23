@@ -1,6 +1,5 @@
-
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +16,7 @@
  */
 
 /*
-  $Id: pbc_time.h,v 2.2 2005-11-23 01:04:18 suh Exp $
+  $Id: pbc_time.h,v 2.3 2006-02-23 00:46:33 willey Exp $
  */
 
 #ifndef INCLUDED_PBC_TIME_H

@@ -1,5 +1,5 @@
 // ========================================================================
-// Copyright 2005 University of Washington
+// Copyright 2006 University of Washington
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
 
 /*
-  $Id: winkeyclient.c,v 1.16 2005-05-13 15:43:14 suh Exp $
+  $Id: winkeyclient.c,v 1.17 2006-02-23 00:46:33 willey Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>

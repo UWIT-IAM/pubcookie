@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file base64.c
  * Base64 functions
  *
- * $Id: base64.c,v 1.24 2005-02-07 22:26:37 willey Exp $
+ * $Id: base64.c,v 1.25 2006-02-23 00:46:33 willey Exp $
  */
 
 

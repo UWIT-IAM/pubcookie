@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.16 2006-02-22 22:01:45 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.17 2006-02-23 00:46:33 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

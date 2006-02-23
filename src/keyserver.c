@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.64 2005-11-14 22:37:22 jjminer Exp $
+ * $Id: keyserver.c,v 2.65 2006-02-23 00:46:33 willey Exp $
  */
 
 

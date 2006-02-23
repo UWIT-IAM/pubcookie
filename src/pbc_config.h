@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.108 2005-10-12 21:59:48 willey Exp $
+     $Id: pbc_config.h,v 1.109 2006-02-23 00:46:33 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG

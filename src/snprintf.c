@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2005 University of Washington
+ * Copyright 2006 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 /** @file snprintf.c
  * snprintf()
  *
- * $Id: snprintf.c,v 2.6 2005-02-16 21:37:16 willey Exp $
+ * $Id: snprintf.c,v 2.7 2006-02-23 00:46:33 willey Exp $
  *
  * Original:
  * Patrick Powell Tue Apr 11 09:48:21 PDT 1995

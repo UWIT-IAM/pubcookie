@@ -1,5 +1,5 @@
 // ========================================================================
-// Copyright 2005 University of Washington
+// Copyright 2006 University of Washington
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.19 2005-11-23 18:48:03 suh Exp $
+//  $Id: debug.c,v 1.20 2006-02-23 00:46:33 willey Exp $
 //
 
 #include <windows.h>
