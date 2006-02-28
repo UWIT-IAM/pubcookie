@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.173 2006-02-23 00:46:33 willey Exp $
+ * $Id: index.cgi.c,v 1.174 2006-02-28 19:51:37 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -716,7 +716,10 @@ static char *safer_string (pool *p, char *cs, int isurl)
                           if ((n>=pcs)&&(pc==0)) pc = 1; /* must be port */
                           *e++ = *s;
                        } else {
-                          strcpy(e, "%3A"); e+=3;
+                          /* allow couple of strings to get past 1.77 module */
+                          if ( (((s-3)>cs)&&!strncmp(s-4,"http:",5)) ||
+                               (((s-4)>cs)&&!strncmp(s-5,"https:",6)) ) *e++ = *s;
+                          else strcpy(e, "%3A"), e+=3;
                        }
                        break;
 
