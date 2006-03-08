@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.18 2006-02-23 00:46:33 willey Exp $
+    $Id: mod_pubcookie.h,v 2.19 2006-03-08 21:53:49 fox Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -80,7 +80,7 @@ static int load_keyed_directives (request_rec * r, char *key);
 server_rec *find_server_from_pool (pool * p);
 request_rec *find_request_from_pool (pool * p);
 
-module pubcookie_module;
+extern module pubcookie_module;
 
 typedef struct
 {

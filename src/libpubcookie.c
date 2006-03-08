@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.89 2006-02-23 00:46:33 willey Exp $
+ * $Id: libpubcookie.c,v 2.90 2006-03-08 21:53:49 fox Exp $
  */
 
 
@@ -903,11 +903,11 @@ unsigned char *libpbc_update_lastts (pool * p,
                                      const security_context * context,
                                      pbc_cookie_data * cookie_data,
                                      const char *peer,
-                                     const char use_granting)
+                                     const char use_granting,
+                                     unsigned char alg)
 {
     unsigned char *cookie_string;
     unsigned char *cookie;
-    char alg = cookie_data->broken.version[2];
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                       "libpbc_update_lastts: hello\n");

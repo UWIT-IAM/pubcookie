@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: libpubcookie.h,v 1.60 2006-02-23 00:46:33 willey Exp $
+    $Id: libpubcookie.h,v 1.61 2006-03-08 21:53:49 fox Exp $
  */
 
 #ifndef PUBCOOKIE_LIB
@@ -80,7 +80,8 @@ pbc_cookie_data *libpbc_unbundle_cookie (pool * p,
                                          char alg);
 unsigned char *libpbc_update_lastts (pool * p, const security_context *,
                                      pbc_cookie_data *, const char *peer,
-                                     const char use_granting);
+                                     const char use_granting,
+                                     unsigned char alg);
 md_context_plus *libpbc_sign_init (pool * p, char *);
 int libpbc_pubcookie_init (pool * p, security_context **);
 unsigned char *libpbc_alloc_init (pool * p, int);

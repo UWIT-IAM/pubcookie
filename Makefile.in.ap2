@@ -18,8 +18,6 @@ INCLUDES=-I.
 
 all: local-shared-build @need_slib_clean@
 
-install: install-modules
-
 need_slib_clean:	
 	@echo ""
 	@echo "Before installing the module:"

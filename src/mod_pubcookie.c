@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.197 2006-02-23 00:46:33 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.198 2006-03-08 21:53:49 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -506,7 +506,7 @@ static void set_session_cookie (request_rec * r,
            to avoid recomputing and resigning the cookie? */
         cookie =
             libpbc_update_lastts (p, scfg->sectext, rr->cookie_data, ME(r),
-                                  0);
+                                  0, scfg->crypt_alg);
     } else {
         /* create a brand new cookie, initialized with the present time */
         cookie = libpbc_get_cookie (p,
