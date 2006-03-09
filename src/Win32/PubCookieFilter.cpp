@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.57 2006-02-23 00:46:33 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.58 2006-03-09 22:59:43 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -1833,15 +1833,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			
 			if( !first_time_in_session ) {
 				//updating session cookie
-				if (p->crypt_alg == PBC_CRYPT_AES)
-				{
-					p->cookie_data->broken.version[2] = 'a';
-				}
-				else
-				{
-					p->cookie_data->broken.version[2] = '0';
-				}
-				cookie = libpbc_update_lastts(p, p->sectext, p->cookie_data, p->server_hostname, 0);
+				cookie = libpbc_update_lastts(p, p->sectext, p->cookie_data, p->server_hostname, 0, p->crypt_alg);
 				filterlog(p, LOG_INFO,"  Setting session cookie last timestamp to: %ld\n",p->cookie_data->broken.last_ts);
 			}
 			else {
