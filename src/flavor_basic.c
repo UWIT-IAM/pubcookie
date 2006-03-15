@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.81 2006-02-23 00:46:33 willey Exp $
+ * $Id: flavor_basic.c,v 1.82 2006-03-15 06:46:16 willey Exp $
  */
 
 
@@ -713,7 +713,8 @@ static login_result process_basic (pool * p,
                          l->realm, credsp, errstr) == 0) {
             /* xxx log realm */
             pbc_log_activity (p, PBC_LOG_AUDIT,
-                              "Authentication success: %s%s%s IP: %s type: %c\n",
+                              "%s Authentication success: %s%s%s IP: %s type: %c\n",
+                              l->first_kiss,
                               l->user,
                               (l->realm == NULL ? "" : "@"),
                               (l->realm == NULL ? "" : l->realm),
@@ -795,7 +796,8 @@ static login_result process_basic (pool * p,
                 *errstr = "authentication failed";
             }
             pbc_log_activity (p, PBC_LOG_AUDIT,
-                              "flavor_basic: login failed for %s: %s",
+                              "%s flavor_basic: login failed for %s: %s",
+                              l->first_kiss,
                               l->user == NULL ? "(null)" : l->user,
                               *errstr);
 
@@ -855,7 +857,9 @@ static login_result process_basic (pool * p,
 
     /* User not properly logged in.  Show login page unless quiet login */
     pbc_log_activity (p, PBC_LOG_ERROR,
-                      "flavor_basic: %s: %s", l->user ? l->user : "(null)",
+                      "%s flavor_basic: %s: %s", 
+                      l->first_kiss,
+                      l->user ? l->user : "(null)",
                       *errstr);
     if (l->flag && strchr (l->flag, 'Q')) {
         pbc_log_activity (p, PBC_LOG_ERROR,

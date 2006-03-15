@@ -23,7 +23,7 @@
  */
 
 /*
-    $Id: flavor_uwsecurid.c,v 2.17 2006-02-23 00:46:33 willey Exp $
+    $Id: flavor_uwsecurid.c,v 2.18 2006-03-15 06:46:16 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -893,7 +893,8 @@ static login_result process_uwsecurid (pool * p,
             && result2 == 0) {
 
             pbc_log_activity (p, PBC_LOG_AUDIT,
-                              "Authentication success: %s IP: %s type: %c\n",
+                              "%s Authentication success: %s IP: %s type: %c\n",
+                              l->first_kiss,
                               l->user,
                               (cgiRemoteAddr ==
                                NULL ? "(null)" : cgiRemoteAddr), l->creds);
