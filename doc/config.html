@@ -21,6 +21,7 @@ all components; many pertain only to the login server components.</p>
 <li><a href="#keyserver">Keyserver Variables</a></li>
 <li><a href="#krb5">Kerberos Verifier Variables</a></li>
 <li><a href="#ldap">LDAP Verifier Variables</a></li>
+<li><a href="#shadow">Shadow Verifier Variables</a></li>
 <li><a href="#other">Other Variables</a></li>
 <li><a href="#values">Definitions</a></li>
 </ul>
@@ -319,6 +320,16 @@ used in the initial bind to the server.</p>
 <dd> Path to cert7.db and key3.db files when using Sun/Netscape/iPlanet LDAP libraries.
      (When using OpenLDAP libraries configure this sort of thing in your ldap.conf file.)</dd>
 <dd> Default: <tt>PREFIX/keys</tt></dd>
+
+</dl>
+
+<h4><a name="shadow">Shadow Verifier Variables</a></h4>
+
+<dl>
+
+<dt> <a name="shadow_path">shadow_path</a> <i>string</i></dt>
+<dd> Location of shadow file.</dd>
+<dd> Default: <tt>/etc/shadow</tt></dd>
 
 </dl>
 
