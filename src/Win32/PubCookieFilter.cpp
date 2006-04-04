@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.58 2006-03-09 22:59:43 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.59 2006-04-04 22:25:23 suh Exp $
 //
 
 //#define COOKIE_PATH
@@ -1276,22 +1276,28 @@ void Add_Header_Values(HTTP_FILTER_CONTEXT* pFC,
 
 	// Set Pubcookie Appid, User and Creds level
 
-	pHeaderInfo->AddHeader(pFC,PBC_Header_Server,p->server_hostname);
+	//pHeaderInfo->AddHeader(pFC,PBC_Header_Server,p->server_hostname);
+	pHeaderInfo->SetHeader(pFC,PBC_Header_Server,p->server_hostname);
 
-	pHeaderInfo->AddHeader(pFC,PBC_Header_Appid,p->appid);
+	//pHeaderInfo->AddHeader(pFC,PBC_Header_Appid,p->appid);
+	pHeaderInfo->SetHeader(pFC,PBC_Header_Appid,p->appid);
+ 
+////////	pHeaderInfo->SetHeader(pFC,"REMOTE_USER",p->user);
+//////// Don't know how to override server variables so use our own
 
-//	pHeaderInfo->SetHeader(pFC,"REMOTE_USER",p->user);
-// Don't know how to override server variables so use our own
-
-	pHeaderInfo->AddHeader(pFC,PBC_Header_User,p->user);
+	//pHeaderInfo->AddHeader(pFC,PBC_Header_User,p->user);
+	pHeaderInfo->SetHeader(pFC,PBC_Header_User,p->user);	
 
 	sprintf(temp,"%c",p->AuthType);
 
-	pHeaderInfo->AddHeader(pFC,PBC_Header_Creds,temp);
+	//pHeaderInfo->AddHeader(pFC,PBC_Header_Creds,temp);
+	pHeaderInfo->SetHeader(pFC,PBC_Header_Creds,temp);
 
-	pHeaderInfo->AddHeader(pFC,PBC_Header_Version,Pubcookie_Version);
+	//pHeaderInfo->AddHeader(pFC,PBC_Header_Version,Pubcookie_Version);
+	pHeaderInfo->SetHeader(pFC,PBC_Header_Version,Pubcookie_Version);
 
 }  /* Add_Header_Values */
+
 
 bool MakeSecContext(HTTP_FILTER_CONTEXT* pFC,			
 					pubcookie_dir_rec *p)
