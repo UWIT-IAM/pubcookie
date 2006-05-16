@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.19 2006-03-08 21:53:49 fox Exp $
+    $Id: mod_pubcookie.h,v 2.20 2006-05-16 18:08:01 willey Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -87,6 +87,7 @@ typedef struct
     table *configlist;
     int dirdepth;
     int noblank;
+    int catenate;		/* Added by ddj@cmu.edu on 2006/05/01 */
     char *login;
     unsigned char *appsrvid;
     char *authtype_names;       /* raw arg string from conf */
@@ -102,6 +103,7 @@ typedef struct
     int inact_exp;
     int hard_exp;
     int non_ssl_ok;
+    unsigned char *oldappid; /* Added by ddj@cmu.edu on 2006/05/10 */
     unsigned char *appid;
     char *end_session;
     int session_reauth;

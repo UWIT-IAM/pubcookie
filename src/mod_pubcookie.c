@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.198 2006-03-08 21:53:49 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.199 2006-05-16 18:08:01 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -432,6 +432,7 @@ unsigned char *appid (request_rec * r)
     pubcookie_server_rec *scfg;
     pubcookie_dir_rec *cfg;
     request_rec *rmain = main_rrec (r);
+    pool *p = r->pool;
 
     cfg = (pubcookie_dir_rec *) ap_get_module_config (r->per_dir_config,
                                                       &pubcookie_module);
@@ -440,11 +441,42 @@ unsigned char *appid (request_rec * r)
                                                        module_config,
                                                        &pubcookie_module);
 
-    if (cfg->appid)
-        return (cfg->appid);
-    else
-        return get_app_path (r, rmain->parsed_uri.path);
-
+    /* Added by ddj@cmu.edu on 2006/05/10. */
+    if (scfg->catenate) {	/* Catenate app IDs? */
+      /* Yeah. Anything to catenate? 4 possibilities. */
+      if (cfg->appid && cfg->oldappid) {
+	/* Old and new are both set. */
+	/* Glue the default, old, and new together. */
+	return ap_pstrcat(p,
+			  get_app_path (r, rmain->parsed_uri.path),
+			  cfg->oldappid,
+			  cfg->appid,
+			  NULL);
+      } else if (cfg->appid) {
+	/* Just the new one is set. */
+	/* Glue the default and the new one together. */
+	return ap_pstrcat(p,
+			  get_app_path (r, rmain->parsed_uri.path),
+			  cfg->appid,
+			  NULL);
+      } else if (cfg->oldappid) {
+	/* Just the old one is set. */
+	/* Glue the default and the old one together. */
+	return ap_pstrcat(p,
+			  get_app_path (r, rmain->parsed_uri.path),
+			  cfg->oldappid,
+			  NULL);
+      } else {
+	/* None were ever set.  Just use the default. */
+	return get_app_path (r, rmain->parsed_uri.path);
+      }
+    } else {
+      /* No, don't catenate.  Use the 3.3.0a logic verbatim. */
+      if (cfg->appid)
+	return (cfg->appid);
+      else
+	return get_app_path (r, rmain->parsed_uri.path);
+    }
 }
 
 /* figure out the appsrvid                                                   */
@@ -1326,6 +1358,8 @@ static void *pubcookie_server_merge (pool * p, void *parent, void *newloc)
         nscfg->appsrvid : pscfg->appsrvid;
     scfg->dirdepth = nscfg->dirdepth ? nscfg->dirdepth : pscfg->dirdepth;
     scfg->noblank = nscfg->noblank ? nscfg->noblank : pscfg->noblank;
+    /* the following added by ddj@cmu.edu on 2006/05/01 */
+    scfg->catenate = nscfg->catenate ? nscfg->catenate : pscfg->catenate;
     scfg->authtype_names = nscfg->authtype_names ?
         nscfg->authtype_names : pscfg->authtype_names;
     scfg->use_post = nscfg->use_post ? nscfg->use_post : pscfg->use_post;
@@ -1357,8 +1391,31 @@ static void *pubcookie_dir_merge (pool * p, void *parent, void *newloc)
         (ncfg->session_reauth == PBC_UNSET_SESSION_REAUTH)
         ? pcfg->session_reauth : ncfg->session_reauth;
 
+    /***
+     * Okay.  We might need to catenate app IDs.  We'll know at
+     * request time.  So, let's make sure the "appid" is set assuming
+     * we *won't* have to, and into "oldappid" goes the stuff we'll
+     * need to include if we *do* have to.  Then we will have all the
+     * data we need to go either way at request time.
+     *
+     * ddj@cmu.edu 2006/05/10
+     */
+
+    /* Did the parent have an app ID? */
+    if (pcfg->appid) {
+      /* Yes.  Did the parent also have an *old* app ID? */
+      if (pcfg->oldappid) {
+	/* Yes.  Glue them together and store as "old app ID". */
+	cfg->oldappid = ap_pstrcat(p, pcfg->oldappid, pcfg->appid, NULL);
+      } else {
+	/* No.  The parent's app ID is now the "old app ID". */
+	cfg->oldappid = pcfg->appid;
+      }
+    }
+
     /* life is much easier if the default value is zero or NULL */
     cfg->appid = ncfg->appid ? ncfg->appid : pcfg->appid;
+
     cfg->end_session = ncfg->end_session ?
         ncfg->end_session : pcfg->end_session;
 
@@ -2713,6 +2770,28 @@ const char *pubcookie_set_no_obscure (cmd_parms * cmd, void *mconfig,
 }
 
 /**
+ * Determine whether setting the AppID replaces the current AppID or
+ * appends its value to the current AppID.
+ *
+ * Added by ddj@cmu.edu on 2006/05/01 to address a security issue with
+ * people stealing cookies from other apps.
+ */
+const char *pubcookie_set_catenate_appids(cmd_parms *cmd, void *mconfig,
+					  int flag)
+{
+  server_rec *s = cmd->server;
+  pubcookie_server_rec *scfg;
+  ap_pool *p = cmd->pool;
+
+  scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
+							&pubcookie_module);
+
+  scfg->catenate = flag;
+
+  return NULL;
+}
+
+/**
  * used to give more debugging, does nothing now
  * @param cmd - command record
  * @param mconfig - module configuration
@@ -2907,6 +2986,15 @@ static const command_rec pubcookie_commands[] = {
                       set_authtype_names,
                       NULL, RSRC_CONF,
                       "Sets the text names for authtypes."),
+
+    /* Added by ddj@cmu.edu on 2006/05/01 to address security
+       issue at CMU. */
+    AP_INIT_FLAG ("PubCookieCatenateAppIDs",
+		  pubcookie_set_catenate_appids,
+		  NULL, RSRC_CONF|ACCESS_CONF,
+		  "Determines whether a new AppID replaces or is catenated "
+		  "to the old App ID."),
+    /* End of ddj@cmu.edu's change. */
 
     AP_INIT_TAKE1 ("PubCookieAppID",
                    pubcookie_set_appid,
