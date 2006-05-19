@@ -20,7 +20,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.30 2006-02-23 00:46:33 willey Exp $
+ * $Id: verify_ldap.c,v 1.31 2006-05-19 15:50:43 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -377,7 +377,7 @@ static int ldap_connect (pool * p, LDAP ** ld,
 
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                           "ldap_connect: Version Requested: %s Version Using: %d\n",
-                          version, ldap_version);
+                          NULL == version ? "3" : version, ldap_version);
 
         rc = ldap_set_option (*ld, LDAP_OPT_PROTOCOL_VERSION,
                               &ldap_version);
