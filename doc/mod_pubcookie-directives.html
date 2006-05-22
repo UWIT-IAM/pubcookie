@@ -20,6 +20,7 @@ directives, you must do the same for other Pubcookie directives. Otherwise,
 <li><a href="#PubcookieHardExpire">PubcookieHardExpire</a></li>
 <li><a href="#PubcookieAppID">PubcookieAppID</a></li>
 <li><a href="#PubcookieDirDepthforAppID">PubcookieDirDepthforAppID</a></li>
+<li><a href="#PubcookieCatenateAppIDs">PubcookieCatenateAppIDs</a></li>
 <li><a href="#PubcookieAppSrvID">PubcookieAppSrvID</a></li>
 <li><a href="#PubcookieLogin">PubcookieLogin</a></li>
 <li><a href="#PubcookieLoginMethod">PubcookieLoginMethod</a></li>
@@ -133,10 +134,11 @@ directive</a></h3>
 "Help"><strong>Compatibility:</strong></a> All versions of mod_pubcookie and
 Apache 1.2 and later.</p>
 
-<p>Allows you to limit the length of default AppIDs to a specific number of
-directories.</p>
+<p>This directive causes appIDs to be defined by the depth of the
+directory path requested. It allows you to limit the length of default
+appIDs to a specific number of directories.</p>
 
-<p>The depth is the number of directories that the AppID will be truncated to.
+<p>The depth is the number of directories that the appID will be truncated to.
 e.g.:</p>
 
 <table>
@@ -156,8 +158,28 @@ e.g.:</p>
 </tr>
 </table>
 
-<p>This directive has no effect if <a href="#PubcookieAppID">PubcookieAppID</a>
-is specified.</p>
+<p>Note: PubcookieDirDepthforAppID is overridden by <a
+href="#PubcookieAppID">PubcookieAppID</a> unless <a
+href="#PubcookieCatenateAppIDs">PubcookieCatenateAppIDs</a> is
+enabled.</p>
+
+<h3><a name="PubcookieCatenateAppIDs">PubcookieCatenateAppIDs directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieCatenateAppIDs on | off<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility" rel=
+"Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie 3.3.1 and
+higher Apache 1.2 and later.</p>
+
+<p>This directive causes appIDs to be constructed by catenating all
+configured values rather than replacing the value as subsequent
+configuration is discovered.</p>
+
+<p>When PubcookieCatenateAppIDs is enabled, <a
+href="#PubcookieDirDepthforAppID">PubcookieDirDepthforAppID</a> and <a
+href="#PubcookieAppID">PubcookieAppID</a> values are accumulative.</p>
 
 <h3><a name="PubcookieAppSrvID">PubcookieAppSrvID directive</a></h3>
 
