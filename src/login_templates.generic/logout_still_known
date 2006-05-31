@@ -1,5 +1,5 @@
-
-<p>
-<img src="/images/icon-excl.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">You are still identified as <b>%contents%</b></font></p>
+<p class="warning">
+  <img src="images/icon-excl.gif" align="absmiddle" alt="" height="35" width="35"/>
+  You will be remembered for next login as <b>%contents%</b>
+</p>
 

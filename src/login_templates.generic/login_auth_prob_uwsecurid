@@ -1,10 +1,8 @@
-<P>
-  <B>
-    <FONT COLOR="#FF0000" SIZE="+1">There has been a system problem.<BR>Please re-enter.<BR>If problems persist please contact help@cac.washington.edu</FONT>
-  </B>
-  <BR>
-</P>
-<P>
-<p>
+<p class="error">
+  There has been a system problem.<br />
+  Please re-enter.<br />
+  If problems persist please contact help@cac.washington.edu
+</p>
+<p class="message">
   Please make sure your <b>Number Lock key is ON</b>.
 </p>

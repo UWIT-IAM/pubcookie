@@ -1,15 +1,4 @@
-<P>
-  <B><font size="+1" color="#FF0000">
-    A problem has been detected!
-  </font></B>
-</P>
-
-<p>
-  <b><font size="+1">
-    The resource you requested requires "multipart/form-data" 
-    capabilities not supported by this Pubcookie login service. 
-    Please email 
-    <a href="mailto:help@example.edu">help@example.edu</a> 
-   for further assistance.
-  </font></b>
+<p class="error">
+  The resource you requested requires "multipart/form-data" 
+  capabilities not supported by this Pubcookie login service. 
 </p>

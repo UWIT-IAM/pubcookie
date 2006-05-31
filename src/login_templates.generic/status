@@ -1,46 +1,37 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-<HTML>
-<HEAD>
-<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<TITLE>pubcookie generic Login</TITLE>
-%refresh%
-</HEAD>
-
-<BODY BGCOLOR="#FFFFFF">
-
-<CENTER>
-
-<TABLE CELLPADDING=0 CELLSPACING=0 BORDER=0 WIDTH=580>
-<TR>
-<TD VALIGN="MIDDLE">
-<IMG SRC="/images/weblogin.gif" ALT="pubcookie generic Login" height="57" width="198">
-
-
-<p>
-<img src="/images/icon-excl.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">You are still logged in to <b>pubcookie</b> 
-as <b>%contents%</b></font></p>
-
-<p>
-<img src="/images/icon-time.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">Time remaining: %remaining%</font></p>
-
-
-<P><font size="+1"> <b>Warning:</b> You are still logged in to pubcookie
-(and possibly other application web sites you visited
-this session). To protect your privacy and prevent unauthorized use,
-<strong>completely exit your Web browser</strong> when you are
-finished browsing. 
-</font></P>
-
-
-<p><small>Copyright &#169; 2004 Example University</small></p>
-
-</td>
-</tr>
-
-</TABLE>
-
-</CENTER>
-</BODY></HTML>
-
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <link rel="stylesheet" type="text/css" href="media/pubcookie.css" />
+    <title>Example University Login</title>
+    %refresh%
+  </head>
+  <body>
+    <div id="mainwindow" class="status">
+      <div id="title">
+        Example University Login Status
+      </div>
+      <div id="mainarea">
+        <p class="message">
+          <img src="images/check.gif" align="absmiddle" alt="" height="35" width="35"/>
+          Logged in as: %contents%
+        </p>
+        <p class="message">
+          <img src="images/icon-time.gif" align="absmiddle" alt="" height="35" width="35"/>
+          Time Remaining: %remaining%
+        </p>
+        <p class="warning">
+          <strong>Warning:</strong> You are still logged in to Example 
+          University. To protect your privacy and prevent unauthorized use,
+          <strong>completely exit your web browser</strong> when you are
+          finished browsing. 
+        </p>
+      </div>
+      <div id="copyright">
+        Copyright &copy; 2006 by Example University
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,23 +1,23 @@
-<!-- begin tmpl pinit_response2 -->
-<p>
-<font size="+1"><b>Note:</b> Now that you have identified yourself
-to the <b>weblogin service</b>, you can log in to other personalized
-websites without having to reenter your id and password.</p>
+        </table>
 
-<p>
-<font size="+1"><b>Warning:</b> To protect your privacy and prevent
-unauthorized use, <strong>completely exit your Web browser</strong> 
-when you are finished browsing.  If you need help, 
-review <a href="http://www.acme.edu/docs/weblogin/logout.html">how to log 
-out</a>.</font></p>
+        <p class="message">
+          <strong>Note:</strong> Now that you have identified yourself
+          to the <strong>weblogin service</strong>, you can log in to other 
+          Example University websites without having to re-enter your id 
+          and password.
+        </p>
 
-<small>Copyright &#169; 2004 Example University</small>
-
-</TD>
-</TR>
-</TABLE>
-</CENTER>
-<!-- Version: %version% -->
-</BODY>
-</HTML>
-
+        <p class="warning">
+          <strong>Warning:</strong> To protect your privacy and prevent
+          unauthorized use, <strong>completely exit your web browser</strong> 
+          when you are finished browsing. If you need help, 
+          review <a href="http://www.acme.edu/docs/weblogin/logout.html">how to 
+          log out</a>.
+        </p>
+      </div>
+      <div id="copyright">
+        Copyright &copy; 2006 by Example University
+      </div>
+    </div>
+  </body>
+</html>

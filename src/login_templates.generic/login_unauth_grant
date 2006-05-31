@@ -1,5 +1,4 @@
-<!-- begin tmpl login_unauth_grant -->
-<p>The application that sent you here is not authorized to
-request login.</p>
-<!-- end tmpl login_unauth_grant -->
+<p class="error">
+  The application that sent you here is not authorized to request login.
+</p>
 

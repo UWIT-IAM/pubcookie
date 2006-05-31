@@ -1,26 +1,4 @@
-<P>
-  <B><font size="+1" color="#FF0000">
-    This browser is either incompatible or has serious security flaws.
-  </font></B>
-</P>
-
-<p>
-  <b><font size="+1">
-    Please upgrade to the most recent version of either
-    <A HREF="http://home.netscape.com/computing/download/index.html">Netscape Navigator</A>, <A HREF="http://www.microsoft.com/windows/ie/default.htm">Internet Explorer</A>, or <A HREF="http://www.opera.com/">Opera</A>.
-
-<!-- this is probably too danerious and of little value
-    <P>
-      The browser you are using identifies itself as:<BR>
-        <TT>
-          percent_sign browser percent_sign
-        </TT>
-    </P>
--->
-
-    <P>
-      Please email <a href="mailto:help@example.edu">help@example.edu</a> for further assistance.
-    </P>
-  </font></b>
-
-<p>&nbsp;</p>
+<p class="error">
+  This browser is either incompatible or has serious security flaws.
+  Please upgrade your browser to the latest version.
+</p>

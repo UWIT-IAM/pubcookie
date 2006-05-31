@@ -1,1 +1,1 @@
-<INPUT TYPE="password" NAME="pass" SIZE="20">
+<input type="password" name="pass" class="inputfield" />

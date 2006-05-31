@@ -1,1 +1,1 @@
-<input type="hidden" name="user" value="%contents%">
+<input type="hidden" name="user" value="%contents%" />

@@ -1,1 +1,1 @@
-<P>Your "weblogin" session has expired.  Please log in again or exit this browser to change UW NetIDs.<P>
+<p class="error">Your session has expired. Please re-login.</p>

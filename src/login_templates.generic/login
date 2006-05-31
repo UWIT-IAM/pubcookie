@@ -1,73 +1,63 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <link rel="stylesheet" type="text/css" href="media/pubcookie.css" />
+    <title>Example University Login</title>
+  </head>
+  <body onLoad="document.query.elements[0].focus()">
+    <div id="mainwindow" class="login">
+      <div id="title">
+        Example University Login
+      </div>
+      <div id="mainarea">
+        <!-- custom login message -->
+        <div class="message">
+          %message%
+        </div>
+        <!-- end of custom login message -->
+      
+        <!-- reason we were sent here -->
+        <div class="message">
+          %reason%
+        </div>
+        <!-- end of reasons -->
+      
+        <form id="query" method="POST" action="%loginuri%"
+          enctype="application/x-www-form-urlencoded" autocomplete="off">
+          <table border="0" align="center">
+            <tr>
+              <td class="fieldname">User ID:</td>
+              <td>%user_field%</td>
+            </tr>
+            <tr>
+              <td class="fieldname">Password:</td>
+              <td>
+                <input type="password" name="pass" class="inputfield" />
+              </td>
+            </tr>
+            <tr>
+              <td class="fieldname"></td>
+              <td>
+                <input type="submit" value="Log in &raquo;" />
+              </td>
+            </tr>
+          </table>
 
-<!-- 
-     think of this as a big format string for a printf statement
-     there are substitution tokens thru-out
-     comments hav been added to explain what will be substitued
-  -->
-
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
- <head>
-  <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-  <title>pubcookie generic Login</title>
- </head>
-
- <body bgcolor="#FFFFFF" onLoad="document.query.elements[0].focus()">
-  <center>
-   <img src="/images/login.gif" alt="" height="64" width="208">
-
-   <!--- action below is the login server URI --->
-   <form name="query" method="POST" action="%loginuri%"
-    enctype="application/x-www-form-urlencoded" autocomplete="off">
-
-    <P>
-    <table border="0" cellpadding="0" cellspacing="2" width="271" height="70">
-     <tr>
-
-     <!-- custom login message -->
-     %message%
-     <!-- end of custom login message -->       
-
-     <!-- reason we were sent here -->
-     %reason%
-     <!-- end of reasons -->       
-
-     </tr>
-     <tr>
-      <td>User ID</td>
-      <td>%user_field%</td>
-     </tr>
-     <tr>
-      <td>Password</td>
-      <td><input type="password" name="pass" size="24"></td>
-     </tr>
-    </table>
-    <p>
-
-<!-- The hidden fields -->
-%hiddenuser%
-%hiddenfields%
-<!-- The GetCred target, if defined -->
-%getcredhidden%
-<!-- End of inserted stuff. -->
-    <P>
-    <input type="SUBMIT" name="submit" value="Log in">
-    </P>
-
-   </form>
-
-   <p>
-   Login gives you 8-hour access without repeat login to protected Web resources.
-   </p>
-   <p>
-   <strong>WARNING</strong>: Protect your privacy! Prevent unauthorized use!<br>
-   Completely exit your Web browser when you are finished.
-   </p>
-
-   <small>Copyright &#169; 2004 Example University</small>
-
-  </center>
-
-  <!-- Version: %version% -->
- </body>
+          <!-- The hidden fields -->
+          %hiddenuser%
+          %hiddenfields%
+          <!-- The GetCred target, if defined -->
+          %getcredhidden%
+          <!-- End of inserted stuff. -->
+        </form>
+      </div>
+      <div id="copyright">
+Version: %version% <br>
+        Copyright &copy; 2006 by Example University
+      </div>
+    </div>
+  </body>
 </html>

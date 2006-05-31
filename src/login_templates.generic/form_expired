@@ -1,1 +1,1 @@
-<p>The login page has expired.  Please log in within %time%.</p>
+<p class="error">The login page has expired.  Please log in within %time%.</p>

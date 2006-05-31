@@ -1,9 +1,7 @@
-<!-- begin tmpl logout_postscript_still_weblogin -->
-<p><font size="+1"> <b>Warning:</b> You are still logged in to 
-the login server (and possibly other personalized web sites you 
-visited this session). To protect your privacy and prevent unauthorized 
-use, <strong>completely exit your Web browser</strong> when you are
-finished browsing. 
-</font></p>
-<!-- end tmpl logout_postscript_still_weblogin -->
-
+<p class="warning">
+  <b>Warning:</b> You are still logged in to 
+  the login server (and possibly other personalized web sites you 
+  visited this session). To protect your privacy and prevent unauthorized 
+  use, <strong>completely exit your Web browser</strong> when you are
+  finished browsing. 
+</p>

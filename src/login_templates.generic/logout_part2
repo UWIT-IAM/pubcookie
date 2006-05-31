@@ -1,10 +1,7 @@
-<!-- begin tmpl logout_part2 -->
-<p><small>Copyright &#169; 2004 Example University</small></p>
-</td>
-</tr>
-</table>
-</center>
-<!-- Version: %version% -->
-</body></html>
-<!-- end tmpl logout_part2 -->
-
+      </div>
+      <div id="copyright">
+        Copyright &copy; 2006 by Example University
+      </div>
+    </div>
+  </body>
+</html>

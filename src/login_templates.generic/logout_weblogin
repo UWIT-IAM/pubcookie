@@ -1,6 +1,5 @@
-<!-- begin tmpl logout_weblogin -->
-<p>
-<img src="/images/check.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">You successfully logged out of your <b>weblogin service</b></font></p>
-<!-- end tmpl logout_weblogin -->
+<p class="message">
+  <img src="images/check.gif" align="absmiddle" alt="" height="35" width="35"/>
+  You successfully logged out of your <b>Example University Login Service</b>.
+</p>
 

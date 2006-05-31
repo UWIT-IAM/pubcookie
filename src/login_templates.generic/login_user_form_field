@@ -1,1 +1,1 @@
-<INPUT TYPE="text" NAME="user" SIZE="20" VALUE="%contents%">
+<input type="text" name="user" size="20" value="%contents%" class="inputfield" />

@@ -1,6 +1,5 @@
-<!-- begin tmpl welcome_back -->
-<p>
-<img src="/images/check.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">Log in successful - welcome back <b>%contents%</b></font></p>
-<!-- end tmpl welcome_back -->
+<p class="message">
+  <img src="images/check.gif" align="absmiddle" alt="" height="35" width="35"/>
+  Logged in as: %contents%
+</p>
 
