@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.200 2006-05-19 15:57:20 jjminer Exp $
+ * $Id: mod_pubcookie.c,v 1.201 2006-06-08 21:54:33 jjminer Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -510,14 +510,21 @@ void set_no_cache_headers (request_rec * r)
     char *datestr = apr_palloc (p, APR_RFC822_DATE_LEN);
     apr_rfc822_date (datestr, r->request_time);
     ap_table_set (r->headers_out, "Expires", datestr);
+    ap_table_set (r->err_headers_out, "Expires", datestr);
 #else
     ap_table_set (r->headers_out, "Expires", ap_gm_timestr_822 (r->pool,
+                                                                r->
+                                                                request_time));
+    ap_table_set (r->err_headers_out, "Expires", ap_gm_timestr_822 (r->pool,
                                                                 r->
                                                                 request_time));
 #endif
     ap_table_set (r->headers_out, "Cache-Control",
                   "no-store, no-cache, must-revalidate");
+    ap_table_set (r->err_headers_out, "Cache-Control",
+                  "no-store, no-cache, must-revalidate");
     ap_table_set (r->headers_out, "Pragma", "no-cache");
+    ap_table_set (r->err_headers_out, "Pragma", "no-cache");
 
 }
 
