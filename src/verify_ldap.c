@@ -20,7 +20,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.31 2006-05-19 15:50:43 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.32 2006-06-08 21:55:40 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -638,17 +638,17 @@ static int ldap_v (pool * p, const char *userid,
                         *errstr = "couldn't bind as user -- auth failed";
 
                     if (got_error == 0) {
-                        pbc_log_activity (p, PBC_LOG_AUDIT,
+                        pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                                           "%s succesfully bound to %s:%d\n",
                                           userid, ludp->lud_host,
                                           ludp->lud_port);
                     } else if (got_error == -1) {
-                        pbc_log_activity (p, PBC_LOG_AUDIT,
+                        pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                                           "%s fatal error binding to %s:%d\n",
                                           userid, ludp->lud_host,
                                           ludp->lud_port);
                     } else if (got_error == -2) {
-                        pbc_log_activity (p, PBC_LOG_AUDIT,
+                        pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
                                           "%s error binding to %s:%d.  Continuing\n",
                                           userid, ludp->lud_host,
                                           ludp->lud_port);
