@@ -18,11 +18,11 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.201 2006-06-08 21:54:33 jjminer Exp $
+ * $Id: mod_pubcookie.c,v 1.202 2006-06-13 16:30:26 dors Exp $
  */
 
 #define MAX_POST_DATA 10485760
-#define CONTENT_TYPE "text/html; charset=ISO-8859-1"
+#define CONTENT_TYPE "text/html; charset=utf-8"
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
