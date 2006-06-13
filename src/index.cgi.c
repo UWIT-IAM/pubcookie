@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.175 2006-06-09 21:36:12 jjminer Exp $
+ * $Id: index.cgi.c,v 1.176 2006-06-13 19:39:52 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1770,7 +1770,9 @@ int logout (pool * p, const security_context * context, login_rec * l,
                           "version", PBC_VERSION_STRING, NULL);
     } else if (logout_action == LOGOUT_ACTION_CLEAR_L) {
 
-        if ( libpbc_config_getswitch (p, "clear_username_at_logout", 0) )
+        int clear_username = libpbc_config_getswitch (p, "clear_username_at_logout", 0);
+
+        if ( clear_username )
             clear_login_cookie (p);
         else
             expire_login_cookie (p, context, l, c);
@@ -1794,7 +1796,7 @@ int logout (pool * p, const security_context * context, login_rec * l,
                                                        "logout_weblogin"),
                               NULL);
 
-        if (c && c->user)
+        if ( c && c->user && ! clear_username )
             ntmpl_print_html (p, TMPL_FNAME,
                               libpbc_config_getstring (p,
                                                        "tmpl_logout_still_known",
