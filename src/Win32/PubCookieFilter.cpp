@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.59 2006-04-04 22:25:23 suh Exp $
+//  $Id: PubCookieFilter.cpp,v 1.60 2006-06-13 16:52:51 dors Exp $
 //
 
 //#define COOKIE_PATH
@@ -469,7 +469,7 @@ int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 	}
 
 
-    sprintf(szBuff, "Content-Type: text/html; charset=ISO-8859-1\r\n");
+    sprintf(szBuff, "Content-Type: text/html; charset=utf-8\r\n");
 		
 	filterlog(p, LOG_INFO," Adding POST data");
 
@@ -2720,12 +2720,12 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 
 	// invalid url
 	if (!urlError) {			
-		snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\nContent-type: text/html; charset=ISO-8859-1;  \r\nLocation: %s\r\n\r\n", 
+		snprintf(httpheader, START_COOKIE_SIZE+1024, "Set-Cookie: %s=%s; domain=%s; path=/; secure\r\nContent-type: text/html; charset=utf-8;  \r\nLocation: %s\r\n\r\n", 
 					PBC_G_COOKIENAME,
 					grpl,
 					p->appsrvid,
 					r_url); 		
-	}else{		snprintf(httpheader, START_COOKIE_SIZE+1024, "Content-type: text/html; charset=ISO-8859-1;\r\n\r\n");			}		if (urlError) {		SendHttpHeaders(pECB, "200 OK", httpheader);
+	}else{		snprintf(httpheader, START_COOKIE_SIZE+1024, "Content-type: text/html; charset=utf-8;\r\n\r\n");			}		if (urlError) {		SendHttpHeaders(pECB, "200 OK", httpheader);
 	}else{
 		SendHttpHeaders(pECB, "302 Moved Temporarily", httpheader);
 	}
