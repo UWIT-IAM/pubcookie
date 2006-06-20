@@ -10,7 +10,7 @@
     <table cellpadding="0" cellspacing="0" border="0" width="580">
       <tr>
         <td width="310" valign="middle">
-          <img src="/images/login/weblogin.gif" alt="" height="57" width="198">
+          <img src="media/login/weblogin.gif" alt="" height="57" width="198">
 
           <form name="query" method="POST" action="%loginuri%"
     enctype="application/x-www-form-urlencoded" autocomplete="off">
@@ -50,7 +50,7 @@
           &nbsp;
         </td>
         <td width="2" bgcolor="#000000">
-          <img src="/images/1pixffcc33iystpiwfy.gif" width="1" height="1" align="BOTTOM" alt="" oncontextmenu="return false">
+          <img src="media/1pixffcc33iystpiwfy.gif" width="1" height="1" align="BOTTOM" alt="" oncontextmenu="return false">
         </td>
         <td width="9">
           &nbsp;

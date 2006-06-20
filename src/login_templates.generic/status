@@ -14,11 +14,11 @@
       </div>
       <div id="mainarea">
         <p class="message">
-          <img src="images/check.gif" align="absmiddle" alt="" height="35" width="35"/>
+          <img src="media/check.gif" align="absmiddle" alt="" height="35" width="35"/>
           Logged in as: %contents%
         </p>
         <p class="message">
-          <img src="images/icon-time.gif" align="absmiddle" alt="" height="35" width="35"/>
+          <img src="media/icon-time.gif" align="absmiddle" alt="" height="35" width="35"/>
           Time Remaining: %remaining%
         </p>
         <p class="warning">
