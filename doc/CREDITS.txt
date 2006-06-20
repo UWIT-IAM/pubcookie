@@ -13,7 +13,7 @@
      * Larry Greenfield     Carnegie Mellon University (former)
      * Jon Miner            University of Wisconsin
      * Ryan Muldoon         University of Wisconsin (former)
-     * Steve Suh            University of Washington
+     * Steve Suh            University of Washington (former)
      * Stephen Willey       University of Washington
 
    Core Contributors:
@@ -37,6 +37,8 @@
      * Allan E. Johannesen  Worcester Polytechnic Institute
      * David Houlder        Australian National University
      * Benjamin Armintor    University of Texas-Austin
+     * Doug DeJulio         Carnegie Mellon University
+     * Konstantin Ryabitsev McGill University
 
    Sponsors:
      * The Andrew W. Mellon Foundation
