@@ -4,7 +4,7 @@
 #
 # @configure_input@
 # 
-# $Id: Makefile.in,v 1.70 2005-12-06 23:12:09 dors Exp $
+# $Id: Makefile.in,v 1.71 2006-06-20 17:02:52 dors Exp $
 
 @SET_MAKE@
 
@@ -23,7 +23,7 @@ KEY_DIR=$(PUBCOOKIE_DIR)/keys
 TEMPLATE_DIR=$(PUBCOOKIE_DIR)/login_templates
 LOGIN_DIR=$(PUBCOOKIE_DIR)/login
 CERT_DB_DIR=$(PUBCOOKIE_DIR)/keys
-LOGIN_IMG_DIR=$(PUBCOOKIE_DIR)/login/images
+LOGIN_MEDIA_DIR=$(PUBCOOKIE_DIR)/login/media
 
 CERT_DB_SOURCE=@CERT_DB_PATH@
 
@@ -237,9 +237,10 @@ LOGIN_TEMPLATES=$(srcdir)/src/login_templates.generic/copyright \
 		$(srcdir)/src/login_templates.generic/README
 
 
-LOGIN_IMAGES=$(srcdir)/src/login_templates.generic/images/check.gif \
-			 $(srcdir)/src/login_templates.generic/images/icon-excl.gif \
-			 $(srcdir)/src/login_templates.generic/images/icon-time.gif
+LOGIN_MEDIA=$(srcdir)/src/login_templates.generic/media/pubcookie.css \
+			 $(srcdir)/src/login_templates.generic/media/check.gif \
+			 $(srcdir)/src/login_templates.generic/media/icon-excl.gif \
+			 $(srcdir)/src/login_templates.generic/media/icon-time.gif
 
 DOCS=$(srcdir)/doc/config.html \
 	 $(srcdir)/doc/CREDITS.txt \
@@ -375,7 +376,7 @@ keyclient: $(builddir)/src/keyclient.o $(LIB_OBJ)
 install: $(KEY_DIR) @install_login@ @install_apache@ 
 @IF_MOD@	$(INSTALL_BIN) keyclient $(PUBCOOKIE_DIR)
 
-install-login: @no_login@ $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_IMG_DIR) $(TEMPLATE_DIR).default/images $(LOGIN_IMAGES) login_server
+install-login: @no_login@ $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $(LOGIN_TEMPLATES) $(LOGIN_MEDIA_DIR) $(TEMPLATE_DIR).default/media $(LOGIN_MEDIA) login_server
 	@for file in $(INDEX_FILES); do \
 		echo $(INSTALL_BIN) $$file $(LOGIN_DIR); \
 		$(INSTALL_BIN) $$file $(LOGIN_DIR); \
@@ -391,15 +392,15 @@ install-login: @no_login@ $(LOGIN_DIR) $(TEMPLATE_DIR) $(TEMPLATE_DIR).default $
 			$(INSTALL_OTHER) $$file $(TEMPLATE_DIR); \
 		true; \
 	done
-	@for file in $(LOGIN_IMAGES); do \
-		echo $(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default/images; \
-		$(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default/images; \
+	@for file in $(LOGIN_MEDIA); do \
+		echo $(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default/media; \
+		$(INSTALL_OTHER) $$file $(TEMPLATE_DIR).default/media; \
 	done
-	@for file in $(LOGIN_IMAGES); do \
+	@for file in $(LOGIN_MEDIA); do \
 		bfile=`basename $$file`; \
-		$(TEST) ! -f $(LOGIN_IMG_DIR)/$$bfile && \
-			echo $(INSTALL_OTHER) $$file $(LOGIN_IMG_DIR) && \
-			$(INSTALL_OTHER) $$file $(LOGIN_IMG_DIR); \
+		$(TEST) ! -f $(LOGIN_MEDIA_DIR)/$$bfile && \
+			echo $(INSTALL_OTHER) $$file $(LOGIN_MEDIA_DIR) && \
+			$(INSTALL_OTHER) $$file $(LOGIN_MEDIA_DIR); \
 		true; \
 	done
 	@for file in $(KEYMGT_FILES); do \
@@ -433,8 +434,10 @@ $(KEY_DIR): $(PUBCOOKIE_DIR)
 $(LOGIN_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(LOGIN_DIR)
 
-$(LOGIN_IMG_DIR): $(PUBCOOKIE_DIR)
-	$(INSTALL_DIR) $(LOGIN_IMG_DIR)
+#$(LOGIN_IMG_DIR): $(PUBCOOKIE_DIR)
+#	$(INSTALL_DIR) $(LOGIN_IMG_DIR)
+$(LOGIN_MEDIA_DIR): $(PUBCOOKIE_DIR)
+	$(INSTALL_DIR) $(LOGIN_MEDIA_DIR)
 
 $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR)
@@ -442,8 +445,8 @@ $(TEMPLATE_DIR): $(PUBCOOKIE_DIR)
 $(TEMPLATE_DIR).default: $(PUBCOOKIE_DIR)
 	$(INSTALL_DIR) $(TEMPLATE_DIR).default
 
-$(TEMPLATE_DIR).default/images: $(TEMPLATE_DIR).default
-	$(INSTALL_DIR) $(TEMPLATE_DIR).default/images
+$(TEMPLATE_DIR).default/media: $(TEMPLATE_DIR).default
+	$(INSTALL_DIR) $(TEMPLATE_DIR).default/media
 
 $(LIB_OBJ): $(LIB_HEAD) $(builddir)/src/pbc_path.h $(srcdir)/src/pbc_version.h.in $(builddir)/src/config.h
 
@@ -659,9 +662,9 @@ dist: a_ver l_ver
 	$(MKDIR) $(DISTNAME)/cgic
 	-$(RECURSIVE_CP) $(srcdir)/src/contrib $(DISTNAME)/src
 	$(MKDIR) $(DISTNAME)/src/login_templates.generic
-	$(MKDIR) $(DISTNAME)/src/login_templates.generic/images
+	$(MKDIR) $(DISTNAME)/src/login_templates.generic/media
 	$(CP) $(LOGIN_TEMPLATES) $(DISTNAME)/src/login_templates.generic
-	$(CP) $(LOGIN_IMAGES) $(DISTNAME)/src/login_templates.generic/images
+	$(CP) $(LOGIN_MEDIA) $(DISTNAME)/src/login_templates.generic/media
 	$(CP) $(DOCS) $(DISTNAME)/doc
 	$(CP) $(CONFIGURE_FILES) $(DISTNAME)
 	$(CP) $(SRC_CONFIGURE_FILES) $(DISTNAME)/src
