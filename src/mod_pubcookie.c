@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.202 2006-06-13 16:30:26 dors Exp $
+ * $Id: mod_pubcookie.c,v 1.203 2006-06-21 20:13:46 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -817,6 +817,7 @@ static int auth_failed_handler (request_rec * r,
     apr_port_t port;
     char *post_data;
     char vstr[4];
+    char *b64uri;
 
     ap_log_rerror (PC_LOG_DEBUG, r, "auth_failed_handler: hello");
 
@@ -892,6 +893,18 @@ static int auth_failed_handler (request_rec * r,
     sprintf (vstr, "%-2.2s%c", PBC_VERSION,
              scfg->crypt_alg == 'd' ? '\0' : scfg->crypt_alg);
 
+    if (scfg->use_post) {
+        b64uri = ap_pcalloc (p, (strlen (mr->uri) + 3) / 3 * 4 + 1);
+        libpbc_base64_encode (p, (unsigned char *) mr->uri,
+                              (unsigned char *) b64uri, strlen (mr->uri));
+        ap_log_rerror (PC_LOG_DEBUG, r,
+                       "Post URI before encoding length %d, string: %s",
+                       strlen (mr->uri), mr->uri);
+        ap_log_rerror (PC_LOG_DEBUG, r,
+                       "Post URI after encoding length %d, string: %s",
+                       strlen (b64uri), b64uri);
+    } else b64uri = ap_pstrdup(p, mr->uri);
+
     ap_snprintf (g_req_contents, PBC_4K - 1,
                  "%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c",
                  PBC_GETVAR_APPSRVID,
@@ -907,7 +920,7 @@ static int auth_failed_handler (request_rec * r,
                  PBC_GETVAR_HOST,
                  host,
                  PBC_GETVAR_URI,
-                 mr->uri,
+                 b64uri,
                  PBC_GETVAR_ARGS,
                  args,
                  PBC_GETVAR_REAL_HOST,
@@ -3415,6 +3428,8 @@ static char *verify_url(request_rec *r, char *in, int ec)
     int n;
     char *sa, *e, *enc;
     char *s = in;
+    char *dpath;
+    int dpathl, sl;
 
     if (!s) return (NULL);
 
@@ -3436,6 +3451,22 @@ static char *verify_url(request_rec *r, char *in, int ec)
     }
     if (*s=='\0') return (in);
     if (*s++!='/') return (NULL);
+
+    /* decode the path */
+    
+    sl = strlen(s);
+    dpath = ap_palloc (r->pool, sl);
+    dpathl = strlen(s);
+    ap_log_rerror (PC_LOG_DEBUG, r, "verify-url decoding: %s", s);
+    if (!libpbc_base64_decode (r->pool, (unsigned char *) s,
+                                 (unsigned char *) dpath, &dpathl)) {
+          ap_log_rerror (PC_LOG_ERR, r,
+                         "DEC path: libpbc_base64_decode() failed");
+    }
+    if (*dpath=='/') dpath++;
+    strncpy(s, dpath, sl);
+    ap_log_rerror (PC_LOG_DEBUG, r, "verify-url path is: %s", s);
+    
 
     /* see if we have to encode anything in the path */
 
