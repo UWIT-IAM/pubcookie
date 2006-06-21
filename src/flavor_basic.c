@@ -25,7 +25,7 @@
  *   will pass l->realm to the verifier and append it to the username when
  *   'append_realm' is set
  *
- * $Id: flavor_basic.c,v 1.82 2006-03-15 06:46:16 willey Exp $
+ * $Id: flavor_basic.c,v 1.83 2006-06-21 17:23:11 dors Exp $
  */
 
 
@@ -809,15 +809,6 @@ static login_result process_basic (pool * p,
             rcode = FLB_BAD_AUTH;
         }
 
-        /* Auth request entry. */
-        /* If reauth, check time limit */
-    } else if (l->session_reauth &&
-               ((l->session_reauth == 1) ||
-                (c
-                 && (c->create_ts + (l->session_reauth) < pbc_time (NULL))))) {
-        *errstr = "reauthentication required";
-        rcode = FLB_REAUTH;
-
         /* If the pinit flag is set, show a pinit login page */
     } else if (l->pinit == PBC_TRUE) {
         *errstr = "pinit";
@@ -845,6 +836,15 @@ static login_result process_basic (pool * p,
                && c->creds != also_allow_cred) {
         *errstr = "cached credentials wrong flavor";
         rcode = FLB_CACHE_CREDS_WRONG;
+
+        /* Auth request entry. */
+        /* If reauth, check time limit */
+    } else if (l->session_reauth &&
+               ((l->session_reauth == 1) ||
+                (c
+                 && (c->create_ts + (l->session_reauth) < pbc_time (NULL))))) {
+        *errstr = "reauthentication required";
+        rcode = FLB_REAUTH;
 
     } else {                    /* valid login cookie */
         pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
