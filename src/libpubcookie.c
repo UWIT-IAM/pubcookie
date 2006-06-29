@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.90 2006-03-08 21:53:49 fox Exp $
+ * $Id: libpubcookie.c,v 2.91 2006-06-29 21:05:43 willey Exp $
  */
 
 
@@ -567,7 +567,6 @@ pbc_cookie_data *libpbc_destringify_cookie_data (pool * p,
 {
 
     (*cookie_data).broken.user[PBC_USER_LEN - 1] = '\0';
-    (*cookie_data).broken.version[PBC_VER_LEN - 1] = '\0';
     (*cookie_data).broken.appid[PBC_APP_ID_LEN - 1] = '\0';
     (*cookie_data).broken.appsrvid[PBC_APPSRV_ID_LEN - 1] = '\0';
     return cookie_data;
@@ -663,6 +662,7 @@ int libpbc_get_crypt_index (pool * p)
 /*                                                                            */
 void libpbc_populate_cookie_data (pool * p, pbc_cookie_data * cookie_data,
                                   unsigned char *user,
+                                  unsigned char *version,
                                   unsigned char type,
                                   unsigned char creds,
                                   int pre_sess_token,
@@ -676,8 +676,8 @@ void libpbc_populate_cookie_data (pool * p, pbc_cookie_data * cookie_data,
 
     strncpy ((char *) (*cookie_data).broken.user, (const char *) user,
              PBC_USER_LEN - 1);
-    strncpy ((char *) (*cookie_data).broken.version, PBC_VERSION,
-             PBC_VER_LEN - 1);
+    strncpy ((char *) (*cookie_data).broken.version, (const char *) version,
+             PBC_VER_LEN);
     (*cookie_data).broken.type = type;
     (*cookie_data).broken.creds = creds;
     (*cookie_data).broken.pre_sess_token = pre_sess_token;
@@ -748,14 +748,16 @@ unsigned char *libpbc_sign_bundle_cookie (pool * p,
 /* this is the call used for creating G and S cookies            */
 unsigned char *libpbc_get_cookie (pool * p,
                                   const security_context * context,
-                                  unsigned char *user, unsigned char type,
+                                  unsigned char *user, 
+                                  unsigned char *version,
+ 				  unsigned char type,
                                   unsigned char creds, int pre_sess_token,
                                   unsigned char *appsrvid,
                                   unsigned char *appid, const char *peer,
                                   const char use_granting, char alg)
 {
 
-    return (libpbc_get_cookie_with_expire (p, context, user,
+    return (libpbc_get_cookie_with_expire (p, context, user, version,
                                            type,
                                            creds,
                                            pre_sess_token,
@@ -777,6 +779,7 @@ unsigned char *libpbc_get_cookie (pool * p,
 unsigned char *libpbc_get_cookie_with_expire (pool * p,
                                               const security_context *
                                               context, unsigned char *user,
+                                              unsigned char *version,
                                               unsigned char type,
                                               unsigned char creds,
                                               int pre_sess_token,
@@ -798,7 +801,7 @@ unsigned char *libpbc_get_cookie_with_expire (pool * p,
     libpbc_augment_rand_state (p, user, PBC_USER_LEN);
 
     cookie_data = libpbc_init_cookie_data (p);
-    libpbc_populate_cookie_data (p, cookie_data, user, type, creds,
+    libpbc_populate_cookie_data (p, cookie_data, user, version, type, creds,
                                  pre_sess_token, create, expire, appsrvid,
                                  appid);
     cookie_string = libpbc_stringify_cookie_data (p, cookie_data);

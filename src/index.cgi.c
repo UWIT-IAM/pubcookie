@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.176 2006-06-13 19:39:52 jjminer Exp $
+ * $Id: index.cgi.c,v 1.177 2006-06-29 21:05:43 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -856,7 +856,17 @@ int expire_login_cookie (pool * p, const security_context * context,
         user = c->user;
     }
 
-    l_res = create_cookie (p, context, urluser = url_encode (p, user), urlappsrvid = url_encode (p, "expired"), urlappid = url_encode (p, "expired"), PBC_COOKIE_TYPE_L, PBC_CREDS_NONE, 23, 0, pbc_time (NULL), l_cookie, NULL,    /* sending it to myself */
+    l_res = create_cookie (p, 
+                           context, urluser = url_encode (p, user), 
+                           PBC_VERSION, 
+                           urlappsrvid = url_encode (p, "expired"), 
+                           urlappid = url_encode (p, "expired"), 
+                           PBC_COOKIE_TYPE_L, 
+                           PBC_CREDS_NONE, 
+                           23, 0, 
+       			   pbc_time (NULL), 
+       			   l_cookie,
+       			   NULL,    /* sending it to myself */
                            PBC_4K, PBC_DEF_CRYPT);
 
     if (urluser != NULL)
@@ -2677,6 +2687,7 @@ int set_l_cookie (pool * p, const security_context * context,
 
     l_res = create_cookie (p, context,
                            user = url_encode (p, l->user),
+                           PBC_VERSION,
                            appsrvid = url_encode (p, l->appsrvid),
                            appid = url_encode (p, l->appid),
                            PBC_COOKIE_TYPE_L,
@@ -2742,6 +2753,7 @@ void print_redirect_page (pool * p, const security_context * context,
     cgiFormEntry *cur;
     cgiFormEntry *next;
     char *redirect_final_trunc = NULL;
+    char version[PBC_VER_LEN];
 
     char *user;
     char *appsrvid;
@@ -2760,12 +2772,22 @@ void print_redirect_page (pool * p, const security_context * context,
         abend (p, "out of memory");
     }
 
+    /* set protocol version */
+    strncpy (version, PBC_VERSION, 2);
+
+    /* if force reath was requested mark the 
+       invisible char in the version string */
+    if ( l->session_reauth ) 
+        version[3] = 'F';
+    else
+        version[3] = 'N';
 
     /* since the flavor responsible for 'creds_from_greq' returned
        LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'
        was successful. */
 
     g_res = create_cookie (p, context, user = url_encode (p, l->user),
+                           version,
                            appsrvid = url_encode (p, l->appsrvid),
                            appid = url_encode (p, l->appid),
                            PBC_COOKIE_TYPE_G,
@@ -3200,6 +3222,7 @@ login_rec *verify_unload_login_cookie (pool * p,
 
 int create_cookie (pool * p, const security_context * context,
                    char *user_buf,
+                   char *version,
                    char *appsrvid_buf,
                    char *appid_buf,
                    char type,
@@ -3264,7 +3287,7 @@ int create_cookie (pool * p, const security_context * context,
         create = pbc_time (NULL);
 
     cookie_local = (char *)
-        libpbc_get_cookie_with_expire (p, context, user, type, creds,
+        libpbc_get_cookie_with_expire (p, context, user, version, type, creds,
                                        pre_sess_tok, create, expire,
                                        appsrvid, appid, peer,
                                        (peer ? 1 : 0), alg);

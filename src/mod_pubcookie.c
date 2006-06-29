@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.203 2006-06-21 20:13:46 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.204 2006-06-29 21:05:43 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -551,6 +551,7 @@ static void set_session_cookie (request_rec * r,
         cookie = libpbc_get_cookie (p,
                                     scfg->sectext,
                                     (unsigned char *) rr->user,
+                                    PBC_VERSION,
                                     PBC_COOKIE_TYPE_S,
                                     rr->creds,
                                     (cfg->session_reauth < 0) ? 23 : 24,
@@ -981,6 +982,7 @@ static int auth_failed_handler (request_rec * r,
         pre_s = (char *) libpbc_get_cookie (p,
                                             scfg->sectext,
                                             (unsigned char *) "presesuser",
+                                            PBC_VERSION,
                                             PBC_COOKIE_TYPE_PRE_S,
                                             PBC_CREDS_NONE,
                                             pre_sess_tok,
@@ -1982,6 +1984,17 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                     return HTTP_UNAUTHORIZED;
                 }
             }
+        }
+
+        /* make sure force reauth requests actually get a reauth */
+        if ( cfg->session_reauth > 0 
+             && (*cookie_data).broken.version[3] != 'F' ) {
+        
+            ap_log_rerror (PC_LOG_INFO, r,
+                               "Force reauth didn't get a re-auth: %c", (*cookie_data).broken.version[3]);
+            rr->failed = PBC_BAD_AUTH;
+            rr->redir_reason_no = PBC_RR_NEW_REAUTH;
+            return OK;
         }
 
         if (libpbc_check_exp
