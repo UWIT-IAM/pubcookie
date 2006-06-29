@@ -16,7 +16,7 @@
  */
 
 /*
-     $Id: pbc_config.h,v 1.109 2006-02-23 00:46:33 willey Exp $
+     $Id: pbc_config.h,v 1.110 2006-06-29 21:15:10 willey Exp $
  */
 
 #ifndef PUBCOOKIE_CONFIG
@@ -255,6 +255,10 @@ document.write(\"<P>Your browser should move to the next page in a few seconds. 
 #define PBC_BASIC_CRED_ID '1'
 #define PBC_GETCRED_CRED_ID '2'
 #define PBC_UWSECURID_CRED_ID '3'
+
+/* stealing chars from the version space to use for other things */
+#define PBC_VERSION_REAUTH_YES 'R'
+#define PBC_VERSION_REAUTH_NO  'N'
 
 /* macros to support older version of apache */
 

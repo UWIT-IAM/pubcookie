@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.177 2006-06-29 21:05:43 willey Exp $
+ * $Id: index.cgi.c,v 1.178 2006-06-29 21:15:10 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2778,9 +2778,9 @@ void print_redirect_page (pool * p, const security_context * context,
     /* if force reath was requested mark the 
        invisible char in the version string */
     if ( l->session_reauth ) 
-        version[3] = 'F';
+        version[3] = PBC_VERSION_REAUTH_YES;
     else
-        version[3] = 'N';
+        version[3] = PBC_VERSION_REAUTH_NO;
 
     /* since the flavor responsible for 'creds_from_greq' returned
        LOGIN_OK, we tell the application that it's desire for 'creds_from_greq'

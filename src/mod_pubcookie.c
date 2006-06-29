@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.204 2006-06-29 21:05:43 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.205 2006-06-29 21:15:10 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1988,7 +1988,7 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
 
         /* make sure force reauth requests actually get a reauth */
         if ( cfg->session_reauth > 0 
-             && (*cookie_data).broken.version[3] != 'F' ) {
+             && (*cookie_data).broken.version[3] != PBC_VERSION_REAUTH_YES ) {
         
             ap_log_rerror (PC_LOG_INFO, r,
                                "Force reauth didn't get a re-auth: %c", (*cookie_data).broken.version[3]);
