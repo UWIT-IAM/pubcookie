@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.60 2006-06-13 16:52:51 dors Exp $
+//  $Id: PubCookieFilter.cpp,v 1.61 2006-06-30 21:01:38 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -1704,6 +1704,15 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			(*cookie_data).broken.user  ,(*cookie_data).broken.version  ,(*cookie_data).broken.appsrvid,
 			(*cookie_data).broken.appid,(*cookie_data).broken.type     ,(*cookie_data).broken.creds,
 			(*cookie_data).broken.create_ts,(*cookie_data).broken.last_ts);
+
+		// check for reauth if we requested it
+		if( (p->session_reauth>0) && ((*cookie_data).broken.version[3]==PBC_VERSION_REAUTH_NO) ) {
+			filterlog(p, LOG_INFO,"[Pubcookie_User] Required reauth didn't happen, version=%s", 
+				(*cookie_data).broken.version);
+			p->failed = PBC_BAD_G_STATE;
+			pbc_free(p, cookie_data);
+			return OK;
+		}
 
 		strcpy(p->user,(const char *)(*cookie_data).broken.user);
 
