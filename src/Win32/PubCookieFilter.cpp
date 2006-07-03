@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.61 2006-06-30 21:01:38 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.62 2006-07-03 21:15:47 dors Exp $
 //
 
 //#define COOKIE_PATH
@@ -1854,7 +1854,8 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 			else {
 				cookie = libpbc_get_cookie(p,
 					p->sectext,
-					(unsigned char *)p->user, 
+					(unsigned char *)p->user,
+					(unsigned char *)PBC_VERSION,
 					PBC_COOKIE_TYPE_S,
 					p->AuthType,
 					23,
