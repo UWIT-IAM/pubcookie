@@ -56,6 +56,20 @@
 
                   <h4><a name="new">What's New</a></h4>
 
+                  <p>Significant improvements and changes included in Pubcookie 3.3.1:</p>
+
+                  <ul>
+                  <li>Added <a href="mod_pubcookie-directives.html#PubcookieCatenateAppIDs">PubcookieCatenateAppIDs</a> directive</li>
+                  <li>Improved Makefile for Apache 2.2 builds.</li>
+                  <li>Modified session reauthentication messaging. The module now verifies that the login cgi handled a reauthentication request
+                      when session reauthentication is configured. (Requires 3.3.1 or higher login server.)
+                  <li>Fixed bug in AES encryption mode that causes session cookies to be unreadable when PubcookieInactiveExpire
+                      is on. </li>
+                  <li>Modified the module's startup process such that it halts if security initialization fails (e.g.,
+                      PubcookieSessionCertFile doesn't exist).</li>
+
+                  </ul>
+
                   <p>Significant improvements and changes included in Pubcookie 3.3.0a:</p>
 
                   <ul>

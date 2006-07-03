@@ -66,6 +66,17 @@
 
 		<h4><a name="news">What's New</a></h4>
 
+                <p>Significant changes in Pubcookie 3.3.1:</p>
+
+                <ul>
+                    <li><p><b>Fixed duplicate HTTP header values.</b> Replaced AddHeader() with SetHeader() in the ISAPI filter
+                    to eliminate duplicate HTTP Header values. </p></li>
+
+                    <li><p><b>Modified session reauthenticaiton messaging.</b> The filter now verifies that the login cgi handled a
+                    reauthentication request when session reauthentication is configured. (Requires 3.3.1 or higher login server.)</p></li>
+
+                </ul>
+
                 <p>Significant changes in Pubcookie 3.3.0a:</p>
 
                 <ul>

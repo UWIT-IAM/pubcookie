@@ -79,6 +79,27 @@ local login server.</p>
 <h4><a name="new">What's New</a></h4>
 
 <p>Significant improvements and changes to the login server components included in 
+Pubcookie 3.3.1:</p>
+
+<ul>
+
+<li>New default <a href="#templates">login CGI templates</a> with
+    more standard XHTML, CSS, and utf-8 encoding.</li>
+<li>Added <a
+    href="config.html#clear_username_at_logout"><tt>clear_username_at_logout</tt></a>
+    site policy to login cgi to control whether the username is cleared
+    on logout.</li>
+<li>Modified session reauthentication messaging. The login cgi now includes in the granting
+    message whether or not it handled a reauthentication request.</li>
+<li>Fixed null pointer usage in LDAP verifier when version is empty.</li>
+<li>Modified login cgi to use more consistent audit logging strings.
+    Prepended the "first kiss" timestamp to authentication success and
+    failure log file messages.</li>
+<li>Modified login cgi to allow 'http:' and 'https:' in app server uri
+    query strings without percent encoding the colon.</li>
+</ul>
+
+<p>Significant improvements and changes to the login server components included in 
 Pubcookie 3.3.0a:</p>
 
 <ul>
@@ -130,17 +151,32 @@ Previously, it only checked the first one, which might be invalid.</li>
 
 <h4><a name="upgrading">Upgrading &amp; Compatibility</a></h4>
 
-<p>In general, the login server components can be built and installed on a 
-live system (if you do that sort of thing) while safely maintaining your existing 
-configuration file (<tt>PREFIX/config</tt>) and login templates. Running <tt>make
-install</tt> will not overwrite these files, but it will install new keyserver, 
-keyclient, and login cgi binaries into <tt>PREFIX/keyserver</tt>, 
-<tt>PREFIX/keyclient</tt>, and <tt>PREFIX/login/index.cgi</tt>, respectively. 
-A new sample configuration file is installed into 
-<tt>PREFIX/config.login.sample</tt>, and an updated set of generic login templates
-is installed into <tt>PREFIX/login_templates.default</tt>. Sites should compare 
-their current config file and current templates against the new ones and resolve
-significant differences before copying the new login cgi in production.</p>
+<p>In general, the login server components can be upgraded (built and
+installed) on a live system while safely maintaining your existing
+configuration file (<tt>PREFIX/config</tt>) and login templates
+(<tt>PREFIX/login_templates</tt>).</p>
+
+<p>Running <tt>make install</tt> on such a system will do the
+following:</p>
+
+<ul>
+
+<li>install new keyserver, keyclient, and login cgi binaries into
+<tt>PREFIX/keyserver</tt>, <tt>PREFIX/keyclient</tt>, and
+<tt>PREFIX/login/index.cgi</tt>, respectively.</li>
+
+<li>install a set of (possibly updated) generic login templates is
+installed into <tt>PREFIX/login_templates.default</tt> but <b>not</b>
+into <tt>PREFIX/login_templates</tt> if it already exists.</li>
+
+<li>install a new sample configuration file
+(<tt>PREFIX/config.login.sample</tt>).</li>
+
+</ul>
+
+<p>Sites should compare their current config file and current templates
+against the new ones and resolve significant differences before copying
+the new login cgi and other binaries in production locations.</p>
 
 <p>Here are some additional compatibility notes for upgrading between specific 
 versions:</p>
@@ -673,21 +709,29 @@ primary concern in deploying it should be to create a simple URL that's
 easy for users to recognize and trust with their password.</p>
 
 <p>The most common approach is to copy it from
-<tt>PREFIX/login/index.cgi</tt> to the server's root directory, resulting
-in a URL such as <i>https://weblogin.example.edu/</i>. 
+<tt>PREFIX/login/index.cgi</tt> to your Apache server's root directory,
+resulting in a URL such as <i>https://weblogin.example.edu/</i>. 
+
+<p>The default HTML templates use relative links to locate the default
+stylesheet and inline images. These files are found in a <i>media</i>
+subdirectory. Copy the <tt>PREFIX/login/media</tt> directory to the same
+location as the login cgi. It should include one stylesheet file and
+three GIF images.</p>
 
 <p>Refer to <a href="#apacheconfig">Appendix A: Apache Configuration</a>
 if you're unfamiliar with the directives that control how Apache detects
-and handles cgi scripts, particularly as a directory index.</p>
+and handles cgi scripts, particularly as a directory index like
+<tt>index.cgi</tt>.</p>
 
 <h4><a name="pinit">Testing Login CGI</a></h4>
 
 <p>The login cgi can be opened directly in a browser. This is sometimes
 called a <i>pinit</i> (for Pubcookie init, like kinit) since
 authentication is requested without being tied to an application. It's a
-good way to test your current config file and verifier. <i>Go ahead and
-try it now.</i> The login page you see comes from
-<tt>PREFIX/login_templates/login_pinit</tt>.</p>
+good way to test your current config file and verifier. Go ahead and
+try it now. The login page you see comes from the
+<tt>PREFIX/login_templates/login</tt> and
+<tt>PREFIX/login_templates/login_pinit</tt> templates.</p>
 
 <p>If authentication succeeds, congratulations, you now can deploy an
 application server using the <a
@@ -715,27 +759,24 @@ error messages. Keyclient uses standard output for its messages.</p>
 
 <h4><a name="templates">Login CGI Templates</a></h4>
 
-<p>The login cgi creates login, logout, error, and redirect pages using
-HTML templates it reads from the <tt>PREFIX/login_templates</tt>
-directory. An alternative location can be defined using the <a
-href="config.html#template_root"><tt>template_root</tt></a> config file
-variable.</p>
+<p>The login cgi reads HTML templates from the
+<tt>PREFIX/login_templates</tt> directory in order to create login,
+logout, error, and redirect pages.</p>
 
-<p>Edit these templates to suit the naming and web design needs of your
-login server. A set of generic templates is copied into place during
-installation. A backup set is also copied to
+<p>The login cgi will read from an alternative location if the <a
+href="config.html#template_root"><tt>template_root</tt></a> config file
+variable is defined.</p>
+
+<p>A set of generic, sample templates is copied into place during
+initial installation. A backup set is also copied to
 <tt>PREFIX/login_templates.default</tt>.</p>
+
+<p>Edit these templates (which represent "Example University") to brand
+the login server for your organization and to meet local web design
+standards.</p>
 
 <p>Refer to the <a href="templates.html">login cgi template
 reference</a> for descriptions of each template.</p>
-
-<p>Note: For comparison purposes, templates (of some vintage) from
-Carnegie Mellon University and the Univerisity of Washington are
-provided in the distribution. See <tt>src/login_templates.cmu</tt> and
-<tt>src/login_templates.uw</tt>. Be warned, however, that the syntax
-for variable substitution within the templates has changed over time,
-and therefore the CMU and UWash templates may be slightly
-out-of-date.</p>
 
 <h4><a name="loginmsgs">Custom Login Messages</a></h4>
 
@@ -1183,7 +1224,7 @@ Copyright 1999-2006, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.43 2006-03-01 19:29:05 willey Exp $
+$Id: install-login.html,v 1.44 2006-07-03 22:11:41 dors Exp $
 </pre>
 </body>
 
