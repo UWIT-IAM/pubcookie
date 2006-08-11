@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.206 2006-06-30 13:55:22 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.207 2006-08-11 20:55:57 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -207,6 +207,18 @@ void dump_req_rec (request_rec * r, pubcookie_req_rec * rr)
                 stop_message: %s", rr->failed, rr->has_granting, rr->creds, rr->redir_reason_no, (rr->stop_message == NULL ? "" : (char *) rr->stop_message));
 
 }
+
+/* Headers in ap2 must be accumulated and set in the output filter.
+   ap1 can write the headers directly */
+
+#ifdef APACHE2
+#define HDRS_OUT rr->hdr_out
+#define HDRS_ERR rr->hdr_err
+#else
+#define HDRS_OUT r->headers_out
+#define HDRS_ERR r->err_headers_out
+#endif
+
 
 /* Recover the currect request or server rec from a pool.
    Note that either of these can return NULL.
@@ -504,27 +516,30 @@ unsigned char *appsrvid (request_rec * r)
 /* make sure agents don't cache the redirect */
 void set_no_cache_headers (request_rec * r)
 {
+    pubcookie_req_rec *rr;
     pool *p = r->pool;
 
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
 #ifdef APACHE2
     char *datestr = apr_palloc (p, APR_RFC822_DATE_LEN);
     apr_rfc822_date (datestr, r->request_time);
-    ap_table_set (r->headers_out, "Expires", datestr);
-    ap_table_set (r->err_headers_out, "Expires", datestr);
+    ap_table_set (HDRS_OUT, "Expires", datestr);
+    ap_table_set (HDRS_ERR, "Expires", datestr);
 #else
-    ap_table_set (r->headers_out, "Expires", ap_gm_timestr_822 (r->pool,
+    ap_table_set (HDRS_OUT, "Expires", ap_gm_timestr_822 (r->pool,
                                                                 r->
                                                                 request_time));
-    ap_table_set (r->err_headers_out, "Expires", ap_gm_timestr_822 (r->pool,
+    ap_table_set (HDRS_ERR, "Expires", ap_gm_timestr_822 (r->pool,
                                                                 r->
                                                                 request_time));
 #endif
-    ap_table_set (r->headers_out, "Cache-Control",
+    ap_table_set (HDRS_OUT, "Cache-Control",
                   "no-store, no-cache, must-revalidate");
-    ap_table_set (r->err_headers_out, "Cache-Control",
+    ap_table_set (HDRS_ERR, "Cache-Control",
                   "no-store, no-cache, must-revalidate");
-    ap_table_set (r->headers_out, "Pragma", "no-cache");
-    ap_table_set (r->err_headers_out, "Pragma", "no-cache");
+    ap_table_set (HDRS_OUT, "Pragma", "no-cache");
+    ap_table_set (HDRS_ERR, "Pragma", "no-cache");
 
 }
 
@@ -565,7 +580,7 @@ static void set_session_cookie (request_rec * r,
                                                         appid (r)),
                               cookie, "/", secure_cookie);
 
-    ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+    ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
 
     if (firsttime && rr->cred_transfer) {
         char *blob = NULL;
@@ -603,7 +618,7 @@ static void set_session_cookie (request_rec * r,
                                                             PBC_CRED_COOKIENAME,
                                                             appid (r)),
                                   base64, "/", secure_cookie);
-        ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+        ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
 
         /* xxx eventually when these are just cookie extensions, they'll
            automatically be copied from the granting cookie to the 
@@ -617,11 +632,14 @@ void clear_granting_cookie (request_rec * r)
     char *new_cookie;
     pool *p = r->pool;
     pubcookie_server_rec *scfg;
+    pubcookie_req_rec *rr;
 
     scfg =
         (pubcookie_server_rec *) ap_get_module_config (r->server->
                                                        module_config,
                                                        &pubcookie_module);
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
 
     if (scfg->use_post)
         new_cookie = ap_psprintf (p, "%s=; path=/; expires=%s;%s",
@@ -636,7 +654,7 @@ void clear_granting_cookie (request_rec * r)
     ap_log_rerror (PC_LOG_DEBUG, r,
                    "clear_granting_cookie: setting cookie: %s",
                    new_cookie);
-    ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+    ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
 }
 
 /* clear cred transfer cookie */
@@ -644,6 +662,10 @@ void clear_transfer_cookie (request_rec * r)
 {
     char *new_cookie;
     pool *p = r->pool;
+    pubcookie_req_rec *rr;
+
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
 
     new_cookie = ap_psprintf (p,
                               "%s=; domain=%s; path=/; expires=%s;%s",
@@ -651,7 +673,7 @@ void clear_transfer_cookie (request_rec * r)
                               PBC_ENTRPRS_DOMAIN,
                               EARLIEST_EVER, secure_cookie);
 
-    ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+    ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
 }
 
 /** clear pre session cookie */
@@ -659,13 +681,17 @@ void clear_pre_session_cookie (request_rec * r)
 {
     char *new_cookie;
     pool *p = r->pool;
+    pubcookie_req_rec *rr;
+
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
 
     new_cookie = ap_psprintf (p,
                               "%s=; path=/; expires=%s;%s",
                               PBC_PRE_S_COOKIENAME,
                               EARLIEST_EVER, secure_cookie);
 
-    ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+    ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
 
 }
 
@@ -689,7 +715,7 @@ void clear_session_cookie (request_rec * r)
                               PBC_CLEAR_COOKIE, EARLIEST_EVER,
                               secure_cookie);
 
-    ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+    ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
 
     if (rr->cred_transfer) {
         /* extra cookies (need cookie extensions) */
@@ -701,7 +727,7 @@ void clear_session_cookie (request_rec * r)
                                   PBC_CLEAR_COOKIE,
                                   EARLIEST_EVER, secure_cookie);
 
-        ap_table_add (r->headers_out, "Set-Cookie", new_cookie);
+        ap_table_add (HDRS_OUT, "Set-Cookie", new_cookie);
     }
 }
 
@@ -789,6 +815,20 @@ request_rec *top_rrec (request_rec * r)
     return mr;
 }
 
+#ifdef APACHE2
+/* Append add the entries in 'src' to the 'dest' table */
+static void append_to_table(request_rec *r, apr_table_t *dest, apr_table_t *src)
+{
+   const apr_array_header_t *srce = apr_table_elts(src);
+   int i;
+ 
+   for (i=0; i<srce->nelts; i++) {
+      apr_table_entry_t *ent = &((apr_table_entry_t *) (srce->elts))[i];
+      ap_log_rerror (PC_LOG_DEBUG, r, " .. adding header %s", ent->key);
+      apr_table_add(dest, ent->key, ent->val);
+   }
+}
+#endif
 
 /* Herein we deal with the redirect of the request to the login server        */
 /*    if it was only that simple ...                                          */
@@ -995,7 +1035,7 @@ static int auth_failed_handler (request_rec * r,
                                     PBC_PRE_S_COOKIENAME,
                                     pre_s, "/", secure_cookie);
 
-        ap_table_add (r->headers_out, "Set-Cookie", pre_s_cookie);
+        ap_table_add (HDRS_OUT, "Set-Cookie", pre_s_cookie);
     }
 
     /* load and send the header */
@@ -1041,17 +1081,23 @@ static int auth_failed_handler (request_rec * r,
         ap_log_rerror (PC_LOG_DEBUG, r,
                        "g_req length %d cookie: %s", strlen (g_req_cookie),
                        g_req_cookie);
-        ap_table_add (r->headers_out, "Set-Cookie", g_req_cookie);
+        ap_table_add (HDRS_OUT, "Set-Cookie", g_req_cookie);
 
         refresh_e = ap_os_escape_path (p, refresh, 0);
 
 #ifdef REDIRECT_IN_HEADER
         /* warning, this will break some browsers */
         if (!(tenc || lenp))
-            ap_table_add (r->headers_out, "Refresh", refresh_e);
+            ap_table_add (HDRS_OUT, "Refresh", refresh_e);
 #endif
 
     }
+
+#ifdef APACHE2
+    /* Add our headers */
+    append_to_table(r, r->headers_out, rr->hdr_out);
+    append_to_table(r, r->err_headers_out, rr->hdr_err);
+#endif
 
     ap_send_http_header (r);
 
@@ -2311,6 +2357,13 @@ static int pubcookie_post_read (request_rec * r)
         printf ("hparse: is post response\n");
         r->handler = "pubcookie-post-reply";
     }
+
+#ifdef APACHE2
+    /* Add headers tables */
+    rr->hdr_out = ap_make_table(r->pool, 5);
+    rr->hdr_err = ap_make_table(r->pool, 5);
+#endif
+
     return DECLINED;
 }
 
@@ -3276,6 +3329,62 @@ static int pubcookie_cleanup (request_rec * r)
     return OK;
 }
 
+/* If apache2 add our headers in the output filter */
+
+#ifdef APACHE2
+
+static void set_output_filter(request_rec *r)
+{
+   ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie adding output filter");
+   ap_add_output_filter("PBC_HEADERS_OUT", NULL, r, r->connection);
+}
+
+static void set_error_filter(request_rec *r)
+{
+   ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie adding error filter");
+   ap_add_output_filter("PBC_HEADERS_ERR", NULL, r, r->connection);
+}
+
+static apr_status_t do_output_filter(ap_filter_t *f,
+                                             apr_bucket_brigade *in)
+{
+    request_rec *r = f->r;
+    pubcookie_req_rec *rr;
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
+
+    ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie output_filter: merging %d output headers",
+                   apr_table_elts(rr->hdr_out)->nelts);
+    append_to_table(r, r->headers_out, rr->hdr_out);
+
+    /* remove ourselves from the filter chain */
+    ap_remove_output_filter(f);
+
+    /* send the data up the stack */
+    return ap_pass_brigade(f->next,in);
+}
+
+static apr_status_t do_error_filter(ap_filter_t *f,
+                                             apr_bucket_brigade *in)
+{
+    request_rec *r = f->r;
+    pubcookie_req_rec *rr;
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
+
+    ap_log_rerror (PC_LOG_DEBUG, r, "error_filter: merging %d error headers",
+                   apr_table_elts(rr->hdr_err)->nelts);
+    append_to_table(r, r->err_headers_out, rr->hdr_err);
+
+    /* remove ourselves from the filter chain */
+    ap_remove_output_filter(f);
+
+    /* send the data up the stack */
+    return ap_pass_brigade(f->next,in);
+}
+
+#endif /* APACHE2 */
+
 
 /* Handle the post-method reply from the login server.
    Activated by:
@@ -3625,13 +3734,13 @@ static int login_reply_handler (request_rec * r)
 
     gr_cookie = ap_psprintf (p, "%s=%s; path=/;%s",
                              PBC_G_COOKIENAME, greply, secure_cookie);
-    ap_table_add (r->headers_out, "Set-Cookie", gr_cookie);
+    ap_table_add (HDRS_OUT, "Set-Cookie", gr_cookie);
 
     if (creply) {
         cr_cookie = ap_psprintf (p, "%s=%s; domain=%s; path=/;%s",
                                  PBC_CRED_TRANSFER_COOKIENAME, creply,
                                  PBC_ENTRPRS_DOMAIN, secure_cookie);
-        ap_table_add (r->headers_out, "Set-Cookie", cr_cookie);
+        ap_table_add (HDRS_OUT, "Set-Cookie", cr_cookie);
     }
 
 
@@ -3640,6 +3749,11 @@ static int login_reply_handler (request_rec * r)
         char *t;
         int needclick = 0;
 
+#ifdef APACHE2
+        /* Add our headers */
+        append_to_table(r, r->headers_out, rr->hdr_out);
+        append_to_table(r, r->err_headers_out, rr->hdr_err);
+#endif
         ap_send_http_header (r);
 
         post_data = ap_pstrdup (p, pdata);
@@ -3684,9 +3798,10 @@ static int login_reply_handler (request_rec * r)
         if (t=strchr(arg,'\r')) *t = '\0';
 
         /* Apache uses the error headers when we return a redirect */
-        ap_table_add (r->err_headers_out, "Set-Cookie", gr_cookie);
-        if (creply) ap_table_add (r->err_headers_out, "Set-Cookie", cr_cookie);
-        ap_table_add (r->headers_out, "Location", arg);
+        ap_table_add (HDRS_ERR, "Set-Cookie", gr_cookie);
+        if (creply) ap_table_add (HDRS_ERR, "Set-Cookie", cr_cookie);
+        ap_table_add (HDRS_OUT, "Location", arg);
+        ap_table_add (HDRS_ERR, "Location", arg);
         return (HTTP_MOVED_TEMPORARILY);
 
     }
@@ -3728,11 +3843,21 @@ module pubcookie_module = {
 
 static void register_hooks (pool * p)
 {
+    ap_register_output_filter("PBC_HEADERS_OUT", do_output_filter,
+                              NULL, AP_FTYPE_CONTENT_SET);
+    ap_register_output_filter("PBC_HEADERS_ERR", do_error_filter,
+                              NULL, AP_FTYPE_CONTENT_SET);
+
+
     ap_hook_post_config (pubcookie_init, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_check_user_id (pubcookie_user_hook, NULL, NULL,
                            APR_HOOK_FIRST);
     ap_hook_auth_checker (pubcookie_authz_hook, NULL, NULL,
                           APR_HOOK_FIRST);
+
+    ap_hook_insert_filter(set_output_filter, NULL, NULL, APR_HOOK_LAST);
+    ap_hook_insert_error_filter(set_error_filter, NULL, NULL, APR_HOOK_LAST);
+
     ap_hook_fixups (pubcookie_fixups, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_header_parser (pubcookie_hparse, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_log_transaction (pubcookie_cleanup, NULL, NULL,

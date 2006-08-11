@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.20 2006-05-16 18:08:01 willey Exp $
+    $Id: mod_pubcookie.h,v 2.21 2006-08-11 20:55:57 fox Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -126,6 +126,10 @@ typedef struct
     char *stop_message;
     char *cred_transfer;
     int cred_transfer_len;
+#ifdef APACHE2
+    table *hdr_out;
+    table *hdr_err;
+#endif
 }
 pubcookie_req_rec;
 
