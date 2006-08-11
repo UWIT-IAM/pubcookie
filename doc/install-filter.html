@@ -202,6 +202,11 @@
 
 		<ul>
 			<li>
+				<p>Define a Default Web site for IIS Instance ID 1 and verify that it is running. 
+                                The installer requires that IIS instance ID 1 is defined and running. (Yes, this
+                                can be an onerous prerequisite, which we intend to change in a future release.) 
+                                Also, on IIS 6.0, verify that the Default application pool is running.</p>
+			<li>
 				<p>Determine the location of your site's Pubcookie login server. The installer 
 				needs this URL during installation. You may also want to find out its version, 
 				so that you know what features it supports.</p>
@@ -271,8 +276,10 @@
 
 				<p><img src="images/welcome.jpg">
 
-				<p>Note: If the installer says, mysteriously, <i>"interrupted before Pubcookie3 could be completely installed"</i>,
-				click Finish and run it again.
+				<p>Note: If the installer says, mysteriously, <i>"The wizard was interrupted before Pubcookie3 could
+                                be completely installed"</i>, click Finish and run it again. (See Installer errors in the
+                                <a href="#problems">Known Problems</a> section below.)</p>
+
 
 			<li>
 				<p>Pubcookie is licensed under the Apache License, Version 2.0. 
@@ -315,6 +322,9 @@
 				as your initial Pubcookie configuration settings and installs a MMC snap-in
 				that adds Pubcookie configuration tabs to Properties dialogs within 
 				the IIS Manager.
+
+                                <p>Note: See Installer errors in the <a href="#problems">Known Problems</a> section 
+                                below if the installer is interrupted during installation.</p>
 
 			<li>
 				<p>Next, your IIS Service will be stopped.
@@ -431,7 +441,7 @@
 
 		<h4><a name="config">Pubcookie Configuration Overview</a></h4>
 
-                <p>Pubcookie dervies its behavior from configuration settings in the Windows registry.
+                <p>Pubcookie derives its behavior from configuration settings in the Windows registry.
 		Use the IIS Manager to view and manage these settings. They fall into two categories,
 		<i>Pubcookie Server Values</i> and <i>Pubcookie Directives</i>.
 
@@ -695,9 +705,21 @@
 
 		<h4><a name="problems">Known Problems</a></h4>
 
-		<p>Known problems with the Windows components in Pubcookie 3.3.0:</p>
+		<p>Known problems with the Windows components in Pubcookie 3.3.1:</p>
 
 		<ul>
+			<li>
+			<p><b>Windows Installer errors.</b> Pubcookie.msi is a rudimentary Windows installer package, so
+                        you might run into some quirks. It isn't understood why it sometimes doesn't proceed beyond the
+                        Welcome screen and says <i>"The wizard was interrupted before Pubcookie3 could be completely
+                        installed."</i> Be persistent here. Re-running the installer often enables it to proceed. (If
+                        you understand why, let us know.) The installer can also fail due to other reasons. If a web site
+                        is not defined and running for IIS Instance ID 1 (often the Default Web site) it will say: 
+                        <i>"Could not find a web site. Make sure that a web site has been defined in the Computer 
+                        Management MMC snap-in."</i> In IIS 6.0, if the Default application pool isn't started, the
+                        installer might say <i>"The wizard was interrupted before Pubcookie 3 could be completely
+                        installed..."</i> and roll back the installation.</p>
+
 			<li>
 			<p><b>Memory leaks.</b> Memory leaks have been observed on systems using the filter, causing the
 			inetinfo.exe (IIS 5) and w3wp.exe (IIS 6) processes to grow over time. This can be addressed on
@@ -732,8 +754,8 @@
 
 			<li>
 			<p><b>Requests to root level resources require a trailing slash.</b> Requests to folders and virtual
-                        directories at the root level of a web site require a trailing slash. Without it, the filter uses
-                        the default web site configuration and doesn't pick up the settings specific to the folder or virtual
+                        directories at the root level of a site require a trailing slash. Without it, the filter uses
+                        the default configuration and doesn't pick up the settings specific to the folder or virtual
                         directory. Until this is fixed in the filter, links and requests should always include the trailing slash.
                         (But that's good form anyway.)
 		</ul>
