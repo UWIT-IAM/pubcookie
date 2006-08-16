@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.208 2006-08-15 05:59:35 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.209 2006-08-16 19:10:32 willey Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1346,7 +1346,7 @@ static void pubcookie_init (server_rec * main_s, pool * pconf)
         /* libpubcookie initialization */
         ap_log_error (PC_LOG_DEBUG, s, "pubcookie_init: libpbc");
         if ( libpbc_pubcookie_init (p, &scfg->sectext) != PBC_OK ) {
-            ap_log_error (APLOG_MARK, APLOG_CRIT, 0, s,
+            ap_log_error (PC_LOG_EMERG, s,
                           "pubcookie_init: libpbc_pubcookie_init failed.");
             PC_INIT_FAIL;
         }
