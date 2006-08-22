@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.209 2006-08-16 19:10:32 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.210 2006-08-22 20:28:41 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -208,10 +208,15 @@ void dump_req_rec (request_rec * r, pubcookie_req_rec * rr)
 
 }
 
-/* Headers in ap2 must be accumulated and set in the output filter.
-   ap1 can write the headers directly */
+/* Apache 2.2.x headers must be accumulated and set in the output filter.
+   Apache 2.0.49+ also supports the filters as well.
+   In Apache 1.3.x and lesser 2.0.x we write the headers directly. */
 
-#ifdef APACHE2
+#if defined(APACHE2) && AP_MODULE_MAGIC_AT_LEAST(20020903,6)
+#define PBC_DEFERRED_HEADERS
+#endif
+
+#ifdef PBC_DEFERRED_HEADERS
 #define HDRS_OUT rr->hdr_out
 #define HDRS_ERR rr->hdr_err
 #else
@@ -815,7 +820,7 @@ request_rec *top_rrec (request_rec * r)
     return mr;
 }
 
-#ifdef APACHE2
+#ifdef PBC_DEFERRED_HEADERS
 /* Append add the entries in 'src' to the 'dest' table */
 static void append_to_table(request_rec *r, apr_table_t *dest, apr_table_t *src)
 {
@@ -1093,7 +1098,7 @@ static int auth_failed_handler (request_rec * r,
 
     }
 
-#ifdef APACHE2
+#ifdef PBC_DEFERRED_HEADERS
     /* Add our headers */
     append_to_table(r, r->headers_out, rr->hdr_out);
     append_to_table(r, r->err_headers_out, rr->hdr_err);
@@ -2358,7 +2363,7 @@ static int pubcookie_post_read (request_rec * r)
         r->handler = "pubcookie-post-reply";
     }
 
-#ifdef APACHE2
+#ifdef PBC_DEFERRED_HEADERS
     /* Add headers tables */
     rr->hdr_out = ap_make_table(r->pool, 5);
     rr->hdr_err = ap_make_table(r->pool, 5);
@@ -3331,7 +3336,7 @@ static int pubcookie_cleanup (request_rec * r)
 
 /* If apache2 add our headers in the output filter */
 
-#ifdef APACHE2
+#ifdef PBC_DEFERRED_HEADERS
 
 static void set_output_filter(request_rec *r)
 {
@@ -3385,7 +3390,7 @@ static apr_status_t do_error_filter(ap_filter_t *f,
     return ap_pass_brigade(f->next,in);
 }
 
-#endif /* APACHE2 */
+#endif /* PBC_DEFERRED_HEADERS */
 
 
 /* Handle the post-method reply from the login server.
@@ -3751,7 +3756,7 @@ static int login_reply_handler (request_rec * r)
         char *t;
         int needclick = 0;
 
-#ifdef APACHE2
+#ifdef PBC_DEFERRED_HEADERS
         /* Add our headers */
         append_to_table(r, r->headers_out, rr->hdr_out);
         append_to_table(r, r->err_headers_out, rr->hdr_err);
@@ -3845,20 +3850,21 @@ module pubcookie_module = {
 
 static void register_hooks (pool * p)
 {
+#ifdef PBC_DEFERRED_HEADERS
     ap_register_output_filter("PBC_HEADERS_OUT", do_output_filter,
                               NULL, AP_FTYPE_CONTENT_SET);
+    ap_hook_insert_filter(set_output_filter, NULL, NULL, APR_HOOK_LAST);
+
     ap_register_output_filter("PBC_HEADERS_ERR", do_error_filter,
                               NULL, AP_FTYPE_CONTENT_SET);
-
+    ap_hook_insert_error_filter(set_error_filter, NULL, NULL, APR_HOOK_LAST);
+#endif
 
     ap_hook_post_config (pubcookie_init, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_check_user_id (pubcookie_user_hook, NULL, NULL,
                            APR_HOOK_FIRST);
     ap_hook_auth_checker (pubcookie_authz_hook, NULL, NULL,
                           APR_HOOK_FIRST);
-
-    ap_hook_insert_filter(set_output_filter, NULL, NULL, APR_HOOK_LAST);
-    ap_hook_insert_error_filter(set_error_filter, NULL, NULL, APR_HOOK_LAST);
 
     ap_hook_fixups (pubcookie_fixups, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_header_parser (pubcookie_hparse, NULL, NULL, APR_HOOK_MIDDLE);
