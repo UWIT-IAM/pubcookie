@@ -39,8 +39,9 @@ directives, you must do the same for other Pubcookie directives. Otherwise,
 <li><a href="#PubcookieOnDemand">PubcookieOnDemand</a></li>
 <li><a href="#PubcookieAddlRequest">PubcookieAddlRequest</a></li>
 <li><a href="#PubcookieNoObscureCookies">PubcookieNoObscureCookies</a></li>
-<li><a href="#PubcookieNoBlank">PubcookieNoBlank</a></li>
+<li><a href="#PubcookieNoCleanCreds">PubcookieNoCleanCreds</a></li>
 <li><a href="#PubcookieEgdDevice">PubcookieEgdDevice</a></li>
+<li><a href="#PubcookieNoBlank">PubcookieNoBlank</a></li>
 <li><a href="#PubcookieSuperDebug">PubcookieSuperDebug</a></li>
 </ul>
 
@@ -576,6 +577,35 @@ rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
 exposed to other handlers. To hand session cookies to other handlers (such
 as CGI programs) set this directive.</p>
 
+<h3><a name="PubcookieNoCleanCreds">PubcookieNoCleanCreds directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel= 
+"Help"><strong>Syntax:</strong></a> PubcookieNoCleanCreds on | off<br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context"
+rel="Help"><strong>Context:</strong></a> server config, virtual host<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
+3.3.2 and higher and Apache 1.3 and later.</p>
+
+<p>By default mod_pubcookie runs a cleanup at the end of the request to
+remove all credentials left by flavor_getcred. With this directive
+enabled all credentials are left in place. This would be needed for an
+application having running mod_pubcookie for authentication only, and
+leaving all session handling to the application itself, thus not having
+mod_pubcookie in the handler stack.</p>
+
+<h3><a name="PubcookieEgdDevice">PubcookieEgdDevice directive</a></h3>
+
+<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
+"Help"><strong>Syntax:</strong></a> PubcookieEgdDevice <i>location</i><br>
+<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
+"Help"><strong>Context:</strong></a> server config, virtual host<br>
+ <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
+rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
+3.0 and higher and Apache 1.3 and later.</p>
+
+<p>Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</p>
+
 <h3><a name="PubcookieNoBlank">PubcookieNoBlank directive</a></h3>
 
 <p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
@@ -589,18 +619,6 @@ rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
 <p>This directive is deprecated in versions 3.2.1 and higher. Use the <a 
 href="#PubcookieNoObscureCookies">PubcookieNoObscureCookies</a> directive 
 instead.</p>
-
-<h3><a name="PubcookieEgdDevice">PubcookieEgdDevice directive</a></h3>
-
-<p><a href="http://www.apache.org/docs/mod/directive-dict.html#Syntax" rel=
-"Help"><strong>Syntax:</strong></a> PubcookieEgdDevice <i>location</i><br>
-<a href="http://www.apache.org/docs/mod/directive-dict.html#Context" rel=
-"Help"><strong>Context:</strong></a> server config, virtual host<br>
- <a href="http://www.apache.org/docs/mod/directive-dict.html#Compatibility"
-rel="Help"><strong>Compatibility:</strong></a> Versions of mod_pubcookie
-3.0 and higher and Apache 1.3 and later.</p>
-
-<p>Location of EGD socket (e.g. /dev/egd-pool) if your system lacks entropy.</p>
 
 <h3><a name="PubcookieSuperDebug">PubcookieSuperDebug directive</a></h3>
 
