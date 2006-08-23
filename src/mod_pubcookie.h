@@ -16,7 +16,7 @@
  */
 
 /*
-    $Id: mod_pubcookie.h,v 2.21 2006-08-11 20:55:57 fox Exp $
+    $Id: mod_pubcookie.h,v 2.22 2006-08-23 15:05:31 dors Exp $
  */
 
 #ifndef INCLUDED_MOD_PUBCOOKIE_H
@@ -88,6 +88,7 @@ typedef struct
     int dirdepth;
     int noblank;
     int catenate;		/* Added by ddj@cmu.edu on 2006/05/01 */
+    int no_clean_creds;
     char *login;
     unsigned char *appsrvid;
     char *authtype_names;       /* raw arg string from conf */

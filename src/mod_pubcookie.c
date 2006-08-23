@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.210 2006-08-22 20:28:41 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.211 2006-08-23 15:05:31 dors Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -180,7 +180,8 @@ void dump_server_rec (request_rec * r, pubcookie_server_rec * scfg)
 		login: %s\n\
 		appsrvid: %s\n\
 		authtype_names: %s\n\
-		use_post: %d\n", scfg->dirdepth, scfg->noblank, (scfg->login == NULL ? "" : scfg->login), (scfg->appsrvid == NULL ? "" : (char *) scfg->appsrvid), (scfg->authtype_names == NULL ? "" : (char *) scfg->authtype_names), scfg->use_post);
+		use_post: %d\n\
+        no_clean_creds: %d\n", scfg->dirdepth, scfg->noblank, (scfg->login == NULL ? "" : scfg->login), (scfg->appsrvid == NULL ? "" : (char *) scfg->appsrvid), (scfg->authtype_names == NULL ? "" : (char *) scfg->authtype_names), scfg->use_post, scfg->no_clean_creds);
 
 }
 
@@ -1437,6 +1438,8 @@ static void *pubcookie_server_merge (pool * p, void *parent, void *newloc)
     scfg->noblank = nscfg->noblank ? nscfg->noblank : pscfg->noblank;
     /* the following added by ddj@cmu.edu on 2006/05/01 */
     scfg->catenate = nscfg->catenate ? nscfg->catenate : pscfg->catenate;
+    scfg->no_clean_creds =
+        nscfg->no_clean_creds ? nscfg->no_clean_creds : pscfg->no_clean_creds;
     scfg->authtype_names = nscfg->authtype_names ?
         nscfg->authtype_names : pscfg->authtype_names;
     scfg->use_post = nscfg->use_post ? nscfg->use_post : pscfg->use_post;
@@ -2905,6 +2908,20 @@ const char *set_super_debug (cmd_parms * cmd, void *mconfig, int f)
 
 }
 
+const char *set_no_clean_creds (cmd_parms * cmd, void *mconfig, int flag)
+{
+  server_rec *s = cmd->server;
+  pubcookie_server_rec *scfg;
+  ap_pool *p = cmd->pool;
+
+  scfg = (pubcookie_server_rec *) ap_get_module_config (s->module_config,
+							&pubcookie_module);
+
+  scfg->no_clean_creds = flag;
+
+  return NULL;
+}
+
 /*                                                                            */
 const char *pubcookie_set_no_ssl_ok (cmd_parms * cmd, void *mconfig,
                                      char *v)
@@ -3149,6 +3166,10 @@ static const command_rec pubcookie_commands[] = {
                   set_super_debug,
                   NULL, OR_AUTHCFG,
                   "Deprecated, do not use"),
+    AP_INIT_FLAG ("PubCookieNoCleanCreds",
+                  set_no_clean_creds,
+                  NULL, RSRC_CONF,
+                  "Set to leave credentials in place after cleanup"),
 
 /* maybe for future exploration
     AP_INIT_TAKE1("PubCookieNoSSLOK",
@@ -3301,17 +3322,21 @@ static int load_keyed_directives (request_rec * r, char *key)
 static int pubcookie_cleanup (request_rec * r)
 {
     pubcookie_req_rec *rr;
+    pubcookie_server_rec *scfg;
     table *e = r->subprocess_env;
 
     ap_log_rerror (PC_LOG_DEBUG, r, "cleanup");
 
     rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
                                                      &pubcookie_module);
+    scfg = (pubcookie_server_rec *) ap_get_module_config (r->server->
+                                                     module_config,
+                                                     &pubcookie_module);
 
     if (!rr)
         return OK;
 
-    if (rr->cred_transfer) {
+    if (rr->cred_transfer && !scfg->no_clean_creds) {
         struct stat sb;
         const char *krb5ccname = ap_table_get (e, "KRB5CCNAME");
 
