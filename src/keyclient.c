@@ -18,7 +18,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.62 2006-04-10 19:51:23 willey Exp $
+ * $Id: keyclient.c,v 2.63 2006-08-23 05:57:21 willey Exp $
  */
 
 
@@ -439,7 +439,7 @@ int main (int argc, char *argv[])
     sa.sin_family = AF_INET;
     h = gethostbyname (keyhost);
     if (!h) {
-        herror (keyhost);
+        fprintf(stderr, "gethostbyname failed for: %s\n", keyhost);
         exit (1);
     }
     memcpy (&sa.sin_addr, h->h_addr, h->h_length);
