@@ -20,7 +20,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.32 2006-06-08 21:55:40 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.33 2006-08-28 19:38:29 jjminer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,6 +63,7 @@ typedef void pool;
 #include "pbc_myconfig.h"
 #include "pbc_configure.h"
 #include "snprintf.h"
+#include "pbc_config.h"
 
 /* Error logging! */
 #include "pbc_logging.h"
@@ -269,11 +270,13 @@ static int ldap_connect (pool * p, LDAP ** ld,
     LDAPURLDesc *ludp;
     char **exts = NULL;
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "ldap_connect: hello\n");
+    const char func[] = "ldap_connect";
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: hello\n", func);
 
     if (ldap_url_parse (ldap_uri, &ludp)) {
-        pbc_log_activity (p, PBC_LOG_ERROR, "Cannot parse \"%s\"\n",
-                          ldap_uri);
+        pbc_log_activity (p, PBC_LOG_ERROR, "%s: Cannot parse \"%s\"\n",
+                          func, ldap_uri);
         *errstr = "System Error.  Contact your system administrator.";
         return -1;
     }
@@ -306,13 +309,13 @@ static int ldap_connect (pool * p, LDAP ** ld,
                     version = strdup (val);
                 } else {
                     pbc_log_activity (p, PBC_LOG_ERROR,
-                                      "ldap_connect: unknown extension %s=%s\n",
-                                      *exts, val);
+                                      "%s: unknown extension %s=%s\n",
+                                      func, *exts, val);
                 }
             } else {
                 pbc_log_activity (p, PBC_LOG_ERROR,
-                                  "ldap_connect: extension error parsing \"%s\"\n",
-                                  *exts);
+                                  "%s: extension error parsing \"%s\"\n",
+                                  func, *exts);
             }
 
             exts++;
@@ -336,6 +339,9 @@ static int ldap_connect (pool * p, LDAP ** ld,
     snprintf (tmp_uri, tmplen, "%s://%s:%d/",
               ludp->lud_scheme, ludp->lud_host, ludp->lud_port);
 
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: ldap_uri (%s)", 
+                      func, tmp_uri);
+
     /* lookup DN for username using an anonymous bind */
     rc = ldap_initialize (ld, tmp_uri);
 
@@ -344,16 +350,16 @@ static int ldap_connect (pool * p, LDAP ** ld,
 # ifdef LDAP_SUN
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "Server: %s Port: %d SSL: %d", ludp->lud_host,
-                      ludp->lud_port,
+                      "%s: Server: %s Port: %d SSL: %d", 
+                      func, ludp->lud_host, ludp->lud_port,
                       ludp->lud_options & LDAP_URL_OPT_SECURE);
 
     if (ludp->lud_options & LDAP_URL_OPT_SECURE) {
 
         if (ldapssl_client_init (CERT_DB_PATH, NULL) != 0) {
             pbc_log_activity (p, PBC_LOG_ERROR,
-                              "Error loading cert db \"%s\"!",
-                              CERT_DB_PATH);
+                              "%s: Error loading cert db \"%s\"!",
+                              func, CERT_DB_PATH);
             return -2;
         }
 
@@ -376,19 +382,134 @@ static int ldap_connect (pool * p, LDAP ** ld,
             ldap_version = LDAP_VERSION2;
 
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                          "ldap_connect: Version Requested: %s Version Using: %d\n",
-                          NULL == version ? "3" : version, ldap_version);
+                          "%s: Version Requested: %s Version Using: %d\n",
+                          func, NULL == version ? "3" : version, ldap_version);
 
         rc = ldap_set_option (*ld, LDAP_OPT_PROTOCOL_VERSION,
                               &ldap_version);
-    }
+        if (rc != LDAP_SUCCESS)
+            pbc_log_activity (p, PBC_LOG_ERROR,
+                              "%s: ldap_set_option %s failed: %s", 
+                              func, "LDAP_OPT_PROTOCOL_VERSION",
+                              ldap_err2string(rc));
 
-    if (rc != LDAP_SUCCESS || *ld == NULL) {
+#ifdef LDAP_OPENLDAP
+
+        if (libpbc_config_getswitch (p, "ldap_tls", 0)) { 
+            int opt_x_tls = LDAP_OPT_X_TLS_DEMAND;
+            int opt_x_require_cert = LDAP_OPT_X_TLS_DEMAND;
+            char *ldapkeyfile = NULL;
+            char *ldapcertfile = NULL;
+            char *ldapcafile = NULL;
+
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                          "ldap_connect: LDAP Initialization error %d.\n",
-                          rc);
-        *errstr = "connection to ldap server failed -- auth failed";
-        return -2;
+                   "ldap_connect: Using TLS client auth");
+
+            rc = ldap_set_option(*ld, LDAP_OPT_X_TLS, &opt_x_tls);
+            if (rc != LDAP_SUCCESS)
+                pbc_log_activity (p, PBC_LOG_ERROR,
+                                  "%s: ldap_set_option %s failed: %s", 
+                                  func, "LDAP_OPT_X_TLS",
+                                  ldap_err2string(rc));
+
+            rc = ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT, &opt_x_require_cert);
+            if (rc != LDAP_SUCCESS)
+                pbc_log_activity (p, PBC_LOG_ERROR,
+                                  "%s: ldap_set_option %s failed: %s", 
+                                  func, "LDAP_OPT_X_TLS_REQUIRE_CERT",
+                                  ldap_err2string(rc));
+
+            ldapkeyfile =
+                 (char *) libpbc_config_getstring (p, "ldap_key_file", NULL);
+            if (ldapkeyfile && access (ldapkeyfile, R_OK | F_OK)) {
+                if (access (ldapkeyfile, F_OK)) {
+                    pbc_log_activity (p, PBC_LOG_ERROR, "%s: "
+                                      "ldap_key_file (%s) doesn't exist.",
+                                      func, ldapkeyfile);
+                } else if (access (ldapkeyfile, R_OK)) {
+                    pbc_log_activity (p, PBC_LOG_ERROR, "%s: "
+                                      "Permissions prohibit reading "
+                                      "ldap_key_file (%s).",
+                                      func, ldapkeyfile);
+                }
+                pbc_free (p, ldapkeyfile);
+                /* not there ? */
+                ldapkeyfile = NULL;
+            } else if (ldapkeyfile) {
+                rc = ldap_set_option(NULL, 
+                                     LDAP_OPT_X_TLS_KEYFILE, ldapkeyfile);
+                if (rc != LDAP_SUCCESS)
+                    pbc_log_activity (p, PBC_LOG_ERROR,
+                                      "%s: ldap_set_option %s (%s) failed: %s", 
+                                      func, "LDAP_OPT_X_TLS_KEYFILE",
+                                      ldapkeyfile, ldap_err2string(rc));
+            } else {
+                pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: "
+                                  "Try setting ldap_key_file",
+                                  func, ldapcafile);
+            }
+
+            ldapcertfile =
+                (char *) libpbc_config_getstring (p, "ldap_cert_file", NULL);
+            if (ldapcertfile && access (ldapcertfile, R_OK | F_OK)) {
+                if (access (ldapcertfile, F_OK)) {
+                    pbc_log_activity (p, PBC_LOG_ERROR, "%s: "
+                                      "ldap_cert_file (%s) doesn't exist.",
+                                      func, ldapcertfile);
+                } else if (access (ldapcertfile, R_OK)) {
+                    pbc_log_activity (p, PBC_LOG_ERROR, "%s: "
+                                      "Permissions prohibit reading "
+                                      "ldap_cert_file (%s).",
+                                      func, ldapcertfile);
+                }
+                pbc_free (p, ldapcertfile);
+                /* not there ? */
+                ldapcertfile = NULL;
+            } else if (ldapcertfile) {
+                rc = ldap_set_option(NULL, 
+                                     LDAP_OPT_X_TLS_CERTFILE, ldapcertfile);
+                if (rc != LDAP_SUCCESS)
+                    pbc_log_activity (p, PBC_LOG_ERROR,
+                                      "%s: ldap_set_option %s (%s) failed: %s", 
+                                      func, "LDAP_OPT_X_TLS_CERTFILE",
+                                      ldapcertfile, ldap_err2string(rc));
+            } else {
+                pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: "
+                                  "Try setting ldap_cert_file",
+                                  func, ldapcafile);
+            }
+
+            ldapcafile =
+                (char *) libpbc_config_getstring (p, "ldap_ca_file", NULL);
+            if (ldapcafile && access (ldapcafile, R_OK | F_OK)) {
+                if (access (ldapcafile, F_OK)) {
+                    pbc_log_activity (p, PBC_LOG_ERROR, "%s: "
+                                      "ldap_ca_file (%s) doesn't exist.",
+                                      func, ldapcafile);
+                } else if (access (ldapcafile, R_OK)) {
+                    pbc_log_activity (p, PBC_LOG_ERROR, "%s: "
+                                      "Permissions prohibit reading "
+                                      "ldap_ca_file (%s).",
+                                      func, ldapcafile);
+                }
+                pbc_free (p, ldapcafile);
+                /* not there ? */
+                ldapcafile = NULL;
+            } else if (ldapcafile) {
+                rc = ldap_set_option(NULL, 
+                                     LDAP_OPT_X_TLS_CACERTFILE, ldapcafile);
+                if (rc != LDAP_SUCCESS)
+                    pbc_log_activity (p, PBC_LOG_ERROR,
+                                      "%s: ldap_set_option %s (%s) failed: %s", 
+                                      func, "LDAP_OPT_X_TLS_CACERTFILE",
+                                      ldapcafile, ldap_err2string(rc));
+            } else {
+                pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: "
+                                  "Try setting ldap_ca_file",
+                                  func, ldapcafile);
+            }
+        }
+#endif /* LDAP_OPENLDAP */
     }
 
     rc = do_bind (p, *ld, dn, pwd, errstr);
@@ -404,12 +525,12 @@ static int ldap_connect (pool * p, LDAP ** ld,
     if (rc == -1) {
         /* Here a bind failing isn't catastrophic..  */
         pbc_log_activity (p, PBC_LOG_DEBUG_LOW,
-                          "ldap_connect: Bind Failed.\n");
+                          "%s: Bind Failed.\n", func);
         /* ldap_unbind(*ld); */
         return -2;
     }
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "ldap_connect: bye!\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s: bye!\n",func);
 
     return 0;
 }
