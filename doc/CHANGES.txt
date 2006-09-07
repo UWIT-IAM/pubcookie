@@ -1,4 +1,20 @@
-Changes with 3.3.1 Beta 1:
+Changes with 3.3.2 Beta 1:
+
+*) Modified Apache module for Apache 2.0.49 and above to set output
+   headers in an output filter. This provides better compatibility with
+   Apache 2.2 and other modules, and in particular with mod_proxy_ajp.
+
+*) Added LDAPS support to LDAP verifier. Enable it with new ldap_tls
+   config file variable. Configure TLS authentication with new
+   ldap_key_file, ldap_cert_file, and ldap_ca_file variables.
+
+*) Added PubcookieNoCleanCreds directive to Apache module. Allows an
+   application to handle flavor_getcred credential cleanup.
+
+*) Removed obsolete herror from Unix keyclient.c. Should fix build
+   problems reported for Solaris.
+
+Changes with 3.3.1:
 
 *) Fixed session reauthentication messaging so that the module and
    filter can verify that the login cgi handled a reauth request.
