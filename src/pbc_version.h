@@ -56,7 +56,7 @@
  *************************************************************************** */
 
 /* beta or final, so the code knows what it is, should it care. */
-#define PBC_VERSION_RELEASE "pre-beta1"
+#define PBC_VERSION_RELEASE "beta1"
 
 /***************************************************************************
  * CAUTION!  This file (pbc_version.h) is automatically generated from
@@ -64,6 +64,6 @@
  * by configure when it is run again!
  *************************************************************************** */
 
-#define PBC_VERSION_STRING "3.3.2-pre-beta1"
+#define PBC_VERSION_STRING "3.3.2-beta1"
 
 #endif /* !PUBCOOKIE_VERSION */
