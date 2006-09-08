@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.179 2006-09-08 18:29:27 jjminer Exp $
+ * $Id: index.cgi.c,v 1.180 2006-09-08 21:06:54 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -3183,10 +3183,10 @@ login_rec *verify_unload_login_cookie (pool * p,
     while ((get_cookie (p, PBC_L_COOKIENAME, cookie, PBC_4K - 1, cn) != PBC_FAIL)) {
         /* Skip cookies that we know will not decode -- the "clear" cookie. */
         if (strcmp (cookie, PBC_CLEAR_COOKIE) != 0) {
-        cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0,
+            cookie_data = libpbc_unbundle_cookie (p, context, cookie, NULL, 0,
                                 PBC_DEF_CRYPT);
 
-        if (cookie_data) break;
+            if (cookie_data) break;
         }
 
         cn++;
