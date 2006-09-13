@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.211 2006-08-23 15:05:31 dors Exp $
+ * $Id: mod_pubcookie.c,v 1.212 2006-09-13 18:37:13 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -3383,9 +3383,11 @@ static apr_status_t do_output_filter(ap_filter_t *f,
     rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
                                                      &pubcookie_module);
 
-    ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie output_filter: merging %d output headers",
+    if ( rr ) {
+        ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie output_filter: merging %d output headers",
                    apr_table_elts(rr->hdr_out)->nelts);
-    append_to_table(r, r->headers_out, rr->hdr_out);
+        append_to_table(r, r->headers_out, rr->hdr_out);
+    }
 
     /* remove ourselves from the filter chain */
     ap_remove_output_filter(f);
