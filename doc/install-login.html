@@ -78,6 +78,23 @@ local login server.</p>
 
 <h4><a name="new">What's New</a></h4>
 
+<p>Significant improvements and changes to the login server components
+included in Pubcookie 3.3.2:</p>
+
+<ul>
+
+<li>Added LDAPS support to LDAP verifier. Enable it with new <a
+    href="config.html#ldap_tls"><tt>ldap_tls</tt></a> config file
+    variable. Configure TLS authentication with new <a
+    href="config.html#ldap_key_file"><tt>ldap_key_file</tt></a>, <a
+    href="config.html#ldap_cert_file"><tt>ldap_cert_file</tt></a>, and
+    <a href="config.html#ldap_ca_file"><tt>ldap_ca_file</tt></a>
+    variables.</li>
+<li>Fixed a bug to avoid a possible loop condition with unexpired
+    PBC_CLEAR_COOKIE cookies.</li>
+
+</ul>
+
 <p>Significant improvements and changes to the login server components included in 
 Pubcookie 3.3.1:</p>
 
@@ -1031,7 +1048,11 @@ href="config.html#basic_verifier"><tt>basic_verifier</tt></a> to
 <p>To configure the LDAP verifier itself, add an <a
 href="config.html#ldap_uri"><tt>ldap_uri</tt></a> to your config file.
 This variable defines how the verifier connects to your LDAP
-directory.</p>
+directory. To enable LDAPS with TLS authentication, configure
+<a href="config.html#ldap_tls"><tt>ldap_tls</tt></a>,
+<a href="config.html#ldap_key_file"><tt>ldap_key_file</tt></a>, 
+<a href="config.html#ldap_cert_file"><tt>ldap_cert_file</tt></a>, and 
+<a href="config.html#ldap_ca_file"><tt>ldap_ca_file</tt></a>.</p>
 
 <pre># ldap verifier config
 <a href="config.html#basic_verifier">basic_verifier</a>: ldap
@@ -1224,7 +1245,7 @@ Copyright 1999-2006, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.44 2006-07-03 22:11:41 dors Exp $
+$Id: install-login.html,v 1.45 2006-09-14 04:40:44 dors Exp $
 </pre>
 </body>
 
