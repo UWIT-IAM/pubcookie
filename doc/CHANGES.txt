@@ -1,3 +1,11 @@
+Changes with 3.3.2 Beta 2:
+
+*) Fixed Apache module to check for a valid request record in 
+   do_output_filter function.
+
+*) Fixed bug in login cgi to avoid a possible loop condition with
+   unexpired PBC_CLEAR_COOKIE cookies.
+
 Changes with 3.3.2 Beta 1:
 
 *) Modified Apache module for Apache 2.0.49 and above to set output
