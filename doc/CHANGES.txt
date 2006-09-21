@@ -1,3 +1,7 @@
+Changes with 3.3.2:
+
+*) No source code changes since 3.3.2-beta2. Minor doc updates.
+
 Changes with 3.3.2 Beta 2:
 
 *) Fixed Apache module to check for a valid request record in 
