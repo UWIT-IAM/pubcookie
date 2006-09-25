@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.212 2006-09-13 18:37:13 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.213 2006-09-25 19:37:17 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -524,11 +524,14 @@ void set_no_cache_headers (request_rec * r)
 {
     pubcookie_req_rec *rr;
     pool *p = r->pool;
+#ifdef APACHE2
+    char *datestr;
+#endif
 
     rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
                                                      &pubcookie_module);
 #ifdef APACHE2
-    char *datestr = apr_palloc (p, APR_RFC822_DATE_LEN);
+    datestr = apr_palloc (p, APR_RFC822_DATE_LEN);
     apr_rfc822_date (datestr, r->request_time);
     ap_table_set (HDRS_OUT, "Expires", datestr);
     ap_table_set (HDRS_ERR, "Expires", datestr);
