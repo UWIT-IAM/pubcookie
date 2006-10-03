@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.214 2006-10-03 18:27:49 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.215 2006-10-03 19:09:09 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1677,7 +1677,7 @@ static int pubcookie_user_hook (request_rec * r)
 #endif
             return OK;
         }
-        if (cfg->noprompt) {
+        if (cfg->noprompt>0) {
             r->USER = ap_pstrdup (r->pool, "");
             return OK;
         }
@@ -2025,6 +2025,15 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
 
         r->AUTH_TYPE = ap_pstrdup (p, ap_auth_type (r));
         r->USER = ap_pstrdup (p, (char *) (*cookie_data).broken.user);
+
+        /* Make sure we really got a user (unless noprompt) */
+        if ((!*r->USER) && (cfg->noprompt<=0)) {
+            ap_log_rerror (PC_LOG_INFO, r,
+                               "No user and not a noprompt");
+            rr->stop_message = ap_pstrdup (p, "Required user login didn't happen");
+            rr->failed = PBC_BAD_G_STATE;
+            return (DONE);
+        }
 
         ap_log_rerror (PC_LOG_DEBUG, r,
                        "pubcookie_user: set type (%s) and user (%s)",
