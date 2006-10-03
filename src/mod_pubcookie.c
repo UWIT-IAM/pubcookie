@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.213 2006-09-25 19:37:17 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.214 2006-10-03 18:27:49 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -839,6 +839,28 @@ static void append_to_table(request_rec *r, apr_table_t *dest, apr_table_t *src)
 }
 #endif
 
+/* URL encode a base64 (deal with '+') */
+static char *fix_base64_for_url(pool *p, char *b64)
+{
+   int n;
+   char *np;
+   char *n64;
+   for (n=0, np=b64; *np; np++) if (*np=='+') n++;
+   if (n>0) {
+       n64 = ap_pcalloc (p, (strlen (b64) + 4*n));
+       for (np=n64; *b64; b64++) {
+          if (*b64=='+') {
+             *np++ = '%';
+             *np++ = '2';
+             *np++ = 'B';
+          } else *np++ = *b64;
+       }
+       *np++ = '\0';
+   } else n64 = b64;
+   return (n64);
+}
+
+
 /* Herein we deal with the redirect of the request to the login server        */
 /*    if it was only that simple ...                                          */
 static int auth_failed_handler (request_rec * r,
@@ -885,6 +907,7 @@ static int auth_failed_handler (request_rec * r,
 
     /* acquire any GET args */
     if (r->args) {
+        char *argst;
         /* error out if length of GET args would cause a problem */
         if (strlen (r->args) > PBC_MAX_GET_ARGS) {
             rr->stop_message =
@@ -895,12 +918,13 @@ static int auth_failed_handler (request_rec * r,
             return (OK);
         }
 
-        args = ap_pcalloc (p, (strlen (r->args) + 3) / 3 * 4 + 1);
+        argst = ap_pcalloc (p, (strlen (r->args) + 3) / 3 * 4 + 1);
         libpbc_base64_encode (p, (unsigned char *) r->args,
-                              (unsigned char *) args, strlen (r->args));
+                              (unsigned char *) argst, strlen (r->args));
         ap_log_rerror (PC_LOG_DEBUG, r,
                        "GET args before encoding length %d, string: %s",
                        strlen (r->args), r->args);
+        args = fix_base64_for_url(p, argst);
         ap_log_rerror (PC_LOG_DEBUG, r,
                        "GET args after encoding length %d, string: %s",
                        strlen (args), args);
