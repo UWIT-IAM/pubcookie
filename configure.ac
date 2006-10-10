@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Revision: 1.107 $)
+AC_REVISION($Revision: 1.108 $)
 
 dnl Unfortunately, this must come before the seperate version splits, which are
 dnl definted below.  Please set them first, and then set the second argument of
@@ -8,7 +8,7 @@ dnl this to:
 dnl PBC_VERSION_MAJOR.PBC_VERSION_MINOR.PBC_VERSION_PATCH PBC_VERSION_TYPE
 dnl Omit PBC_VERSION_TYPE if the TYPE is "final"
 dnl I apologize that this isn't done automatically
-AC_INIT(Pubcookie, [3.3.2a], pubcookie-dev@u.washington.edu)
+AC_INIT(Pubcookie, [3.3.3-pre-beta1], pubcookie-dev@u.washington.edu)
 
 AC_CONFIG_SRCDIR([src/libpubcookie.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -18,7 +18,7 @@ dnl The version number, to be assembled
 dnl If any of these change, reset PBC_WIN_BUILD_NUMBER
 PBC_VERSION_MAJOR=3
 PBC_VERSION_MINOR=3
-PBC_VERSION_PATCH=2a
+PBC_VERSION_PATCH=3
 
 dnl The version "type".
 dnl If this is "final", it is not included in the version string.
@@ -26,7 +26,7 @@ dnl Otherwise it is.  For the National Edition, this will be "pre-beta" or
 dnl "beta".  For campus editions, this will be unique for the campus, we
 dnl imagine.
 dnl When this changes, don't forget to increment PBC_WIN_BUILD_NUMBER
-PBC_VERSION_TYPE=final
+PBC_VERSION_TYPE=pre-beta1
 
 dnl The Windows "Build Number" ..  Unfortunately the Windows build process can't
 dnl use the text version (betaX, pre-betaX), so this is just incremented every
