@@ -1,3 +1,16 @@
+Changes with 3.3.2a:
+
+*) Modified Apache module to verify that the login server sends a
+   non-empty userid in the granting reply, unless PubcookieNoPrompt
+   is on. (PubcookieNoPrompt allows and in fact relies on empty
+   userids.)
+
+*) Modifed Apache module to url-encode '+' chars after base64-encoding
+   query strings. This fixes possible truncations of uri's sent through
+   the login process.
+
+*) Fixed out of place "char *datestr" declaration in Apache module. 
+
 Changes with 3.3.2:
 
 *) No source code changes since 3.3.2-beta2. Minor doc updates.

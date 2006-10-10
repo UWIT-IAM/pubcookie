@@ -56,6 +56,18 @@
 
                   <h4><a name="new">What's New</a></h4>
 
+                  <p>Significant improvements and changes included in Pubcookie 3.3.2a:</p>
+
+                  <ul>
+                  <li>Modified Apache module to verify that the login server sends a
+                  non-empty userid in the granting reply, unless PubcookieNoPrompt
+                  is on.</li>
+                  <li>Modifed Apache module to url-encode '+' chars after base64-encoding
+                  query strings. This fixes possible truncations of uri's sent through
+                  the login process.</li>
+                  <li>Fixed out of place "char *datestr" declaration.</li>
+                  </ul>
+
                   <p>Significant improvements and changes included in Pubcookie 3.3.2:</p>
 
                   <ul>
