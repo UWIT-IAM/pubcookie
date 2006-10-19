@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.62 2006-07-03 21:15:47 dors Exp $
+//  $Id: PubCookieFilter.cpp,v 1.63 2006-10-19 20:13:12 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -152,6 +152,8 @@ static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
     int n;
     char *sa, *e, *enc;
     char *s = in;
+	char *dpath;
+	int dpathl, sl;
 
     if (!s) return (NULL);
 
@@ -173,6 +175,19 @@ static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
     }
     if (*s=='\0') return (in);
     if (*s++!='/') return (NULL);
+
+	/* decode the path part */
+
+	sl = strlen(s);
+	dpath = (char*)pbc_malloc(p, sl);
+	dpathl = strlen(s);
+	if (!libpbc_base64_decode(p, (unsigned char*)s, (unsigned char*)dpath, &dpathl)) {
+		//ap_log_rerror (PC_LOG_DEBUG, r, "verify-url decode failed");
+	}
+	if (*dpath=='/') strncpy(s, dpath+1, sl);
+	else strncpy(s, dpath, sl);
+	
+	pbc_free(p, dpath);
 
     /* see if we have to encode anything in the path */
 
@@ -655,6 +670,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	char 			g_req_contents[PBC_4K];
 	unsigned char	e_g_req_contents[PBC_4K];
 	char			szTemp[PBC_1K];
+	char			*b64uri;
+
 	//TODO: REMOVED - presession cookie
 	/*
     unsigned char   *pre_s;
@@ -687,8 +704,18 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	if ( strlen(p->appsrv_port) > 0 ) {
 		strcat(szTemp,":");
 		strcat(szTemp,p->appsrv_port);
-	}	  
-	
+	}	
+
+	/* encode the uri */
+	b64uri = (char *)pbc_malloc(p, (strlen(p->uri)+4)*4 + 1);
+	if (!b64uri) {
+		filterlog(p, LOG_ERR,"[Get_Cookie] Error allocating b64uri");
+		return NULL;
+	}
+	libpbc_base64_encode(p, (unsigned char *)p->uri, (unsigned char *)b64uri,
+						strlen(p->uri));
+	filterlog(p, LOG_DEBUG,"[Get_Cookie] b64uri = %s", b64uri);
+
 	/* make the granting request */
 	snprintf(g_req_contents, PBC_4K,
 		//"%s=%s&%s=%s&%s=%c&%s=%s&%s=%s&%s=%s&%s=%s&%s=%s&%s=%d&%s=%d&%s=%c", 
@@ -706,7 +733,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		PBC_GETVAR_HOST, 
 		  szTemp,
 		PBC_GETVAR_URI, 
-		  p->uri,
+		  b64uri,
 		PBC_GETVAR_ARGS, 
 		  args,
 		PBC_GETVAR_SESSION_REAUTH,
@@ -721,6 +748,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents)); //to avoid illegal cookie characters
+	pbc_free(p, b64uri);
 
 #ifdef PBC_USE_GET_METHOD
 	Add_Cookie(pFC, PBC_G_REQ_COOKIENAME, e_g_req_contents, p->appsrvid);
