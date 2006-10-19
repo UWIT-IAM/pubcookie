@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.215 2006-10-03 19:09:09 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.216 2006-10-19 21:57:59 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -3650,6 +3650,8 @@ static char *verify_url(request_rec *r, char *in, int ec)
     sl = strlen(s);
     dpath = ap_palloc (r->pool, sl);
     dpathl = strlen(s);
+    /* the login may have turned our pluses to spaces */
+    for (e=s; *e; e++) if (*e==' ') *e = '+';
     ap_log_rerror (PC_LOG_DEBUG, r, "verify-url decoding: %s", s);
     if (!libpbc_base64_decode (r->pool, (unsigned char *) s,
                                  (unsigned char *) dpath, &dpathl)) {
