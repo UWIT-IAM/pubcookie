@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.63 2006-10-19 20:13:12 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.64 2006-10-19 21:55:05 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -181,6 +181,8 @@ static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
 	sl = strlen(s);
 	dpath = (char*)pbc_malloc(p, sl);
 	dpathl = strlen(s);
+	/* the login may have turned our pluses to spaces */
+	for (e=s; *e; e++) if (*e==' ') *e = '+';
 	if (!libpbc_base64_decode(p, (unsigned char*)s, (unsigned char*)dpath, &dpathl)) {
 		//ap_log_rerror (PC_LOG_DEBUG, r, "verify-url decode failed");
 	}
