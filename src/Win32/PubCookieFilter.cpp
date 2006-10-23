@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.65 2006-10-23 19:04:45 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.66 2006-10-23 19:07:46 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -1747,7 +1747,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		strcpy(p->user,(const char *)(*cookie_data).broken.user);
 
 		/* Make sure we really got a user (unless noprompt) */
-		if ((!*p->user) && (p->no_prompt!=0)) {
+		if ((!*p->user) && (p->no_prompt==0)) {
 			filterlog(p, LOG_ERR,"[Pubcookie_User] No user and not noprompt");
 			p->failed = PBC_BAD_G_STATE;
 			pbc_free(p, cookie_data);
