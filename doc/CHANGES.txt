@@ -1,9 +1,18 @@
+Changes with 3.3.2b:
+
+*) Modified Apache module to allow '+' chars in the encoded path name.
+
+*) Modified ISAPI filter to match Apache module's handling of chars
+   in the path: base64 encode and url-encode '+' characters.
+
+*) Modified ISAPI filter to verify that the login server sends a   
+   non-empty userid in the granting reply, unless No_Prompt is on.
+
 Changes with 3.3.2a:
 
 *) Modified Apache module to verify that the login server sends a
    non-empty userid in the granting reply, unless PubcookieNoPrompt
-   is on. (PubcookieNoPrompt allows and in fact relies on empty
-   userids.)
+   is on. 
 
 *) Modifed Apache module to url-encode '+' chars after base64-encoding
    query strings. This fixes possible truncations of uri's sent through
