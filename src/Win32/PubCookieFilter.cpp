@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.66 2006-10-23 19:07:46 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.67 2006-11-02 21:19:34 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -62,6 +62,7 @@ extern "C"
 
     for (s=in; s&&*s; s++) {
         if ( (*s=='"') ||
+			 (*s == ' ') ||
              (*s == '<') ||
              (*s == '>') ||
              (*s == '(') ||
@@ -80,6 +81,7 @@ extern "C"
     for (s=enc; in&&*in; in++) {
         switch (*in) { 
 
+			case ' ':  strcpy(s, "+"); s+=1; break;
             case '"':  strcpy(s, "%22"); s+=3; break;
             case '<':  strcpy(s, "%3C"); s+=3; break;
             case '>':  strcpy(s, "%3E"); s+=3; break;
@@ -665,6 +667,34 @@ void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, unsigned char* coo
 
 }
 
+/* URL encode a base64 (deal with '+') Edit b64 in place. */
+static void fix_base64_for_url(pubcookie_dir_rec *p, char *b64)
+{
+   int n;
+   char *np, *bp;
+   char n64[PBC_4K];
+   for (n=0, bp=b64; *bp; bp++) if (*bp=='+') n++;
+   if (n>0) {
+      if ( (strlen(b64)+n*3) > sizeof(n64) ) {
+			filterlog(p, LOG_ERR,"[Pubcookie_Init] Invalid Args encLength = %d; remote_host: %s",
+				strlen(b64), p->remote_host);
+			strcpy(b64, "");
+      } else {
+          strcpy(n64, b64);
+		  for (np=n64,bp=b64; *np; np++) {
+          if (*np=='+') {
+             *bp++ = '%';
+             *bp++ = '2';
+             *bp++ = 'B';
+          } else *bp++ = *np;
+       }
+       *bp++ = '\0';
+	  }
+   }
+   return;
+}
+
+
 //handles cases where pubc authn failed. sets pression & granting requests and ships browser to login server.
 int Auth_Failed (HTTP_FILTER_CONTEXT* pFC) 
 {
@@ -695,12 +725,12 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 			filterlog(p, LOG_ERR,"[Pubcookie_Init] Invalid Args Length = %d; remote_host: %s",
 				strlen(p->args), p->remote_host);
 			strcpy(args, "");
-		} else
+		} else {
 			libpbc_base64_encode(p, (unsigned char *)p->args, (unsigned char *)args,
 						strlen(p->args));
+			fix_base64_for_url(p, args);
 		}
-	else
-		strcpy(args, "");
+	} else	strcpy(args, "");
 
 	strcpy(szTemp,p->appsrvid); 
 	if ( strlen(p->appsrv_port) > 0 ) {
