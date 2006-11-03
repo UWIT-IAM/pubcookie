@@ -66,6 +66,17 @@
 
 		<h4><a name="news">What's New</a></h4>
 
+                <p>Significant changes in Pubcookie 3.3.2b:</p>
+
+                <ul>
+                    <li><p><b>Improved handling of odd characters in path and query strings.</b> 
+                    The filter now matches the Apache module's handling of odd characters in 
+                    the requested uri's path and query; this fixes possible truncation of uri's
+                    sent through the login process.</p></li>
+                    <li><p><b>Verify non-empty userid.</b> Modified the ISAPI filter to disallow
+                    empty userids in the granting reply unless the No_Prompt setting is on.</p></li>
+                </ul>
+
                 <p>Significant changes in Pubcookie 3.3.1:</p>
 
                 <ul>
