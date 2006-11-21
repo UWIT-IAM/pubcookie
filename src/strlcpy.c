@@ -18,7 +18,7 @@
 /** @file strlcpy.c
  * strlcpy()
  *
- * $Id: strlcpy.c,v 2.12 2006-02-23 00:46:33 willey Exp $
+ * $Id: strlcpy.c,v 2.13 2006-11-21 02:46:31 willey Exp $
  */
 
 
@@ -55,14 +55,14 @@ size_t strlcpy (char *dst, const char *src, size_t len)
     size_t n;
 
     /* Avoid problems if size_t is unsigned */
-    if (len == 0)
+    if (len <= 0)
         return strlen (src);
 
     for (n = 0; n < len - 1; n++) {
         if ((dst[n] = src[n]) == '\0')
             break;
     }
-    if (src[n] != '\0') {
+    if (n >= len-1) {
         /* ran out of space */
         dst[n] = '\0';
         while (src[n])
