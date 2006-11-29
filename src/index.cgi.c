@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.180 2006-09-08 21:06:54 willey Exp $
+ * $Id: index.cgi.c,v 1.181 2006-11-29 19:05:07 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -3001,7 +3001,7 @@ void print_redirect_page (pool * p, const security_context * context,
         if (strstr (post_stuff_lower, "submit") != NULL)
             print_html (p, "document.query.submit.click()");
         else
-            print_html (p, "document.query.submit");
+            print_html (p, "document.query.submit()");
 
         print_html (p, "\n-->\n</SCRIPT>\n");
 
