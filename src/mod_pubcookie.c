@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.216 2006-10-19 21:57:59 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.217 2006-12-01 00:07:20 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -271,6 +271,40 @@ request_rec *find_request_from_pool (pool * p)
 
 #endif /* which apache */
 
+
+#ifdef PBC_DEFERRED_HEADERS
+/* Append add the entries in 'src' to the 'dest' table */
+static void append_to_table(request_rec *r, apr_table_t *dest, apr_table_t *src)
+{
+   const apr_array_header_t *srce = apr_table_elts(src);
+   int i;
+ 
+   for (i=0; i<srce->nelts; i++) {
+      apr_table_entry_t *ent = &((apr_table_entry_t *) (srce->elts))[i];
+      ap_log_rerror (PC_LOG_DEBUG, r, " .. adding header %s", ent->key);
+      apr_table_add(dest, ent->key, ent->val);
+   }
+}
+#endif
+
+/* Send headers - so we can send direct content.  If we're 
+   doing the deferred method, append any headers we've accumulated
+   to the real header list. */
+static void flush_headers(request_rec *r)
+{
+#ifdef PBC_DEFERRED_HEADERS
+    pubcookie_req_rec *rr;
+    rr = (pubcookie_req_rec *) ap_get_module_config (r->request_config,
+                                                     &pubcookie_module);
+    if ( rr ) {
+        ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie flush headers: merging %d output headers",
+                   apr_table_elts(rr->hdr_out)->nelts);
+        append_to_table(r, r->headers_out, rr->hdr_out);
+        append_to_table(r, r->err_headers_out, rr->hdr_err);
+    }
+#endif
+    ap_send_http_header (r);
+}
 
 
 /**
@@ -763,7 +797,7 @@ static int do_end_session_redirect (request_rec * r,
     clear_session_cookie (r);
     set_no_cache_headers (r);
 
-    ap_send_http_header (r);
+    flush_headers (r);
 
     refresh = ap_psprintf (p, "%d;URL=%s?%s=%d&%s=%s&%s=%s",
                            PBC_REFRESH_TIME,
@@ -800,7 +834,7 @@ static int stop_the_show (request_rec * r, pubcookie_server_rec * scfg,
     clear_session_cookie (r);
     set_no_cache_headers (r);
 
-    ap_send_http_header (r);
+    flush_headers (r);
 
     ap_rprintf (r, stop_html, r->server->server_admin,
                 rr->stop_message ? rr->stop_message : "");
@@ -823,21 +857,6 @@ request_rec *top_rrec (request_rec * r)
     }
     return mr;
 }
-
-#ifdef PBC_DEFERRED_HEADERS
-/* Append add the entries in 'src' to the 'dest' table */
-static void append_to_table(request_rec *r, apr_table_t *dest, apr_table_t *src)
-{
-   const apr_array_header_t *srce = apr_table_elts(src);
-   int i;
- 
-   for (i=0; i<srce->nelts; i++) {
-      apr_table_entry_t *ent = &((apr_table_entry_t *) (srce->elts))[i];
-      ap_log_rerror (PC_LOG_DEBUG, r, " .. adding header %s", ent->key);
-      apr_table_add(dest, ent->key, ent->val);
-   }
-}
-#endif
 
 /* URL encode a base64 (deal with '+') */
 static char *fix_base64_for_url(pool *p, char *b64)
@@ -1126,13 +1145,7 @@ static int auth_failed_handler (request_rec * r,
 
     }
 
-#ifdef PBC_DEFERRED_HEADERS
-    /* Add our headers */
-    append_to_table(r, r->headers_out, rr->hdr_out);
-    append_to_table(r, r->err_headers_out, rr->hdr_err);
-#endif
-
-    ap_send_http_header (r);
+    flush_headers (r);
 
     /* If we're using the post method, just bundle everything
        in a post to the login server. */
@@ -1696,7 +1709,7 @@ static int pubcookie_user_hook (request_rec * r)
         } else if (rr->failed == PBC_BAD_USER) {
             ap_log_rerror (PC_LOG_DEBUG, r, " .. user_hook: bad user");
             r->content_type = CONTENT_TYPE;
-            ap_send_http_header (r);
+            flush_headers (r);
             ap_rprintf (r, "Unauthorized user.");
             return DONE;
         }
@@ -3778,7 +3791,6 @@ static int login_reply_handler (request_rec * r)
     greply = ap_table_get (args, PBC_G_COOKIENAME);
     if (!greply) {
         /* Send out bad call error */
-        ap_send_http_header (r);
         rr->stop_message = ap_pstrdup (p, "No granting reply");
         stop_the_show (r, scfg, cfg, rr);
         return (OK);
@@ -3793,7 +3805,6 @@ static int login_reply_handler (request_rec * r)
         /* Send out bad call error */
         ap_log_rerror (PC_LOG_ERR, r,
                        "bad redirect url: %s", r_url);
-        ap_send_http_header (r);
         rr->stop_message = ap_pstrdup (p, "Invalid relay URL");
         stop_the_show (r, scfg, cfg, rr);
         return (OK);
@@ -3821,12 +3832,7 @@ static int login_reply_handler (request_rec * r)
         char *t;
         int needclick = 0;
 
-#ifdef PBC_DEFERRED_HEADERS
-        /* Add our headers */
-        append_to_table(r, r->headers_out, rr->hdr_out);
-        append_to_table(r, r->err_headers_out, rr->hdr_err);
-#endif
-        ap_send_http_header (r);
+        flush_headers (r);
 
         post_data = ap_pstrdup (p, pdata);
         if (strstr (post_data, "submit=")) needclick = 1;
