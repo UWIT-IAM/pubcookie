@@ -79,6 +79,20 @@ local login server.</p>
 <h4><a name="new">What's New</a></h4>
 
 <p>Significant improvements and changes to the login server components
+included in Pubcookie 3.3.2c:</p>
+
+<ul>
+
+<li>Fixed strlcpy.c bug. Pubcookie's implementation of strlcpy.c had
+a null termination bug when the source string (length - 1) exactly fits 
+the destination string buffer.</li>
+
+<li>Fixed Javascript call in login cgi when posting data back to the
+application server. Added '()' to document.query.submit.</li>
+
+</ul>
+
+<p>Significant improvements and changes to the login server components
 included in Pubcookie 3.3.2:</p>
 
 <ul>
@@ -1245,7 +1259,7 @@ Copyright 1999-2006, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.45 2006-09-14 04:40:44 dors Exp $
+$Id: install-login.html,v 1.46 2006-12-15 23:04:20 dors Exp $
 </pre>
 </body>
 
