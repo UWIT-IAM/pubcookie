@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.217 2006-12-01 00:07:20 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.218 2007-01-31 22:52:23 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -3703,7 +3703,7 @@ static char *verify_url(request_rec *r, char *in, int ec)
             case '>':  strcpy(s, "%3E"); s+=3; break;
             case ':':  if (ec) {
                            strcpy(s, "%3A"); s+=3;
-                       } else *s++ = *in;
+                       } else *s++ = *sa;
                        break;
             case ';':  strcpy(s, "%3B"); s+=3; break;
             case '?':  strcpy(s, "%3F"); s+=3; break;
