@@ -1,5 +1,5 @@
 // ========================================================================
-// Copyright 2006 University of Washington
+// Copyright 2007 University of Washington
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.67 2006-11-02 21:19:34 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.68 2007-02-07 22:49:22 willey Exp $
 //
 
 //#define COOKIE_PATH

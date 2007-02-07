@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file security_legacy.c
  * Heritage message protection
  *
- * $Id: security_legacy.c,v 1.59 2006-06-13 17:04:33 fox Exp $
+ * $Id: security_legacy.c,v 1.60 2007-02-07 22:49:22 willey Exp $
  */
 
 

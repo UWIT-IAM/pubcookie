@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
  *
  * Verifies users against an LDAP server (or servers.)
  * 
- * $Id: verify_ldap.c,v 1.33 2006-08-28 19:38:29 jjminer Exp $
+ * $Id: verify_ldap.c,v 1.34 2007-02-07 22:49:22 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

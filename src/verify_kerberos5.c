@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@
  *
  * Verifies users against an Kerberos5 server (or servers.)
  *
- * $Id: verify_kerberos5.c,v 1.40 2006-02-23 00:46:33 willey Exp $
+ * $Id: verify_kerberos5.c,v 1.41 2007-02-07 22:49:22 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file libpubcookie.c
  * Core pubcookie library
  *
- * $Id: libpubcookie.c,v 2.91 2006-06-29 21:05:43 willey Exp $
+ * $Id: libpubcookie.c,v 2.92 2007-02-07 22:49:22 willey Exp $
  */
 
 

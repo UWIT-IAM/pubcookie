@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file strlcpy.c
  * strlcpy()
  *
- * $Id: strlcpy.c,v 2.13 2006-11-21 02:46:31 willey Exp $
+ * $Id: strlcpy.c,v 2.14 2007-02-07 22:49:22 willey Exp $
  */
 
 

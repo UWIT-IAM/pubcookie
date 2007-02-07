@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
  *
  * key and cert locations all come from pubcookie config
  *
- * $Id: pbc_verify.c,v 1.26 2006-02-23 00:46:33 willey Exp $
+ * $Id: pbc_verify.c,v 1.27 2007-02-07 22:49:22 willey Exp $
  */
 
 

@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2006 University of Washington
+ * Copyright 2007 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
  * - the policy of when freerides are allowed
  * - what the layout of the login page is, how login messages are printed. 
  *
- * $Id: flavor.h,v 1.15 2006-02-23 00:46:33 willey Exp $
+ * $Id: flavor.h,v 1.16 2007-02-07 22:49:22 willey Exp $
  */
 
 #ifndef INCLUDED_FLAVOR_H
