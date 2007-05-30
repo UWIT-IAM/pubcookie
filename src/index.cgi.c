@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.183 2007-05-30 17:03:20 fox Exp $
+ * $Id: index.cgi.c,v 1.184 2007-05-30 17:05:50 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2970,7 +2970,7 @@ void print_redirect_page (pool * p, const security_context * context,
         /* put submit at the bottom so it looks better */
         if (submit_value)
             print_html (p,
-                        "<input type=\"submit\" name=\"submit\" value=\'%s\'>\n",
+                        "<input type=\"submit\" name=\"submit\" value=\"%s\">\n",
                         submit_value);
         else
             print_html (p, "<input type=\"submit\" value=\"%s\">\n",
