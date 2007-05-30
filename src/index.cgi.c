@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.182 2007-02-07 22:49:22 willey Exp $
+ * $Id: index.cgi.c,v 1.183 2007-05-30 17:03:20 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -1091,7 +1091,7 @@ char *string_encode (pool * p, char *in)
     char *out;
     char *ptr;
 
-    if (!(out = malloc (strlen (in) * 5 + 1))) {
+    if (!(out = malloc (strlen (in) * 6 + 1))) {
         abend (p, "out of memory");
     }
 
@@ -1123,6 +1123,20 @@ char *string_encode (pool * p, char *in)
             *(++ptr) = 'u';
             *(++ptr) = 'o';
             *(++ptr) = 't';
+            *(++ptr) = ';';
+            break;
+        case '\n':
+            *ptr = '&';
+            *(++ptr) = '#';
+            *(++ptr) = '1';
+            *(++ptr) = '0';
+            *(++ptr) = ';';
+            break;
+        case '\r':
+            *ptr = '&';
+            *(++ptr) = '#';
+            *(++ptr) = '1';
+            *(++ptr) = '3';
             *(++ptr) = ';';
             break;
         default:
@@ -2751,7 +2765,6 @@ void print_redirect_page (pool * p, const security_context * context,
     int limitations_mentioned = 0;
     char *submit_value = NULL;
     cgiFormEntry *cur;
-    cgiFormEntry *next;
     char *redirect_final_trunc = NULL;
     char version[PBC_VER_LEN];
 
@@ -2933,40 +2946,17 @@ void print_redirect_page (pool * p, const security_context * context,
 
         cur = cgiFormEntryFirst;
         while (cur) {
-            /* in the perl version we had to make sure we were getting */
-            /* rid of this header line                                 */
-            /*        cur->attr =~ s%^\s*HTTP/1.1 100 Continue\s*%%mi;   */
 
-            /* if there is a " in the value string we have to put */
-            /* in a TEXTAREA object that will be visible          */
-            if (strstr (cur->value, "\"") ||
-                strstr (cur->value, "\r") || strstr (cur->value, "\n")) {
-                if (!limitations_mentioned) {
-                    print_html (p,
-                                "Certain limitations require that this be shown, please ignore it<BR>\n");
-                    limitations_mentioned++;
-                }
-                print_html (p,
-                            "<textarea cols=\"0\" rows=\"0\" name=\"%s\">\n",
-                            cur->attr);
-                print_html (p, "%s</textarea>",
-                            string_encode (p, cur->value));
-                print_html (p, "<P>\n");
+            /* we don't want to overwrite other people's submits */
+            if (!strcmp (cur->attr, "submit")) {
+                submit_value = string_encode (p, cur->value);
             } else {
-                /* we don't want to cover other people's submits */
-                if (!strcmp (cur->attr, "submit")) {
-                    submit_value = string_encode (p, cur->value);
-                } else {
-                    print_html (p, "<input type=\"hidden\" ");
-                    print_html (p, "name=\"%s\" value=\"%s\">\n",
-                                cur->attr, cur->value);
-                }
+                print_html (p, "<input type=\"hidden\" ");
+                print_html (p, "name=\"%s\" value=\"%s\">\n",
+                            string_encode(p, cur->attr), string_encode(p, cur->value));
             }
-
-            /* move onto the next attr/value pair */
-            next = cur->next;
-            cur = next;
-        }                       /* while cur */
+            cur = cur->next;
+        }
 
 
         print_html (p, "</td></tr>\n");
@@ -2977,7 +2967,7 @@ void print_redirect_page (pool * p, const security_context * context,
         print_html (p, "%s\n", PBC_POST_NO_JS_TEXT);
         print_html (p, "</td></tr></table>\n");
 
-        /* put submit at the bottom so it looks better and */
+        /* put submit at the bottom so it looks better */
         if (submit_value)
             print_html (p,
                         "<input type=\"submit\" name=\"submit\" value=\'%s\'>\n",
