@@ -1,3 +1,11 @@
+Changes with 3.3.2d:
+
+*) Fixed login cgi handling of post data names and values during
+   redirect back to the application server in the GET login method.
+
+*) Fixed bug in Apache module's verify_url function causing some
+   chars such as colons to be converted to other chars during login.
+
 Changes with 3.3.2c:
 
 *) Rebuilt PubcookieFilter DLL using OpenSSL 0.9.7f libraries to fix
