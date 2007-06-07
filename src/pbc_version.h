@@ -47,7 +47,7 @@
 
 #define PBC_VERSION_MAJOR "3"
 #define PBC_VERSION_MINOR "3"
-#define PBC_VERSION_PATCH "3"
+#define PBC_VERSION_PATCH "2d"
 
 /***************************************************************************
  * CAUTION!  This file (pbc_version.h) is automatically generated from
@@ -56,7 +56,7 @@
  *************************************************************************** */
 
 /* beta or final, so the code knows what it is, should it care. */
-#define PBC_VERSION_RELEASE "pre-beta1"
+#define PBC_VERSION_RELEASE "final"
 
 /***************************************************************************
  * CAUTION!  This file (pbc_version.h) is automatically generated from
@@ -64,6 +64,6 @@
  * by configure when it is run again!
  *************************************************************************** */
 
-#define PBC_VERSION_STRING "3.3.3-pre-beta1"
+#define PBC_VERSION_STRING "3.3.2d"
 
 #endif /* !PUBCOOKIE_VERSION */
