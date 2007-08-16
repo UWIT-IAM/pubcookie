@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.219 2007-02-07 22:49:22 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.220 2007-08-16 22:09:18 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -499,7 +499,7 @@ unsigned char *appid (request_rec * r)
       if (cfg->appid && cfg->oldappid) {
 	/* Old and new are both set. */
 	/* Glue the default, old, and new together. */
-	return ap_pstrcat(p,
+	return (unsigned char *) ap_pstrcat(p,
 			  get_app_path (r, rmain->parsed_uri.path),
 			  cfg->oldappid,
 			  cfg->appid,
@@ -507,14 +507,14 @@ unsigned char *appid (request_rec * r)
       } else if (cfg->appid) {
 	/* Just the new one is set. */
 	/* Glue the default and the new one together. */
-	return ap_pstrcat(p,
+	return (unsigned char *) ap_pstrcat(p,
 			  get_app_path (r, rmain->parsed_uri.path),
 			  cfg->appid,
 			  NULL);
       } else if (cfg->oldappid) {
 	/* Just the old one is set. */
 	/* Glue the default and the old one together. */
-	return ap_pstrcat(p,
+	return (unsigned char *) ap_pstrcat(p,
 			  get_app_path (r, rmain->parsed_uri.path),
 			  cfg->oldappid,
 			  NULL);
@@ -609,7 +609,7 @@ static void set_session_cookie (request_rec * r,
         cookie = libpbc_get_cookie (p,
                                     scfg->sectext,
                                     (unsigned char *) rr->user,
-                                    PBC_VERSION,
+                                    (unsigned char *) PBC_VERSION,
                                     PBC_COOKIE_TYPE_S,
                                     rr->creds,
                                     (cfg->session_reauth < 0) ? 23 : 24,
@@ -1074,7 +1074,7 @@ static int auth_failed_handler (request_rec * r,
         pre_s = (char *) libpbc_get_cookie (p,
                                             scfg->sectext,
                                             (unsigned char *) "presesuser",
-                                            PBC_VERSION,
+                                            (unsigned char *) PBC_VERSION,
                                             PBC_COOKIE_TYPE_PRE_S,
                                             PBC_CREDS_NONE,
                                             pre_sess_tok,
@@ -1526,7 +1526,7 @@ static void *pubcookie_dir_merge (pool * p, void *parent, void *newloc)
       /* Yes.  Did the parent also have an *old* app ID? */
       if (pcfg->oldappid) {
 	/* Yes.  Glue them together and store as "old app ID". */
-	cfg->oldappid = ap_pstrcat(p, pcfg->oldappid, pcfg->appid, NULL);
+	cfg->oldappid = (unsigned char *) ap_pstrcat(p, pcfg->oldappid, pcfg->appid, NULL);
       } else {
 	/* No.  The parent's app ID is now the "old app ID". */
 	cfg->oldappid = pcfg->appid;
@@ -2399,6 +2399,7 @@ static int pubcookie_post_read (request_rec * r)
 
     ap_log_rerror (PC_LOG_DEBUG, r,
                    "pubcookie_post_read: sr=%x", r->server);
+
 #ifdef APACHE1_3
     current_request_rec = r;
     current_server_rec = r->server;
@@ -2406,12 +2407,10 @@ static int pubcookie_post_read (request_rec * r)
     apr_pool_userdata_setn (r, PBC_REQUEST_REC_KEY, NULL, r->pool);
 #endif
 
-    printf ("post_read set rr, uri=%s\n", r->uri);
     ap_set_module_config (r->request_config, &pubcookie_module, rr);
 
     if (scfg->use_post && *r->uri == '/' &&
         !strcmp (r->uri + 1, scfg->post_reply_url)) {
-        printf ("hparse: is post response\n");
         r->handler = "pubcookie-post-reply";
     }
 
@@ -2419,6 +2418,24 @@ static int pubcookie_post_read (request_rec * r)
     /* Add headers tables */
     rr->hdr_out = ap_make_table(r->pool, 5);
     rr->hdr_err = ap_make_table(r->pool, 5);
+
+    /* If this is a forwarded request, copy our headers from the parent */
+
+    if (r->prev) {
+       int nprro;
+       int nprre;
+       pubcookie_req_rec *prr = (pubcookie_req_rec *) ap_get_module_config (r->prev->request_config,
+                                                     &pubcookie_module);
+
+       if (prr) {
+          nprro = apr_table_elts(prr->hdr_out)->nelts;
+          nprre = apr_table_elts(prr->hdr_err)->nelts;
+          ap_log_rerror (PC_LOG_DEBUG, r, "pbc of: forwarding %d output headers to redirect request", nprro);
+          if (nprro) append_to_table(r, rr->hdr_out, prr->hdr_out);
+          ap_log_rerror (PC_LOG_DEBUG, r, "pbc of: forwarding %d error headers to redirect request", nprre);
+          if (nprre) append_to_table(r, rr->hdr_err, prr->hdr_err);
+       }
+    }
 #endif
 
     return DECLINED;
@@ -3414,14 +3431,20 @@ static int pubcookie_cleanup (request_rec * r)
 
 static void set_output_filter(request_rec *r)
 {
-   ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie adding output filter");
-   ap_add_output_filter("PBC_HEADERS_OUT", NULL, r, r->connection);
+   if (r->main) ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie skipping output filter (sub)");
+   else {
+      ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie adding output filter");
+      ap_add_output_filter("PBC_HEADERS_OUT", NULL, r, r->connection);
+   }
 }
 
 static void set_error_filter(request_rec *r)
 {
-   ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie adding error filter");
-   ap_add_output_filter("PBC_HEADERS_ERR", NULL, r, r->connection);
+   if (r->main) ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie skipping error filter (sub)");
+   else {
+      ap_log_rerror (PC_LOG_DEBUG, r, "pubcookie adding error filter");
+      ap_add_output_filter("PBC_HEADERS_ERR", NULL, r, r->connection);
+   }
 }
 
 static apr_status_t do_output_filter(ap_filter_t *f,
@@ -3747,6 +3770,7 @@ static int login_reply_handler (request_rec * r)
     table *args = ap_make_table (r->pool, 5);
     const char *greply, *creply, *pdata;
     char *arg;
+    char *a;
     const char *lenp = ap_table_get (r->headers_in, "Content-Length");
     char *post_data;
     char *gr_cookie, *cr_cookie;
@@ -3826,10 +3850,21 @@ static int login_reply_handler (request_rec * r)
         ap_table_add (HDRS_OUT, "Set-Cookie", cr_cookie);
     }
 
+    /* get the query string */
+    a = (char*) ap_table_get (args, "get_args");
+
+    if (a && *a) {
+        arg = ap_psprintf (p, "%s?%s", r_url, encode_get_args(r, (char*)a, 0));
+    } else {
+        arg = (char*) r_url;
+    }
+    /* make sure there are no newlines in the redirect location */
+    if (a=strchr(arg,'\n')) *a = '\0';
+    if (a=strchr(arg,'\r')) *a = '\0';
+
 
     if (*pdata) {
-        char *a, *v;
-        char *t;
+        char *v, *t;
         int needclick = 0;
 
         flush_headers (r);
@@ -3842,7 +3877,7 @@ static int login_reply_handler (request_rec * r)
         /* send post form with original elements */
         ap_rprintf (r, post_reply_1_html,
                     needclick ? POST_REPLY_CLICK : POST_REPLY_SUBMIT,
-                    r_url);
+                    arg);
 
         while (post_data) {
             if (a = strchr (post_data, '&')) *a++ = '\0';
@@ -3862,18 +3897,6 @@ static int login_reply_handler (request_rec * r)
         ap_rprintf (r, post_reply_2_html);
 
     } else {                    /* do a get */
-
-        const char *a = ap_table_get (args, "get_args");
-        char *t;
-
-        if (a && *a) {
-            arg = ap_psprintf (p, "%s?%s", r_url, encode_get_args(r, (char*)a, 0));
-        } else {
-            arg = (char*) r_url;
-        }
-        /* make sure there are no newlines in the redirect location */
-        if (t=strchr(arg,'\n')) *t = '\0';
-        if (t=strchr(arg,'\r')) *t = '\0';
 
         /* Apache uses the error headers when we return a redirect */
         ap_table_add (HDRS_ERR, "Set-Cookie", gr_cookie);
