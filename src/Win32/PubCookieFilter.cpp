@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.68 2007-02-07 22:49:22 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.69 2007-08-29 21:50:18 dors Exp $
 //
 
 //#define COOKIE_PATH
@@ -1790,7 +1790,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			 p->AuthType = AUTH_SECURID;
 
 		if( ! Pubcookie_Check_Exp(pFC,(*cookie_data).broken.create_ts, PBC_GRANTING_EXPIRE) ) {
-			filterlog(p, LOG_INFO,"[Pubcookie_User] Granting cookie expired for user: %s  elapsed: %d limit: %d; remote_host: %s", 
+			filterlog(p, LOG_ERR,"[Pubcookie_User] Granting cookie expired for user: %s  elapsed: %d limit: %d; remote_host: %s", 
 				(*cookie_data).broken.user,(pbc_time(NULL)-(*cookie_data).broken.create_ts), PBC_GRANTING_EXPIRE, p->remote_host);
 			p->failed = PBC_GRANTING_TIMEOUT;
 			pbc_free(p, cookie_data);
