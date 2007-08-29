@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.220 2007-08-16 22:09:18 fox Exp $
+ * $Id: mod_pubcookie.c,v 1.221 2007-08-29 22:54:21 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1659,10 +1659,6 @@ static int pubcookie_user_hook (request_rec * r)
     if (!ap_auth_type (r))
         return DECLINED;
 
-    /* pass if the request is for favicon.ico */
-    if (!strncasecmp (r->unparsed_uri, "/favicon.ico", 12))
-        return OK;
-
     /* pass if the request is for our post-reply */
     if (!strcasecmp (r->unparsed_uri + 1, scfg->post_reply_url))
         return OK;
@@ -1675,6 +1671,10 @@ static int pubcookie_user_hook (request_rec * r)
     /* get pubcookie creds or bail if not a pubcookie auth_type */
     if ((creds = pubcookie_auth_type (r)) == PBC_CREDS_NONE)
         return DECLINED;
+
+    /* pass if the request is for favicon.ico */
+    if (!strncasecmp (r->unparsed_uri, "/favicon.ico", 12))
+        return OK;
 
 
     /* If this is a subrequest we either already have a user or we don't. */
