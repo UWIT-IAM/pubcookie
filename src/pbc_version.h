@@ -64,6 +64,6 @@
  * by configure when it is run again!
  *************************************************************************** */
 
-#define PBC_VERSION_STRING "3.3.3-pre-beta1"
+#define PBC_VERSION_STRING "3.3.3"
 
 #endif /* !PUBCOOKIE_VERSION */
