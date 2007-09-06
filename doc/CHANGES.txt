@@ -1,3 +1,16 @@
+Changes with 3.3.3:
+
+*) Fixed Apache module not to handle /favicon.ico requests when
+   Pubcookie authentication isn't enabled. (A problem originally
+   reported by Matt Petro, University of Wisconsin - Madison.)
+
+*) Modified Apache module: on internal redirects, forward our headers
+   to the new request record; with POST login method, to preserve and
+   restore query string as well as post data; and added some type casts
+   to avoid compiler warnings.
+
+*) Modified ISAPI filter to log expired granting cookies as errors.
+
 Changes with 3.3.2d:
 
 *) Fixed login cgi handling of post data names and values during
