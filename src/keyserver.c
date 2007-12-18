@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.67 2007-02-07 22:49:22 willey Exp $
+ * $Id: keyserver.c,v 2.68 2007-12-18 22:38:35 fox Exp $
  */
 
 
@@ -1053,11 +1053,12 @@ int main (int argc, char *argv[])
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "peer cn: %s\n", peer);
 
     /* read HTTP query */
-    if (SSL_read (ssl, buf, sizeof (buf)) <= 0) {
+    if ((c=SSL_read (ssl, buf, sizeof(buf)-1)) <= 0) {
         pbc_log_activity (p, PBC_LOG_ERROR, "SSL_read() failed");
         ERR_print_errors_fp (stderr);
         exit (1);
     }
+    buf[c] = '\0';
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "REQ=%s", buf);
     for (ptr = buf; *ptr != '\0'; ptr++) {
