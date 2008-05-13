@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.184 2007-05-30 17:05:50 fox Exp $
+ * $Id: index.cgi.c,v 1.185 2008-05-13 23:59:23 willey Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2862,19 +2862,21 @@ void print_redirect_page (pool * p, const security_context * context,
             strcpy (ptr + 1, "...");
 
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                          "%s Redirect user: %s redirect(full): %s reason: %s\n",
+                          "%s Redirect user: %s redirect(full): %s IP: %s reason: %s\n",
                           l->first_kiss,
                           (l->user == NULL ? "" : l->user),
                           redirect_final,
+                          (cgiRemoteAddr == NULL ? "(null)" : cgiRemoteAddr),
                           l->appsrv_err_string ==
                           NULL ? "(null)" : l->appsrv_err_string);
     }
     pbc_log_activity (p, PBC_LOG_AUDIT,
-                      "%s Redirect user: %s redirect%s: %s reason: %s\n",
+                      "%s Redirect user: %s redirect%s: %s IP: %s reason: %s\n",
                       l->first_kiss,
                       (l->user == NULL ? "" : l->user),
                       (ptr == NULL) ? "" : "(truncated)",
                       redirect_final_trunc,
+                      (cgiRemoteAddr == NULL ? "(null)" : cgiRemoteAddr),
                       l->appsrv_err_string ==
                       NULL ? "(null)" : l->appsrv_err_string);
 
