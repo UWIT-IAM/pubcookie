@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2007 University of Washington
+ * Copyright 2008 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file pbc_time.c
  * Configure stuff
  *
- * $Id: pbc_time.c,v 2.3 2007-02-07 22:49:22 willey Exp $
+ * $Id: pbc_time.c,v 2.4 2008-05-16 22:09:10 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

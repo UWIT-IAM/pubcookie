@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2007 University of Washington
+ * Copyright 2008 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file security.c
  * Support for security structure
  *
- * $Id: security.c,v 1.15 2007-02-07 22:49:22 willey Exp $
+ * $Id: security.c,v 1.16 2008-05-16 22:09:10 willey Exp $
  */
 
 

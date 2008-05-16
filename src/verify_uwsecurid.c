@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2007 University of Washington
+ * Copyright 2008 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@
  *   @return 0 on success, -1 if sid lookup fails, -3 next PRN,
  *          -2 on system error
  *
- * $Id: verify_uwsecurid.c,v 2.11 2007-02-07 22:49:22 willey Exp $
+ * $Id: verify_uwsecurid.c,v 2.12 2008-05-16 22:09:10 willey Exp $
  */
 
 #ifdef HAVE_CONFIG_H

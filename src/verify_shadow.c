@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2007 University of Washington
+ * Copyright 2008 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
  *  
  *    @return 0 on success, -1 if user/pass doesn't match, -2 on system error
  *  
- * $Id: verify_shadow.c,v 1.22 2007-02-07 22:49:22 willey Exp $
+ * $Id: verify_shadow.c,v 1.23 2008-05-16 22:09:10 willey Exp $
  */
 
 

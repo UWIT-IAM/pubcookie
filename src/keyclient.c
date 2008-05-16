@@ -1,5 +1,5 @@
 /* ========================================================================
- * Copyright 2007 University of Washington
+ * Copyright 2008 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /** @file keyclient.c
  * Key administration tool for clients
  *
- * $Id: keyclient.c,v 2.64 2007-02-07 22:49:22 willey Exp $
+ * $Id: keyclient.c,v 2.65 2008-05-16 22:09:10 willey Exp $
  */
 
 
