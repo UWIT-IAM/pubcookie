@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.186 2008-05-16 22:09:10 willey Exp $
+ * $Id: index.cgi.c,v 1.187 2008-05-22 16:29:33 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2677,7 +2677,7 @@ int set_l_cookie (pool * p, const security_context * context,
                   login_rec * l, login_rec * c)
 {
     char *l_cookie;
-    char l_set_cookie[PBC_1K];
+    char l_set_cookie[2048];
     int l_res;
     const char *domain = login_host_cookie_domain (p);
 
