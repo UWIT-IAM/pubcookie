@@ -181,6 +181,33 @@ GetCertInfoString(LPSTR pszType, PCCERT_CONTEXT *pCertContext, LPSTR *pszValue)
 	//free(pszName);
 }
 
+// compare HostName against the Cert's CN
+// CN can be a wildcard "*.dom.ain"
+static int
+matchHostWithCommonName(LPSTR pszHostName, LPTSTR pszCommonName)
+{
+	char *cn_p, *host_p;
+
+	cn_p = strchr(pszCommonName, '*');
+	if (cn_p) {
+		if (cn_p > pszCommonName) {
+			message("**** mal-formed wildcard CN in certificate\n");
+			return 0;
+		}
+		++cn_p;
+		if (strlen(cn_p) > strlen(pszHostName))
+			return 0;
+		host_p = pszHostName + strlen(pszHostName) - strlen(cn_p);
+		if (stricmp(host_p, cn_p) == 0) {
+			return 1;
+		}
+	} else if (stricmp(pszHostName, pszCommonName) == 0) {
+		return 1;
+	}
+
+	return 0;
+}
+
 
 /*****************************************************************************/
 SECURITY_STATUS
@@ -303,7 +330,7 @@ CertSearchLoop:
 					pszCertSubAltDNSName,
 					cbSize);
 				
-				if (stricmp(pszCertSubAltDNSName, pszHostName) != 0)
+				if (!matchHostWithCommonName(pszHostName, pszCertSubAltDNSName))
 				{							
 					free(pszCertSubAltDNSName);	
 					continue;
@@ -353,8 +380,7 @@ CertSearchLoop:
 					pszCertSubCommonName,
 					cbSize);
 				
-
-				if (stricmp(pszCertSubCommonName, pszHostName) != 0)
+				if (!matchHostWithCommonName(pszHostName, pszCertSubCommonName))
 				{							
 					free(pszCertSubCommonName);	
 					continue;
