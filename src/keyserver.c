@@ -18,7 +18,7 @@
 /** @file keyserver.c
  * Server side of key management structure
  *
- * $Id: keyserver.c,v 2.69 2008-05-16 22:09:10 willey Exp $
+ * $Id: keyserver.c,v 2.70 2009-03-12 21:47:59 willey Exp $
  */
 
 
@@ -188,7 +188,7 @@ int pushkey (const char *peer, const security_context * context,
     pool *p = NULL;
     char **lservers = libpbc_config_getlist (p, "login_servers");
     const char *hostname;
-    char *lservername, *ptr;
+    char *lservername, *ptr, *lhostname;
     int x;
     int res;
     int fail = 0;
@@ -211,19 +211,19 @@ int pushkey (const char *peer, const security_context * context,
         /* login_servers (should?  might?) contain a URI */
 
         /* break out the hostname and see if that is us */
-        lservername = strdup (lservers[x]);
-        if (!strncmp (lservername, "https://", 8))
-            lservername += 8;
-        ptr = strchr (lservername, '/');
+        lhostname = lservername = strdup (lservers[x]);
+        if (!strncmp (lhostname, "https://", 8))
+            lhostname += 8;
+        ptr = strchr (lhostname, '/');
         if (ptr) {
             *ptr = '\0';
         }
-        ptr = strchr (lservername, ':');
+        ptr = strchr (lhostname, ':');
         if (ptr) {
             *ptr = '\0';
         }
 
-        if (!strcasecmp (hostname, lservername)) {
+        if (!strcasecmp (hostname, lhostname)) {
             /* don't push the key to myself */
             free (lservername);
             continue;
