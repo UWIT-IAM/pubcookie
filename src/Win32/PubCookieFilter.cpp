@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.70 2008-05-16 22:09:10 willey Exp $
+//  $Id: PubCookieFilter.cpp,v 1.71 2009-05-07 20:51:48 fox Exp $
 //
 
 //#define COOKIE_PATH
@@ -54,8 +54,10 @@ extern "C"
 #define HDRSIZE 56
 #define MAX_BUFFER 4096
 
+#define zeroterm(str,len) (str[(len)-1]='\0')
 
-static char *encode_get_args (pubcookie_dir_rec *p, char *in, int en)
+
+static char *encode_get_args (pubcookie_dir_rec *p, char *in, char *buf)
 {
     int na = 0;
     char *enc, *s;
@@ -67,16 +69,15 @@ extern "C"
              (*s == '>') ||
              (*s == '(') ||
              (*s == ')') ||
-             (*s == ':') ||
              (*s == ';') ||
              (*s == '\n') ||
              (*s == '\r') ) na++;
     }
     if (!na) return (in);
+    if ((strlen(in)+(na*5))>=MAX_BUFFER) return (""); 
 
-    //enc = (char*) ap_palloc (r->pool, strlen(in)+(na*5));
-	//enc = (char*) malloc(strlen(in)+(na*5));
-	enc = (char*) pbc_malloc(p, strlen(in)+(na*5));
+    // use the provided buffer
+    enc = buf;
 	
     for (s=enc; in&&*in; in++) {
         switch (*in) { 
@@ -87,11 +88,6 @@ extern "C"
             case '>':  strcpy(s, "%3E"); s+=3; break;
             case '(':  strcpy(s, "%28"); s+=3; break;
             case ')':  strcpy(s, "%29"); s+=3; break;
-            //case ':':  strcpy(s, "%3A"); s+=3; break;
-			case ':': if (en) {
-							strcpy(s, "%3A"); s+=3;
-					  }else *s++ = *in;
-					  break;
             case ';':  strcpy(s, "%3B"); s+=3; break;
             case '\n': strcpy(s, "&#10;"); s+=5; break;
             case '\r': strcpy(s, "&#13;"); s+=5; break;
@@ -149,7 +145,7 @@ static char *decode_data(char *in)
 /* verify the url. return 0 if OK.
    We are mostly checking for characters that
    could introduce javascript xss code. */
-static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
+static char *verify_url(pubcookie_dir_rec *p, char *in, char *buf)
 {
     int n;
     char *sa, *e, *enc;
@@ -201,7 +197,6 @@ static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
         if ( (*s=='"') ||
              (*s == '<') ||
              (*s == '>') ||
-             (*s == ':') ||
              (*s == ';') ||
              (*s == '?') ||
 			 (*s == '%') ||
@@ -210,7 +205,10 @@ static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
     if (n==0) return (in);  /* checks out ok */
 
     /* else have to encode them */    
-	enc = (char*) pbc_malloc(p, strlen(in)+(n*4));
+    if ((strlen(in)+(n*3))>=MAX_BUFFER) return (NULL);
+
+    // use the provided buffer
+    enc = buf;
     strncpy(enc, in, sa-in);
     for (s=enc+(sa-in); sa&&*sa; sa++) {
         switch (*sa) { 
@@ -218,17 +216,12 @@ static char *verify_url(pubcookie_dir_rec *p, char *in, int ec)
             case '"':  strcpy(s, "%22"); s+=3; break;
             case '<':  strcpy(s, "%3C"); s+=3; break;
             case '>':  strcpy(s, "%3E"); s+=3; break;
-            //case ':':  strcpy(s, "%3A"); s+=3; break;
-			case ':':  if (ec) {
-                           strcpy(s, "%3A"); s+=3;
-                       } else *s++ = *in;
-                       break;
             case ';':  strcpy(s, "%3B"); s+=3; break;
             case '?':  strcpy(s, "%3F"); s+=3; break;
             case '=':  strcpy(s, "%3D"); s+=3; break;
-			case '%':  if (ec || strncmp(sa,"%3A",3)) *s++ = *sa;
-                       else *s++=':',sa+=2;
-                       break;
+		case '%':  if (strncmp(sa,"%3A",3)) *s++ = *sa;
+                           else *s++=':',sa+=2;
+                           break;
             default: *s++ = *sa;
         }
      }
@@ -280,7 +273,7 @@ VOID filterlog(pubcookie_dir_rec *p, int loglevel, const char *format, ...) {
     va_start(args, format);
 	if (p) {  
 		_snprintf(source,HDRSIZE,"Pubcookie-%s",p->instance_id);
-		//_snprintf(source,HDRSIZE,"Pubcookie-siteID=%s", p->instance_id);
+		zeroterm(source,HDRSIZE);
 	}
 	else
 	{
@@ -308,6 +301,7 @@ bool logsource_exists(pubcookie_dir_rec *p, const char *source) {
 	//First, check to see if key exists
 	dsize = MAX_REG_BUFF;
 	_snprintf(p->strbuff,MAX_REG_BUFF,"System\\CurrentControlSet\\Services\\Eventlog\\Application\\%s",source);
+	zeroterm(p->strbuff,MAX_REG_BUFF);
 	
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		p->strbuff,0,KEY_READ,&hKey) != ERROR_SUCCESS) {
@@ -385,6 +379,7 @@ VOID create_source(pubcookie_dir_rec *p, const char *source) {
 
 	dsize = MAX_REG_BUFF;
 	_snprintf(keybuff,MAX_REG_BUFF,"System\\CurrentControlSet\\Services\\Eventlog\\Application\\%s",source);
+	zeroterm(keybuff,MAX_REG_BUFF);
 
 	if ((retval = RegCreateKeyEx(HKEY_LOCAL_MACHINE, 
 					keybuff,
@@ -424,13 +419,14 @@ VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_doma
 		strncpy (secure_string,"",15);
 	}
 
-	sprintf(new_cookie, "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\r\n", 
+	snprintf(new_cookie, START_COOKIE_SIZE, "Set-Cookie: %s=%s; domain=%s; path=%s; expires=%s%s\r\n", 
 			cookie_name,
 			PBC_CLEAR_COOKIE,
 			cookie_domain, 
 			cookie_path,
 			EARLIEST_EVER,
 			secure_string);
+	zeroterm(new_cookie, START_COOKIE_SIZE);
 
 	
 		pFC->AddResponseHeaders(pFC,new_cookie,0);
@@ -440,7 +436,7 @@ VOID Clear_Cookie(HTTP_FILTER_CONTEXT* pFC, char* cookie_name, char* cookie_doma
 
 int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
     //char    szBuff[2048];
-	char	szBuff[PBC_4K];
+	char	szBuff[PBC_4K+500];
 	DWORD	dwBuffSize;
     pubcookie_dir_rec   *p;
 
@@ -463,6 +459,7 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 					" </BODY>\n"
 					"</HTML>\n"		
 					,PBC_REFRESH_TIME, RUrl);
+	zeroterm(szBuff, PBC_4K + 500);
 	
 	dwBuffSize=strlen(szBuff);
 
@@ -474,7 +471,7 @@ int Redirect(HTTP_FILTER_CONTEXT* pFC, char* RUrl) {
 
 int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 
-    char    szBuff[PBC_4K + 500];
+    char    szBuff[PBC_4K + 1000];
 	DWORD	dwBuffSize;
     pubcookie_dir_rec   *p;
 
@@ -510,6 +507,7 @@ int Add_Post_Data(HTTP_FILTER_CONTEXT* pFC, unsigned char* greq) {
 					"  </form>\r\n"
 					" </body>\r\n"
 					"</html>\r\n",p->Login_URI,greq,p->Relay_URI);
+	zeroterm(szBuff, PBC_4K + 1000);
 	
 	
 	dwBuffSize=strlen(szBuff);
@@ -662,6 +660,7 @@ void Add_Cookie (HTTP_FILTER_CONTEXT* pFC, char* cookie_name, unsigned char* coo
 		cookie_name, 
 		cookie_contents,
 		cookie_domain);
+	zeroterm(szHeaders, PBC_4K);
 
 	pFC->AddResponseHeaders(pFC,szHeaders,0);
 
@@ -700,7 +699,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 {
 	char 			args[PBC_4K];
 	char 			g_req_contents[PBC_4K];
-	unsigned char	e_g_req_contents[PBC_4K];
+	unsigned char	*e_g_req_contents;
 	char			szTemp[PBC_1K];
 	char			*b64uri;
 
@@ -721,7 +720,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 
 	/* deal with GET args */
 	if ( strlen(p->args) > 0 ) {
-		if ( strlen(p->args) > sizeof(args) ) {  // ?? does base64 double size ??
+		if ( strlen(p->args)*2 > sizeof(args) ) {  // base64 might be 4/3 the size
 			filterlog(p, LOG_ERR,"[Pubcookie_Init] Invalid Args Length = %d; remote_host: %s",
 				strlen(p->args), p->remote_host);
 			strcpy(args, "");
@@ -739,7 +738,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	}	
 
 	/* encode the uri */
-	b64uri = (char *)pbc_malloc(p, (strlen(p->uri)+4)*4 + 1);
+	b64uri = (char *)pbc_malloc(p, (strlen(p->uri)+4)*2 + 1);
 	if (!b64uri) {
 		filterlog(p, LOG_ERR,"[Get_Cookie] Error allocating b64uri");
 		return NULL;
@@ -775,9 +774,11 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		 // pre_sess_tok,
           PBC_GETVAR_FLAG,
 		  p->no_prompt ? 'Q' : '0');
+	zeroterm(g_req_contents, PBC_4K);
 
 	filterlog(p, LOG_DEBUG,"Granting Request:\n%s",g_req_contents); 
 
+	e_g_req_contents = (char *)pbc_malloc(p, (strlen(g_req_contents)+4)*2 + 1);
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents)); //to avoid illegal cookie characters
 	pbc_free(p, b64uri);
@@ -809,6 +810,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 
 #ifdef PBC_USE_GET_METHOD
 	snprintf(szTemp,1024,p->Login_URI);
+	zeroterm(szTemp,1024);
+	pbc_free(p, e_g_req_contents);
 	return (Redirect(pFC,szTemp));
 #else
 	char szAppPort[PBC_1K];
@@ -817,13 +820,12 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 		strcat(szAppPort,":");
 		strcat(szAppPort,p->appsrv_port);
 	}
-	//OLD -- keeping it around for now, delete this after testing...
-	//snprintf(szTemp,1024,"https://%s/%s?appsrvid=%s",p->appsrvid,PBC_POST_NAME,p->appsrvid);
-	//NEW
 	snprintf(szTemp,1024,"https://%s/%s?appsrvid=%s",szAppPort,PBC_POST_NAME,p->appsrvid);
+	zeroterm(szTemp,1024);
 	p->Relay_URI = strdup(szTemp);
 	Add_Post_Data(pFC, e_g_req_contents);
 	free(p->Relay_URI);
+	pbc_free(p, e_g_req_contents);
 	//TODO: REMOVED -  presession cookie
 	//free(pre_s);
 	return OK;
@@ -1318,10 +1320,12 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			p->Error_Page,
 			p->crypt_alg,
 			p->Set_Server_Values);
+	zeroterm(buff, 4096);
 		
 	filterlog(p, LOG_INFO,buff);
 	}
-	sprintf(p->s_cookiename,"%s_%s",PBC_S_COOKIENAME,p->appid);
+	snprintf(p->s_cookiename, 64, "%s_%s",PBC_S_COOKIENAME,p->appid);
+	zeroterm(p->s_cookiename, 64);
 
 } 
 
@@ -1488,9 +1492,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	ptr = strchr(achUrl,'?');
 	if (ptr) {
-		*ptr++;
-		strncpy(szBuff, ptr, strlen(ptr));
-		szBuff[strlen(ptr)] = NULL;
+		ptr++;
+		strcpy(szBuff, ptr);
 		strcpy(p->args, decode_data(szBuff));		
 
 		filterlog(p, LOG_INFO,"  Query String  : %s\n",szBuff);
@@ -1505,7 +1508,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	filterlog(p, LOG_DEBUG,"  Normalized URL: %s\n",achUrl);
 
 	// set Uri
-	strcpy(p->uri,achUrl);
+	strncpy(p->uri,achUrl,PBC_MAX_GET_ARGS);
 
 	// set Request Method
 	dwBuffSize = sizeof(p->method);
@@ -1541,14 +1544,17 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
     ptr = strchr(pachUrl,'/');
 	if ( ptr ) { // subfolder, off root
-		strncpy((char *)p->appid, pachUrl, ptr-pachUrl);
-		p->appid[(ptr-pachUrl)] = NULL;
+                int l = ptr - pachUrl;
+                if (l>=PBC_APP_ID_LEN) l = PBC_APP_ID_LEN - 1;
+		strncpy((char *)p->appid, pachUrl, l);
+		p->appid[l] = NULL;
 	} 
 	else if (strlen(pachUrl) > 0) {   // This could set appid to a filename in the root dir
 		//strcpy((char *)p->appid, pachUrl);		
 		if (stricmp(pachUrl, PBC_POST_NAME) == 0 || stricmp(pachUrl, "favicon.ico") == 0)
 		{
-			strcpy((char *)p->appid, pachUrl);
+			strncpy((char *)p->appid, pachUrl, PBC_APP_ID_LEN);
+			zeroterm(p->appid, PBC_APP_ID_LEN);
 		}
 		else
 		{
@@ -1631,6 +1637,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	{
 		p->failed = PBC_BAD_PORT;
 		snprintf(szBuff, PBC_4K, "https://%s%s%s%s",p->appsrvid, achUrl,(strlen(p->args) ? "?" : ""), p->args);
+		zeroterm(szBuff, PBC_4K);
 		return(Redirect(pFC,szBuff));
 	}
 
@@ -1644,7 +1651,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 		if ( strlen(p->default_url) > 0 )
 			strcpy((char *)p->force_reauth,p->default_url);
 		else
-			strcpy((char *)p->force_reauth,achUrl);
+			strncpy((char *)p->force_reauth,achUrl,1024);
+		zeroterm(p->force_reauth, 1024);
 
     //  Get Granting cookie or Session cookie
 	// If '<cookie name>=' then client has bogus time and cleared cookie hasn't expired
@@ -1955,6 +1963,7 @@ int Pubcookie_Typer (HTTP_FILTER_CONTEXT* pFC,
 
 #else
 			snprintf(session_cookie_name,MAX_PATH,"%s_%s",PBC_S_COOKIENAME,p->appid);
+			zeroterm(session_cookie_name,MAX_PATH);
 			Add_Cookie(pFC,session_cookie_name,cookie,p->appsrvid);
 			
 	
@@ -2183,6 +2192,7 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	filterlog(p, LOG_INFO,"\n PBC_OnPreprocHeaders\n");
 	/* Have to use szBuff here since p->strbuff in PBC_KEY_DIR will be overwritten with the filterlog call*/
 	snprintf(szBuff,1024,"\n Using crypt key: %s\\%s",PBC_KEY_DIR,p->server_hostname);
+	zeroterm(szBuff, 1024);
 	filterlog(p, LOG_INFO, szBuff);
 
 	szBuff[0]= NULL; dwBuffSize=1024;
@@ -2652,6 +2662,7 @@ void output_debug_page(EXTENSION_CONTROL_BLOCK *pECB, const char *msg) {
    WriteString(pECB,"</HEAD>\r\n");
    WriteString(pECB,"<BODY bgcolor=\"#ffffff\">\r\n");
    snprintf(sztmpstr,MAX_BUFFER,"<h1>%s</H1>\r\n",msg);
+   zeroterm(sztmpstr,MAX_BUFFER);
    WriteString(pECB,sztmpstr);
    WriteString(pECB,"</BODY>\r\n");
    WriteString(pECB,"</HTML>\r\n");
@@ -2683,15 +2694,18 @@ void relay_granting_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p,
    WriteString(pECB,"<body onLoad=\"document.relay.submit()\">\r\n");
 
    snprintf(sztmpstr,MAX_BUFFER,"<form method=post action=\"%s\" name=relay>\r\n\r\n",p->Login_URI);
+   zeroterm(sztmpstr,MAX_BUFFER);
    WriteString(pECB,sztmpstr);
    
    snprintf(sztmpstr,MAX_BUFFER,"<input type=hidden name=pubcookie_g_req value=\"%s\">\r\n",greq);
+   zeroterm(sztmpstr,MAX_BUFFER);
    WriteString(pECB,sztmpstr);
    
   // snprintf(sztmpstr,MAX_BUFFER,"<input type=hidden name=post_stuff value=\"%s\">\r\n",post);
   // WriteString(pECB,sztmpstr);
    
    snprintf(sztmpstr,MAX_BUFFER,"<input type=hidden name=relay_url value=\"%s\">\r\n\r\n", p->Relay_URI);
+   zeroterm(sztmpstr,MAX_BUFFER);
    
    WriteString(pECB,sztmpstr);
    WriteString(pECB,"<noscript>\r\n");
@@ -2719,12 +2733,13 @@ static int need_area(char *in)
   return (0);
 }
 
-/* Return value of arg from http querystring.  If valuesize is zero, allocate space for value */
+/* Return value of arg from http querystring.  */
 
 BOOL getqueryarg (const char* querystr, char* value, const char* arg, int valuesize) {
 
 	char *searchstr, *pos1, *pos2;
 
+	strcpy(value,"");
 	size_t mallocsize = sizeof(char)*(strlen(arg)+2);
 	if (!(searchstr = (char *)malloc(mallocsize))) {
 		return FALSE;
@@ -2732,32 +2747,17 @@ BOOL getqueryarg (const char* querystr, char* value, const char* arg, int values
 	strcpy(searchstr,arg);
 	strcat(searchstr,"=");
 	
-	if (valuesize == 0) {
-		mallocsize = sizeof(char)*2;
-		if (!(value = (char *)malloc(mallocsize))) {
-			return FALSE;
-		}
-	}
 	if (pos1 = strstr(querystr, searchstr)) {
 		pos1 += strlen(searchstr);
 		if (!(pos2 = strchr(pos1,'&'))) {
 			pos2 = pos1+strlen(pos1);
 		}
-		if (valuesize == 0) {
-			valuesize = pos2-pos1+1;
-			mallocsize =  sizeof(char) * valuesize;
-			if (!(value = (char *)malloc(mallocsize))) {
-				return FALSE;
-			}
-		}
 		if ( pos2-pos1 < valuesize ) {
 			strncpy(value,pos1,pos2-pos1);
 		} else {
-			strcpy(value,"");
 			return FALSE;
 		}
 	} else {
-		strcpy(value,"");
 		return FALSE;
 	}
 
@@ -2768,6 +2768,7 @@ BOOL getqueryarg (const char* querystr, char* value, const char* arg, int values
 void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *grpl, char *redirect_url, char *get_args)
 { 	char httpheader[START_COOKIE_SIZE+1024];
 	char sztmpstr[MAX_BUFFER];	char f_url[MAX_BUFFER];
+	char urlbuf[MAX_BUFFER];
 	int urlError = 0;	
 	// Send HTTP headers and set granting cookie
 
@@ -2775,7 +2776,7 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 	// Access issues in 6.0
 	
 	char* r_url = redirect_url;
-	if (!(r_url=verify_url(p, redirect_url, 0))) {
+	if (!(r_url=verify_url(p, redirect_url, urlbuf))) {
 		//filterlog(p, LOG_ERR, " bad redirect url: %s", redirect_url);		
 		syslog(LOG_ERR, " bad redirect url: %s", redirect_url);	
 		urlError = 1;
@@ -2784,7 +2785,8 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 	
 
 	if (strlen(get_args) > 0) {
-		snprintf(f_url, MAX_BUFFER, "%s?%s", r_url, encode_get_args(p, get_args, 0));
+		snprintf(f_url, MAX_BUFFER, "%s?%s", r_url, encode_get_args(p, get_args, urlbuf));
+		zeroterm(f_url, MAX_BUFFER);
 		r_url = f_url;
 	}
 
@@ -2804,7 +2806,12 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 					grpl,
 					p->appsrvid,
 					r_url); 		
-	}else{		snprintf(httpheader, START_COOKIE_SIZE+1024, "Content-type: text/html; charset=utf-8;\r\n\r\n");			}		if (urlError) {		SendHttpHeaders(pECB, "200 OK", httpheader);
+	}else{
+		snprintf(httpheader, START_COOKIE_SIZE+1024, "Content-type: text/html; charset=utf-8;\r\n\r\n");
+	}
+	zeroterm(httpheader, START_COOKIE_SIZE+1024);
+	if (urlError) {
+		SendHttpHeaders(pECB, "200 OK", httpheader);
 	}else{
 		SendHttpHeaders(pECB, "302 Moved Temporarily", httpheader);
 	}
@@ -2836,6 +2843,7 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 		WriteString(pECB, "<H1>Found</H1>\r\n");
 
 		snprintf(sztmpstr,MAX_BUFFER,"<P>This document has moved <A HREF=\"%s\">here</A>.</P>\r\n>",r_url);		
+   		zeroterm(sztmpstr,MAX_BUFFER);
 						
 		WriteString(pECB,sztmpstr);		
 		WriteString(pECB,"</BODY>\r\n");
@@ -2855,7 +2863,7 @@ void relay_granting_reply(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
   
 void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, char *act, const char *qs)
 {
-   char *a1=NULL, *a2=NULL;
+   char a1[1024], a2[1024];
    char *furl;
    size_t l;
 
@@ -2875,12 +2883,8 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
 
 
    // Build the redirection 
-   if (!getqueryarg(qs,a1,"one",0)) {
-		a1 = strdup("");
-   }
-   if (!getqueryarg(qs,a2,"two",0)) {
-		a2 = strdup("");
-   }
+   getqueryarg(qs,a1,"one",1024);
+   getqueryarg(qs,a2,"two",1024);
 
    l = strlen(p->Login_URI) + 
          strlen(PBC_GETVAR_LOGOUT_ACTION) + strlen(act) +
@@ -2888,11 +2892,13 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    furl = (char*) malloc(l);
    snprintf(furl,l, "%s?%s=%s&one=%s&two=%s", p->Login_URI,
            PBC_GETVAR_LOGOUT_ACTION, act, a1, a2);
+   zeroterm(furl,l);
 
    //output page
    WriteString(pECB,"<HTML>\r\n");
    WriteString(pECB,"<HEAD>\r\n");
    snprintf(sztmpstr,MAX_BUFFER,"<meta http-equiv=\"Refresh\" content=\"0;URL=%s\"\r\n>",furl);
+   zeroterm(sztmpstr,MAX_BUFFER);
    WriteString(pECB,sztmpstr);
    WriteString(pECB,"</HEAD>\r\n");
    WriteString(pECB,"<BODY>\r\n");
@@ -2900,17 +2906,17 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    WriteString(pECB,"</HTML>\r\n");
 
    free(furl);
-   free(a1);
-   free(a2);
 }
 
 DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 {
-  char *cookie=NULL, *val=NULL, *postdata=NULL, *redirect_url=NULL, *get_args=NULL;
-  char *host, *port, *uri, *qs;
+  char *cookie=NULL, *postdata=NULL, *redirect_url=NULL, *get_args=NULL;
+  char val[1024];
+  char *host, *port, *uri;
   char *uport;
   int ishttps;
   char szBuffer[MAX_BUFFER];
+  char qs[MAX_BUFFER];
   DWORD dwBufferSize;
   size_t ts;
   DWORD retcode=HSE_STATUS_SUCCESS;
@@ -2922,12 +2928,12 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 
   dwBufferSize = sizeof szBuffer;
   if ((pECB->GetServerVariable(pECB->ConnID, "QUERY_STRING", szBuffer, &dwBufferSize))) {
-	  qs = strdup(szBuffer);
+	  strcpy(qs, szBuffer);
   } else {
-	  qs = "";
+	  qs[0] = '\0';
   }
 
-  getqueryarg(qs, p->appsrvid,"appsrvid",1024);
+  getqueryarg(qs, p->appsrvid,"appsrvid",PBC_APPSRV_ID_LEN);
 
   // syslog(LOG_ERR,"p->Login_URI = %s : strlen = %d",p->Login_URI,strlen(p->Login_URI)); 
 
@@ -2976,14 +2982,14 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
   ts = 24 + strlen(host) + strlen(uport) + strlen(uri) + strlen(qs);
   p->Relay_URI = (char*) malloc(ts);
   snprintf(p->Relay_URI,ts,"http%c://%s%s%s%s%s",
-           ishttps?'s':'\0', host, uport, uri,*qs?"?":"", qs); 
+           ishttps?'s':'\0', host, uport, uri,qs[0]?"?":"", qs); 
+	zeroterm(p->Relay_URI,ts);
 
   /* A logout request to the login server will have a
      logout action variable */
 
-  if (getqueryarg(qs,val,PBC_GETVAR_LOGOUT_ACTION,0)) {
+  if (getqueryarg(qs,val,PBC_GETVAR_LOGOUT_ACTION,1024)) {
       relay_logout_request(pECB, p, val, qs);
-      free(val);
   } else {
     /* A login reply to the application will have a granting
      cookie in posted form data */
@@ -3000,6 +3006,7 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
        request cookie */
        if (cookie= Get_Ext_Cookie(pECB, p, PBC_G_REQ_COOKIENAME)) {
            relay_granting_request(pECB, p, cookie);
+           free(cookie);
           /* Otherwise this is an invalid request */
 
     } else {       output_error_page(pECB);

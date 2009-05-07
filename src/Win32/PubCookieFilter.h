@@ -37,7 +37,7 @@ typedef struct {
 	char			pszPassword[SF_MAX_PASSWORD];
 	char			appid[PBC_APP_ID_LEN];
 	char			s_cookiename[64];
-	char			force_reauth[4];
+	char			force_reauth[1024];
 	char			AuthType;
 	char			default_url[1024];
 	char			timeout_url[1024];
