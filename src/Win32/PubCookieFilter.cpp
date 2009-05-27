@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.71 2009-05-07 20:51:48 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.72 2009-05-27 20:48:16 dors Exp $
 //
 
 //#define COOKIE_PATH
@@ -778,7 +778,7 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 
 	filterlog(p, LOG_DEBUG,"Granting Request:\n%s",g_req_contents); 
 
-	e_g_req_contents = (char *)pbc_malloc(p, (strlen(g_req_contents)+4)*2 + 1);
+	e_g_req_contents = (unsigned char *)pbc_malloc(p, (strlen(g_req_contents)+4)*2 + 1);
 	libpbc_base64_encode(p, (unsigned char *)g_req_contents, (unsigned char *)e_g_req_contents,
 				strlen(g_req_contents)); //to avoid illegal cookie characters
 	pbc_free(p, b64uri);
