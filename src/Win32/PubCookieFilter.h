@@ -93,9 +93,13 @@ char *Get_Cookie (HTTP_FILTER_CONTEXT* pFC, char *name);
 
 #define WINKEY "System\\CurrentControlSet\\Control\\Windows"
 #define PBC_Header_Appid   "Pubcookie-Appid:"
+#define PBC_Header_Appid_  "Pubcookie_Appid:"
 #define PBC_Header_User    "Pubcookie-User:"
+#define PBC_Header_User_   "Pubcookie_User:"
 #define PBC_Header_Creds   "Pubcookie-Creds:"
+#define PBC_Header_Creds_  "Pubcookie_Creds:"
 #define PBC_Header_Server  "Pubcookie-Server:"
+#define PBC_Header_Server_ "Pubcookie_Server:"
 #define PBC_Header_Version "Pubcookie-Filter-Version:"
 
 // Define COOKIE_PATH to include a path of /<application name> in the session
