@@ -1,5 +1,5 @@
 // ========================================================================
-// Copyright 2008 University of Washington
+// Copyright 2009 University of Washington
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.73 2009-06-17 18:35:32 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.74 2009-06-26 17:35:44 dors Exp $
 //
 
 //#define COOKIE_PATH
@@ -674,7 +674,7 @@ static void fix_base64_for_url(pubcookie_dir_rec *p, char *b64)
    char n64[PBC_4K];
    for (n=0, bp=b64; *bp; bp++) if (*bp=='+') n++;
    if (n>0) {
-      if ( (strlen(b64)+n*3) > sizeof(n64) ) {
+      if ( (strlen(b64)+n*3) >= sizeof(n64) ) {
 			filterlog(p, LOG_ERR,"[Pubcookie_Init] Invalid Args encLength = %d; remote_host: %s",
 				strlen(b64), p->remote_host);
 			strcpy(b64, "");
@@ -809,8 +809,8 @@ int Auth_Failed (HTTP_FILTER_CONTEXT* pFC)
 	Add_No_Cache(pFC);
 
 #ifdef PBC_USE_GET_METHOD
-	snprintf(szTemp,1024,p->Login_URI);
-	zeroterm(szTemp,1024);
+	snprintf(szTemp,PBC_1K,p->Login_URI);
+	zeroterm(szTemp,PBC_1K);
 	pbc_free(p, e_g_req_contents);
 	return (Redirect(pFC,szTemp));
 #else
@@ -851,9 +851,10 @@ int Bad_User (HTTP_FILTER_CONTEXT* pFC)
 		pFC->ServerSupportFunction(pFC,SF_REQ_SEND_RESPONSE_HEADER,
 								"200 OK",NULL,NULL);
 
-		sprintf(szTemp,"<B> User Authentication Failed!<br><br>"
+		snprintf(szTemp, 1024, "<B> User Authentication Failed!<br><br>"
 			           " Please contact <a href=\"mailto:ntadmin@%s\">ntadmin@%s</a> </B> <br>",
 			p->server_hostname,p->server_hostname);
+		zeroterm(szTemp, 1024);
 		dwSize=strlen(szTemp);
 
 		pFC->WriteClient (pFC, szTemp, &dwSize, 0);
@@ -1235,11 +1236,12 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		ptr = strchr(pachUrl,'/');
 
 		if (ptr) {
-			strncpy(szBuff, pachUrl, ptr-pachUrl);
-			szBuff[ptr-pachUrl] = NULL;
+		    strncpy(szBuff, pachUrl, min(ptr-pachUrl,1025));
+		    szBuff[min(ptr-pachUrl, 1025 - 1)] = NULL;
 		}
 		else {
-			strcpy(szBuff,pachUrl);
+		    strncpy(szBuff,pachUrl, 1025);
+		    zeroterm(szBuff, 1025);
 		}
 
 		if (!strlen(szBuff)) {
@@ -1267,8 +1269,9 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			}
 		}
 
-		strcat (key, "\\");
-		strcat (key, szBuff);
+		strncat (key, "\\", 1024+MAX_PATH);
+		strncat (key, szBuff, 1024+MAX_PATH);
+		zeroterm(key, 1024+MAX_PATH);
 
 		Read_Reg_Values (key, p);
 
@@ -1393,8 +1396,9 @@ bool MakeSecContext(HTTP_FILTER_CONTEXT* pFC,
 
     if (!g_certfile) {
         g_certfile = (char *)pbc_malloc(p, 1025); 
-        snprintf(g_certfile, 1024, "%s\\%s", PBC_KEY_DIR,
+        snprintf(g_certfile, 1025, "%s\\%s", PBC_KEY_DIR,
                  "pubcookie_granting.cert");
+	zeroterm(g_certfile, 1025);
     }
 
     /* test g_certfile; it's a fatal error if this isn't found */
@@ -1514,6 +1518,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	// set Uri
 	strncpy(p->uri,achUrl,PBC_MAX_GET_ARGS);
+	zeroterm(p->uri, PBC_MAX_GET_ARGS);
 
 	// set Request Method
 	dwBuffSize = sizeof(p->method);
@@ -1596,7 +1601,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 			
 			filterlog(p, LOG_INFO,"  Logout Redirect....\n");
 			
-			sprintf(szBuff, "%s?%s=%d&%s=%s&%s=%s",
+			snprintf(szBuff, PBC_4K, "%s?%s=%d&%s=%s&%s=%s",
 				p->Login_URI,
 				PBC_GETVAR_LOGOUT_ACTION,
 				(p->logout_action == LOGOUT_REDIRECT_CLEAR_LOGIN ? LOGOUT_ACTION_CLEAR_L : LOGOUT_ACTION_NOTHING),
@@ -1604,7 +1609,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 				p->appid,
 				PBC_GETVAR_APPSRVID,
 				p->appsrvid);
-			
+			zeroterm(szBuff, PBC_4K);
 			
 			p->failed = PBC_LOGOUT_REDIR;
 			p->handler = PBC_LOGOUT_REDIR;
@@ -2039,7 +2044,8 @@ BOOL WINAPI GetFilterVersion (HTTP_FILTER_VERSION* pVer)
 	pVer->dwFilterVersion =  HTTP_FILTER_REVISION; // MAKELONG( 0, 4 ); Version 4.0
 
 	// The description
-	strcpy( pVer->lpszFilterDesc, Pubcookie_Version );
+	strncpy( pVer->lpszFilterDesc, Pubcookie_Version, SF_MAX_FILTER_DESC_LEN);
+	zeroterm(pVer->lpszFilterDesc, SF_MAX_FILTER_DESC_LEN);
 
 	syslog(LOG_INFO,"[GetFilterVersion] %s",Pubcookie_Version);
 	
@@ -2190,7 +2196,9 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
       "SERVER_NAME",szBuff,&dwBuffSize);
 	AddToLog(LogBuff,"  Server Name    : %s\n",szBuff);
 	strncpy((char *)p->server_hostname, szBuff, PBC_APPSRV_ID_LEN);
+	zeroterm(p->server_hostname, PBC_APPSRV_ID_LEN);
 	strncpy(p->appsrvid, szBuff, PBC_APPSRV_ID_LEN);   // Use SERVER_NAME for appsrvid
+	zeroterm(p->appsrvid, PBC_APPSRV_ID_LEN);
 
 	//remove reference to pbc_time, previously ctime, which converts time to string
 	//filterlog(p, LOG_INFO,"\n %s \n PBC_OnPreprocHeaders\n",pbc_time(&ltime));
@@ -2204,7 +2212,8 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	pFC->GetServerVariable(pFC, "REMOTE_HOST",
 							szBuff, &dwBuffSize);
 	AddToLog(LogBuff,"  Remote_Host    : %s\n",szBuff);
-	strcpy(p->remote_host,szBuff);
+	strncpy(p->remote_host,szBuff, MAX_PATH);
+	zeroterm(p->remote_host, MAX_PATH);
 
 	szBuff[0]= NULL; dwBuffSize=1024;
 	pFC->GetServerVariable(pFC, "HTTP_REFERER",
@@ -2244,7 +2253,8 @@ DWORD OnPreprocHeaders (HTTP_FILTER_CONTEXT* pFC,
 	pFC->GetServerVariable(pFC,"SERVER_PORT",
 							szBuff, &dwBuffSize);
 	AddToLog(LogBuff,"  Server SERVER_PORT: %s\n",szBuff);
-	strcpy(p->appsrv_port,szBuff);
+	strncpy(p->appsrv_port,szBuff, 6);
+	zeroterm(p->appsrv_port, 6);
 	// Force port 80 or 443(ssl) to null
 	if ( strcmp(p->appsrv_port, "80") == 0 ||
 	 	 strcmp(p->appsrv_port,"443") == 0    )
@@ -2362,8 +2372,10 @@ DWORD OnAuthentication (HTTP_FILTER_CONTEXT* pFC,
 	if ( p )
 	if ( strlen(p->pszUser) > 0 && p->legacy) {
 		// Give the mapped user/password back to the server
-		strcpy(pAuthInfo->pszUser    , p->pszUser);
-		strcpy(pAuthInfo->pszPassword, p->pszPassword);
+	        strncpy(pAuthInfo->pszUser, p->pszUser, pAuthInfo->cbUserBuff);
+		zeroterm(pAuthInfo->pszUser, pAuthInfo->cbUserBuff);
+		strncpy(pAuthInfo->pszPassword, p->pszPassword, pAuthInfo->cbPasswordBuff);
+		zeroterm(pAuthInfo->pszPassword, pAuthInfo->cbPasswordBuff);
 
 		AddToLog(LogBuff,"  New UserName : %s\n",pAuthInfo->pszUser);
 		AddToLog(LogBuff,"  New PW length: %d\n",strlen(pAuthInfo->pszPassword));
@@ -2511,6 +2523,7 @@ DWORD OnLog (HTTP_FILTER_CONTEXT* pFC,
 			
 			pszNewClient = (char *)pFC->AllocMem(pFC,dwBuffSize,0);		
 			strncpy(pszNewClient,(PBC_CLIENT_LOG_FMT), dwBuffSize);
+			zeroterm(pszNewClient, dwBuffSize);
 			ReplaceToken("%w",pLogInfo->pszClientUserName,pszNewClient, dwBuffSize);
 			ReplaceToken("%p",p->user, pszNewClient, dwBuffSize);
 			//AddToLog(LogBuff,"  Modified user : %s\n",pszNewClient);
@@ -2688,11 +2701,12 @@ void relay_granting_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p,
    DWORD dwBufferSize = sizeof sztmpstr;
 
    // Send HTTP headers and clear granting reqest cookie
-   sprintf(httpheader, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\r\nContent-type: text/html\r\n\r\n", 
+   snprintf(httpheader, START_COOKIE_SIZE+256, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\r\nContent-type: text/html\r\n\r\n", 
 			PBC_G_REQ_COOKIENAME,
 			PBC_CLEAR_COOKIE,
 			p->appsrvid, 
 			EARLIEST_EVER);
+   zeroterm(httpheader, START_COOKIE_SIZE+256);
 
    SendHttpHeaders(pECB, "200 OK", httpheader);
    WriteString(pECB,"<html>\r\n");
@@ -2742,7 +2756,8 @@ static int need_area(char *in)
 
 BOOL getqueryarg (const char* querystr, char* value, const char* arg, int valuesize) {
 
-	char *searchstr, *pos1, *pos2;
+        char *searchstr;
+	const char *pos1, *pos2;
 
 	strcpy(value,"");
 	size_t mallocsize = sizeof(char)*(strlen(arg)+2);
@@ -2878,11 +2893,12 @@ void relay_logout_request(EXTENSION_CONTROL_BLOCK *pECB, pubcookie_dir_rec *p, c
    DWORD dwBufferSize = sizeof sztmpstr;
 
    // Send HTTP headers and clear granting reqest cookie
-   sprintf(httpheader, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\r\nContent-type: text/html\r\n\r\n", 
+   snprintf(httpheader, START_COOKIE_SIZE+256, "Set-Cookie: %s=%s; domain=%s; path=/; expires=%s; secure\r\nContent-type: text/html\r\n\r\n", 
 			PBC_G_REQ_COOKIENAME,
 			PBC_CLEAR_COOKIE,
 			p->appsrvid, 
 			EARLIEST_EVER);
+   zeroterm(httpheader, START_COOKIE_SIZE+256);
 
    SendHttpHeaders(pECB, "200 OK", httpheader);
 
@@ -2986,8 +3002,8 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
 
   ts = 24 + strlen(host) + strlen(uport) + strlen(uri) + strlen(qs);
   p->Relay_URI = (char*) malloc(ts);
-  snprintf(p->Relay_URI,ts,"http%c://%s%s%s%s%s",
-           ishttps?'s':'\0', host, uport, uri,qs[0]?"?":"", qs); 
+  snprintf(p->Relay_URI,ts,"http%s://%s%s%s%s%s",
+           ishttps? "s" : "", host, uport, uri,qs[0]?"?":"", qs); 
 	zeroterm(p->Relay_URI,ts);
 
   /* A logout request to the login server will have a
@@ -3020,6 +3036,9 @@ DWORD WINAPI HttpExtensionProc(IN EXTENSION_CONTROL_BLOCK *pECB)
    FreeKeyList(hKeyList);
   }
 
+  if(host) free(host);
+  if(uri) free(uri);
+  if(port) free(port);
   free(uport);
   free(p->Relay_URI);
   free(p);

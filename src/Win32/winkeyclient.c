@@ -1,5 +1,5 @@
 // ========================================================================
-// Copyright 2008 University of Washington
+// Copyright 2009 University of Washington
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
 
 /*
-  $Id: winkeyclient.c,v 1.19 2008-05-16 22:09:10 willey Exp $
+  $Id: winkeyclient.c,v 1.20 2009-06-26 17:35:45 dors Exp $
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -130,7 +130,8 @@ int Messagef(const char * format, ...){
 
 		va_start(args, format);
 
-		_vsnprintf(msg, sizeof(msg)-1, format, args);
+		_vsnprintf(msg, sizeof(msg), format, args);
+		msg[sizeof(msg)-1] = '\0';
 
 		MessageBox(NULL,msg,"Keyclient",MB_ICONINFORMATION);
 
@@ -148,7 +149,8 @@ UINT MessageYesNo(const char * format, ...) {
 
 	va_start(args, format);
 
-	_vsnprintf(msg, sizeof(msg)-1, format, args);
+	_vsnprintf(msg, sizeof(msg), format, args);
+	msg[sizeof(msg)-1] = '\0';
 
 	uiResponse = MessageBox(NULL,msg, "Keyclient found more than one valid certificate.", MB_YESNO);
 
@@ -490,6 +492,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			snprintf(buf, sizeof(buf),
 				"GET %s?genkey=getgc;\r\n\r\n",
 				keymgturi);
+			buf[sizeof(buf)-1] = '\0';
 
 		} else {   /* set the key */
 			if (get_crypt_key(&c_stuff, hostname) != PBC_OK) {
@@ -502,11 +505,13 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 			snprintf(buf, sizeof(buf),
 				"%s?genkey=put&setkey=%s;%s",
 				keymgtpath, hostname, enckey);
+			buf[sizeof(buf)-1] = '\0';
 		}
 	} else {
 		snprintf(buf, sizeof(buf), 
 			"%s?genkey=%s", keymgtpath,
 			newkeyp ? "yes" : "no");
+		buf[sizeof(buf)-1] = '\0';
 	}
 
 

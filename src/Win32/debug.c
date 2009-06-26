@@ -1,5 +1,5 @@
 // ========================================================================
-// Copyright 2008 University of Washington
+// Copyright 2009 University of Washington
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //
 
 //
-//  $Id: debug.c,v 1.22 2008-05-16 22:09:10 willey Exp $
+//  $Id: debug.c,v 1.23 2009-06-26 17:35:44 dors Exp $
 //
 
 #include <windows.h>
@@ -80,6 +80,7 @@ extern void filter_log_activity (pubcookie_dir_rec *p, const char * source, int 
 			
 		}
         _vsnprintf(log, BUFFSIZE, format, args);
+	log[BUFFSIZE - 1] = '\0';
 		//pszaStrings[0] = log;
 		hEvent = RegisterEventSource(NULL,source);
 		if (hEvent) 
@@ -158,6 +159,7 @@ char * AddToLog(char*LogBuff, const char *format, ...) {
 	LogPos = LogBuff + strlen(LogBuff);
 
     _vsnprintf(LogPos, LOGBUFFSIZE - (LogPos - LogBuff), format, args);
+    LogBuff[LOGBUFFSIZE-1] = '\0';
 
     va_end(args);
 
