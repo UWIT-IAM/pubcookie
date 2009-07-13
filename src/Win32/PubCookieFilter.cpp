@@ -16,7 +16,7 @@
 //
  
 //
-//  $Id: PubCookieFilter.cpp,v 1.75 2009-07-09 21:01:19 fox Exp $
+//  $Id: PubCookieFilter.cpp,v 1.76 2009-07-13 20:00:43 dors Exp $
 //
 
 //#define COOKIE_PATH
@@ -1646,7 +1646,7 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	if ( strcmp(szBuff,"0") == 0 ) 
 	{
 		char argbuf[MAX_BUFFER];
-		encode_get_args(p, p->args, argbuf)
+		encode_get_args(p, p->args, argbuf);
 		p->failed = PBC_BAD_PORT;
 		snprintf(szBuff, PBC_4K, "https://%s%s%s%s",p->appsrvid, achUrl,(strlen(argbuf) ? "?" : ""), argbuf);
 		zeroterm(szBuff, PBC_4K);
