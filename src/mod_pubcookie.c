@@ -18,7 +18,7 @@
 /** @file mod_pubcookie.c
  * Apache pubcookie module
  *
- * $Id: mod_pubcookie.c,v 1.222 2008-05-16 22:09:10 willey Exp $
+ * $Id: mod_pubcookie.c,v 1.223 2009-09-18 21:24:51 fox Exp $
  */
 
 #define MAX_POST_DATA 10485760
@@ -1854,14 +1854,25 @@ int pubcookie_user (request_rec * r, pubcookie_server_rec * scfg,
                                      appid,
                                      sizeof (cookie_data->broken.appid) -
                                      1) != 0) {
+        char *ckfix;
         while (cookie = get_cookie (r, sess_cookie_name, scnt)) {
             cookie_data =
                 libpbc_unbundle_cookie (p, scfg->sectext, cookie, ME(r), 0,
                                         scfg->crypt_alg);
 
             if (cookie_data) break;
+
+            /* try 'fixing' the cookie */
             ap_log_rerror (PC_LOG_INFO, r,
-                           "can't unbundle S cookie; uri: %s\n",
+                           "retring failed unbundle of S cookie; uri: %s\n",
+                           r->uri);
+            ckfix = ap_pstrcat(p, cookie, "==");
+            cookie_data = libpbc_unbundle_cookie (p, scfg->sectext, ckfix, ME(r), 0,
+                                        scfg->crypt_alg);
+            if (cookie_data) break;
+
+            ap_log_rerror (PC_LOG_INFO, r,
+                           "still can't unbundle S cookie; uri: %s\n",
                            r->uri);
             scnt++;
         }
@@ -3886,6 +3897,7 @@ static int login_reply_handler (request_rec * r)
 
                 if (v = strchr (post_data, '=')) *v++ = '\0';
                 for (t = v; t&&*t; t++) if (*t == '+') *t = ' ';
+                decode_data (post_data);
                 decode_data (v);
 
                 ap_rprintf (r, post_reply_arg_html, encode_data(r, post_data), encode_data(r, v)); 
