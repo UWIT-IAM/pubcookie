@@ -1,5 +1,5 @@
 /* 
-  $Id: cgic.c,v 1.3 2004-12-15 02:12:47 jteaton Exp $
+  $Id: cgic.c,v 1.4 2010-01-15 22:33:11 fox Exp $
  */
 
 #ifdef WITH_FCGI
@@ -248,11 +248,17 @@ cgiParseResultType cgiParseFormInput(char *data, int length) {
 	while (pos != length) {
 		int foundEq = 0;
 		int foundAmp = 0;
+		int skipArg = 0;
 		int start = pos;
 		int len = 0;
 		char *attr;
 		char *value;
 		while (pos != length) {
+			if (data[pos] == '&') { /* arg not 'a=b' */
+                                skipArg = 1;
+                                pos++;
+                                break;
+                        }
 			if (data[pos] == '=') {
 				foundEq = 1;
 				pos++;
@@ -261,6 +267,7 @@ cgiParseResultType cgiParseFormInput(char *data, int length) {
 			pos++;
 			len++;
 		}
+                if (skipArg) continue;
 		if (!foundEq) {
 			break;
 		}
