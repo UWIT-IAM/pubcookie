@@ -18,7 +18,7 @@
 /** @file index.cgi.c
  * Login server CGI
  *
- * $Id: index.cgi.c,v 1.187 2008-05-22 16:29:33 fox Exp $
+ * $Id: index.cgi.c,v 1.188 2010-01-15 17:17:03 jjminer Exp $
  */
 
 #ifdef WITH_FCGI
@@ -2156,8 +2156,8 @@ int cgiMain_init ()
     /* I don't remember if config_init will change altconfig, better safe than
      * sorry -- tmp_config is a pointer to the static environment */
     if (tmp_config != NULL) {
-        altconfig = pbc_malloc (p, strlen (tmp_config));
-        strncpy (altconfig, tmp_config, strlen (tmp_config));
+        altconfig = pbc_malloc (p, strlen (tmp_config) + 1);
+        strncpy (altconfig, tmp_config, strlen (tmp_config) + 1);
     }
 
     libpbc_config_init (p, altconfig, "logincgi");
