@@ -79,7 +79,30 @@ local login server.</p>
 <h4><a name="new">What's New</a></h4>
 
 <p>Significant improvements and changes to the login server components
-included in Pubcookie 3.3.2c:</p>
+included in Pubcookie 3.3.4:</p>
+
+<ul>
+
+<li>Added support for 4096-bit private keys to login cgi.</li>
+
+<li>Modified login cgi to log user's IP address on Redirect log line.</li>
+
+</ul>
+
+<p>Significant improvements and changes to the login server 
+components included in Pubcookie 3.3.2d:</p>
+
+<ul>
+
+<li>Applied security fixes to address vulnerability described in
+<a href="http://pubcookie.org/news/20070606-login-secadv.html">June 
+28, 2007 security advisory</a>.</li>
+
+</ul>
+
+<p>Significant improvements and changes 
+to the login server 
+components included in Pubcookie 3.3.2c:</p>
 
 <ul>
 
@@ -177,7 +200,6 @@ Previously, it only checked the first one, which might be invalid.</li>
 
 </ul>
 
-
 <p>See <tt>doc/CHANGES.txt</tt> for bug fixes and other improvements.</p>
 
 <h4><a name="upgrading">Upgrading &amp; Compatibility</a></h4>
@@ -213,6 +235,15 @@ the new login cgi and other binaries in production locations.</p>
 versions:</p>
 
 <dl>
+
+<dt>Upgrading to 3.3.4:</dt>
+
+<dd><b>User's IP address added to Redirect log line:</b>
+Sites that parse the login cgi's log file data should be aware that
+the user's IP address has been added to support additional business
+purposes (e.g. usage metrics, forensics, troubleshooting). Any scripts
+or programs that depend on the format of this data should be tested
+for compatibility prior to deploying the new version.</dd>
 
 <dt>Upgrading to 3.3:</dt>
 
@@ -1259,7 +1290,7 @@ Copyright 1999-2007, University of Washington.  All rights reserved.<br />
 See doc/LICENSE.txt for terms of use.
 </p>
 <pre>
-$Id: install-login.html,v 1.47 2007-02-07 22:49:22 willey Exp $
+$Id: install-login.html,v 1.48 2010-02-01 06:39:37 dors Exp $
 </pre>
 </body>
 

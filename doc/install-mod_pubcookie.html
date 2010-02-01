@@ -56,6 +56,12 @@
 
                   <h4><a name="new">What's New</a></h4>
 
+                  <p>Significant improvements and changes included in Pubcookie 3.3.4:</p>
+
+                  <ul>
+                  <li>Fix handling of angle brackets in the argument names in POST data.</li>
+                  </ul>
+
                   <p>Significant improvements and changes included in Pubcookie 3.3.3:</p>
 
                   <ul>
@@ -619,25 +625,16 @@ Granting cert saved to keys/pubcookie_granting.cert</pre></TD>
                       <p> 
                           <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                             <TR> 
-                              <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
-LoadModule ssl_module         modules/libssl.so
+                              <TD> <pre>LoadModule ssl_module         modules/libssl.so
 LoadModule pubcookie_module   modules/mod_pubcookie.so
-&lt;/IfDefine&gt;
 
 ...
 
-&lt;IfDefine HAVE_SSL&gt;
 AddModule mod_ssl.c
-AddModule mod_pubcookie.c
-&lt;/IfDefine&gt;</pre></TD>
+AddModule mod_pubcookie.c</pre></TD>
                             </TR>
                           </TABLE></p>
                        <p>Again, this is just an example. Your httpd.conf may differ.</p>
-                       <p>Warning: if your LoadModule and AddModule directives for the
-                         module are placed within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block 
-                         directive, all Pubcookie run-time directives must 
-                         also be placed with an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block 
-                         directive.</p>
 
                       <p><b>Apache 2.0: LoadModule</b><br>
                         With Apache 2.0, add a <a href="http://httpd.apache.org/docs-2.0/mod/mod_so.html#loadmodule">LoadModule</a> 
@@ -649,13 +646,20 @@ AddModule mod_pubcookie.c
                               <TD> <pre>LoadModule pubcookie_module   modules/mod_pubcookie.so</pre></TD>
                             </TR>
                           </TABLE></p>
+                      <p>Tip: With Apache 2.2, <a href="http://httpd.apache.org/docs/2.2/mod/mod_authz_user.html">authz_user_module</a>
+                        should be loaded to use the 'require valid-user' syntax often used in tandem with Pubcookie authentication.</p>
+                      <p> 
+                          <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+                            <TR> 
+                              <TD> <pre>LoadModule authz_user_module modules/mod_authz_user.so</pre></TD>
+                            </TR>
+                          </TABLE></p>
                     <li> 
                       <p>Add a new section in httpd.conf for configuring the module:</p>
                       <p> 
                       <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                         <TR> 
-                          <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
-&lt;IfModule mod_pubcookie.c&gt;
+                          <TD> <pre>&lt;IfModule mod_pubcookie.c&gt;
 
 #
 # Pubcookie configuration section
@@ -677,8 +681,7 @@ PubcookieAuthTypeNames EGNetID
 PubcookieInactiveExpire -1
 &lt;/Directory&gt;
 
-&lt;/IfModule&gt;
-&lt;/IfDefine&gt;</pre></TD>
+&lt;/IfModule&gt;</pre></TD>
                         </TR>
                       </TABLE>
 
@@ -720,10 +723,9 @@ PubcookieInactiveExpire -1
                       </li>
                       <li>
                         <p>Warning: If your LoadModule and AddModule directives 
-                        reside within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive 
+                        reside within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive,
                         then all the module's configuration directives must also reside
-                        within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive. This is the
-                        convention used throughout this guide.</p>
+                        within an <tt>&lt;IfDefine HAVE_SSL&gt;</tt> block directive.</p>
                       </li>
                       <li>
                       <p>Permissions. If you initially start Apache as root and use the
@@ -947,8 +949,7 @@ PubcookieEndSession redirect</pre></TD>
                   <p> 
                   <TABLE BGCOLOR="#E0E5F5" BORDER="0" CELLSPACING="0" CELLPADDING="5">
                     <TR> 
-                          <TD> <pre>&lt;IfDefine HAVE_SSL&gt;
-&lt;IfModule mod_pubcookie.c&gt;
+                          <TD> <pre>&lt;IfModule mod_pubcookie.c&gt;
 
 #
 # Pubcookie configuration section
@@ -972,8 +973,7 @@ require valid-user
 PubcookieEndSession clearLogin
 &lt;/LocationMatch&gt;
 
-&lt;/IfModule mod_pubcookie.c&gt;
-&lt;/IfDefine&gt;</pre></TD>
+&lt;/IfModule mod_pubcookie.c&gt;</pre></TD>
                     </TR>
                   </TABLE>
                   </p>

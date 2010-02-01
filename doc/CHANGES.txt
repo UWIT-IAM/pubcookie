@@ -1,3 +1,30 @@
+Changes with 3.3.4:
+
+*) Security fix to ISAPI filter for stack buffer overflow. (Reported by
+   Chris Ries, Carnegie Mellon University.)
+
+*) Fixed bug in the login cgi's supporting cgic library that caused
+   granting request parsing problems (for referring URLs with no
+   "name=value" args), which particularly affect session reauth.
+   (Bug diagnosed and reported by Todd Ross.)
+
+*) Fixed bug in login cgi allocation of space to altconfig; we were
+   off by 1. (Discovered and fixed by Bradley Schwoerer and Jon Miner.)
+
+*) Fixed bug in Apache module handling of angle brackets in the argument
+   names in POST data. (Bug reported by Trevor Bortins and Jon Hauser.)
+
+*) Fixed ISAPI filter meta-refresh redirect that enforces https to
+   re-encode query string arguments prior to redirect so that values
+   aren't truncated. (Bug reported by William Jordan.)
+
+*) Fixed bug in keyserver that crashed it when using the login_servers 
+   config file option. (Bug report and patch provided by Pascal Lalonde.)
+
+*) Added support for 4096 bit private keys to login cgi.
+
+*) Modified login cgi to log user's IP address on Redirect log line.
+
 Changes with 3.3.3:
 
 *) Fixed Apache module not to handle /favicon.ico requests when

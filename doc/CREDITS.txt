@@ -39,6 +39,7 @@
      * Benjamin Armintor    University of Texas-Austin
      * Doug DeJulio         Carnegie Mellon University
      * Konstantin Ryabitsev McGill University
+     * Chris Ries           Carnegie Mellon University
 
    Sponsors:
      * The Andrew W. Mellon Foundation

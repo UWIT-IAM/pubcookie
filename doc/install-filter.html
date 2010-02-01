@@ -66,6 +66,16 @@
 
 		<h4><a name="news">What's New</a></h4>
 
+                <p>Significant changes in Pubcookie 3.3.4:</p>
+
+                <ul>
+                    <li><p><b>Fixed Stack Buffer Overflow in ISAPI Filter.</b>
+                    Applied security fix to address stack buffer overflow vulnerability described in 
+                    <a href="http://pubcookie.org/news/20100201-apps-secadv.html">February 1, 2010 security advisory</a>.</p></li>
+                    <li><p><b>Fixed query string encoding bug in Meta-Refresh redirect.</b> When enforcing https, the filter
+                    re-encodes query string arguments prior to redirection, so that values aren't truncated.</p></li>
+                </ul>
+
                 <p>Significant changes in Pubcookie 3.3.3:</p>
 
                 <ul>
@@ -731,7 +741,7 @@
 
 		<h4><a name="problems">Known Problems</a></h4>
 
-		<p>Known problems with the Windows components in Pubcookie 3.3.1:</p>
+		<p>Known problems with the Windows components in Pubcookie 3.3:</p>
 
 		<ul>
 			<li>
@@ -783,7 +793,12 @@
                         directories at the root level of a site require a trailing slash. Without it, the filter uses
                         the default configuration and doesn't pick up the settings specific to the folder or virtual
                         directory. Until this is fixed in the filter, links and requests should always include the trailing slash.
-                        (But that's good form anyway.)
+                        (But that's good form anyway.)</p>
+
+			<li>
+			<p><b>Filter works okay, but status not updating.</b> With IIS 6, the "Network Service" account needs read 
+                        permission to the Pubcookie folder to update the ISAPI filter status (to status up/green). This is the account the
+                        filter runs under as per the DefaultAppPool Identity setting.</p>
 		</ul>
 
 		<h4><a name="certs">Appendix A: Windows Certificate Store</a></h4>
