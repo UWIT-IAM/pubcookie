@@ -1,3 +1,9 @@
+Changes with 3.3.4a:
+
+*) Applied patch to login cgi to make print_header consistent with
+   print_html to fix segfaults RHEL5 (64-bit). (Patch resubmited by 
+   Daniel Baber.)
+
 Changes with 3.3.4:
 
 *) Security fix to ISAPI filter for stack buffer overflow. (Reported by
