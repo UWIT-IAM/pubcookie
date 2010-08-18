@@ -1,5 +1,10 @@
+/* crypto/pqueue/pqueue.h */
+/* 
+ * DTLS implementation written by Nagendra Modadugu
+ * (nagendra@cs.stanford.edu) for the OpenSSL project 2005.  
+ */
 /* ====================================================================
- * Copyright (c) 2003 The OpenSSL Project.  All rights reserved.
+ * Copyright (c) 1999-2005 The OpenSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -16,12 +21,12 @@
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *    for use in the OpenSSL Toolkit. (http://www.OpenSSL.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
  *    endorse or promote products derived from this software without
  *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *    openssl-core@OpenSSL.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
  *    nor may "OpenSSL" appear in their names without prior written
@@ -30,7 +35,7 @@
  * 6. Redistributions of any form whatsoever must retain the following
  *    acknowledgment:
  *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *    for use in the OpenSSL Toolkit (http://www.OpenSSL.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -44,30 +49,48 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
+ * ====================================================================
+ *
+ * This product includes cryptographic software written by Eric Young
+ * (eay@cryptsoft.com).  This product includes software written by Tim
+ * Hudson (tjh@cryptsoft.com).
  *
  */
 
-#ifndef HEADER_FIPS_RAND_H
-#define HEADER_FIPS_RAND_H
+#ifndef HEADER_PQUEUE_H
+#define HEADER_PQUEUE_H
 
-#include "des.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#ifdef OPENSSL_FIPS
+#include <openssl/pq_compat.h>
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
+typedef struct _pqueue *pqueue;
 
-void FIPS_set_prng_key(const unsigned char k1[8],const unsigned char k2[8]);
-void FIPS_test_mode(int test,const unsigned char faketime[8]);
-void FIPS_rand_seed(const void *buf, FIPS_RAND_SIZE_T num);
-/* NB: this returns true if _partially_ seeded */
-int FIPS_rand_seeded(void);
+typedef struct _pitem
+	{
+	PQ_64BIT priority;
+	void *data;
+	struct _pitem *next;
+	} pitem;
 
-RAND_METHOD *FIPS_rand_method(void);
+typedef struct _pitem *piterator;
 
-#ifdef  __cplusplus
-}
-#endif
-#endif
-#endif
+pitem *pitem_new(PQ_64BIT priority, void *data);
+void   pitem_free(pitem *item);
+
+pqueue pqueue_new(void);
+void   pqueue_free(pqueue pq);
+
+pitem *pqueue_insert(pqueue pq, pitem *item);
+pitem *pqueue_peek(pqueue pq);
+pitem *pqueue_pop(pqueue pq);
+pitem *pqueue_find(pqueue pq, PQ_64BIT priority);
+pitem *pqueue_iterator(pqueue pq);
+pitem *pqueue_next(piterator *iter);
+
+void   pqueue_print(pqueue pq);
+int    pqueue_size(pqueue pq);
+
+#endif /* ! HEADER_PQUEUE_H */
