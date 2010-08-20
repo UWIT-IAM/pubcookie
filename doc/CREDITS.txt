@@ -64,6 +64,7 @@
      * ViewCVS
      * Subversion
      * View VC
+     * TortoiseSVN
 
    (*) cgic, copyright 1996 by Thomas Boutell. Permission is granted to
    use cgic in any application, commercial or noncommercial, at no cost.
