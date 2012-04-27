@@ -569,7 +569,7 @@ int flus_get_reason_html (pool * p, int reason, login_rec * l,
     case FLUS_LCOOKIE_ERROR:
     default:
         reasonpage = libpbc_config_getstring (p, "tmpl_login_nolcookie",
-                                              "login_nolcookie");
+                                              "login_nolcookie_uwsecurid");
         break;
     }
 

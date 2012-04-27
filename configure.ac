@@ -359,7 +359,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h shadow.h stdlib.h \
                   string.h strings.h sys/param.h sys/socket.h sys/time.h \
                   unistd.h getopt.h ctype.h stdarg.h stdio.h varargs.h\
                   sys/utsname.h time.h pwd.h sys/types.h assert.h sys/stat.h \
-                  sysexits.h mango/messages.h mango/mgoapi2.h mango/sidapi.h \
+                  sysexits.h sidapimds.h \
 		  sys/resource.h fnmatch.h \
                   errno.h ])
 
@@ -814,6 +814,7 @@ AC_ARG_WITH(mango-inc-dir,
      ;;
   esac ])
 
+
 AC_ARG_WITH(mango-lib-dir,
     AC_HELP_STRING([--with-mango-lib-dir=PATH], [U WASH ONLY: Mango lib path]),
 [ case "$withval" in
@@ -824,10 +825,42 @@ AC_ARG_WITH(mango-lib-dir,
      ;;
   esac ])
 
-    AC_CHECK_HEADERS([mango/mgoapi2.h mango/sidapi.h])
-    LIBS="$LIBS -lmgoapi2 -lsidapi";
-    AC_CHECK_LIB(mgoapi2, MGOinitialize)
+    AC_CHECK_HEADERS([sidapimds.h])
+    LIBS="$LIBS -lmdsapi -lsidapimds";
+    AC_CHECK_LIB(mgoapi, MDSinitialize)
+    AC_DEFINE(HAVE_MANGO_H, 1, [Define to 1 for mango])
 fi
+
+# Find the ezs library
+
+AC_ARG_WITH(ezs,
+    AC_HELP_STRING([--with-ezs=PATH],[Path to ezs install]),
+[ case "${withval}" in
+   no)
+    ;;
+   *)
+    CPPFLAGS="$CPPFLAGS -I$withval/include"
+    LIBS="$LIBS -lezs"
+    LDFLAGS="$LDFLAGS -L$withval/lib"
+    ;;
+  esac ])
+
+# Find the lsc library
+
+AC_ARG_WITH(lsc,
+    AC_HELP_STRING([--with-lsc=PATH],[Path to lsc install.  'no' to skip lsc ]),
+[ case "${withval}" in
+   no)
+    CPPFLAGS="$CPPFLAGS -DUSE_FAKE_LSC"
+    AC_DEFINE(USE_FAKE_LSC, 1, [Define to 1 to skip lsc])
+    ;;
+   *)
+    CPPFLAGS="$CPPFLAGS -I$withval/include"
+    LIBS="$LIBS -llsc"
+    LDFLAGS="$LDFLAGS -L$withval/lib"
+    ;;
+  esac ])
+
 
 AC_ARG_ENABLE(dmalloc,
     AC_HELP_STRING([--enable-dmalloc],[Enable dmalloc debugging]),
@@ -926,7 +959,6 @@ AM_MAINTAINER_MODE
 AC_CONFIG_FILES([Makefile src/pbc_path.h src/pbc_version.h cgic/Makefile
                  src/Win32/PubCookieFilter.h src/Win32/PubCookieFilter.rc])
 AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
-
 
 
 # setup module directory if we're building the module 

@@ -105,12 +105,9 @@ pool *p = NULL;
 # include <netinet/in.h>
 #endif /* HAVE_NETINET_IN_H */
 
-#ifdef HAVE_MANGO_MGOAPI2_H
-# include <mango/mgoapi2.h>
-# include <mango/sidapi.h>
-# include <mango/messages.h>
-# include <sys/stat.h>
-#endif /* HAVE_MGOAPI_H */
+#ifdef HAVE_MANGO_H
+# include <sidapimds.h>
+#endif /* HAVE_MANGO_H */
 
 #include "snprintf.h"
 
@@ -136,10 +133,10 @@ pool *p = NULL;
 
 #define BIGS 1024
 
-void securid_cleanup (MgoHandle * shndl)
+void securid_cleanup (MdsHandle * shndl)
 {
-    MGOfreehandle (shndl);
-
+    MDSdisconnect (shndl);
+    MDSfreehandle (shndl);
 }
 
 int securid (char *reason,
@@ -149,20 +146,19 @@ int securid (char *reason,
 {
     int i, prn, ret;
     char tmp_res[BIGS];
-    struct stat info;
     pbc_time_t date;
     char buff[BSIZ];
     int mode, opts, rets;
-    MgoHandle *shndl;
+    MdsHandle *shndl;
     CrnList crn;
 
-    MGOzero (&crn, sizeof (CrnList));
+    MDSzero (&crn, sizeof (CrnList));
     strcpy (crn.principal, user);
     pbc_time (&date);
     shndl = NULL;
     rets = 0;
     snprintf (buff, BSIZ, "%s/%s", "weblogin", user);
-    opts = MGO_OPT_CST;
+    opts = MDS_OPT_CST;
 
     snprintf (tmp_res, BIGS,
               "user: %s card_id: %s s_prn: %s log: %d typ: %d doit: %d",
@@ -185,16 +181,16 @@ int securid (char *reason,
      * Connect to Mango and query for CRN information
      */
 
-    if ((rets = MGOinitialize (&shndl, SID_CONFIG)) == MGO_SUCCESS) {
-        MGOsetoption (shndl, MGO_OPT_USER, (void *) buff);
+    if ((rets = MDSinitialize (&shndl, SID_CONFIG)) == MDS_SUCCESS) {
+        MDSsetoption (shndl, MDS_OPT_USER, (void *) buff);
     } else {
-        if (rets == MGO_ENOENT) {
-            MGOsetoption (shndl, MGO_OPT_HOST, (void *) SID_HOST);
-            MGOsetoption (shndl, MGO_OPT_OPTIONS, (void *) &opts);
-            MGOsetoption (shndl, MGO_OPT_USER, (void *) buff);
+        if (rets == MDS_ENOENT) {
+            MDSsetoption (shndl, MDS_OPT_HOST, (void *) SID_HOST);
+            MDSsetoption (shndl, MDS_OPT_OPTIONS, (void *) &opts);
+            MDSsetoption (shndl, MDS_OPT_USER, (void *) buff);
         } else {
             snprintf (tmp_res, BIGS, "SecurID initialize error: %s.",
-                      MGOerrormsg (shndl, rets));
+                      MDSerrormsg (shndl, rets));
             reason = strdup (tmp_res);
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
             securid_cleanup (shndl);
@@ -205,9 +201,9 @@ int securid (char *reason,
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "Securid: about to connect for %s", crn.principal);
 
-    if ((rets = MGOconnect (shndl)) != MGO_SUCCESS) {
+    if ((rets = MDSconnect (shndl)) != MDS_SUCCESS) {
         snprintf (tmp_res, BIGS, "Securid connect error: %s.\n",
-                  MGOerrormsg (shndl, rets));
+                  MDSerrormsg (shndl, rets));
         reason = strdup (tmp_res);
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
         securid_cleanup (shndl);
@@ -234,15 +230,15 @@ int securid (char *reason,
 
     if ((rets =
          SIDcheckprn (shndl, (char *) user, crn.crn, prn,
-                      mode)) != MGO_SUCCESS) {
-        switch (shndl->srverrno) {
-        case MGO_E_CRN:
+                      mode)) != MDS_SUCCESS) {
+        switch (rets) {
+        case MDS_ERR_CRN:
             snprintf (tmp_res, BIGS,
                       "Failed SecurID check: id=%s, prn=%d.", user, prn);
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", tmp_res);
             ret = SECURID_FAIL;
             break;
-        case MGO_E_NPN:
+        case MDS_ERR_NPN:
             snprintf (tmp_res, BIGS,
                       "Asking for next prn: id=%s, prn=%d.", user, prn);
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", tmp_res);
@@ -250,7 +246,7 @@ int securid (char *reason,
             break;
         default:
             snprintf (tmp_res, BIGS, "Unexpected error: %s.",
-                      MGOerrormsg (shndl, rets));
+                      MDSerrormsg (shndl, rets));
             reason = strdup (tmp_res);
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
             ret = SECURID_PROB;
@@ -410,3 +406,22 @@ static int uwsecurid_v (pool * p, const char *userid,
 #endif /* ENABLE_UWSECURID */
 
 verifier uwsecurid_verifier = { "uwsecurid", &uwsecurid_v, NULL, NULL };
+
+
+/* fake lsc library functions 
+   allows linking with default openssl (no 'IDEA')
+   disallows actual use of lsc
+ */
+
+#ifdef USE_FAKE_LSC
+  
+int lsc_errno;
+void lsc_errmsg() {}
+void lsc_read_keylist() {}
+void lsc_new() {}
+void lsc_authenticate_peer() {}
+void lsc_free_keylist() {}
+void lsc_free() {}
+void lsc_crypt() {}
+
+#endif
