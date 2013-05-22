@@ -113,7 +113,7 @@ extern void syslog(int whichlog, const char *message, ...) {
 	pubcookie_dir_rec *p;
 	va_list   args;
 
-	p = malloc(sizeof(pubcookie_dir_rec)); 
+	p = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec)); 
 	bzero(p,sizeof(pubcookie_dir_rec));
 
     va_start(args, message);
@@ -135,7 +135,7 @@ extern void pbc_log_activity(pubcookie_dir_rec *p, int logging_level, const char
 	if (p) {
 		pp=p;
 	} else {
-		pp = malloc(sizeof(pubcookie_dir_rec)); 
+		pp = (pubcookie_dir_rec *)malloc(sizeof(pubcookie_dir_rec)); 
 		bzero(pp,sizeof(pubcookie_dir_rec));
 	}
     va_start(args, message);

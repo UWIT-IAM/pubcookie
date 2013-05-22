@@ -1,23 +1,43 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PubCookieFilter", "PubCookieFilter.vcproj", "{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PubCookieFilter", "PubCookieFilter.vcxproj", "{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbc_messages", "pbc_messages.vcproj", "{70162427-59FC-45E7-AD96-E87043A23374}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbc_messages", "pbc_messages.vcxproj", "{70162427-59FC-45E7-AD96-E87043A23374}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "keyclient", "keyclient.vcxproj", "{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Debug|Win32.Build.0 = Debug|Win32
+		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Debug|x64.ActiveCfg = Debug|x64
+		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Debug|x64.Build.0 = Debug|x64
 		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Release|Win32.ActiveCfg = Release|Win32
 		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Release|Win32.Build.0 = Release|Win32
+		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Release|x64.ActiveCfg = Release|x64
+		{1A25D5CB-EAD0-4631-9013-F11F3109C2D5}.Release|x64.Build.0 = Release|x64
 		{70162427-59FC-45E7-AD96-E87043A23374}.Debug|Win32.ActiveCfg = Release|Win32
 		{70162427-59FC-45E7-AD96-E87043A23374}.Debug|Win32.Build.0 = Release|Win32
+		{70162427-59FC-45E7-AD96-E87043A23374}.Debug|x64.ActiveCfg = Release|x64
+		{70162427-59FC-45E7-AD96-E87043A23374}.Debug|x64.Build.0 = Release|x64
 		{70162427-59FC-45E7-AD96-E87043A23374}.Release|Win32.ActiveCfg = Release|Win32
 		{70162427-59FC-45E7-AD96-E87043A23374}.Release|Win32.Build.0 = Release|Win32
+		{70162427-59FC-45E7-AD96-E87043A23374}.Release|x64.ActiveCfg = Release|x64
+		{70162427-59FC-45E7-AD96-E87043A23374}.Release|x64.Build.0 = Release|x64
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Debug|Win32.Build.0 = Debug|Win32
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Debug|x64.ActiveCfg = Debug|x64
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Debug|x64.Build.0 = Debug|x64
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Release|Win32.ActiveCfg = Release|Win32
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Release|Win32.Build.0 = Release|Win32
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Release|x64.ActiveCfg = Release|x64
+		{EB0E3F9C-882E-4DFF-9F48-F647DE26A259}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

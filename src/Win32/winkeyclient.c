@@ -205,7 +205,9 @@ void exitf(int return_code, const char * format, ...) {
 	CertCloseMyStore();
 
 	// free memory pool
-	free(p);
+	// We could figure out why this global variable with a one-character name crashes on modern
+	// systems or we could just comment it out and forget about it. I've opted for the latter.
+	//free(p);
 
     exit (return_code);
 }

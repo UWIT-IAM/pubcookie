@@ -1106,6 +1106,8 @@ void Read_Reg_Values (char *key, pubcookie_dir_rec* p)
 	char authname[512];
 	char crypt_alg[10];
 
+filterlog(p, LOG_DEBUG,"[Read_Reg_Values] key = %s", key);
+
 	if (rslt = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		key,0,KEY_READ,&hKey) == ERROR_SUCCESS)
 	{
@@ -1249,18 +1251,17 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	p->legacy = false;	
 	p->crypt_alg = PBC_CRYPT_AES;
 
-    // Then Look in default key
+     // Then Look in default appid key
 	
 	strcpy (key, (PBC_WEB_VAR_LOCATION));
 	strcat (key,"\\");
 	strcat (key, PBC_DEFAULT_KEY);
 	
-	strcpy (appid, p->appid); //store current appid, i.e. webapp
+	strcpy (appid, p->appid); // save current appid, i.e. defaultapp
 
 	Read_Reg_Values (key, p);
 
-
-	// Then first node (current appid)
+	// Then current appid
 
 	strcpy (key, PBC_WEB_VAR_LOCATION);
 	strcat (key,"\\");
@@ -1279,7 +1280,16 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 	Read_Reg_Values (key, p);
 
 	// Then any app/subdirectory/file settings
+
+	if (ptr) {
+		filterlog(p, LOG_DEBUG,"[Get_Effective_Values] ptr = %s", ptr);
+	} else {
+		filterlog(p, LOG_DEBUG,"[Get_Effective_Values] ptr = NULL");
+	}
  
+	strcpy (key, PBC_WEB_VAR_LOCATION);
+	strcat (key,"\\");
+
 	while ( ptr ) { // while we still have a '/' left to deal with
 
 		pachUrl = ptr + 1;
@@ -1327,6 +1337,11 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 
 	}
 
+	// If Service Name is defined then force port to null for Load Balancer which uses port# for dispatching
+
+	if ( strcmp(p->appsrvid, PBC_SERVICE_NAME) == 0 )
+		strcpy(p->appsrv_port,"");
+
 #ifndef COOKIE_PATH
 	// Convert appid to lower case
 	strlwr(p->appid);
@@ -1338,6 +1353,8 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 		_snprintf(buff,4096,
 			"Get_Effective_Values\n" 
 			"  Values for: %s\n" 
+			"    Server Name      : %s\n"
+			"    Port Number      : %s\n"
 			"    AppId            : %s\n" 
 			"    NtUserId         : %s\n" 
 			"    Password?        : %d\n" 
@@ -1349,13 +1366,16 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			"    Logout_Action    : %1d\n" 
 			"    AuthType         : %c\n" 
 			"    Default_Url      : %s\n" 
-			"    Timeout_Url      : %s\n" 
+			"    Timeout_Url      : %s\n"
 			"    Login_URI        : %s\n" 
 			"    Enterprise_Domain: %s\n" 
 			"    Error_Page       : %s\n" 
-			"	 Encryption_Method: %c\n"
+			"    Encryption_Method: %c\n"
+			"    Service_Name     : %s\n"
 			"    Set_Server_Values: %d\n",
 			key,
+			p->appsrvid,
+			p->appsrv_port,
 			p->appid,
 			p->pszUser,
 			(strlen(p->pszPassword) > 0),
@@ -1372,6 +1392,7 @@ void Get_Effective_Values(HTTP_FILTER_CONTEXT* pFC,
 			p->Enterprise_Domain,
 			p->Error_Page,
 			p->crypt_alg,
+			PBC_SERVICE_NAME,
 			p->Set_Server_Values);
 	zeroterm(buff, 4096);
 		
@@ -1630,6 +1651,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 	// strcpy(p->path_id,p->appid);
 
 	// Get userid, timeouts, AuthType, etc for this app.  Could change appid.
+// ** new
+	ptr = achUrl;
 	Get_Effective_Values(pFC,pHeaderInfo,ptr);
 
 	/* Log out if indicated */
@@ -1743,8 +1766,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 		pbc_free(p, cookie);
 
-		filterlog(p, LOG_INFO,"  Session Cookie Contents:\n    user= %s\n    version= %s\n    appsrvid= %s\n    appid= %s\n    type= %c\n    creds= %c\n    create_ts= %d\n    last_ts= %d\n",
-			(*cookie_data).broken.user,(*cookie_data).broken.version,(*cookie_data).broken.appsrvid,
+		filterlog(p, LOG_INFO,"  Session Cookie Contents:\n    user= %s\n    version= %c%c\n    appsrvid= %s\n    appid= %s\n    type= %c\n    creds= %c\n    create_ts= %d\n    last_ts= %d\n",
+			(*cookie_data).broken.user,(*cookie_data).broken.version[0],(*cookie_data).broken.version[1],(*cookie_data).broken.appsrvid,
 			(*cookie_data).broken.appid,(*cookie_data).broken.type,(*cookie_data).broken.creds,
 			(*cookie_data).broken.create_ts,(*cookie_data).broken.last_ts);
 
@@ -1829,15 +1852,15 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 		pbc_free(p, cookie);
 
-		filterlog(p, LOG_INFO,"  Granting Cookie Contents:\n    user= %s\n    version= %s\n    appsrvid= %s\n    appid= %s\n    type= %c\n    creds= %c\n    create_ts= %d\n    last_ts= %d\n",
-			(*cookie_data).broken.user  ,(*cookie_data).broken.version  ,(*cookie_data).broken.appsrvid,
+		filterlog(p, LOG_INFO,"  Granting Cookie Contents:\n    user= %s\n    version= %c%c\n    appsrvid= %s\n    appid= %s\n    type= %c\n    creds= %c\n    create_ts= %d\n    last_ts= %d\n",
+			(*cookie_data).broken.user ,(*cookie_data).broken.version[0],(*cookie_data).broken.version[1] ,(*cookie_data).broken.appsrvid,
 			(*cookie_data).broken.appid,(*cookie_data).broken.type     ,(*cookie_data).broken.creds,
 			(*cookie_data).broken.create_ts,(*cookie_data).broken.last_ts);
 
 		// check for reauth if we requested it
 		if( (p->session_reauth>0) && ((*cookie_data).broken.version[3]==PBC_VERSION_REAUTH_NO) ) {
-			filterlog(p, LOG_INFO,"[Pubcookie_User] Required reauth didn't happen, version=%s", 
-				(*cookie_data).broken.version);
+			filterlog(p, LOG_INFO,"[Pubcookie_User] Required reauth didn't happen, version[3]=%c", 
+				(*cookie_data).broken.version[3]);
 			p->failed = PBC_BAD_G_STATE;
 			pbc_free(p, cookie_data);
 			return OK;
@@ -1892,8 +1915,8 @@ int Pubcookie_User (HTTP_FILTER_CONTEXT* pFC,
 
 	if( !Pubcookie_Check_Version(pFC,(*cookie_data).broken.version, 
 			(unsigned char *)PBC_VERSION)){
-		filterlog(p, LOG_ERR,"[Pubcookie_User] Wrong version id; module: %d cookie: %d", 
-				PBC_VERSION, (*cookie_data).broken.version);
+		filterlog(p, LOG_ERR,"[Pubcookie_User] Wrong version id; module: %s cookie: %c%c", 
+				PBC_VERSION, (*cookie_data).broken.version[0],(*cookie_data).broken.version[1]);
 		p->failed = PBC_BAD_VERSION;
 		pbc_free(p, cookie_data);
 		return OK;

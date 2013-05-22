@@ -70,6 +70,7 @@
 #define PBC_INSTANCE_KEY "_PBC_Web_Instances"
 #define PBC_DEFAULT_KEY "default"
 #define PBC_ENCRYPT_METHOD (libpbc_config_getstring(p, "Encryption_Method", "AES"))
+#define PBC_SERVICE_NAME (libpbc_config_getstring(p, "Service_Name", ""))
 #endif
 
 #define PBC_DEFAULT_FORM_EXPIRE_TIME	60
