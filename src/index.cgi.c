@@ -2701,7 +2701,10 @@ int set_l_cookie (pool * p, const security_context * context,
                        ? compute_l_expire (p, l) : c->expire_ts);
 
     /* the login cookie is encoded as having passed 'creds', which is what
-       the flavor verified. */
+       the flavor verified.
+       If the existing login cookie has a greater 'creds' value than the new
+       one, then we remember that.
+    */
 
     l_res = create_cookie (p, context,
                            user = url_encode (p, l->user),
@@ -2709,7 +2712,7 @@ int set_l_cookie (pool * p, const security_context * context,
                            appsrvid = url_encode (p, l->appsrvid),
                            appid = url_encode (p, l->appid),
                            PBC_COOKIE_TYPE_L,
-                           l->creds,
+                           (c && c->creds > l->creds) ? c->creds : l->creds,
                            0,
                            l->create_ts,
                            l->expire_ts,

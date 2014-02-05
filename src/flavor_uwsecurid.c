@@ -319,7 +319,7 @@ char ride_free_zone (login_rec * l, login_rec * c)
                           func, l->first_kiss, c->create_ts, t, c->user);
 
         if (l->user == NULL)
-            l->user = c->user;
+	    l->user = strdup (c->user);
 
         return (PBC_BASIC_CRED_ID);
     }
@@ -832,6 +832,7 @@ static login_result process_uwsecurid (pool * p,
                                        const char **errstr)
 {
     int result1, result2;
+    pbc_time_t t;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                       "process_uwsecurid: hello\n");
@@ -1002,6 +1003,14 @@ static login_result process_uwsecurid (pool * p,
                           "process_uwsecurid: login in progress, goodbye\n");
         return LOGIN_INPROGRESS;
 
+	/* if special appid bypass securid entry */
+    } else if(strcasecmp(l->appid ? l->appid : "", UWTOKEN30_STR) == 0 &&
+	      c->creds == PBC_UWSECURID_CRED_ID &&
+	      ((t = pbc_time(NULL)) < (c->create_ts + UWTOKEN30_TIME))){
+	pbc_log_activity (p, PBC_LOG_AUDIT,
+			  "flavor_uwsecurid: appid %s bypass securid reentry, created: %d now: %d user: %s",
+			  l->appid, c->create_ts, t, l->user ? l->user : "(null)");
+	return LOGIN_OK;
     } else {                    /* securid requires reauth */
         *errstr = "uwsecurid requires reauth";
         pbc_log_activity (p, PBC_LOG_AUDIT,

@@ -164,6 +164,8 @@ void print_header (pool *, const char *format, ...);
 #define DEFAULT_LOGIN_EXPIRE (8 * 60 * 60)
 #define APP_LOGOUT_STR "app_logout_string"
 #define APP_LOGOUT_STR_SEP '-'
+#define UWTOKEN30_STR "uwtoken30"
+#define UWTOKEN30_TIME (30 * 60)
 
 #define STATUS_HTML_REFRESH "<meta http-equiv=\"Refresh\" content=\"%d;URL=/?countdown=%d\">"
 #define STATUS_INIT_SIZE 256
