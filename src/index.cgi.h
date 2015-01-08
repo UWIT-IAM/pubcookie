@@ -166,6 +166,7 @@ void print_header (pool *, const char *format, ...);
 #define APP_LOGOUT_STR_SEP '-'
 #define UWTOKEN30_STR "uwtoken30"
 #define UWTOKEN30_TIME (30 * 60)
+#define MIN_RIDE_FREE (5)
 
 #define STATUS_HTML_REFRESH "<meta http-equiv=\"Refresh\" content=\"%d;URL=/?countdown=%d\">"
 #define STATUS_INIT_SIZE 256

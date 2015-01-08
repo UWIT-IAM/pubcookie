@@ -859,6 +859,10 @@ static login_result process_uwsecurid (pool * p,
         return LOGIN_ERR;
     }
 
+    /* set the minimum ride-free */
+    int fix_reauth = MIN_RIDE_FREE;
+    if (strcasecmp(l->appid ? l->appid : "", UWTOKEN30_STR) == 0) fix_reauth = UWTOKEN30_TIME;
+
     /* choices, choices */
 
     /* index.cgi is responsible for extracting replies to the prompts
@@ -958,15 +962,6 @@ static login_result process_uwsecurid (pool * p,
                               "process_uwsecurid: login in progress, goodbye\n");
             return LOGIN_INPROGRESS;
         }
-    } else if (l->session_reauth) {
-        *errstr = "reauthentication required";
-        pbc_log_activity (p, PBC_LOG_AUDIT,
-                          "flavor_uwsecurid: %s: %s", l->user, *errstr);
-
-        print_login_page (p, l, c, FLUS_REAUTH);
-        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                          "process_uwsecurid: login in progress, goodbye\n");
-        return LOGIN_INPROGRESS;
 
         /* l->check_error will be set whenever the l cookie isn't valid
            including (for example) when the login cookie has expired. 
@@ -1004,9 +999,7 @@ static login_result process_uwsecurid (pool * p,
         return LOGIN_INPROGRESS;
 
 	/* if special appid bypass securid entry */
-    } else if(strcasecmp(l->appid ? l->appid : "", UWTOKEN30_STR) == 0 &&
-	      c->creds == PBC_UWSECURID_CRED_ID &&
-	      ((t = pbc_time(NULL)) < (c->create_ts + UWTOKEN30_TIME))){
+    } else if (c->creds == PBC_UWSECURID_CRED_ID && ((t=pbc_time(NULL)) < (c->create_ts + fix_reauth))){
 	pbc_log_activity (p, PBC_LOG_AUDIT,
 			  "flavor_uwsecurid: appid %s bypass securid reentry, created: %d now: %d user: %s",
 			  l->appid, c->create_ts, t, l->user ? l->user : "(null)");

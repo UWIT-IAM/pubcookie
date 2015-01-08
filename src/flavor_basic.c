@@ -674,6 +674,10 @@ static login_result process_basic (pool * p,
     also_allow_cred =
         libpbc_config_getint (p, "basic_also_accepts", 0) + 48;
 
+    /* allow minimum ride-free for reauth */
+    int fix_reauth = l->session_reauth;
+    if (fix_reauth>0 && fix_reauth<MIN_RIDE_FREE) fix_reauth = MIN_RIDE_FREE;
+    
     /* choices, choices */
 
     /* index.cgi is responsible for extracting replies to the prompts
@@ -839,10 +843,7 @@ static login_result process_basic (pool * p,
 
         /* Auth request entry. */
         /* If reauth, check time limit */
-    } else if (l->session_reauth &&
-               ((l->session_reauth == 1) ||
-                (c
-                 && (c->create_ts + (l->session_reauth) < pbc_time (NULL))))) {
+    } else if (fix_reauth && (c && (c->create_ts+fix_reauth < pbc_time (NULL)))) {
         *errstr = "reauthentication required";
         rcode = FLB_REAUTH;
 
