@@ -78,6 +78,7 @@ typedef struct
     void *flavor_extension;     /* used for ad-hoc purposes until
                                    we add a general extension mechanism to the
                                    cookie structure */
+    int is_upgrade;   /* flag for conditional auto upgrade to uwsecurid */
 }
 login_rec;
 
@@ -167,6 +168,7 @@ void print_header (pool *, const char *format, ...);
 #define UWTOKEN30_STR "uwtoken30"
 #define UWTOKEN30_TIME (30 * 60)
 #define MIN_RIDE_FREE (5)
+#define UWTOKEN_AUTO_STR "uwtokenauto"
 
 #define STATUS_HTML_REFRESH "<meta http-equiv=\"Refresh\" content=\"%d;URL=/?countdown=%d\">"
 #define STATUS_INIT_SIZE 256

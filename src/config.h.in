@@ -15,6 +15,9 @@
 /* Define to 1 to support U. Wash. SecurID verifiers */
 #undef ENABLE_UWSECURID
 
+/* Define to 1 to support U. Wash. auto upgrade capability */
+#undef ENABLE_AUTO_UPGRADE
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 

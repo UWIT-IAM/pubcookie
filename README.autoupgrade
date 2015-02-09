@@ -1,0 +1,29 @@
+
+Version 3.4 includes an auto-upgrade capability.  This allows selected clients (modules)
+to have some of their users automatically upgraded from basic to uwsecurid login.
+
+The upgrade is based on appid and group membership
+
+configure option:  --enable-autoupgrade
+
+
+config lines:
+
+# uprade triggers.  if caller is 'app_id' and user is in the group, securid required
+auto_upgrade: app_id:group_cn app_id:group_cn ...
+
+# gws group api
+gws_member_template: https://iam-ws.u.washington.edu:7443/group_sws/v2/group/%s/effective_member/%s
+
+# certs and keys (e.g.)
+gws_crtfile: /usr/local/pubcookie/certs/loginsign.cac.washington.edu.cert
+gws_keyfile: /usr/local/pubcookie/certs/loginsign.cac.washington.edu.key
+gws_cafile: /usr/local/pubcookie/cacerts/cacerts.file
+
+# if set, GWS errors cause all logins from app_id will be upgraded
+# else, GWS errors allow all logins from app_id to succeed on password only
+auth_upgrade_fail_mode: 1
+
+
+
+

@@ -293,6 +293,12 @@ char ride_free_zone (login_rec * l, login_rec * c)
 
     if (c == NULL)
         return (PBC_CREDS_NONE);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                      "%s: in ride_free_zone 1 ready to look at cookie contents user: %s",
+                      func, c->user ? c->user : "Null");
+    if (l && l->check_error) pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "check_error: %s", l->check_error);
+
     if (l != NULL && l->check_error != NULL)
         return (PBC_CREDS_NONE);
 
@@ -308,7 +314,7 @@ char ride_free_zone (login_rec * l, login_rec * c)
         return (PBC_CREDS_NONE);
     }
 
-    if ((c->create_ts + RIDE_FREE_TIME) < (t = pbc_time (NULL))) {
+    if ((c->create_ts + RIDE_FREE_TIME) < (t = pbc_time (NULL)) && (l && l->creds_from_greq!=PBC_BASIC_CRED_ID)) {
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                           "%s %s: No Free Ride login cookie created: %d now: %d user: %s",
                           func, l->first_kiss, c->create_ts, t, c->user);
@@ -451,7 +457,7 @@ char *flus_get_user_field (pool * p, login_rec * l, login_rec * c,
         }
     } else if (strcmp (static_config, STATIC_USER_FIELD_FASCIST) == 0) {
         if (c != NULL && c->user != NULL ||
-            l->user != NULL && l->ride_free_creds == PBC_BASIC_CRED_ID) {
+            l->user != NULL && (l->ride_free_creds == PBC_BASIC_CRED_ID || l->creds_from_greq==PBC_BASIC_CRED_ID)) {
             user_field_html =
                 flus_get_field_html (p,
                                      libpbc_config_getstring (p,
@@ -486,6 +492,12 @@ char *flus_get_user_field (pool * p, login_rec * l, login_rec * c,
 char *flus_get_pass_field (pool * p, login_rec * l, login_rec * c,
                            int reason)
 {
+#ifdef ENABLE_AUTO_UPGRADE
+    if (l->is_upgrade) {
+       pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "skip pass field on upgrade");
+       return (NULL);
+    }
+#endif
     if (l->ride_free_creds == PBC_BASIC_CRED_ID) {
         return (flus_get_field_html (p,
                                      libpbc_config_getstring (p,
@@ -598,8 +610,7 @@ int flus_get_reason_html (pool * p, int reason, login_rec * l,
 
 }
 
-static void print_login_page (pool * p, login_rec * l, login_rec * c,
-                              int reason)
+static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason)
 {
     /* currently, we never clear the login cookie
        we always clear the greq cookie */
@@ -685,6 +696,7 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
         /* Yeah, this sucks, but I don't know a better way. 
          * That doesn't mean there isn't one. */
 
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "make hidden stuff: %d", hidden_needed_len);
         hidden_needed_len = snprintf (hidden_fields, hidden_len,
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
@@ -706,6 +718,7 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
                                       PBC_GETVAR_APPSRVID,
@@ -746,8 +759,10 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c,
                                       l->pre_sess_tok, "first_kiss",
                                       (l->first_kiss ? l->first_kiss : ""),
                                       PBC_GETVAR_PINIT, l->pinit,
-                                      PBC_GETVAR_REPLY, FORM_REPLY);
+                                      PBC_GETVAR_REPLY, FORM_REPLY,
+                                      "upg", l->is_upgrade);
     }
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "made hidden stuff: %d", hidden_needed_len);
 
     snprintf (now, sizeof (now), "%d", pbc_time (NULL));
 
@@ -834,8 +849,10 @@ static login_result process_uwsecurid (pool * p,
     int result1, result2;
     pbc_time_t t;
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "process_uwsecurid: hello\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: hello");
+#ifdef ENABLE_AUTO_UPGRADE
+    if (l) pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is_upgrade = %d", l->is_upgrade);
+#endif
 
     /* make sure we're initialized */
     assert (v1 != NULL);
@@ -885,14 +902,37 @@ static login_result process_uwsecurid (pool * p,
 
     l->ride_free_creds = ride_free_zone (l, c);
 
-    if (l->reply == FORM_REPLY) {
+            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                              "process_uwsecurid: l->reply=%d\n", l->reply);
+
+#ifdef ENABLE_AUTO_UPGRADE
+    if (l->reply!=FORM_REPLY && l->creds_from_greq==PBC_BASIC_CRED_ID) {
+        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: entry from basic upgrade\n");
+        l->creds_from_greq=PBC_UWSECURID_CRED_ID;
+        *errstr = "uwsecurid upgrade";
+        l->ride_free_creds = PBC_BASIC_CRED_ID;
+        print_login_page (p, l, c, FLUS_REAUTH);
+        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: login in progress, goodbye\n");
+        l->reply = FORM_REPLY;
+        return LOGIN_INPROGRESS;
+
+
+    } else
+#endif
+
+    if (l->reply == FORM_REPLY && l->creds_from_greq==PBC_UWSECURID_CRED_ID) {
 
         result1 =
             v1->v (p, l->user, l->pass, NULL, l->realm, NULL, errstr);
+            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                              "====== process_uwsecurid: result1 %d\n", result1);
         /* only do securid check if necessary */
-        if (l->ride_free_creds == PBC_BASIC_CRED_ID || result1 == 0)
+        if (l->ride_free_creds == PBC_BASIC_CRED_ID || result1 == 0) {
             result2 =
                 v2->v (p, l->user, l->pass2, NULL, l->realm, NULL, errstr);
+            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                              "====== process_uwsecurid: result2 %d\n", result2);
+         }
 
         if ((l->ride_free_creds == PBC_BASIC_CRED_ID || result1 == 0)
             && result2 == 0) {
@@ -914,9 +954,16 @@ static login_result process_uwsecurid (pool * p,
 
             /* xxx modify 'l' accordingly ? */
 
+#ifdef ENABLE_AUTO_UPGRADE
+            if (l->is_upgrade) {
+               pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is upgrade.  restore basic cred");
+               l->creds_from_greq = PBC_BASIC_CRED_ID;
+            }
+#endif
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                               "process_uwsecurid: good login, goodbye\n");
 
+            
             return LOGIN_OK;
         } else {
 

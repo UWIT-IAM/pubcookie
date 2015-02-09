@@ -1,3 +1,5 @@
+# configure command used by UW to build login server
+
 ./configure \
    --enable-login \
    --enable-krb5 \
@@ -9,5 +11,6 @@
    --with-mango-lib-dir=/tulsa/lib/rhel6 \
    --with-audit-log=LOG_LOCAL3 \
    --with-general-log=LOG_LOCAL3 \
-   --enable-uwsecurid
+   --enable-uwsecurid \
+   --enable-autoupgrade
 
