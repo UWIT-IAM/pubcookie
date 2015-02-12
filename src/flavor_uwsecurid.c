@@ -911,7 +911,7 @@ static login_result process_uwsecurid (pool * p,
         l->creds_from_greq=PBC_UWSECURID_CRED_ID;
         *errstr = "uwsecurid upgrade";
         l->ride_free_creds = PBC_BASIC_CRED_ID;
-        print_login_page (p, l, c, FLUS_REAUTH);
+        print_login_page (p, l, c, FLUS_CACHE_CREDS_WRONG);  /* this adds the 'need token' message */
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: login in progress, goodbye\n");
         l->reply = FORM_REPLY;
         return LOGIN_INPROGRESS;
