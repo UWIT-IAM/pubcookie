@@ -493,10 +493,12 @@ char *flus_get_pass_field (pool * p, login_rec * l, login_rec * c,
                            int reason)
 {
 #ifdef ENABLE_AUTO_UPGRADE
+#ifdef HIDE_PASS_REMINDER
     if (l->is_upgrade) {
        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "skip pass field on upgrade");
        return (NULL);
     }
+#endif
 #endif
     if (l->ride_free_creds == PBC_BASIC_CRED_ID) {
         return (flus_get_field_html (p,
