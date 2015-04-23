@@ -2452,15 +2452,8 @@ int cgiMain ()
     l = get_query (p);
 
     /* unload the login cookie if we have it */
-    unsigned char savecreds = l->creds_from_greq;
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "saving cred %c", savecreds);
-
     c = verify_unload_login_cookie (p, context, l);
 
-    if (savecreds==PBC_UWSECURID_CRED_ID) {
-       pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "restoring securid from  %c", l->creds_from_greq);
-       l->creds_from_greq = PBC_UWSECURID_CRED_ID;
-    }
     /* log the arrival */
     pbc_log_activity (p, PBC_LOG_AUDIT,
                       "%s Visit from user: %s client addr: %s app host: %s appid: %s uri: %s relay: %s because: %s",
@@ -2899,7 +2892,7 @@ int set_l_cookie (pool * p, const security_context * context,
        If the existing login cookie has a greater 'creds' value than the new
        one, then we remember that.
     */
-
+   
     l_res = create_cookie (p, context,
                            user = url_encode (p, l->user),
                            PBC_VERSION,

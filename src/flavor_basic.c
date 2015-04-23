@@ -729,8 +729,15 @@ static login_result process_basic (pool * p,
 
             /* set the create time */
             l->create_ts = pbc_time (NULL);
-            if (c != NULL)
+            if (c != NULL) {
                 c->create_ts = pbc_time (NULL);
+                if (c->creds==PBC_UWSECURID_CRED_ID) {
+                     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+                          "process_basic: demoting cookie securid to basic");
+                     c->creds = PBC_BASIC_CRED_ID;
+                   
+                }
+            }
 
             /* xxx modify 'l' accordingly ? */
 
