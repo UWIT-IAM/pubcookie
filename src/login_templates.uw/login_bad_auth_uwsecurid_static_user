@@ -1,0 +1,12 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/login_bad_auth_uwsecurid_static_user $ -->
+<!-- $Id: login_bad_auth_uwsecurid_static_user 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<P>
+  <B>
+    <FONT COLOR="#FF0000" SIZE="+1">Login failed.  Please re-enter.</FONT>
+  </B>
+  <BR>
+</P>
+<P>
+<p>
+  Please make sure your <b>Number Lock key is ON</b>.
+</p>

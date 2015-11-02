@@ -1,0 +1,28 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/notok_badagent $ -->
+<!-- $Id: notok_badagent 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<P>
+  <B><font size="+1" color="#FF0000">
+    This browser is either incompatible or has serious security flaws.
+  </font></B>
+</P>
+
+<p>
+  <b><font size="+1">
+    Please upgrade to the most recent version of either
+    <A HREF="http://home.netscape.com/computing/download/index.html">Netscape Navigator</A>, <A HREF="http://www.microsoft.com/windows/ie/default.htm">Internet Explorer</A>, or <A HREF="http://www.opera.com/">Opera</A>.
+
+<!-- this is probably too danerious and of little value
+    <P>
+      The browser you are using identifies itself as:<BR>
+        <TT>
+          percent_sign browser percent_sign
+        </TT>
+    </P>
+-->
+
+    <P>
+      Please email <a href="mailto:help@u.washington.edu">help@u.washington.edu</a> for further assistance.
+    </P>
+  </font></b>
+
+<p>&nbsp;</p>

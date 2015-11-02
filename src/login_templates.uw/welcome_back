@@ -1,4 +1,4 @@
-<p>
-<img src="/images/login/check.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">Log in successful - welcome back <b>%s</b></font></P>
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/welcome_back $ -->
+<!-- $Id: welcome_back 720 2012-08-31 21:49:50Z hubert@u.washington.edu $ -->
+<p class="message"><img src="/images/login/check.gif" align="absmiddle" alt="" height="35" width="35"><span>Log in successful - welcome back <strong>%contents%</strong></span></P>
 

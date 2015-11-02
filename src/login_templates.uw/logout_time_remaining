@@ -1,4 +1,4 @@
-<p>
-<img src="/images/login/icon-time.gif" align="absmiddle" alt="" height="35" width="35">
-<font size="+1">Time remaining: %s</font></p>
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/logout_time_remaining $ -->
+<!-- $Id: logout_time_remaining 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<p class="message"><img src="/images/login/icon-time.gif" align="absmiddle" alt="" height="35" width="35"><span>Time remaining: %remaining%</span></p>
 

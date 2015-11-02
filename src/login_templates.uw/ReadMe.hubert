@@ -1,0 +1,227 @@
+This describes which templates are used for what and how
+they fit together.
+
+---------------
+Top Level pages
+---------------
+
+These 6 templates form full pages. Note that they may include other pieces
+using the %variable% notation. Some of those pieces are other templates.
+
+"login"               | The key substitution for these two pages is %reason%
+"login_uwsecurid"     | See Reason templates section below.
+
+"status"
+"login_unauth_grant"
+"error"
+"notok"
+
+Pages contained in print_redirect_page(). This function produces a top-level page
+but much of it is hardwired in source code. Maybe we'll need to change this
+hardwired code, I don't know. There is some logic that looks like:
+if (l->relay_uri)
+  All hardwired, no template substitutions.
+else if (l->post_stuff)
+  Mostly hardwired stuff but it gets the
+  "logo"       template and the
+  "copyright"  template and inserts those into the rest.
+else
+  Whole thing is from the template
+  "nonpost_redirect"
+
+For a pinit response 4 templates are strung together to form a single response page.
+A pinit response happens when you login directly to weblogin instead of arriving there
+from some application server because of a redirect.
+  "pinit_response1"
+  "welcome_back"
+  "logout_time_remaining"
+  "pinit_response2"
+
+---------------
+%reason% templates
+These are used in forming the %reason% portion of the page created by
+the login and login_uwsecurid templates. That is, the %reason% is substituted
+for with the contents of one of these templates.
+---------------
+login reason pages:
+  "login_bad_auth"
+  "login_bad_auth_static_user"
+  "login_reauth"
+  "login_cache_creds_wrong"
+  "login_pinit"
+  "login_expired"
+  "form_expired"
+        "form_expire_time" from config (/usr/local/pubcookie/config) is
+        inserted for %time% in this form_expired template
+  "login_nolcookie"
+login_uwsecurid reason pages:
+  "login_bad_auth_uwsecurid"
+  "login_bad_auth_uwsecurid_static_user"
+  "login_reauth"
+  "login_cache_creds_wrong"
+  "login_next_prn"   (Apparently not used anymore, because securid is gone)
+  "login_expired"
+  "login_auth_prob_uwsecurid"
+  "login_nolcookie_uwsecurid"
+
+----------------
+Other template files inserted in login pages
+These are templates used in other %var% substitutions in the login pages.
+----------------
+"login_user_hidden" with %contents% replaced by a user name
+  (substituted for %hiddenuser% in the two login templates)
+
+"login_user_form_field"
+  or
+"login_user_static"
+  (substituted for %user_field% in two login templates)
+
+"login_pass_form_field"
+  or
+"login_pass_static"
+  (substituted for %pass_field% in login_uwsecurid template)
+
+-----------------
+notok %subtext% pages
+-----------------
+"notok_badagent"
+"notok_form_multipart"
+"notok_generic"
+
+-------------------
+logout pages
+The logout pages fit together like this:
+-------------------
+
+  "logout_part1"
+
+  optionally include {
+    "logout_app"
+      OR
+    "logout_app_custom"
+      %text%   From config file app_logout_string-appserver.example.edu-testapp. Could
+               be something like
+               "<font size="+1">You successfully logged out of <B>MyUW</B></font>"
+               But these are just config variables so we can change them if we need to.
+  }
+
+  {
+    "logout_already_weblogin"
+       OR
+    "logout_weblogin"
+
+    optionally include {
+      "logout_still_known"
+    }
+
+    "logout_postscript_still_others"
+  }
+    OR
+  {
+    "logout_still_weblogin"
+    "logout_time_remaining"
+    "logout_postscript_still_weblogin"
+  }
+
+  "logout_part2"
+
+------------
+I believe all the templates that are in use are mentioned above.
+------------
+
+---------------------------------------------------------------------
+
+Here's a short description of how the various %variable% substitutions work.
+Note that only a small subset of the variables is available to each
+template. The available variables are hardcoded in the source code.
+
+%loginuri%       From config file.
+%curtime%        Not sure what this is, it looks like time since the epoch, but
+                 not in ascii! Doesn't seem to be used.
+%message%        Custom login message which we don't use, so it's always empty for us.
+%reason%         This is used by the two login templates. It can be one of many
+                 different templates depending on what's happening. Here are
+                 all the possibilities.
+For "login" template the possible templates used for %reason% are:
+   "login_bad_auth"
+   "login_bad_auth_static_user"
+   "login_reauth"
+   "login_cache_creds_wrong"
+   "login_pinit"
+   "login_expired"
+   "form_expired"
+               "form_expire_time" from config is inserted for %time% in
+               form_expired template
+   "login_nolcookie"
+For "login-uwsecurid" template the possible templates used for %reason% are:
+   "login_bad_auth_uwsecurid"
+   "login_bad_auth_uwsecurid_static_user"
+   "login_reauth"
+   "login_cache_creds_wrong"
+   "login_next_prn"   (Not used anymore)
+   "login_expired"
+   "login_auth_prob_uwsecurid"
+   "login_nolcookie_uwsecurid"
+
+%reason%         In the "notok" template this is not the same reason. It
+                 looks like it is always "<BR>".
+
+%hiddenuser%     This is the "login_user_hidden" template.
+
+%hiddenfields%   This is computed in the source code. The lines look similar to
+                 the hiddenuser field. Like:
+    <input type="hidden" name="one" value="webloginprodtest.cac.washington.edu">
+    <input type="hidden" name="two" value="pinit">
+    <input type="hidden" name="creds_from_greq" value="1">
+    <input type="hidden" name="three" value="1">
+    <input type="hidden" name="four" value="a5">
+    <input type="hidden" name="five" value="">
+    <input type="hidden" name="six" value="webloginprodtest.cac.washington.edu">
+    <input type="hidden" name="seven" value="/index.cgi">
+    <input type="hidden" name="relay_url" value="">
+    <input type="hidden" name="eight" value="">
+    <input type="hidden" name="fr" value="">
+    <input type="hidden" name="hostname" value="">
+    <input type="hidden" name="nine" value="PInit">
+    <input type="hidden" name="file" value="">
+    <input type="hidden" name="flag" value="">
+    <input type="hidden" name="referer" value="">
+    <input type="hidden" name="post_stuff" value="">
+    <input type="hidden" name="sess_re" value="0">
+    <input type="hidden" name="pre_sess_tok" value="0">
+    <input type="hidden" name="first_kiss" value="1335566967-88052">
+    <input type="hidden" name="pinit" value="1">
+    <input type="hidden" name="reply" value="1">
+    <input type="hidden" name="create_ts" value="1335566967">
+
+%getcredhidden%  Only available in login template. This is computed and it looks
+                 like the other hidden fields.
+
+%user_field%     This uses one of the two templates
+                 "login_user_form_field" or "login_user_static" and
+                 %contents% in those is the user name.
+
+%pass_field%     Only avail in login_uwsecurid. This uses one of the two templates
+                 "login_pass_static" or "login_pass_form_field".
+
+%durationtext%   This is computed text, something to do with kiosk_duration.
+                 We don't use it.
+%version%        3.3.6-pre-beta1
+
+%refresh%        Something like "<meta http-equiv=\"Refresh\"
+                                         content=\"%d;URL=/?countdown=%d\">"
+%remaining%      Time remaining text, something like "1 hour and 3 minutes"
+
+%flavor%         The name of the flavor, like "basic" or "uwsecurid".
+%error%          A simple string like "cached credentials wrong flavor" or
+                 "authentication failed" or "The login form has expired."
+
+%subtext%        This is used in the "notok" template. It comes from
+                 one of these three templates.
+    "notok_badagent"
+    "notok_form_multipart"
+    "notok_generic"
+
+%delay%          I think this is "0".
+%url%            A url we're redirecting to.
+%contents%       Despite the generic name, this looks like it is always a user name.

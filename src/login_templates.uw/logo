@@ -1,0 +1,4 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/logo $ -->
+<!-- $Id: logo 751 2012-11-07 23:00:14Z hubert@u.washington.edu $ -->
+<!-- this is used in the page that redirects user when there are post args to deal with -->
+<img src="/images/login/weblogin.gif" height="57" width="198" alt="" aria-hidden="true" oncontextmenu="return false">

@@ -521,6 +521,7 @@ void init_login_rec (pool * p, login_rec * r)
     r->creds_from_greq = PBC_CREDS_NONE;
     r->ride_free_creds = PBC_CREDS_NONE;
     r->relay_uri = NULL;
+    r->is_upgrade = 0;
 }
 
 /*
@@ -998,7 +999,9 @@ login_rec *load_login_rec (pool * p, login_rec * l)
     if (tmp)
         l->relay_uri = tmp;
     l->create_ts = get_int_arg (p, PBC_GETVAR_CREATE_TS, 0);
+    l->is_upgrade = get_int_arg (p, "upg", 0);
 
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade: %d \n", l->is_upgrade);
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "load_login_rec: bye\n");
 
     return (l);
@@ -1316,6 +1319,187 @@ char *decode_granting_request (pool * p, char *in, char **peerp)
 }
 
 
+#ifdef ENABLE_AUTO_UPGRADE
+
+/**
+ * Configure auto upgrade to uwsecurid  ( includes auto-deny )
+ * config is: 
+ * auto_upgrade: auto_appid:gws_group_name:mode auto_appid:gws_group_name:mode ...
+ * mode is: 'u'=upgrade to securid, 'r'=require group membership
+ */ 
+
+
+/*
+ * curl interface to GWS
+ */
+
+#include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
+
+/* default webservice */
+#define GWS_TEMPLATE "https://iam-ws.u.washington.edu:7443/group_sws/v2/group/%s/effective_member/%s"
+
+const char *gws_crtfile = NULL;
+const char *gws_keyfile = NULL;
+const char *gws_cafile = NULL;
+
+/* all we really care about is the return code */
+static size_t page_reader(void *buf, size_t len, size_t num, void *wp) {
+  // printf("..recv %d(%d) bytes\n", len, num);
+  return (len*num);
+}
+static size_t header_reader(void *buf, size_t len, size_t num, void *wp)
+{
+  // printf("..head %d(%d) bytes: [%s]\n", len, num, buf);
+  return (len*num);
+}
+
+
+/* returns 1 if is member, 0 if not, -1 on error */
+gws_is_member(pool *p, char *cn, char *id) {
+ 
+   long l0;
+   CURL *curl;
+   char curl_errtxt[CURL_ERROR_SIZE ];
+
+   /* init */
+   curl = curl_easy_init();
+   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_reader);
+   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, header_reader);
+   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+   struct curl_slist *headers=NULL;
+   headers = curl_slist_append(headers, "Accept: text/xml");
+   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+   curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errtxt);
+
+   // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, l0);
+   // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, l0);
+   curl_easy_setopt(curl, CURLOPT_SSLCERT, gws_crtfile);
+   curl_easy_setopt(curl, CURLOPT_SSLKEY, gws_keyfile);
+   curl_easy_setopt(curl, CURLOPT_CAINFO, gws_cafile);
+
+   /* query GWS */
+
+   char url[2048];
+   int s;
+   long http_resp;
+   int nb;
+
+   char *tmpl = (char *) libpbc_config_getstring (p, "gws_member_template", GWS_TEMPLATE);
+
+   snprintf(url, 2047, tmpl, cn, id);
+   curl_easy_setopt(curl, CURLOPT_URL, url);
+   pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gws url: %s", url);
+
+   s = curl_easy_perform(curl);
+   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_resp);
+   curl_easy_cleanup(curl);
+   if (http_resp==200) return (1);
+   if (http_resp!=404) {
+      pbc_log_activity (p, PBC_LOG_ERROR, "curl error: %s", curl_errtxt);
+      return (-1);
+   }
+   return(0);
+}
+
+
+static void gws_init(pool *p) {
+   gws_crtfile = libpbc_config_getstring (p, "gws_crtfile", NULL);
+   gws_keyfile = libpbc_config_getstring (p, "gws_keyfile", NULL);
+   gws_cafile = libpbc_config_getstring (p, "gws_cafile", NULL);
+   if (gws_crtfile==NULL || gws_keyfile==NULL || gws_cafile==NULL) {
+      pbc_log_activity (p, PBC_LOG_ERROR, "auto_upgrade: invalid cert/key config!");
+   }
+}
+      
+
+
+
+typedef struct AutoUpgradeDef__ {
+   struct AutoUpgradeDef__ *next;
+   char *appid;
+   char *group_cn;
+   char mode;
+} AutoUpgradeDef_, *AutoUpgradeDef;
+
+AutoUpgradeDef auto_upgrades = NULL;
+
+static void get_auto_upgrade_definitions (pool *p) {
+
+    AutoUpgradeDef ad;
+    char **vals;
+    int nauto = 0;
+    vals = libpbc_config_getlist (p, "auto_upgrade");
+    int i;
+
+    for (i = 0; vals && vals[i]; i++) {
+        char *app = vals[i];
+        char *cn = strchr(app, ':');
+        if (!cn) {
+            pbc_log_activity (p, PBC_LOG_ERROR, "auto_upgrade: invalid app:cn specification");
+            continue;
+        }
+        *cn++ = '\0';
+        char mode = 'u';
+        // see if there's a mode
+        char *mz = strchr(cn, ':');
+        if (mz) {
+           *mz++ = '\0';
+           if (*mz == 'r') mode = 'r';
+        }
+        
+        ad = (AutoUpgradeDef) malloc (sizeof (AutoUpgradeDef_));
+        ad->next = auto_upgrades;
+        ad->appid = strdup(app);
+        ad->group_cn = strdup(cn);
+        ad->mode = mode;
+        ad->next = auto_upgrades;
+        auto_upgrades = ad;
+        nauto++;
+    }
+    if (vals) free(vals);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "auto-upgrade found %d appids", nauto);
+    gws_init(p);
+}
+
+/* return 1 if auto upgrade is called for */
+int gets_auth_upgrade(pool *p, char *appid, char *id) {
+   AutoUpgradeDef ad;
+  
+   pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gets_auth_upgrade for: appid=%s, id=%s", appid, id);
+   for (ad=auto_upgrades; ad!=NULL; ad=ad->next) {
+      if (ad->mode!='u') continue;
+      if (!strcmp(ad->appid, appid)) {
+         int ret =  gws_is_member(p, ad->group_cn, id);
+         if (ret>=0) return (ret);
+         pbc_log_activity (p, PBC_LOG_ERROR, "auto_upgrade: curl error!");
+         return (get_int_arg (p, "auth_upgrade_fail_mode", 1));  /* default is to fail hard (require upgrade) */
+      }
+   }
+   pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gets_auth_upgrade: nope");
+   return (0);
+}
+
+/* return 1 if user permitted (is in group) */
+int gets_auth_access(pool *p, char *appid, char *id) {
+   AutoUpgradeDef ad;
+  
+   pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gets_auth_access for: appid=%s, id=%s", appid, id);
+   for (ad=auto_upgrades; ad!=NULL; ad=ad->next) {
+      if (ad->mode!='r') continue;
+      if (!strcmp(ad->appid, appid)) {
+         int ret =  gws_is_member(p, ad->group_cn, id);
+         if (ret>=0) return (ret);
+         pbc_log_activity (p, PBC_LOG_ERROR, "auto_upgrade: curl error!");
+         return (get_int_arg (p, "auth_upgrade_fail_mode", 0));  /* default is to fail hard (deny admission) */
+      }
+   }
+   pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gets_auth_access: no match");
+   return (1);
+}
+#endif /* ENABLE_AUTO_UPGRADE */
+
 /*                                                                   */
 /*                                                                   */
 /* four cases for the main thingie                                   */
@@ -1353,8 +1537,10 @@ int vector_request (pool * p, const security_context * context,
     login_result res;
     const char *errstr = NULL;
     struct login_flavor *fl = NULL;
+    int i;
 
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "vector_request: hello\n");
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "vector_request: greq creds=%c\n", l->creds_from_greq);
 
     /* find flavor of authn requested */
     fl = get_flavor (p, l->creds_from_greq);
@@ -1383,7 +1569,39 @@ int vector_request (pool * p, const security_context * context,
     l->check_error = check_l_cookie (p, context, l, c);
 
     /* call authn flavor to determine correct result */
+    
+    pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "vector_request: calling flavor: %s\n", fl->name);
     res = fl->process_request (p, context, l, c, &errstr);
+
+    /* watch for auto upgrade to token */
+
+#ifdef ENABLE_AUTO_UPGRADE
+    if (res==LOGIN_OK && fl->id==PBC_BASIC_CRED_ID) {
+       if (!gets_auth_access(p, l->appid, l->user)) {
+          pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "auto access denied for %s", l->user);
+          res = LOGIN_INPROGRESS;
+          errstr = "You are not permitted to the remote application.";
+          ntmpl_print_html (p, TMPL_FNAME, libpbc_config_getstring (p, "tmpl_noperm", "noperm"), "error", errstr, NULL);
+       }
+    }
+    if (res==LOGIN_OK && fl->id==PBC_BASIC_CRED_ID) {
+       if (gets_auth_upgrade(p, l->appid, l->user)) {
+          pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "upgrading %s to securid", l->user);
+          set_l_cookie (p, context, l, c);
+          if (c) {
+             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "have a c");
+             c->user = strdup(l->user);
+          }
+          l->ride_free_creds = PBC_BASIC_CRED_ID;
+          l->reply = 0;
+          l->is_upgrade = 1;
+          fl = get_flavor (p, PBC_UWSECURID_CRED_ID);
+          fl->init_flavor();
+          res = fl->process_request (p, context, l, c, &errstr);
+          pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "return from auto upgrade res=%d", res);
+       }
+    }
+#endif /* ENABLE_AUTO_UPGRADE */
 
     switch (res) {
     case LOGIN_OK:
@@ -1421,6 +1639,8 @@ char *user_agent (pool * p)
     return (cgiUserAgent);
 
 }
+
+
 
 /**
  * Kiosk lifetimes from the config files.
@@ -2176,6 +2396,9 @@ int cgiMain_init ()
     }
 
     get_kiosk_parameters (p);
+#ifdef ENABLE_AUTO_UPGRADE
+    get_auto_upgrade_definitions(p);
+#endif
     if (libpbc_pubcookie_init (p, &context) == PBC_FAIL)
         abend (p, "Initialization failed");
     init_user_agent (p);
@@ -2705,7 +2928,7 @@ int set_l_cookie (pool * p, const security_context * context,
        If the existing login cookie has a greater 'creds' value than the new
        one, then we remember that.
     */
-
+   
     l_res = create_cookie (p, context,
                            user = url_encode (p, l->user),
                            PBC_VERSION,

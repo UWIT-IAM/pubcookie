@@ -1,0 +1,5 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/logout_app_custom $ -->
+<!-- $Id: logout_app_custom 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<!-- begin tmpl logout_app_custom -->
+<P class="message"><img src="/images/login/check.gif" align="absmiddle" alt="" height="35" width="35"><span>%text%</span></P>
+<!-- end tmpl logout_app_custom -->

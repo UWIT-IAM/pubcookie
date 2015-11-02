@@ -1,0 +1,4 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/logout_still_known $ -->
+<!-- $Id: logout_still_known 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<p class="message"><img src="/images/login/icon-excl.gif" align="absmiddle" alt="" height="35" width="35"><span>You are still identified as <strong>%contents%</strong></span></p>
+

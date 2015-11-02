@@ -1,0 +1,29 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/notok $ -->
+<!-- $Id: notok 813 2013-04-02 22:12:02Z hubert@u.washington.edu $ -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <meta name="viewport" content="width = 580">
+<title>UW NetID Weblogin</title>
+</head>
+<body bgcolor="#FFFFFF">
+<center>
+<table cellpadding="0" cellspacing="0" border="0" width="580">
+<tr>
+<td valign="middle">
+<img src="/images/login/weblogin.gif" height="57" width="198" alt="" aria-hidden="true">
+
+%subtext%
+
+%reason%
+
+<p><small>Copyright &#169; 2013 University of Washington |
+    <a href="http://www.washington.edu/online/privacy">PRIVACY</a> |
+    <a href="http://www.washington.edu/online/terms">TERMS</a></small></p>
+</td>
+</tr>
+</table>
+</center>
+</body>
+</html>

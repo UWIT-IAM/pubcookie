@@ -1,0 +1,109 @@
+<!doctype html>
+
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/login $ -->
+<!-- $Id: login 813 2013-04-02 22:12:02Z hubert@u.washington.edu $ -->
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <title>UW NetID Weblogin</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <meta content='width=device-width; initial-scale=1.0;' name='viewport' />
+  <meta http-equiv="cleartype" content="on">
+
+  <link rel="stylesheet" type="text/css" href="css/global.css" media="screen, handheld" />
+  <link rel="stylesheet" type="text/css" href="css/enhanced.css" media="screen  and (min-width: 40.5em)" />
+  <!--[if (lt IE 9)&(!IEMobile)]>
+  <link rel="stylesheet" type="text/css" href="css/enhanced.css" />
+  <![endif]-->
+
+</head>
+
+<body onLoad="document.query.elements[0].focus()">
+
+
+  <h1 class="visuallyhidden">UW NetID Weblogin</h1>
+
+  <div id="container">
+    <div id="main" role="main">
+
+
+        <h2 class="visuallyhidden" aria-flowto="weblogin_warning">Login</h2>
+        <div class="form">
+
+          <div><img src="/images/login/weblogin.gif" height="57" width="198" alt="" aria-hidden="true"></div>
+
+          <form name="query" method="POST" action="%loginuri%" enctype="application/x-www-form-urlencoded" autocomplete="off">
+
+            <!-- Custom login message, if there is such -->
+            %message%
+            <!-- The end of message. -->
+            <!-- The reason we were sent here. -->
+            %reason%
+            <!-- The end of reasons. -->
+
+			<!-- hide labels for modern browsers and mobile browsers -->
+            <ul class="login">
+            %user_field%
+			 <li><label for="weblogin_password">Password:</label><input id="weblogin_password" placeholder="Password" type="password" NAME="pass" SIZE="20" /></li>
+		   </ul>
+
+<!-- The hidden fields -->
+%hiddenuser%
+%hiddenfields%
+<!-- The GetCred target, if defined -->
+%getcredhidden%
+<!-- End of inserted stuff. -->
+
+            <ul class="submit">
+              <li><input type="SUBMIT" name="submit" value="Log in"></li>
+            </ul>
+
+          </form>
+
+    	</div>
+
+    	<h2 class="visuallyhidden">Weblogin Help</h2>
+    	<div class="sidebar">
+
+        	<h3 style="margin-top:0;">Troubleshooting</h3>
+
+            <ul class="links">
+                <li><a href="https://uwnetid.washington.edu/newid/">Need a UW NetID?</a></li>
+                <li><a href="http://www.washington.edu/itconnect/accounts/#password">Forget your password?</a></li>
+            </ul>
+
+
+            <h3 style="margin-top:30px;">Additional Information</h3>
+
+            <ul class="links">
+                <li><a href="http://www.washington.edu/itconnect/accounts/">Learn about UW NetIDs</a></li>
+    	        <li><a href="http://www.washington.edu/computing/weblogin/">Learn about "weblogin"</A></li>
+                <li><a href="http://www.washington.edu/itconnect/help/">Contact UW-IT</a></li>
+            </ul>
+
+      	</div>
+      	<div id="weblogin_warning" class="warning">
+
+            <p>Login gives you 8-hour access without repeat login to UW NetID-protected Web resources.</p>
+
+            <p style="color:#999;"><strong>WARNING:</strong> Protect your privacy! Prevent unauthorized use!<br/>
+                <a href="http://www.washington.edu/computing/weblogin/logout.html" title="How to log out">Completely exit your Web browser when you are finished.</a></p>
+
+            <p class="copyright">Copyright &#169; 2013 University of Washington <span class="copyright-links"><a href="http://www.washington.edu/online/privacy">PRIVACY</a> | <a href="http://www.washington.edu/online/terms">TERMS</a></span></p>
+
+         </div>
+
+
+
+
+    </div> <!--end main -->
+  </div> <!-- end container -->
+  <!-- Version: %version% -->
+
+</body>
+</html>

@@ -1,18 +1,14 @@
-Pragma: No-Cache
-Cache-Control: no-store, no-cache, must-revalidate
-Expires: Sat, 1 Jan 2000 01:01:01 GMT
-Content-Type: text/html
-
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/nonpost_redirect $ -->
+<!-- $Id: nonpost_redirect 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <!-- don't use the window.location.replace("%s"); -- -->
-    <meta http-equiv="Refresh" content="%s;URL=%s">
-    <title>pubcookie redirect</title>
+    <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <meta http-equiv="Refresh" content="%delay%;URL=%url%">
+    <title>Weblogin Redirect</title>
   </head>
 
-  <body bgcolor="white">
-    <!--redirecting to %s-->
+  <body bgcolor="#ffffff">
   </body>
 </html>
 

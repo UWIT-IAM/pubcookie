@@ -281,6 +281,9 @@ static int uwsecurid_v (pool * p, const char *userid,
     if (!sid)
         return (-1);
 
+            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "uwsecurid_v: user=%s, sid=%s, service=%s, realm=%s\n", 
+                 userid, sid, service, user_realm);
+
     /* if the securid field is in the form card_id=prn seperate it */
     ptr = card_id = (char *) sid;
     while (*ptr) {

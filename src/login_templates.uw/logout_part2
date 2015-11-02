@@ -1,11 +1,10 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/logout_part2 $ -->
+<!-- $Id: logout_part2 813 2013-04-02 22:12:02Z hubert@u.washington.edu $ -->
+<p class="copyright">Copyright &#169; 2013 University of Washington <span class="copyright-links"><a href="http://www.washington.edu/online/privacy">PRIVACY</a> | <a href="http://www.washington.edu/online/terms">TERMS</a></span></p>
 
-<p><small>Copyright &#169; 2002 University of Washington</small></p>
+    </div> <!--end main -->
+  </div> <!-- end container -->
+  <!-- Version: %version% -->
 
-</td>
-</tr>
-
-</TABLE>
-
-</CENTER>
-</BODY></HTML>
-
+</body>
+</html>

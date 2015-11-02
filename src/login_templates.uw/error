@@ -1,0 +1,33 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/error $ -->
+<!-- $Id: error 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<!--
+     think of this as a big format string for a printf statement
+     there are substitution tokens thru-out
+     comments hav been added to explain what will be substitued
+  -->
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <meta name="viewport" content="width = 580">
+    <title>Weblogin Login Error</title>
+  </head>
+
+  <body bgcolor="#ffffff">
+  <img src="/images/login.gif" alt="" height="64" width="208">
+  <p>
+    The login service has encountered an error. Please report the
+  following:
+  </p>
+
+  <p>
+  <center>
+  <b>%flavor%</b>: <!--- flavor name --->
+  %error% <!--- error message --->
+  </center>
+  </p>
+
+  </body>
+
+</html>

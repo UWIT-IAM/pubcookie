@@ -1,0 +1,17 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/notok_form_multipart $ -->
+<!-- $Id: notok_form_multipart 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<P>
+  <B><font size="+1" color="#FF0000">
+    A problem has been detected!
+  </font></B>
+</P>
+
+<p>
+  <b><font size="+1">
+    The resource you requested requires "multipart/form-data"
+    capabilities not supported by the UW NetID "weblogin" service.
+    Please email
+    <a href="mailto:help@u.washington.edu">help@u.washington.edu</a>
+   for further assistance.
+  </font></b>
+</p>

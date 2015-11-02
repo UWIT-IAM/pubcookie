@@ -1,0 +1,20 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/pinit_response2 $ -->
+<!-- $Id: pinit_response2 813 2013-04-02 22:12:02Z hubert@u.washington.edu $ -->
+
+<p><strong>Note:</strong>&nbsp;&nbsp;Now that you have identified yourself
+to the <strong>weblogin service</strong>, you can log in to other personalized UW
+Web sites without having to reenter your UW NetID and password.</p>
+
+<p><strong>Warning:</strong>&nbsp;&nbsp;To protect your privacy and prevent
+unauthorized use, <strong>completely exit your Web browser</strong> 
+when you are finished browsing.  If you need help, 
+review <a href="http://www.washington.edu/computing/weblogin/logout.html">how to log out</a>.</p>
+
+<p class="copyright">Copyright &#169; 2013 University of Washington <span class="copyright-links"><a href="http://www.washington.edu/online/privacy">PRIVACY</a> | <a href="http://www.washington.edu/online/terms">TERMS</a></span></p>
+
+    </div> <!--end main -->
+  </div> <!-- end container -->
+  <!-- Version: %version% -->
+
+</body>
+</html>

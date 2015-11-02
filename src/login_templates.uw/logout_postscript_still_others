@@ -1,5 +1,9 @@
-<p><font size="+1"><b>Warning:</b> It is possible that you are still
-logged in to other personalized UW Web sites you visited this session. To
-protect your privacy and prevent unauthorized use, <strong>completely exit
-your Web browser</strong> when you are finished browsing.  If you need
-help, review <a href="http://www.washington.edu/computing/weblogin/logout.html">how to log out</a>.</font></p>
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/logout_postscript_still_others $ -->
+<!-- $Id: logout_postscript_still_others 719 2012-08-31 21:26:15Z hubert@u.washington.edu $ -->
+<p><strong>Warning:</strong> To protect your privacy and prevent
+unauthorized use, <strong>completely exit your web browser</strong> when
+you are finished browsing. You still may be logged in to other
+personalized UW Web sites you visited this session. If you need help,
+review <a
+href="http://www.washington.edu/computing/weblogin/logout.html">how to log
+out</a>.</p>

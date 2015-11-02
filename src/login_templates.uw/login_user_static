@@ -1,0 +1,3 @@
+<!-- $HeadURL: https://svn.cac.washington.edu/svn/ateam/weblogin_files/trunk/pubcookie/login_templates/login_user_static $ -->
+<!-- $Id: login_user_static 755 2012-11-07 23:09:40Z hubert@u.washington.edu $ -->
+<li class="login-static-name"><label for="weblogin_netid">UW NetID:</label><span>%contents%</span></li>
