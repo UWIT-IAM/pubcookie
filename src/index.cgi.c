@@ -1420,7 +1420,10 @@ typedef struct AutoUpgradeDef__ {
    struct AutoUpgradeDef__ *next;
    char *appid;
    char *group_cn;
+<<<<<<< HEAD
    char mode;
+=======
+>>>>>>> origin/master
 } AutoUpgradeDef_, *AutoUpgradeDef;
 
 AutoUpgradeDef auto_upgrades = NULL;
@@ -1441,6 +1444,7 @@ static void get_auto_upgrade_definitions (pool *p) {
             continue;
         }
         *cn++ = '\0';
+<<<<<<< HEAD
         char mode = 'u';
         // see if there's a mode
         char *mz = strchr(cn, ':');
@@ -1448,12 +1452,17 @@ static void get_auto_upgrade_definitions (pool *p) {
            *mz++ = '\0';
            if (*mz == 'r') mode = 'r';
         }
+=======
+>>>>>>> origin/master
         
         ad = (AutoUpgradeDef) malloc (sizeof (AutoUpgradeDef_));
         ad->next = auto_upgrades;
         ad->appid = strdup(app);
         ad->group_cn = strdup(cn);
+<<<<<<< HEAD
         ad->mode = mode;
+=======
+>>>>>>> origin/master
         ad->next = auto_upgrades;
         auto_upgrades = ad;
         nauto++;
@@ -1469,7 +1478,10 @@ int gets_auth_upgrade(pool *p, char *appid, char *id) {
   
    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gets_auth_upgrade for: appid=%s, id=%s", appid, id);
    for (ad=auto_upgrades; ad!=NULL; ad=ad->next) {
+<<<<<<< HEAD
       if (ad->mode!='u') continue;
+=======
+>>>>>>> origin/master
       if (!strcmp(ad->appid, appid)) {
          int ret =  gws_is_member(p, ad->group_cn, id);
          if (ret>=0) return (ret);
@@ -1481,6 +1493,7 @@ int gets_auth_upgrade(pool *p, char *appid, char *id) {
    return (0);
 }
 
+<<<<<<< HEAD
 /* return 1 if user permitted (is in group) */
 int gets_auth_access(pool *p, char *appid, char *id) {
    AutoUpgradeDef ad;
@@ -1498,6 +1511,8 @@ int gets_auth_access(pool *p, char *appid, char *id) {
    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "gets_auth_access: no match");
    return (1);
 }
+=======
+>>>>>>> origin/master
 #endif /* ENABLE_AUTO_UPGRADE */
 
 /*                                                                   */
@@ -1577,6 +1592,7 @@ int vector_request (pool * p, const security_context * context,
 
 #ifdef ENABLE_AUTO_UPGRADE
     if (res==LOGIN_OK && fl->id==PBC_BASIC_CRED_ID) {
+<<<<<<< HEAD
        if (!gets_auth_access(p, l->appid, l->user)) {
           pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "auto access denied for %s", l->user);
           res = LOGIN_INPROGRESS;
@@ -1585,6 +1601,8 @@ int vector_request (pool * p, const security_context * context,
        }
     }
     if (res==LOGIN_OK && fl->id==PBC_BASIC_CRED_ID) {
+=======
+>>>>>>> origin/master
        if (gets_auth_upgrade(p, l->appid, l->user)) {
           pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "upgrading %s to securid", l->user);
           set_l_cookie (p, context, l, c);
