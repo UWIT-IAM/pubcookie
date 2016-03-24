@@ -52,6 +52,7 @@
             %user_field%
             %pass_field%
 			 <li class="token-list"><label for="weblogin_token">Token Number:</label><input id="weblogin_token" placeholder="Token Number" type="test" NAME="pass2" SIZE="20" /></li>
+                         <li><a href="https://identity.uw.edu/account/resetpassword/">Forgot your password?</a></li>
 		   </ul>
 
 <!-- The hidden fields -->
@@ -68,22 +69,17 @@
 
     	</div>
 
-    	<h2 class="visuallyhidden">Weblogin Help</h2>
+    	<h2 class="visuallyhidden">UW NetID Help</h2>
     	<div class="sidebar">
 
-        	<h3>Troubleshooting</h3>
+        	<h3>UW NetID Help</h3>
 
             <ul class="links">
-                <li><a href="https://uwnetid.washington.edu/newid/">Need a UW NetID?</a></li>
-                <li><a href="http://www.washington.edu/itconnect/accounts/#password">Forget your password?</a></li>
-            </ul>
-
-
-            <h3>Additional Information</h3>
-
-            <ul class="links">
+                 <li><a href="http://www.washington.edu/itconnect/security/uw-netids/about-uw-netids/account-recovery/">Learn about account recovery options</a></li>
                 <li><a href="http://www.washington.edu/itconnect/accounts/">Learn about UW NetIDs</a></li>
-    	        <li><a href="http://www.washington.edu/computing/weblogin/">Learn about "weblogin"</A></li>
+                <li><a href="http://www.washington.edu/computing/weblogin/">Learn about "weblogin"</A></li>
+                <li><a href="https://uwnetid.washington.edu/newid/">Obtain a UW NetID</a></li>
+                <li style="height: 30px"></li>
                 <li><a href="http://www.washington.edu/itconnect/help/">Contact UW-IT</a></li>
             </ul>
 
