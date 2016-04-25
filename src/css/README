@@ -1,0 +1,5 @@
+These fonts have had the 'Installable Embedding mode' bit set in them - by embed.c
+
+See, for instance, http://kltf.de/kltf_notes_ie9ttfembeddingbits.shtml for some info on the installable mode.
+
+Jim
