@@ -359,7 +359,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h shadow.h stdlib.h \
                   string.h strings.h sys/param.h sys/socket.h sys/time.h \
                   unistd.h getopt.h ctype.h stdarg.h stdio.h varargs.h\
                   sys/utsname.h time.h pwd.h sys/types.h assert.h sys/stat.h \
-                  sysexits.h sidapimds.h \
+                  sysexits.h tasapi3.h \
 		  sys/resource.h fnmatch.h \
                   errno.h ])
 
@@ -825,8 +825,8 @@ AC_ARG_WITH(mango-lib-dir,
      ;;
   esac ])
 
-    AC_CHECK_HEADERS([sidapimds.h])
-    LIBS="$LIBS -lmdsapi -lsidapimds";
+    AC_CHECK_HEADERS([tasapi3.h])
+    LIBS="$LIBS -ltasapi3 -lmdsapipwd3";
     AC_CHECK_LIB(mgoapi, MDSinitialize)
     AC_DEFINE(HAVE_MANGO_H, 1, [Define to 1 for mango])
 fi

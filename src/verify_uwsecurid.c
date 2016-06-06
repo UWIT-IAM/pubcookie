@@ -106,7 +106,7 @@ pool *p = NULL;
 #endif /* HAVE_NETINET_IN_H */
 
 #ifdef HAVE_MANGO_H
-# include <sidapimds.h>
+# include <tasapi3.h>
 #endif /* HAVE_MANGO_H */
 
 #include "snprintf.h"
@@ -149,13 +149,14 @@ int securid (char *reason,
     pbc_time_t date;
     char buff[BSIZ];
     int mode, opts, rets;
-    MdsHandle *shndl;
+    MdsHandle *mds;
     CrnList crn;
+    int port = TAS_PORT;
+    char *host = TAS_HOST;
 
     MDSzero (&crn, sizeof (CrnList));
-    strcpy (crn.principal, user);
     pbc_time (&date);
-    shndl = NULL;
+    mds = NULL;
     rets = 0;
     snprintf (buff, BSIZ, "%s/%s", "weblogin", user);
     opts = MDS_OPT_CST;
@@ -167,100 +168,32 @@ int securid (char *reason,
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "Securid visit: %s",
                       tmp_res);
 
-    /* move prn if we got one */
+    /* check we got a  prn */
     if (s_prn == NULL) {
         reason = strdup ("No PRN");
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
-        securid_cleanup (shndl);
-        return (SECURID_PROB);
-    } else {
-        prn = atoi (s_prn);
-    }
-
-    /*
-     * Connect to Mango and query for CRN information
-     */
-
-    if ((rets = MDSinitialize (&shndl, SID_CONFIG)) == MDS_SUCCESS) {
-        MDSsetoption (shndl, MDS_OPT_USER, (void *) buff);
-    } else {
-        if (rets == MDS_ENOENT) {
-            MDSsetoption (shndl, MDS_OPT_HOST, (void *) SID_HOST);
-            MDSsetoption (shndl, MDS_OPT_OPTIONS, (void *) &opts);
-            MDSsetoption (shndl, MDS_OPT_USER, (void *) buff);
-        } else {
-            snprintf (tmp_res, BIGS, "SecurID initialize error: %s.",
-                      MDSerrormsg (shndl, rets));
-            reason = strdup (tmp_res);
-            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
-            securid_cleanup (shndl);
-            return (SECURID_PROB);
-        }
-    }
-
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
-                      "Securid: about to connect for %s", crn.principal);
-
-    if ((rets = MDSconnect (shndl)) != MDS_SUCCESS) {
-        snprintf (tmp_res, BIGS, "Securid connect error: %s.\n",
-                  MDSerrormsg (shndl, rets));
-        reason = strdup (tmp_res);
-        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
-        securid_cleanup (shndl);
+        securid_cleanup (mds);
         return (SECURID_PROB);
     }
 
-    /* this is the bail-out option */
-    if (doit == SECURID_ONLY_CRN) {
-        snprintf (tmp_res, BIGS,
-                  "no securid check was done for user: %s card_id: %s",
-                  user, card_id);
-        reason = strdup (tmp_res);
-        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
-        securid_cleanup (shndl);
-        return (SECURID_BAILOUT);
-    }
+    strncpy (crn.user, user, 128);
+    strncpy (crn.prn, s_prn, 32);
+    if (card_id!=NULL) strncpy (crn.crn, card_id, 2048);
 
-    if (card_id == NULL || strcmp (card_id, "") == 0)
-        *crn.crn = ESV;
-    else
-        strcpy (crn.crn, card_id);
+    TASinitialize (&mds, NULL);
+    MDSsetoption (mds, MDS_OPT_HOST, (void *) host);
+    MDSsetoption (mds, MDS_OPT_PORT, (void *) &port);
 
-    mode = SID_VALIDATE;
-
-    if ((rets =
-         SIDcheckprn (shndl, (char *) user, crn.crn, prn,
-                      mode)) != MDS_SUCCESS) {
-        switch (rets) {
-        case MDS_ERR_CRN:
-            snprintf (tmp_res, BIGS,
-                      "Failed SecurID check: id=%s, prn=%d.", user, prn);
-            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", tmp_res);
-            ret = SECURID_FAIL;
-            break;
-        case MDS_ERR_NPN:
-            snprintf (tmp_res, BIGS,
-                      "Asking for next prn: id=%s, prn=%d.", user, prn);
-            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", tmp_res);
-            ret = SECURID_WANTNEXT;
-            break;
-        default:
-            snprintf (tmp_res, BIGS, "Unexpected error: %s.",
-                      MDSerrormsg (shndl, rets));
-            reason = strdup (tmp_res);
-            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
-            ret = SECURID_PROB;
-            break;
-        }
-    } else {
+    if ((rets = TASchktoken (mds, &crn)) == MDS_SUCCESS) {
         snprintf (tmp_res, BIGS, "OK SecurID check: id=%s", user);
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", tmp_res);
         ret = SECURID_OK;
+    } else {
+        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "securid failed");
+        ret = SECURID_FAIL;
     }
 
-    reason = strdup (tmp_res);
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "%s", reason);
-    securid_cleanup (shndl);
+    securid_cleanup (mds);
     return (ret);
 
 }
@@ -309,15 +242,6 @@ static int uwsecurid_v (pool * p, const char *userid,
         break;
     case SECURID_FAIL:
         return (-1);
-        break;
-    case SECURID_WANTNEXT:
-        return (-3);
-        break;
-    case SECURID_PROB:
-        return (-2);
-        break;
-    case SECURID_BAILOUT:
-        return (-2);
         break;
     default:
         return (-2);

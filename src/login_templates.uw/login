@@ -79,7 +79,7 @@
             <ul class="links">
                 <li><a href="http://www.washington.edu/itconnect/security/uw-netids/about-uw-netids/account-recovery/">Learn about account recovery options</a></li>
                 <li><a href="http://www.washington.edu/itconnect/accounts/">Learn about UW NetIDs</a></li>
-    	        <li><a href="http://www.washington.edu/computing/weblogin/">Learn about "weblogin"</A></li>
+    	        <li><a href="http://itconnect.uw.edu/security/uw-netids/weblogin/">Learn about Weblogin</A></li>
                 <li><a href="https://uwnetid.washington.edu/newid/">Obtain a UW NetID</a></li>
                 <li style="height: 30px"></li>
                 <li><a href="http://www.washington.edu/itconnect/help/">Need help?</a></li>
@@ -91,9 +91,9 @@
             <p>Sign in reduces how often you have to reauthenticate to access UW resources.</p>
 
             <p style="color:#999;"><strong>WARNING:</strong> Protect your privacy! Prevent unauthorized use!<br/>
-                <a href="http://www.washington.edu/computing/weblogin/logout.html" title="How to log out">Completely exit your Web browser when you are finished.</a></p>
+                <a href="http://itconnect.uw.edu/security/uw-netids/weblogin/" title="How to log out">Completely exit your Web browser when you are finished.</a></p>
 
-            <p class="copyright">Copyright &#169; 2013 University of Washington <span class="copyright-links"><a href="http://www.washington.edu/online/privacy">PRIVACY</a> | <a href="http://www.washington.edu/online/terms">TERMS</a></span></p>
+            <p class="copyright">Copyright &#169; 2016 University of Washington <span class="copyright-links"><a href="http://www.washington.edu/online/privacy">PRIVACY</a> | <a href="http://www.washington.edu/online/terms">TERMS</a></span></p>
 
          </div>
 
