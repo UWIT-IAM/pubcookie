@@ -77,12 +77,12 @@
         	<!-- <h3>UW NetID Help</h3> -->
 
             <ul class="links">
-                 <li><a href="http://www.washington.edu/itconnect/security/uw-netids/about-uw-netids/account-recovery/">Learn about account recovery options</a></li>
-                <li><a href="http://www.washington.edu/itconnect/accounts/">Learn about UW NetIDs</a></li>
+                <li><a href="http://itconnect.uw.edu/security/uw-netids/about-uw-netids/account-recovery//">Learn about account recovery options</a></li>
+                <li><a href="http://itconnect.uw.edu/security/uw-netids/about-uw-netids/">Learn about UW NetIDs</a></li>
                 <li><a href="http://itconnect.uw.edu/security/uw-netids/weblogin/">Learn about Weblogin</A></li>
                 <li><a href="https://uwnetid.washington.edu/newid/">Obtain a UW NetID</a></li>
                 <li style="height: 30px"></li>
-                <li><a href="http://www.washington.edu/itconnect/help/">Need help?</a></li>
+                <li><a href="http://itconnect.uw.edu/help/">Need help?</a></li>
             </ul>
 
       	</div>
