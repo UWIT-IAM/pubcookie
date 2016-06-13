@@ -1,0 +1,23 @@
+
+Do a configure and make here.
+
+see uw_server_config.sh for how it's been done at UW
+
+Note. There's a lot of configuration on the target hosts that is not documented.
+Easiest is to copy an entire /usr/local/pubcookie from one working host to the new one.
+
+then:
+
+You'll need to copy index.cgi to (target_host):/www/index.cgi
+You'll need to copy keyserver to (target_host):/usrlocal/pubcookie
+
+Mkae a tar of the templates and css and img:
+
+ $ cd src
+ $ mkdist
+
+templates.tar.gz -> /usr/local/pubcookie/login_templates
+cssimg.tar.gz -> /www
+
+
+

@@ -2,11 +2,11 @@
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: 400;
-  src: local('Open Sans'), local('OpenSans'), url(/css/opensans.ttf) format('truetype');
+  src: local('Open Sans'), local('OpenSans'), url(/css/opensans.ttf) format('woff');
 }
 @font-face {
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: 600;
-  src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(/css/opensans-bf.ttf) format('truetype');
+  src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(/css/opensans-bf.ttf) format('woff');
 }

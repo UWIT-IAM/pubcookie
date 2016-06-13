@@ -25,7 +25,7 @@ width: 100%;
 .form {
 border: none;
 padding: 0;
-margin-bottom: 100px;
+margin-bottom: 35px;
 }
 
 .links {
@@ -46,9 +46,8 @@ padding: 0;
 }
 
 
-
 .login li, .submit li {
-
+margin: 15px;
 }
 
 .login li:first-child, .submit li:first-child {
@@ -123,7 +122,14 @@ padding-left: 5px;
 line-height: 43px; text-align: left;
 
 }
-.login-static-name span { line-height: 43px; font-size: 18px; font-weight: bold; color: #666; padding: 4px; width: 97%;
+.login-static-name span {
+display: block;
+line-height: 43px;
+font-size: 18px;
+font-weight: bold;
+color: #666;
+padding: 4px;
+width: 97%;
 background-color: #eee;
 -webkit-border-radius: 3px;
 -moz-border-radius: 3px;

@@ -1,0 +1,13 @@
+#!/bin/bash
+# make tar for easier dist
+
+cssfiles="css/.htaccess css/opensans-bf.ttf css/opensans.css css/opensans.ttf css/weblogin-enhanced.css css/weblogin-global.css "
+imgfiles="img/.htaccess img/weblogin.png"
+
+tar czf cssimg.tar.gz $cssfiles $imgfiles
+
+echo "In /www, untar cssimg.tar.gz"
+
+cd login_templates.uw
+tar czf ../templates.tar.gz [a-z]*
+echo "In /usr/local/pubcookie/login_templates, untar templates.tar.gz"
