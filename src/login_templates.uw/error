@@ -15,7 +15,7 @@
   </head>
 
   <body bgcolor="#ffffff">
-  <img src="/images/login.gif" alt="" height="64" width="208">
+  <img src="/img/weblogin.png" alt="" height="64" width="208">
   <p>
     The login service has encountered an error. Please report the
   following:

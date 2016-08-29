@@ -21,3 +21,29 @@ cssimg.tar.gz -> /www
 
 
 
+==== steps for 06/2016 ==================
+
+(weblogin11-16)
+
+/etc/init.d/loadr idle
+tail -f /logs/pubcookie.log
+
+
+cd /www
+tar xf ~fox/cssimg.tar.gz
+
+cd /usr/local/pubcookie
+cp -a login_templates login_templates.sav
+cd login_templates
+rm -rf old.*
+tar xf ~fox/templates.tar.gz
+
+cd /www
+cp index.cgi index.cgi.12060629
+cp ~fox/index.cgi .
+
+/etc/init.d/loadr start
+
+
+afterward: fixup notok, logo
+======================
