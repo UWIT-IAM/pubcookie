@@ -96,6 +96,9 @@ static verifier *v2 = NULL;
 #define INIT_HIDDEN_SIZE 2048
 #define GETCRED_HIDDEN_MAX 512
 
+#include "duo.h"
+#include "duo_iframe.h"
+
 /* no reason to leave this in except that we might want to change verifiers */
 static int init_uwsecurid ()
 {
@@ -501,6 +504,8 @@ char *flus_get_pass_field (pool * p, login_rec * l, login_rec * c,
 #endif
 #endif
     if (l->ride_free_creds == PBC_BASIC_CRED_ID) {
+        // DUO
+        if (1) return (NULL);
         return (flus_get_field_html (p,
                                      libpbc_config_getstring (p,
                                                               "tmpl_login_pass_static",
@@ -610,6 +615,35 @@ int flus_get_reason_html (pool * p, int reason, login_rec * l,
 
     return (ret);
 
+}
+
+// returns 1 if user has duo
+static int check_duo_account(pool * p, login_rec * l)
+{
+    if (!(l && l->user)) return (0);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "check duo for %s", l->user);
+    char *duohost = libpbc_config_getstring (p, "duo_host", "");
+    char *duoikey = libpbc_config_getstring (p, "duo_ikey", "");
+    char *duoakey = libpbc_config_getstring (p, "duo_akey", "");
+    char *duoskey = libpbc_config_getstring (p, "duo_skey", "");
+    duo_t *duo;
+    duocode_t code;
+    struct duo_param params[16];
+    char *body = NULL;
+    if ((duo = duo_init(duohost, duoikey, duoskey, "pbc-duoapi/1.0" , NULL, NULL)) == NULL) {
+              pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "DUO init fails");
+          return (0);
+    }
+
+    struct duo_auth *resp = duo_auth_preauth(duo, l->user);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "duo_auth_preauth: result: %s", resp->ok.preauth.result);
+
+    if (!strcmp(resp->ok.preauth.result, "auth")) {
+       pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "has duo account");
+       return (1);
+    }
+    return (0);
 }
 
 static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason)
@@ -774,6 +808,7 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
     /* what should the password field look like? */
     pass_field = flus_get_pass_field (p, l, c, reason);
 
+
     /* if the user field should be hidden */
     hidden_user = flus_get_hidden_user_field (p, l, c, reason);
 
@@ -790,7 +825,38 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
         ldurp = ldur, ldurtyp = "second";
     sprintf (ldurtxt, "%d %s%s", ldurp, ldurtyp, ldurp == 1 ? "" : "s");
 
-    /* Display the login form. */
+    /* decide which secure login form to present */
+    
+  if (pass_field==NULL && check_duo_account(p,l)) {
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "doing duo auth");
+
+    /* Display the duo login form. */
+    char *duohost = libpbc_config_getstring (p, "duo_host", "");
+    char *duoikey = libpbc_config_getstring (p, "duo_ikey", "");
+    char *duoakey = libpbc_config_getstring (p, "duo_akey", "");
+    char *duoskey = libpbc_config_getstring (p, "duo_skey", "");
+    char *duoreq = sign_web_request(duoikey, duoskey, duoakey, l->user);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "req=[%s]", duoreq);
+    ntmpl_print_html (p, TMPL_FNAME,
+                      libpbc_config_getstring (p, "tmpl_login_duo",
+                                               "login_duo"),
+                      "duohost", duohost,
+                      "duorequest", duoreq,
+                      "loginuri", PBC_LOGIN_URI,
+                      "message", login_msg != NULL ? login_msg : "",
+                      "reason", "Continue your sign in with Duo",
+                      "curtime", now,
+                      "hiddenuser", hidden_user != NULL ? hidden_user : "",
+                      "hiddenfields", hidden_fields,
+                      "user_field", user_field != NULL ? user_field : "",
+                      "pass_field", pass_field != NULL ? pass_field : "",
+                      "durationtext", ldurtxt,
+                      "version", PBC_VERSION_STRING, NULL);
+
+        
+  } else {
+
+    /* Display the token login form. */
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p, "tmpl_login_uwsecurid",
                                                "login_uwsecurid"),
@@ -804,6 +870,9 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
                       "pass_field", pass_field != NULL ? pass_field : "",
                       "durationtext", ldurtxt,
                       "version", PBC_VERSION_STRING, NULL);
+
+  }
+
 
     /* this tags the incoming request as a form reply */
 
@@ -908,7 +977,7 @@ static login_result process_uwsecurid (pool * p,
                               "process_uwsecurid: l->reply=%d\n", l->reply);
 
 #ifdef ENABLE_AUTO_UPGRADE
-    if (l->reply!=FORM_REPLY && l->creds_from_greq==PBC_BASIC_CRED_ID) {
+    if (l->reply!=FORM_REPLY && l->is_upgrade==1) {
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: entry from basic upgrade\n");
         l->creds_from_greq=PBC_UWSECURID_CRED_ID;
         *errstr = "uwsecurid upgrade";
@@ -924,14 +993,13 @@ static login_result process_uwsecurid (pool * p,
 
     if (l->reply == FORM_REPLY && l->creds_from_greq==PBC_UWSECURID_CRED_ID) {
 
-        result1 =
-            v1->v (p, l->user, l->pass, NULL, l->realm, NULL, errstr);
-            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
+        if (l->ride_free_creds == PBC_BASIC_CRED_ID) result1 = 0;
+        else result1 = v1->v (p, l->user, l->pass, NULL, l->realm, NULL, errstr);
+        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                               "====== process_uwsecurid: result1 %d\n", result1);
         /* only do securid check if necessary */
         if (l->ride_free_creds == PBC_BASIC_CRED_ID || result1 == 0) {
-            result2 =
-                v2->v (p, l->user, l->pass2, NULL, l->realm, NULL, errstr);
+            result2 = v2->v (p, l->user, l->pass2, l->sig_response, l->realm, NULL, errstr);
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                               "====== process_uwsecurid: result2 %d\n", result2);
          }
@@ -957,10 +1025,12 @@ static login_result process_uwsecurid (pool * p,
             /* xxx modify 'l' accordingly ? */
 
 #ifdef ENABLE_AUTO_UPGRADE
+/***
             if (l->is_upgrade) {
                pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is upgrade.  restore basic cred");
                l->creds_from_greq = PBC_BASIC_CRED_ID;
             }
+**/
 #endif
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                               "process_uwsecurid: good login, goodbye\n");

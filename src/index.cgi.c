@@ -522,6 +522,7 @@ void init_login_rec (pool * p, login_rec * r)
     r->ride_free_creds = PBC_CREDS_NONE;
     r->relay_uri = NULL;
     r->is_upgrade = 0;
+    r->sig_response = NULL;
 }
 
 /*
@@ -1000,8 +1001,11 @@ login_rec *load_login_rec (pool * p, login_rec * l)
         l->relay_uri = tmp;
     l->create_ts = get_int_arg (p, PBC_GETVAR_CREATE_TS, 0);
     l->is_upgrade = get_int_arg (p, "upg", 0);
+    l->sig_response = get_string_arg (p, "sig_response", NO_NEWLINES_FUNC);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade: %d \n", l->is_upgrade);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= sig_response: %s \n", l->sig_response);
+
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "load_login_rec: bye\n");
 
     return (l);
@@ -1542,8 +1546,19 @@ int vector_request (pool * p, const security_context * context,
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "vector_request: hello\n");
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "vector_request: greq creds=%c\n", l->creds_from_greq);
 
+    /* decode login cookie */
+    l->check_error = check_l_cookie (p, context, l, c);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade-4: %d \n", l->is_upgrade);
     /* find flavor of authn requested */
-    fl = get_flavor (p, l->creds_from_greq);
+    // DUO always do basic first
+    if (l && l->is_upgrade==1) {
+       pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "FLAVOR chooser, is_uprade=%d", l->is_upgrade);
+       fl = get_flavor (p, l->creds_from_greq);
+    } else {
+       pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "FLAVOR chooser, not upgrade");
+       fl = get_flavor (p, PBC_BASIC_CRED_ID); 
+    }
 
     if (!fl) {
         /* the application server's httpd.conf is misconfigured and asking
@@ -1565,16 +1580,31 @@ int vector_request (pool * p, const security_context * context,
         return PBC_FAIL;
     }
 
-    /* decode login cookie */
-    l->check_error = check_l_cookie (p, context, l, c);
-
     /* call authn flavor to determine correct result */
     
     pbc_log_activity (p, PBC_LOG_DEBUG_LOW, "vector_request: calling flavor: %s\n", fl->name);
     res = fl->process_request (p, context, l, c, &errstr);
 
-    /* watch for auto upgrade to token */
-
+    /* See if token was requested */
+    // DUO
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "FLAVOR res=%d, greq cred = %c, is_upgrade=%d", res, l->creds_from_greq, l->is_upgrade);
+    if (res==LOGIN_OK && l->creds_from_greq == PBC_UWSECURID_CRED_ID && l->is_upgrade==0) {
+          pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "upgrading %s to securid", l->user);
+          set_l_cookie (p, context, l, c);
+          if (c) {
+             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "have a c");
+             c->user = strdup(l->user);
+          }
+          l->ride_free_creds = PBC_BASIC_CRED_ID;
+          l->reply = 0;
+          l->is_upgrade = 1;
+          fl = get_flavor (p, PBC_UWSECURID_CRED_ID);
+          fl->init_flavor();
+          res = fl->process_request (p, context, l, c, &errstr);
+          pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "return from securid upgrade res=%d", res);
+    }
+    
+ 
 #ifdef ENABLE_AUTO_UPGRADE
     if (res==LOGIN_OK && fl->id==PBC_BASIC_CRED_ID) {
        if (!gets_auth_access(p, l->appid, l->user)) {
@@ -2486,6 +2516,7 @@ int cgiMain ()
     /* user and pass filled in                                         */
     /* malloc and populate login_rec                                   */
     l = get_query (p);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade-2: %d \n", l->is_upgrade);
 
     /* unload the login cookie if we have it */
     c = verify_unload_login_cookie (p, context, l);

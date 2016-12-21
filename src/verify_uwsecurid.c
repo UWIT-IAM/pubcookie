@@ -133,6 +133,9 @@ pool *p = NULL;
 
 #define BIGS 1024
 
+#include "duo.h"
+#include "duo_iframe.h"
+
 void securid_cleanup (MdsHandle * shndl)
 {
     MDSdisconnect (shndl);
@@ -198,9 +201,29 @@ int securid (char *reason,
 
 }
 
+int duo (char *sig_response, const char *user)
+{
+    int i;
+
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "Duo verify user=%s, resp=%s", user, sig_response);
+
+    char *duohost = libpbc_config_getstring (p, "duo_host", "");
+    char *duoikey = libpbc_config_getstring (p, "duo_ikey", "");
+    char *duoakey = libpbc_config_getstring (p, "duo_akey", "");
+    char *duoskey = libpbc_config_getstring (p, "duo_skey", "");
+
+    char *u_user = verify_response(duoikey, duoskey, duoakey, sig_response);
+
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "Duo verify result: u_user=%s", u_user);
+    
+    return (strcmp(user, u_user));
+
+}
+
 static int uwsecurid_v (pool * p, const char *userid,
                         const char *sid,
-                        const char *service,
+                        const char *sig_response,
                         const char *user_realm,
                         struct credentials **creds, const char **errstr)
 {
@@ -211,11 +234,16 @@ static int uwsecurid_v (pool * p, const char *userid,
     char *ptr;
     char *prn = NULL;
 
+    if (sig_response) {
+       pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "uwsecurid_v DUO: user=%s, resp==%s\n", userid, sig_response);
+       return duo(sig_response, userid);
+    }
+
     if (!sid)
         return (-1);
 
-            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "uwsecurid_v: user=%s, sid=%s, service=%s, realm=%s\n", 
-                 userid, sid, service, user_realm);
+            pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "uwsecurid_v: user=%s, sid=%s, realm=%s\n", 
+                 userid, sid, user_realm);
 
     /* if the securid field is in the form card_id=prn seperate it */
     ptr = card_id = (char *) sid;

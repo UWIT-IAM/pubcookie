@@ -79,6 +79,7 @@ typedef struct
                                    we add a general extension mechanism to the
                                    cookie structure */
     int is_upgrade;   /* flag for conditional auto upgrade to uwsecurid */
+    char *sig_response;  /* if duo iframe response */
 }
 login_rec;
 
