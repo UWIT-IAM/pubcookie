@@ -1,0 +1,18 @@
+This is a modified version of the github resource:
+
+caesar-0$ git remote show origin
+* remote origin
+  Fetch URL: https://github.com/duosecurity/libduo.git
+  Push  URL: https://github.com/duosecurity/libduo.git
+  HEAD branch: master
+  Remote branch:
+    master tracked
+  Local branch configured for 'git pull':
+    master merges with remote master
+  Local ref configured for 'git push':
+    master pushes to master (up to date)
+caesar-0$ ls
+
+
+Modified to work with pubcookie logins.
+

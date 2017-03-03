@@ -617,7 +617,7 @@ int flus_get_reason_html (pool * p, int reason, login_rec * l,
 
 }
 
-// returns 1 if user has duo
+// returns 1 if user has duo, 0 if not, -1 if duo unavailable
 static int check_duo_account(pool * p, login_rec * l)
 {
     if (!(l && l->user)) return (0);
@@ -632,13 +632,17 @@ static int check_duo_account(pool * p, login_rec * l)
     struct duo_param params[16];
     char *body = NULL;
     if ((duo = duo_init(duohost, duoikey, duoskey, "pbc-duoapi/1.0" , NULL, NULL)) == NULL) {
-              pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "DUO init fails");
-          return (0);
+              pbc_log_activity (p, PBC_LOG_ERROR, "DUO init fails");
+          return (-1);
     }
 
     struct duo_auth *resp = duo_auth_preauth(duo, l->user);
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "duo_auth_preauth: result: %s", resp->ok.preauth.result);
+    if (resp==NULL) {
+       pbc_log_activity (p, PBC_LOG_ERROR, "duo_auth_preauth: DUO not available!");
+       return (-1)
+    }
 
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "duo_auth_preauth: result: %s", resp->ok.preauth.result);
     if (!strcmp(resp->ok.preauth.result, "auth")) {
        pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "has duo account");
        return (1);
@@ -827,7 +831,7 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
 
     /* decide which secure login form to present */
     
-  if (pass_field==NULL && check_duo_account(p,l)) {
+  if (pass_field==NULL && check_duo_account(p,l)>0) {
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "doing duo auth");
 
     /* Display the duo login form. */
