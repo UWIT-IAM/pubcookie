@@ -639,7 +639,7 @@ static int check_duo_account(pool * p, login_rec * l)
     struct duo_auth *resp = duo_auth_preauth(duo, l->user);
     if (resp==NULL) {
        pbc_log_activity (p, PBC_LOG_ERROR, "duo_auth_preauth: DUO not available!");
-       return (-1)
+       return (-1);
     }
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "duo_auth_preauth: result: %s", resp->ok.preauth.result);
