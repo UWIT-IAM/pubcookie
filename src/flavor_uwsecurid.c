@@ -93,7 +93,7 @@ static verifier *v2 = NULL;
 #define FLUS_AUTH_PROB         8
 
 /* The beginning size for the hidden fields */
-#define INIT_HIDDEN_SIZE 2048
+#define INIT_HIDDEN_SIZE 20480
 #define GETCRED_HIDDEN_MAX 512
 
 #include "duo.h"
@@ -317,7 +317,7 @@ char ride_free_zone (login_rec * l, login_rec * c)
         return (PBC_CREDS_NONE);
     }
 
-    if ((c->create_ts + RIDE_FREE_TIME) < (t = pbc_time (NULL)) && (l && l->creds_from_greq!=PBC_BASIC_CRED_ID)) {
+    if (0 && (c->create_ts + RIDE_FREE_TIME) < (t = pbc_time (NULL)) && (l && l->creds_from_greq!=PBC_BASIC_CRED_ID)) {
         pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                           "%s %s: No Free Ride login cookie created: %d now: %d user: %s",
                           func, l->first_kiss, c->create_ts, t, c->user);
@@ -623,10 +623,9 @@ static int check_duo_account(pool * p, login_rec * l)
     if (!(l && l->user)) return (0);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "check duo for %s", l->user);
-    char *duohost = libpbc_config_getstring (p, "duo_host", "");
-    char *duoikey = libpbc_config_getstring (p, "duo_ikey", "");
-    char *duoakey = libpbc_config_getstring (p, "duo_akey", "");
-    char *duoskey = libpbc_config_getstring (p, "duo_skey", "");
+    char *duohost = libpbc_config_getstring (p, "duo_api_host", "");
+    char *duoikey = libpbc_config_getstring (p, "duo_api_ikey", "");
+    char *duoskey = libpbc_config_getstring (p, "duo_api_skey", "");
     duo_t *duo;
     duocode_t code;
     struct duo_param params[16];
@@ -760,6 +759,7 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
                                       "<input type=\"hidden\" name=\"%s\" value=\"%s\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
+                                      "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n"
                                       "<input type=\"hidden\" name=\"%s\" value=\"%d\">\n",
                                       PBC_GETVAR_APPSRVID,
                                       (l->appsrvid ? l->appsrvid : ""),
@@ -800,7 +800,8 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
                                       (l->first_kiss ? l->first_kiss : ""),
                                       PBC_GETVAR_PINIT, l->pinit,
                                       PBC_GETVAR_REPLY, FORM_REPLY,
-                                      "upg", l->is_upgrade);
+                                      "upg", l->is_upgrade,
+                                      "autoupg", l->is_auto_upgrade);
     }
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "made hidden stuff: %d", hidden_needed_len);
 
@@ -860,10 +861,17 @@ static void print_login_page (pool * p, login_rec * l, login_rec * c, int reason
         
   } else {
 
+    char *tmpl = "login_uwsecurid";
+/*
+    if (reason==FLUS_BAD_AUTH) {
+        pbc_log_activity (p, PBC_LOG_AUDIT, "got bad token login.  switch to pass");
+        tmpl = "login";
+    }
+*/
     /* Display the token login form. */
     ntmpl_print_html (p, TMPL_FNAME,
                       libpbc_config_getstring (p, "tmpl_login_uwsecurid",
-                                               "login_uwsecurid"),
+                                               tmpl),
                       "loginuri", PBC_LOGIN_URI,
                       "message", login_msg != NULL ? login_msg : "",
                       "reason", reason_msg != NULL ? reason_msg : "",
@@ -926,7 +934,7 @@ static login_result process_uwsecurid (pool * p,
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "process_uwsecurid: hello");
 #ifdef ENABLE_AUTO_UPGRADE
-    if (l) pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is_upgrade = %d", l->is_upgrade);
+    if (l) pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is_upgrade = %d %d", l->is_upgrade, l->is_auto_upgrade);
 #endif
 
     /* make sure we're initialized */
@@ -1029,12 +1037,10 @@ static login_result process_uwsecurid (pool * p,
             /* xxx modify 'l' accordingly ? */
 
 #ifdef ENABLE_AUTO_UPGRADE
-/***
-            if (l->is_upgrade) {
-               pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is upgrade.  restore basic cred");
+            if (l->is_auto_upgrade) {
+               pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "====== is auto upgrade.  restore basic cred");
                l->creds_from_greq = PBC_BASIC_CRED_ID;
             }
-**/
 #endif
             pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE,
                               "process_uwsecurid: good login, goodbye\n");

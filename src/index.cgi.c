@@ -1,4 +1,4 @@
-/* ========================================================================
+/*========================================================================
  * Copyright 2008 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -522,6 +522,7 @@ void init_login_rec (pool * p, login_rec * r)
     r->ride_free_creds = PBC_CREDS_NONE;
     r->relay_uri = NULL;
     r->is_upgrade = 0;
+    r->is_auto_upgrade = 0;
     r->sig_response = NULL;
 }
 
@@ -1001,9 +1002,10 @@ login_rec *load_login_rec (pool * p, login_rec * l)
         l->relay_uri = tmp;
     l->create_ts = get_int_arg (p, PBC_GETVAR_CREATE_TS, 0);
     l->is_upgrade = get_int_arg (p, "upg", 0);
+    l->is_auto_upgrade = get_int_arg (p, "autoupg", 0);
     l->sig_response = get_string_arg (p, "sig_response", NO_NEWLINES_FUNC);
 
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade: %d \n", l->is_upgrade);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade: %d %d \n", l->is_upgrade, l->is_auto_upgrade);
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= sig_response: %s \n", l->sig_response);
 
     pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "load_login_rec: bye\n");
@@ -1625,6 +1627,7 @@ int vector_request (pool * p, const security_context * context,
           l->ride_free_creds = PBC_BASIC_CRED_ID;
           l->reply = 0;
           l->is_upgrade = 1;
+          l->is_auto_upgrade = 1;
           fl = get_flavor (p, PBC_UWSECURID_CRED_ID);
           fl->init_flavor();
           res = fl->process_request (p, context, l, c, &errstr);
@@ -2330,6 +2333,7 @@ int pinit (pool * p, const security_context * context, login_rec * l,
 /*  Load the ok_browsers file: copy to memory, create a list of lines. */
 static void init_user_agent (pool * p)
 {
+#ifdef USINGUSERAGENTTEST
     FILE *ifp;
     long ifplen;
     char *s, *txt;
@@ -2393,6 +2397,7 @@ static void init_user_agent (pool * p)
                           "can't open ok browsers file: %s, continuing",
                           OK_BROWSERS_FILE);
 
+#endif
 }
 
 /*                                                                         */
@@ -2516,7 +2521,7 @@ int cgiMain ()
     /* user and pass filled in                                         */
     /* malloc and populate login_rec                                   */
     l = get_query (p);
-    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade-2: %d \n", l->is_upgrade);
+    pbc_log_activity (p, PBC_LOG_DEBUG_VERBOSE, "========= is_upgrade-2: %d %d \n", l->is_upgrade, l->is_auto_upgrade);
 
     /* unload the login cookie if we have it */
     c = verify_unload_login_cookie (p, context, l);
