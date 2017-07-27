@@ -1,2 +1,2 @@
-cc -o tokchk tokchk.c -I/tulsa/include -ltasapi3 -lmdsapipwd3 -lezs -lcrypto -lssl -llsc
+cc -o tokchk tokchk.c -I/tulsa/include -L/tulsa/lib/rhel6 -ltasapi3 -lmdsapipwd3 -lezs -lcrypto -lssl -llsc
 

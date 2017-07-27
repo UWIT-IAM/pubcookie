@@ -106,7 +106,7 @@ pool *p = NULL;
 #endif /* HAVE_NETINET_IN_H */
 
 #ifdef HAVE_MANGO_H
-# include <tasapi3.h>
+# include <tasapi3_old.h>
 #endif /* HAVE_MANGO_H */
 
 #include "snprintf.h"
